@@ -1,0 +1,20 @@
+# Dependencies
+node_modules/
+
+# Build and Packaging Output
+build/
+dist/
+release/
+build-installer/
+coverage/
+
+# Environment and Logs
+*.log
+.env*
+!.env.example
+
+# OS & Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

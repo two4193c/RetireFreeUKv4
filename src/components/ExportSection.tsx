@@ -1,0 +1,4535 @@
+import React, { useState } from 'react';
+import { motion } from 'motion/react';
+import { UserProfile, InvestmentPots, YearProjection, UKTaxResult, PlannerScenario } from '../types';
+import { DEFAULT_PARTNER_POTS, DEFAULT_POTS, DEFAULT_MORTGAGE, sanitizePots } from '../utils/defaultData';
+import { jsPDF } from 'jspdf';
+import { FileText, Download, Printer, CheckCircle2, Sparkles, ShieldCheck, ArrowUpRight, Table, PieChart, Image as ImageIcon, BarChart3, Upload, FileJson } from 'lucide-react';
+import { getProjectedPensionAtTakeAge, getPensionAccessAge, getPartnerPensionAccessAge, calculateUKTax, calculatePartnerUKTax, calculateMaxPcls, calculatePartnerMaxPcls, getLumpSumTakeAge, getPartnerLumpSumTakeAge } from '../utils/ukTaxEngine';
+import { runMonteCarloSimulation } from '../utils/monteCarloEngine';
+import { runHistoricSimulation } from '../utils/historicModelingEngine';
+import { getTargetIncomeForAge } from '../utils/projectionEngine';
+
+interface ExportSectionProps {
+  profile: UserProfile;
+  pots: InvestmentPots;
+  projections: YearProjection[];
+  taxResult?: UKTaxResult;
+  planName?: string;
+  scenarios?: PlannerScenario[];
+  onImportScenarios?: (scenarios: PlannerScenario[]) => void;
+  variant?: 'all' | 'pdf_only' | 'data_only';
+}
+
+export const ExportSection: React.FC<ExportSectionProps> = ({
+  profile,
+  pots,
+  projections,
+  taxResult,
+  planName,
+  scenarios = [],
+  onImportScenarios,
+  variant = 'all',
+}) => {
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [exportSuccessMsg, setExportSuccessMsg] = useState<string | null>(null);
+
+  const effectivePlanName = (planName && planName.trim()) ? planName.trim() : (profile.name && profile.name.trim()) ? profile.name.trim() : 'Retirement_Plan';
+  const fileNameSlug = effectivePlanName.replace(/[^a-zA-Z0-9_-]/g, '_');
+
+  const retirementYear = (projections && projections.length > 0)
+    ? (projections.find((p) => p.age === profile.targetRetirementAge) || projections[0])
+    : { totalPot: 0, pensionPot: 0, isaPot: 0, cashGiaPot: 0, targetRetirementIncome: 0, age: profile.targetRetirementAge, year: 2024 };
+
+  const endingYear = (projections && projections.length > 0)
+    ? projections[projections.length - 1]
+    : retirementYear;
+
+  // CSV Export Handler
+  const handleExportCsv = () => {
+    try {
+      const headers = [
+        'Year',
+        'Age',
+        'Phase',
+        'Pension Pot (£)',
+        'ISA Pot (£)',
+        'Cash/GIA Pot (£)',
+        'Total Portfolio (£)',
+        'State Pension (£)',
+        'DB Pension (£)',
+        'Annuity Payout (£)',
+        'Pension Drawdown (£)',
+        'Total Tax Paid (£)',
+        'Net Retirement Income (£)',
+        'Target Requirement (£)',
+        'Shortfall Deficit (£)',
+        'Annual Surplus (£)',
+        'Cumulative Surplus (£)',
+      ];
+
+      const rows = (projections || []).map((p) => [
+        p.year,
+        p.age,
+        p.isRetired ? 'Retirement (Decumulation)' : 'Working (Accumulation)',
+        p.pensionPot || 0,
+        p.isaPot || 0,
+        p.cashGiaPot || 0,
+        p.totalPot || 0,
+        p.statePensionReceived || 0,
+        p.dbPensionIncomeReceived || 0,
+        p.annuityIncomeReceived || 0,
+        p.pensionDrawdown || 0,
+        p.totalTaxPaid || 0,
+        p.netRetirementIncome || 0,
+        p.targetRetirementIncome || 0,
+        p.incomeShortfall || 0,
+        p.annualIncomeExcess || 0,
+        p.cumulativeExcessIncome || 0,
+      ]);
+
+      const csvContent =
+        'data:text/csv;charset=utf-8,\uFEFF' +
+        [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
+
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement('a');
+      link.setAttribute('href', encodedUri);
+      link.setAttribute('download', `RetireFree_UK_Projections_${fileNameSlug}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      setExportSuccessMsg('Projections exported to CSV successfully!');
+      setTimeout(() => setExportSuccessMsg(null), 4000);
+    } catch (err) {
+      console.error('CSV Export Error:', err);
+      alert('Error exporting CSV data.');
+    }
+  };
+
+  // Ultra-Professional Multi-Page PDF Report Export Handler
+  const handleExportPdfReport = async () => {
+    if (!projections || projections.length === 0) {
+      setExportSuccessMsg('No projections available to export.');
+      setTimeout(() => setExportSuccessMsg(null), 3000);
+      return;
+    }
+
+    const exportTaxResult = taxResult || calculateUKTax(profile, pots);
+    setIsExportingPdf(true);
+    try {
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+      });
+
+      const primaryName = profile.name || 'Primary';
+      const partnerName = profile.isCouplePlanning ? (profile.partnerName || 'Partner') : null;
+      const peopleLabel = partnerName ? `${primaryName} & ${partnerName}` : primaryName;
+      const safeProfileName = profile.name || 'Retirement Plan';
+      const activePlanName = planName || safeProfileName;
+      const reportFullTitle = `${peopleLabel} - ${activePlanName}`;
+
+      const targetAge = profile.targetRetirementAge || 60;
+      const currentAge = profile.currentAge || 30;
+      const horizonAge = profile.lifeExpectancyAge || 90;
+
+      // Color Tokens
+      const emeraldColor = [16, 185, 129];
+      const slateDark = [15, 23, 42];
+      const slateMuted = [100, 116, 139];
+      const slateLight = [248, 250, 252];
+      const indigoColor = [99, 102, 241];
+      const amberColor = [245, 158, 11];
+      const roseColor = [225, 29, 72];
+      const tealColor = [13, 148, 136];
+
+      const rowsPerPage = 42;
+      const totalDecumPages = Math.ceil((projections || []).length / rowsPerPage) || 1;
+
+      // Accumulation Ledger helper for PDF export
+      const formatPotNamePDF = (pot?: string) => {
+        if (!pot) return '—';
+        switch (pot) {
+          case 'workplace_pension': return 'Workplace Pension';
+          case 'sipp': return 'SIPP';
+          case 'stocks_and_shares_isa': return 'S&S ISA';
+          case 'cash_isa': return 'Cash ISA';
+          case 'lisa': return 'LISA';
+          case 'gia': return 'GIA';
+          case 'cash_savings': return 'Cash Savings';
+          default: return pot.replace(/_/g, ' ').toUpperCase();
+        }
+      };
+
+      const getGroupedAccumulationItems = () => {
+        const items: any[] = [];
+        const currentYear = new Date().getFullYear();
+        const primaryName = profile.name || 'Primary';
+        const partnerName = profile.partnerName || 'Partner';
+        const primaryCurrentAge = profile.currentAge || 35;
+        const primaryRetireAge = profile.targetRetirementAge || 60;
+        const partnerCurrentAge = profile.partnerCurrentAge || primaryCurrentAge;
+        const partnerRetireAge = profile.partnerTargetRetirementAge || primaryRetireAge;
+        const isCouple = Boolean(profile.isCouplePlanning);
+
+        // 1. One-off & Custom Regular Contributions
+        (profile.oneOffContributions || []).filter(c => c.enabled !== false).forEach((c) => {
+          const isPartnerOwner = c.owner === 'partner';
+          const ownerName = isPartnerOwner ? partnerName : primaryName;
+          const curAge = isPartnerOwner ? partnerCurrentAge : primaryCurrentAge;
+          const retAge = isPartnerOwner ? partnerRetireAge : primaryRetireAge;
+          const isMonthly = c.frequency === 'regular_monthly';
+
+          let startYear: number;
+          let endYear: number;
+          let dateSortKey: string;
+          let scheduleDisplay: string;
+
+          if (c.date && c.date.trim() !== '') {
+            let cleanDateStr = c.date.trim();
+            if (/^00\d{2}/.test(cleanDateStr)) {
+              cleanDateStr = '20' + cleanDateStr.slice(2);
+            }
+            const parts = cleanDateStr.split('-');
+            startYear = parseInt(parts[0], 10) || currentYear;
+            endYear = startYear;
+            dateSortKey = cleanDateStr;
+            const dateObj = new Date(cleanDateStr);
+            scheduleDisplay = !isNaN(dateObj.getTime())
+              ? dateObj.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+              : cleanDateStr;
+          } else if (c.startAge !== undefined) {
+            startYear = currentYear + Math.max(0, c.startAge - curAge);
+            endYear = c.endAge ? currentYear + Math.max(0, c.endAge - curAge) : currentYear + Math.max(0, retAge - curAge);
+            if (endYear < startYear) endYear = startYear;
+            dateSortKey = `${startYear}-04-06`;
+            if (isMonthly) {
+              scheduleDisplay = startYear === endYear
+                ? `${startYear} (1 yr)`
+                : `${startYear}–${endYear} (${endYear - startYear + 1} yrs)`;
+            } else {
+              scheduleDisplay = `Tax Year ${startYear}/${(startYear + 1).toString().slice(2)} (Age ${c.startAge})`;
+            }
+          } else {
+            startYear = currentYear;
+            endYear = isMonthly ? currentYear + Math.max(0, retAge - curAge) : currentYear;
+            if (endYear < startYear) endYear = startYear;
+            dateSortKey = `${startYear}-04-06`;
+            scheduleDisplay = isMonthly ? `Ongoing (${startYear}–${endYear})` : `Tax Year ${startYear}/${(startYear + 1).toString().slice(2)}`;
+          }
+
+          let grossAnnual = c.grossAmount || 0;
+          let monthlyAmt: number | undefined = undefined;
+
+          if (isMonthly) {
+            if (c.targetPot === 'workplace_pension' && c.workplaceContributionType === 'percent') {
+              const salary = isPartnerOwner ? (profile.partnerGrossAnnualSalary || 0) : (profile.grossAnnualSalary || 0);
+              const empMo = (salary * ((c.employeePercent || 0) / 100)) / 12;
+              const emprMo = (salary * ((c.employerPercent || 0) / 100)) / 12;
+              monthlyAmt = empMo + emprMo;
+              grossAnnual = monthlyAmt * 12;
+            } else {
+              monthlyAmt = c.grossAmount || 0;
+              grossAnnual = monthlyAmt * 12;
+            }
+          }
+
+          items.push({
+            name: c.name || (isMonthly ? 'Regular Contribution' : 'One-off Lump Sum'),
+            category: isMonthly ? 'Monthly Savings' : 'One-off Lump Sum',
+            ownerName,
+            sourcePot: c.sourcePot,
+            targetPot: c.targetPot,
+            grossAnnual,
+            monthlyAmt,
+            isMonthly,
+            startYear,
+            endYear,
+            scheduleDisplay,
+            dateSortKey,
+            description: c.description || '',
+          });
+        });
+
+        // 0. Initial Starting Pot Balances
+        const addStartingPot = (name: string, potKey: string, balance: number, owner: string) => {
+          if (balance > 0) {
+            items.push({
+              name: `${name} (Starting Balance)`,
+              category: 'Starting Balance',
+              ownerName: owner,
+              targetPot: potKey,
+              grossAnnual: balance,
+              isMonthly: false,
+              startYear: currentYear,
+              endYear: currentYear,
+              scheduleDisplay: `Start Year (${currentYear})`,
+              dateSortKey: `${currentYear}-01-01-A-${potKey}`,
+              description: `Initial baseline capital balance`,
+            });
+          }
+        };
+
+        addStartingPot(`${primaryName} Workplace Pension`, 'workplace_pension', pots.workplacePensionBalance || 0, primaryName);
+        addStartingPot(`${primaryName} SIPP`, 'sipp', pots.sippBalance || 0, primaryName);
+        addStartingPot(`${primaryName} Stocks & Shares ISA`, 'stocks_and_shares_isa', pots.stocksAndSharesIsaBalance || 0, primaryName);
+        addStartingPot(`${primaryName} Cash ISA`, 'cash_isa', pots.cashIsaBalance || 0, primaryName);
+        addStartingPot(`${primaryName} LISA`, 'lisa', pots.lisaBalance || 0, primaryName);
+        addStartingPot(`${primaryName} GIA`, 'gia', pots.giaBalance || 0, primaryName);
+        addStartingPot(`${primaryName} Cash Savings`, 'cash_savings', pots.cashSavingsBalance || 0, primaryName);
+
+        if (isCouple && profile.partnerPots) {
+          const pPots = profile.partnerPots;
+          addStartingPot(`${partnerName} Workplace Pension`, 'workplace_pension', pPots.workplacePensionBalance || 0, partnerName);
+          addStartingPot(`${partnerName} SIPP`, 'sipp', pPots.sippBalance || 0, partnerName);
+          addStartingPot(`${partnerName} Stocks & Shares ISA`, 'stocks_and_shares_isa', pPots.stocksAndSharesIsaBalance || 0, partnerName);
+          addStartingPot(`${partnerName} Cash ISA`, 'cash_isa', pPots.cashIsaBalance || 0, partnerName);
+          addStartingPot(`${partnerName} LISA`, 'lisa', pPots.lisaBalance || 0, partnerName);
+          addStartingPot(`${partnerName} GIA`, 'gia', pPots.giaBalance || 0, partnerName);
+          addStartingPot(`${partnerName} Cash Savings`, 'cash_savings', pPots.cashSavingsBalance || 0, partnerName);
+        }
+
+        // 2. Base Workplace Pension & Monthly Contributions into pots
+        const primaryPots = pots;
+        const salary = profile.grossAnnualSalary || 0;
+        const hasPrimaryWorkplaceInOneOff = (profile.oneOffContributions || []).some(
+          (c) => (c.owner || 'primary') === 'primary' && c.targetPot === 'workplace_pension' && c.frequency === 'regular_monthly'
+        );
+
+        if (!hasPrimaryWorkplaceInOneOff) {
+          let pEmpPensionMo = primaryPots.workplacePensionMonthlyEmployeeType === 'percent'
+            ? (salary * ((primaryPots.workplacePensionMonthlyEmployee || 0) / 100)) / 12
+            : (primaryPots.workplacePensionMonthlyEmployee || 0);
+          let pEmprPensionMo = (salary * ((primaryPots.employerMatchPercentage || 0) / 100)) / 12;
+          let pTotalWorkplaceMo = pEmpPensionMo + pEmprPensionMo;
+          if (pTotalWorkplaceMo > 0) {
+            const endYr = currentYear + Math.max(0, primaryRetireAge - primaryCurrentAge);
+            items.push({
+              name: `${primaryName} Workplace Pension (Salary Sacrifice)`,
+              category: 'Monthly Savings',
+              ownerName: primaryName,
+              targetPot: 'workplace_pension',
+              grossAnnual: pTotalWorkplaceMo * 12,
+              monthlyAmt: pTotalWorkplaceMo,
+              isMonthly: true,
+              startYear: currentYear,
+              endYear: endYr,
+              scheduleDisplay: `Ongoing (${currentYear}–${endYr})`,
+              dateSortKey: `${currentYear}-01-02-workplace`,
+              description: `Employee: £${Math.round(pEmpPensionMo).toLocaleString()}/mo | Employer match: £${Math.round(pEmprPensionMo).toLocaleString()}/mo`,
+            });
+          }
+        }
+
+        const addMonthlyPotContrib = (potName: string, potKey: string, monthlyAmt: number, owner: string, endAge: number, curAge: number) => {
+          if (monthlyAmt > 0) {
+            const endYr = currentYear + Math.max(0, endAge - curAge);
+            items.push({
+              name: `${owner} ${potName} Monthly Savings`,
+              category: 'Monthly Savings',
+              ownerName: owner,
+              targetPot: potKey,
+              grossAnnual: monthlyAmt * 12,
+              monthlyAmt: monthlyAmt,
+              isMonthly: true,
+              startYear: currentYear,
+              endYear: endYr,
+              scheduleDisplay: `Ongoing (${currentYear}–${endYr})`,
+              dateSortKey: `${currentYear}-01-02-${potKey}`,
+              description: `Regular monthly savings of £${Math.round(monthlyAmt).toLocaleString()}/mo`,
+            });
+          }
+        };
+
+        addMonthlyPotContrib('SIPP', 'sipp', pots.sippMonthlyContribution || 0, primaryName, primaryRetireAge, primaryCurrentAge);
+        addMonthlyPotContrib('S&S ISA', 'stocks_and_shares_isa', pots.stocksAndSharesIsaMonthlyContribution || 0, primaryName, primaryRetireAge, primaryCurrentAge);
+        addMonthlyPotContrib('Cash ISA', 'cash_isa', pots.cashIsaMonthlyContribution || 0, primaryName, primaryRetireAge, primaryCurrentAge);
+        addMonthlyPotContrib('LISA', 'lisa', pots.lisaMonthlyContribution || 0, primaryName, primaryRetireAge, primaryCurrentAge);
+        addMonthlyPotContrib('GIA', 'gia', pots.giaMonthlyContribution || 0, primaryName, primaryRetireAge, primaryCurrentAge);
+        addMonthlyPotContrib('Cash Savings', 'cash_savings', pots.cashSavingsMonthlyContribution || 0, primaryName, primaryRetireAge, primaryCurrentAge);
+
+        if (isCouple && profile.partnerPots) {
+          const hasPartnerWorkplaceInOneOff = (profile.oneOffContributions || []).some(
+            (c) => c.owner === 'partner' && c.targetPot === 'workplace_pension' && c.frequency === 'regular_monthly'
+          );
+
+          if (!hasPartnerWorkplaceInOneOff) {
+            const partPots = profile.partnerPots;
+            const partSalary = profile.partnerGrossAnnualSalary || 0;
+            let partEmpPensionMo = partPots.workplacePensionMonthlyEmployeeType === 'percent'
+              ? (partSalary * ((partPots.workplacePensionMonthlyEmployee || 0) / 100)) / 12
+              : (partPots.workplacePensionMonthlyEmployee || 0);
+            let partEmprPensionMo = (partSalary * ((partPots.employerMatchPercentage || 0) / 100)) / 12;
+            let partTotalWorkplaceMo = partEmpPensionMo + partEmprPensionMo;
+            if (partTotalWorkplaceMo > 0) {
+              const endYr = currentYear + Math.max(0, partnerRetireAge - partnerCurrentAge);
+              items.push({
+                name: `${partnerName} Workplace Pension (Salary Sacrifice)`,
+                category: 'Monthly Savings',
+                ownerName: partnerName,
+                targetPot: 'workplace_pension',
+                grossAnnual: partTotalWorkplaceMo * 12,
+                monthlyAmt: partTotalWorkplaceMo,
+                isMonthly: true,
+                startYear: currentYear,
+                endYear: endYr,
+                scheduleDisplay: `Ongoing (${currentYear}–${endYr})`,
+                dateSortKey: `${currentYear}-01-02-partner-workplace`,
+                description: `Employee: £${Math.round(partEmpPensionMo).toLocaleString()}/mo | Employer match: £${Math.round(partEmprPensionMo).toLocaleString()}/mo`,
+              });
+            }
+          }
+
+          const partPots = profile.partnerPots;
+          addMonthlyPotContrib('SIPP', 'sipp', partPots.sippMonthlyContribution || 0, partnerName, partnerRetireAge, partnerCurrentAge);
+          addMonthlyPotContrib('S&S ISA', 'stocks_and_shares_isa', partPots.stocksAndSharesIsaMonthlyContribution || 0, partnerName, partnerRetireAge, partnerCurrentAge);
+          addMonthlyPotContrib('Cash ISA', 'cash_isa', partPots.cashIsaMonthlyContribution || 0, partnerName, partnerRetireAge, partnerCurrentAge);
+          addMonthlyPotContrib('LISA', 'lisa', partPots.lisaMonthlyContribution || 0, partnerName, partnerRetireAge, partnerCurrentAge);
+          addMonthlyPotContrib('GIA', 'gia', partPots.giaMonthlyContribution || 0, partnerName, partnerRetireAge, partnerCurrentAge);
+          addMonthlyPotContrib('Cash Savings', 'cash_savings', partPots.cashSavingsMonthlyContribution || 0, partnerName, partnerRetireAge, partnerCurrentAge);
+        }
+
+        // 3. Pot Transfers
+        (profile.potTransfers || []).filter(t => t.enabled !== false).forEach((t) => {
+          const isSrcPartner = t.owner === 'partner';
+          const ownerName = isSrcPartner ? partnerName : primaryName;
+          const curAge = isSrcPartner ? partnerCurrentAge : primaryCurrentAge;
+
+          let year: number;
+          let dateSortKey: string;
+          let scheduleDisplay: string;
+
+          if (t.transferDate && t.transferDate.trim() !== '') {
+            const parts = t.transferDate.split('-');
+            year = parseInt(parts[0], 10) || currentYear;
+            dateSortKey = t.transferDate;
+            const dateObj = new Date(t.transferDate);
+            scheduleDisplay = !isNaN(dateObj.getTime())
+              ? dateObj.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+              : t.transferDate;
+          } else if (t.transferAge !== undefined) {
+            year = currentYear + Math.max(0, t.transferAge - curAge);
+            dateSortKey = `${year}-04-06`;
+            scheduleDisplay = `Tax Year ${year}/${(year + 1).toString().slice(2)} (Age ${t.transferAge})`;
+          } else {
+            year = currentYear + 2;
+            dateSortKey = `${year}-04-06`;
+            scheduleDisplay = `Tax Year ${year}/${(year + 1).toString().slice(2)}`;
+          }
+
+          items.push({
+            name: t.name || 'Pot Transfer',
+            category: 'Pot Transfer',
+            ownerName,
+            sourcePot: t.sourcePot,
+            targetPot: t.destinationPot,
+            grossAnnual: t.amount || 0,
+            isMonthly: false,
+            startYear: year,
+            endYear: year,
+            scheduleDisplay,
+            dateSortKey,
+            description: t.description || '',
+          });
+        });
+
+        // 4. DB Pension Tax-Free Lump Sum Payouts
+        (profile.dbPensions || []).filter(db => db.enabled !== false && db.taxFreeLumpSum && db.taxFreeLumpSum > 0).forEach((db) => {
+          const isPartnerOwner = db.owner === 'partner';
+          const ownerName = isPartnerOwner ? partnerName : primaryName;
+          const curAge = isPartnerOwner ? partnerCurrentAge : primaryCurrentAge;
+          const startAge = db.startAge || 60;
+          const year = currentYear + Math.max(0, startAge - curAge);
+
+          items.push({
+            name: `${db.name} (DB Tax-Free Lump Sum)`,
+            category: 'DB Lump Sum',
+            ownerName,
+            targetPot: db.targetPot || 'cash_savings',
+            grossAnnual: db.taxFreeLumpSum,
+            isMonthly: false,
+            startYear: year,
+            endYear: year,
+            scheduleDisplay: `Age ${startAge} (${year})`,
+            dateSortKey: `${year}-04-06`,
+            description: `DB pension lump sum payout`,
+          });
+        });
+
+        return items.sort((a, b) => (a.dateSortKey || '').localeCompare(b.dateSortKey || ''));
+      };
+
+      const getAccumulationLedgerItems = () => {
+        const grouped = getGroupedAccumulationItems();
+        return grouped.map((g) => ({
+          ...g,
+          dateDisplay: g.scheduleDisplay,
+        })).sort((a, b) => (a.dateSortKey || '').localeCompare(b.dateSortKey || ''));
+      };
+
+      const accumLedgerItems = getAccumulationLedgerItems();
+      const accumRowsPerPage = 38;
+      const totalAccumPages = Math.ceil(accumLedgerItems.length / accumRowsPerPage) || 1;
+      const totalHistoricPages = 3;
+      const totalMortgagePages = 1;
+      const TOTAL_PAGES = 12 + totalAccumPages + totalDecumPages + totalHistoricPages + totalMortgagePages;
+
+      // Helper function for header bar
+      const renderPageHeader = (title: string, pageNum: number) => {
+        doc.setFillColor(slateDark[0], slateDark[1], slateDark[2]);
+        doc.rect(0, 0, 210, 14, 'F');
+        doc.setFillColor(emeraldColor[0], emeraldColor[1], emeraldColor[2]);
+        doc.rect(0, 12, 210, 2, 'F');
+
+        doc.setTextColor(255, 255, 255);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9);
+        doc.text(`RetireFree UK • ${reportFullTitle}`, 14, 8.5);
+
+        doc.setFontSize(8.5);
+        doc.setFont('helvetica', 'normal');
+        doc.text(title, 135, 8.5);
+
+        // Page footer
+        doc.setFontSize(7.5);
+        doc.setTextColor(slateMuted[0], slateMuted[1], slateMuted[2]);
+        doc.text(`Page ${pageNum} of ${TOTAL_PAGES} • RetireFree UK Confidential Guidance Model`, 14, 287);
+        doc.text(`Generated: ${new Date().toLocaleDateString('en-GB')}`, 165, 287);
+      };
+
+      // Milestone Projections
+      const primaryAccessAge = getPensionAccessAge(profile);
+      const primarySpaAge = profile.statePensionAge || 67;
+
+      const privateAccessYear = (projections && projections.length > 0)
+        ? (projections.find((p) => p.age === primaryAccessAge) || projections[0])
+        : { totalPot: 0, pensionPot: 0, isaPot: 0, cashGiaPot: 0, targetRetirementIncome: 0, age: primaryAccessAge, year: 2024 };
+
+      const retirementYear = (projections && projections.length > 0)
+        ? (projections.find((p) => p.age === profile.targetRetirementAge) || projections[0])
+        : { totalPot: 0, pensionPot: 0, isaPot: 0, cashGiaPot: 0, targetRetirementIncome: 0, age: profile.targetRetirementAge, year: 2024 };
+
+      const statePensionYear = (projections && projections.length > 0)
+        ? (projections.find((p) => p.age === primarySpaAge) || projections[0])
+        : { totalPot: 0, pensionPot: 0, isaPot: 0, cashGiaPot: 0, targetRetirementIncome: 0, age: primarySpaAge, year: 2024 };
+
+      // Calculate totals for cover page & summary
+      const potRowsPrelim = [
+        { name: 'Workplace Pension', primary: pots?.workplacePensionBalance || 0, partner: profile.partnerPots?.workplacePensionBalance || profile.partnerWorkplacePensionBalance || 0 },
+        { name: 'SIPP / Personal Pension', primary: pots?.sippBalance || 0, partner: profile.partnerPots?.sippBalance || profile.partnerSippBalance || 0 },
+        { name: 'Stocks & Shares ISA', primary: pots?.stocksAndSharesIsaBalance || 0, partner: profile.partnerPots?.stocksAndSharesIsaBalance || profile.partnerIsaBalance || 0 },
+        { name: 'Cash ISA', primary: pots?.cashIsaBalance || 0, partner: profile.partnerPots?.cashIsaBalance || 0 },
+        { name: 'Lifetime ISA (LISA)', primary: pots?.lisaBalance || 0, partner: profile.partnerPots?.lisaBalance || 0 },
+        { name: 'General Investment Account (GIA)', primary: pots?.giaBalance || 0, partner: profile.partnerPots?.giaBalance || 0 },
+        { name: 'Cash Savings & Emergency Fund', primary: pots?.cashSavingsBalance || 0, partner: profile.partnerPots?.cashSavingsBalance || 0 },
+      ];
+      let totalCurrentPrimary = 0;
+      let totalCurrentPartner = 0;
+      potRowsPrelim.forEach((row) => {
+        totalCurrentPrimary += row.primary;
+        totalCurrentPartner += row.partner;
+      });
+
+      const shortfallYears = (projections || []).filter((p) => p.isRetired && (p.incomeShortfall || 0) > 0);
+      const isPlanFeasible = shortfallYears.length === 0;
+
+      // Run preliminary Monte Carlo simulation for Executive Summary stochastic metrics
+      const mcNormalPrelim = runMonteCarloSimulation(profile, pots, exportTaxResult as any, {
+        numSimulations: 500,
+        accumulationVolatility: 12.0,
+        decumulationVolatility: 8.0,
+        maxAge: horizonAge,
+        marketScenario: 'standard',
+      });
+      const mcNormalSuccessRate = mcNormalPrelim?.successRate ?? mcNormalPrelim?.successRateTargetAge ?? 0;
+
+      // =========================================================================
+      // PAGE 1: COVER PAGE
+      // =========================================================================
+      // Full Bleed Dark Header
+      doc.setFillColor(slateDark[0], slateDark[1], slateDark[2]);
+      doc.rect(0, 0, 210, 58, 'F');
+      doc.setFillColor(emeraldColor[0], emeraldColor[1], emeraldColor[2]);
+      doc.rect(0, 56, 210, 2, 'F');
+
+      doc.setTextColor(16, 185, 129);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.text('RETIREFREE UK • WEALTH & DECUMULATION MODEL', 14, 16);
+
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(17);
+      doc.text('UK RETIREMENT PLAN & FINANCIAL REPORT', 14, 26);
+
+      doc.setFontSize(10.5);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(203, 213, 225);
+      doc.text(`Prepared for: ${peopleLabel}`, 14, 36);
+      doc.setFontSize(9);
+      doc.text(`Scenario: ${activePlanName}`, 14, 43);
+      doc.text(`Generated: ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`, 14, 49);
+
+      let covY = 64;
+
+      // Card 1: Household Details Box
+      doc.setFillColor(248, 250, 252);
+      doc.roundedRect(14, covY, 182, 34, 3, 3, 'F');
+      doc.setDrawColor(226, 232, 240);
+      doc.roundedRect(14, covY, 182, 34, 3, 3, 'D');
+
+      doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9.5);
+      doc.text('Client Household Parameters & Scope', 18, covY + 6.5);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(51, 65, 85);
+      doc.text(`• Primary Member: ${primaryName} (Age ${currentAge})`, 18, covY + 14);
+      doc.text(`• Target Retirement Age: Age ${targetAge}`, 18, covY + 20);
+      doc.text(`• Private Pension Access Age: Age ${primaryAccessAge}`, 18, covY + 26);
+
+      if (profile.isCouplePlanning) {
+        doc.text(`• Partner Member: ${partnerName} (Age ${profile.partnerCurrentAge || currentAge})`, 108, covY + 14);
+        doc.text(`• Partner Retirement Age: Age ${profile.partnerTargetRetirementAge || targetAge}`, 108, covY + 20);
+        doc.text(`• Planning Horizon: Age ${horizonAge}`, 108, covY + 26);
+      } else {
+        doc.text(`• Household Structure: Single Member Planning`, 108, covY + 14);
+        doc.text(`• Planning Horizon: Age ${horizonAge}`, 108, covY + 20);
+        doc.text(`• Tax Region: ${(profile.taxRegion || 'england_ni_wales').replace(/_/g, ' ').toUpperCase()}`, 108, covY + 26);
+      }
+
+      covY += 38;
+
+      // Card 2: Key Executive Metrics Overview (Grid of 6 KPIs)
+      doc.setFillColor(248, 250, 252);
+      doc.roundedRect(14, covY, 182, 60, 3, 3, 'F');
+      doc.setDrawColor(226, 232, 240);
+      doc.roundedRect(14, covY, 182, 60, 3, 3, 'D');
+
+      doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9.5);
+      doc.text('Key Executive Metrics Overview', 18, covY + 7);
+
+      // Grid Row 1
+      // KPI 1
+      doc.setFillColor(255, 255, 255);
+      doc.roundedRect(18, covY + 11, 85, 14, 2, 2, 'F');
+      doc.setFontSize(6.5);
+      doc.setTextColor(100, 116, 139);
+      doc.text('CURRENT COMBINED PORTFOLIO WEALTH', 22, covY + 15.5);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(13, 148, 136);
+      doc.text(`£${Math.round(totalCurrentPrimary + totalCurrentPartner).toLocaleString()}`, 22, covY + 21.5);
+
+      // KPI 2 (First milestone age)
+      const kpi2Obj = targetAge <= primaryAccessAge ? retirementYear : privateAccessYear;
+      const kpi2Title = targetAge <= primaryAccessAge ? `PROJECTED WEALTH AT RETIREMENT AGE (${targetAge})` : `PROJECTED WEALTH AT PRIVATE PENSION AGE (${primaryAccessAge})`;
+      doc.setFillColor(255, 255, 255);
+      doc.roundedRect(107, covY + 11, 85, 14, 2, 2, 'F');
+      doc.setFontSize(6.5);
+      doc.setTextColor(100, 116, 139);
+      doc.text(kpi2Title, 111, covY + 15.5);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(16, 185, 129);
+      doc.text(`£${Math.round(kpi2Obj.totalPot || 0).toLocaleString()}`, 111, covY + 21.5);
+
+      // Grid Row 2
+      // KPI 3 (Second milestone age)
+      const kpi3Obj = targetAge <= primaryAccessAge ? privateAccessYear : retirementYear;
+      const kpi3Title = targetAge <= primaryAccessAge ? `PROJECTED WEALTH AT PRIVATE PENSION AGE (${primaryAccessAge})` : `PROJECTED WEALTH AT RETIREMENT AGE (${targetAge})`;
+      doc.setFillColor(255, 255, 255);
+      doc.roundedRect(18, covY + 27, 85, 14, 2, 2, 'F');
+      doc.setFontSize(6.5);
+      doc.setTextColor(100, 116, 139);
+      doc.text(kpi3Title, 22, covY + 31.5);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(120, 53, 15);
+      doc.text(`£${Math.round(kpi3Obj.totalPot || 0).toLocaleString()}`, 22, covY + 37.5);
+
+      // KPI 4
+      doc.setFillColor(255, 255, 255);
+      doc.roundedRect(107, covY + 27, 85, 14, 2, 2, 'F');
+      doc.setFontSize(6.5);
+      doc.setTextColor(100, 116, 139);
+      doc.text(`PROJECTED WEALTH AT STATE PENSION AGE (${primarySpaAge})`, 111, covY + 31.5);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(79, 70, 229);
+      doc.text(`£${Math.round(statePensionYear.totalPot || 0).toLocaleString()}`, 111, covY + 37.5);
+
+      // Grid Row 3
+      // KPI 5: Plan Feasibility & Stochastic Status (Full Width)
+      doc.setFillColor(255, 255, 255);
+      doc.roundedRect(18, covY + 43, 174, 14, 2, 2, 'F');
+      doc.setFontSize(6.5);
+      doc.setTextColor(100, 116, 139);
+      doc.text('PLAN FEASIBILITY & STOCHASTIC STATUS', 22, covY + 47.5);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      if (isPlanFeasible) {
+        doc.setTextColor(22, 101, 52);
+        doc.text(`Deterministic: On Track | MC: ${mcNormalSuccessRate.toFixed(1)}% Success`, 22, covY + 53.5);
+      } else {
+        doc.setTextColor(225, 29, 72);
+        doc.text(`Deterministic: Deficit | MC: ${mcNormalSuccessRate.toFixed(1)}% Success`, 22, covY + 53.5);
+      }
+
+      covY += 64;
+
+      // Card 3: Executive Guidance & Document Purpose Box
+      doc.setFillColor(240, 244, 255);
+      doc.roundedRect(14, covY, 182, 34, 3, 3, 'F');
+      doc.setDrawColor(199, 210, 254);
+      doc.roundedRect(14, covY, 182, 34, 3, 3, 'D');
+
+      doc.setTextColor(79, 70, 229);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9.5);
+      doc.text('Document Scope & Strategic Purpose', 18, covY + 6.5);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(51, 65, 85);
+      doc.text('This comprehensive report models your entire financial trajectory from current pre-retirement accumulation', 18, covY + 13);
+      doc.text('through full post-retirement decumulation. It incorporates current UK tax laws, allowances (PCLS, LSA, Personal Allowance),', 18, covY + 18);
+      doc.text('State Pension rules (including Triple Lock indexing), defined benefit pensions, annuity structures, and spending phases.', 18, covY + 23);
+      doc.text('Furthermore, it includes Monte Carlo stochastic volatility analysis (500 iterations) and 50-year historic sequence stress testing.', 18, covY + 28);
+
+      covY += 38;
+
+      // Card 4: Important UK Financial Planning Guidance Notice & Legal Disclaimer
+      doc.setFillColor(255, 251, 235);
+      doc.roundedRect(14, covY, 182, 42, 3, 3, 'F');
+      doc.setDrawColor(252, 211, 77);
+      doc.roundedRect(14, covY, 182, 42, 3, 3, 'D');
+
+      doc.setTextColor(180, 83, 9);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.text('Important UK Financial Planning Guidance Notice & Legal Disclaimer', 18, covY + 6.5);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.setTextColor(51, 65, 85);
+      doc.text('• Non-Regulated Financial Guidance: This document is produced strictly for illustrative and educational financial modeling purposes.', 18, covY + 13);
+      doc.text('  It does not constitute formal regulated financial, legal, tax, or accounting advice under the Financial Services and Markets Act 2000 (FSMA).', 18, covY + 17);
+      doc.text('• UK Tax Legislation & Allowances: Projections reflect current HMRC tax rules, including Personal Allowances, PCLS limits, LSA (£268,275),', 18, covY + 22);
+      doc.text('  Money Purchase Annual Allowance (MPAA), Capital Gains Tax thresholds, and April 2027 Inheritance Tax (IHT) rules regarding pension pots.', 18, covY + 26);
+      doc.text('• Projections & Market Risk: Deterministic return paths assume smooth annual growth and do not account for short-term market crashes.', 18, covY + 31);
+      doc.text('  Stochastic Monte Carlo stress testing (500 iterations) and 50-year historic sequence analysis model sequence-of-returns risk.', 18, covY + 35);
+
+      // Footer notice on cover page
+      doc.setFontSize(7.5);
+      doc.setTextColor(slateMuted[0], slateMuted[1], slateMuted[2]);
+      doc.text(`RetireFree UK • Confidential Guidance Model • Page 1 of ${TOTAL_PAGES}`, 14, 287);
+
+      // =========================================================================
+      // PAGE 2: TABLE OF CONTENTS & REPORT INDEX
+      // =========================================================================
+      doc.addPage();
+      renderPageHeader('Table of Contents & Index', 2);
+
+      let tocY = 24;
+
+      doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.text('Table of Contents & Report Structure', 14, tocY);
+
+      tocY += 8;
+
+      const tocItems = [
+        { section: '1. Executive Summary & Plan Feasibility Status', page: 3, desc: 'Overall feasibility verdict, points of failure, shortfall timeline, and key risk alerts.' },
+        { section: '2. Detailed Household Income & Personal Profile', page: 3, desc: 'Current salaries, access ages, State Pension inclusion & Triple Lock details.' },
+        { section: '3. Current Investment Pot Assets Breakdown', page: 3, desc: 'Baseline asset breakdown across Pensions, ISAs, GIAs, and Cash Savings.' },
+        { section: '4. Accumulation Summary & Pre-Retirement Savings Strategy', page: 4, desc: 'Monthly savings rate, workplace pension employer match, and scheduled pot transfers.' },
+        { section: '4a. Year-by-Year Tax Relief & Allowances Breakdown', page: 4, desc: 'Annual tax relief gained, savings interest tax, pension allowance, and ISA allowance.' },
+        { section: '5. Projected Assets Breakdown at Target Retirement Age', page: 4, desc: `Projected capital balances at target retirement age (Age ${targetAge}).` },
+        { section: '6. Projected Assets Breakdown at Private Pension Access Age', page: 4, desc: `Capital balances at private pension access age (Age ${primaryAccessAge}).` },
+        { section: '6a. Potential Tax-Free Lump Sum (PCLS & LSA Allowance) Analysis', page: 4, desc: 'Tax-free cash entitlement (PCLS), LSA allowance caps, and lump sum extraction strategy.' },
+        { section: '7. Projected Assets Breakdown at State Pension Access Age', page: 4, desc: `Capital balances at state pension access age (Age ${primarySpaAge}).` },
+        { section: '8. Investment Growth & Macroeconomic Assumptions', page: 4, desc: 'Pre and post-retirement returns, CPI inflation, and indexing assumptions.' },
+        { section: '9. Spending Phase Profile & Target Income Amounts', page: 5, desc: 'Age-based spending requirements (Go-Go, Slow-Go, No-Go) and monthly targets.' },
+        { section: '10. Retirement Income Product Structure & Drawdown Strategy', page: 5, desc: 'Flexi-access drawdown, lifetime annuities, PCLS tax-free cash & destination strategy.' },
+        { section: '11. Key Milestone Schedule & Execution Details', page: 5, desc: 'Milestone timeline table, State Pension execution details, and annuity purchase rates.' },
+        { section: '12. Visual Diagram Models — Portfolio Allocation & Trajectories', page: 6, desc: 'Charts of initial asset distribution and multi-year portfolio wealth trajectory curves.' },
+        { section: '13. Visual Diagram Models — Drawdown Income Breakdown', page: 7, desc: 'Charts of net annual drawdown income sources in both Nominal and Real Today\'s £.' },
+        { section: '14. Visual Diagram Models — Deficit Risk & Legal Guidance Notice', page: 8, desc: 'Shortfall/surplus analysis and regulatory financial planning guidance disclaimers.' },
+        { section: '15. Monte Carlo Volatility & Risk Simulation Analysis', page: 9, desc: 'Stochastic sequence-of-returns stress testing (500 runs), fan bands, and survival rates.' },
+        { section: '16. Inheritance Tax (IHT) & Estate Planning Analysis', page: 12, desc: 'Post-April 2027 pension IHT rules, main residence RNRB, gifting, and estate valuations.' },
+        { section: '17. Appendix 1: Monthly Accumulation Ledger', page: 13, desc: 'Detailed schedule of all monthly contributions, employer matches, and transfers.' },
+        { section: '18. Appendix 2: Full Decumulation Schedule Output', page: 13 + totalAccumPages, desc: 'Year-by-year decumulation ledger detailing pot balances, withdrawals, and tax paid.' },
+        { section: '19. Appendix 3: Historic Market Performance Simulation', page: 13 + totalAccumPages + totalDecumPages, desc: '75-sequence market stress test, sequence distribution bar chart & 75 start year matrix.' },
+        { section: '20. Appendix 4: Mortgage Payoff Projection & Debt Amortization', page: 15 + totalAccumPages + totalDecumPages, desc: 'Mortgage balance amortization chart, overpayment savings & milestone debt balances.' },
+      ];
+
+      tocItems.forEach((item, idx) => {
+        if (idx % 2 === 1) {
+          doc.setFillColor(slateLight[0], slateLight[1], slateLight[2]);
+          doc.rect(14, tocY, 182, 10.5, 'F');
+        }
+
+        doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.5);
+        doc.text(item.section, 18, tocY + 4.5);
+
+        doc.setTextColor(16, 185, 129);
+        doc.text(`Page ${item.page}`, 172, tocY + 4.5);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7);
+        doc.setTextColor(100, 116, 139);
+        doc.text(item.desc, 18, tocY + 8.5);
+
+        tocY += 10.5;
+      });
+
+      // =========================================================================
+      // PAGE 3: EXECUTIVE SUMMARY, HOUSEHOLD PROFILE & CURRENT ASSETS
+      // =========================================================================
+      doc.addPage();
+      renderPageHeader('Executive Summary & Current Assets', 3);
+
+      let y = 24;
+
+      doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(14);
+      doc.text(`Retirement Plan: ${reportFullTitle}`, 14, y);
+
+      y += 8;
+
+      // SECTION 1: SUMMARY & PLAN FEASIBILITY STATUS
+      if (isPlanFeasible) {
+        doc.setFillColor(240, 253, 244);
+        doc.roundedRect(14, y, 182, 18, 3, 3, 'F');
+        doc.setDrawColor(187, 247, 208);
+        doc.roundedRect(14, y, 182, 18, 3, 3, 'D');
+
+        doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.text(`1. Plan Feasibility Status — Deterministic: ON TRACK | Monte Carlo Success: ${mcNormalSuccessRate.toFixed(1)}%`, 18, y + 7);
+
+        doc.setTextColor(22, 101, 52);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8);
+        doc.text(`Status: Deterministic Model: ON TRACK (100% Target Income Covered to Age ${horizonAge}) | Monte Carlo Standard Success: ${mcNormalSuccessRate.toFixed(1)}% (500 Runs)`, 18, y + 13);
+
+        y += 24;
+      } else {
+        const firstItem = shortfallYears[0];
+        const firstAge = firstItem?.age || targetAge;
+        const firstYear = firstItem?.year || (new Date().getFullYear() + (firstAge - currentAge));
+        const firstVal = Math.round(firstItem?.incomeShortfall || 0);
+
+        const maxItem = shortfallYears.reduce((max, curr) => (curr.incomeShortfall || 0) > (max.incomeShortfall || 0) ? curr : max, shortfallYears[0]);
+        const maxVal = Math.round(maxItem?.incomeShortfall || 0);
+        const maxAge = maxItem?.age || firstAge;
+        const maxYear = maxItem?.year || firstYear;
+
+        const totalCumShortfall = Math.round(shortfallYears.reduce((sum, p) => sum + (p.incomeShortfall || 0), 0));
+        const totalDeficitYears = shortfallYears.length;
+
+        const boxH = 50;
+        doc.setFillColor(254, 242, 242);
+        doc.roundedRect(14, y, 182, boxH, 3, 3, 'F');
+        doc.setDrawColor(254, 205, 205);
+        doc.roundedRect(14, y, 182, boxH, 3, 3, 'D');
+
+        doc.setTextColor(159, 18, 57);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.text(`1. Plan Feasibility Status — Deterministic: DEFICIT DETECTED | Monte Carlo Success: ${mcNormalSuccessRate.toFixed(1)}%`, 18, y + 7);
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8);
+        doc.text(`CRITICAL ALERT: Deterministic Shortfall at Age ${firstAge} (${firstYear}) | Monte Carlo Standard Success: ${mcNormalSuccessRate.toFixed(1)}% (500 Runs)`, 18, y + 13);
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8);
+        doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+        doc.text('Points of Failure & Risk Breakdown:', 18, y + 19);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7.5);
+        doc.setTextColor(51, 65, 85);
+
+        doc.text(`1. Initial Capital Failure: Liquid asset pots fully deplete at Age ${firstAge} (${firstYear}), leaving an initial annual shortfall of £${(firstVal || 0).toLocaleString()}/yr.`, 18, y + 25);
+        doc.text(`2. Shortfall Duration: Net income deficit persists for ${totalDeficitYears} consecutive years (from Age ${firstAge} through Horizon Age ${horizonAge}).`, 18, y + 31);
+        doc.text(`3. Peak Annual Shortfall: Maximum annual net income deficit reaches £${(maxVal || 0).toLocaleString()}/yr at Age ${maxAge} (${maxYear}).`, 18, y + 37);
+        doc.text(`4. Cumulative Lifetime Deficit: Total aggregate capital shortfall across the retirement horizon equals £${(totalCumShortfall || 0).toLocaleString()}.`, 18, y + 43);
+
+        y += boxH + 6;
+      }
+
+      // SECTION 2: DETAILED HOUSEHOLD INCOME & PERSONAL PROFILE (WITH TRIPLE LOCK DETAIL)
+      const macroPre = profile.expectedInvestmentReturn ?? 6.5;
+      const macroPost = profile.postRetirementReturn ?? 4.5;
+      const macroInf = profile.expectedInflationRate ?? 2.5;
+
+      const priTripleLockStr = (profile.enableTripleLock !== false) ? 'Triple Lock Enabled' : 'CPI / Fixed Indexing';
+      const partTripleLockStr = (profile.partnerEnableTripleLock !== false) ? 'Triple Lock Enabled' : 'CPI / Fixed Indexing';
+
+      doc.setFillColor(slateLight[0], slateLight[1], slateLight[2]);
+      doc.roundedRect(14, y, 182, 48, 3, 3, 'F');
+      doc.setDrawColor(226, 232, 240);
+      doc.roundedRect(14, y, 182, 48, 3, 3, 'D');
+
+      doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.text('2. Detailed Household Income & Personal Profile', 18, y + 8);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      doc.setTextColor(51, 65, 85);
+
+      // Primary Profile Column
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Primary Member: ${primaryName}`, 18, y + 17);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`• Current Gross Annual Salary: £${(profile.grossAnnualSalary || 0).toLocaleString()}/yr`, 18, y + 23);
+      doc.text(`• Current Age: ${currentAge} | Pension Access Age: ${profile.pensionAccessAge || 57}`, 18, y + 29);
+      doc.text(`• Target Retirement Age: ${targetAge} | State Pension Age: ${profile.statePensionAge || 67}`, 18, y + 35);
+      doc.text(`• State Pension: ${profile.includeStatePension ? `Included (£${(profile.fullStatePensionAmount || 12548).toLocaleString()}/yr - ${priTripleLockStr})` : 'Excluded'}`, 18, y + 41);
+
+      // Partner Profile Column (if couple)
+      if (profile.isCouplePlanning) {
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Partner Member: ${partnerName}`, 108, y + 17);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`• Gross Annual Salary: £${(profile.partnerGrossAnnualSalary || 0).toLocaleString()}/yr`, 108, y + 23);
+        doc.text(`• Current Age: ${profile.partnerCurrentAge || currentAge} | Access Age: ${profile.partnerPensionAccessAge || 57}`, 108, y + 29);
+        doc.text(`• Target Retirement Age: ${profile.partnerTargetRetirementAge || targetAge} | State Pension Age: ${profile.partnerStatePensionAge || 67}`, 108, y + 35);
+        doc.text(`• State Pension: ${profile.partnerIncludeStatePension !== false ? `Included (£${(profile.partnerFullStatePensionAmount || 12548).toLocaleString()}/yr - ${partTripleLockStr})` : 'Excluded'}`, 108, y + 41);
+      } else {
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Planning Parameters:`, 108, y + 17);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`• Planning Horizon: Age ${horizonAge}`, 108, y + 23);
+        doc.text(`• Inflation Rate: ${macroInf}% p.a. CPI`, 108, y + 29);
+        doc.text(`• Pre-Retirement Return: ${macroPre}% p.a.`, 108, y + 35);
+        doc.text(`• Post-Retirement Return: ${macroPost}% p.a.`, 108, y + 41);
+      }
+
+      // SECTION 3: CURRENT INVESTMENT POT ASSETS BREAKDOWN
+      y += 54;
+      doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.text('3. Current Investment Pot Assets Breakdown', 14, y);
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica', 'italic');
+      doc.setTextColor(100, 116, 139);
+      doc.text('(Baseline starting balances at start of Plan Year 1, prior to annual contributions & investment returns)', 14, y + 4.5);
+
+      y += 6.5;
+      doc.setFillColor(30, 41, 59);
+      doc.rect(14, y, 182, 6.5, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(8.5);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Asset Class / Account Type', 18, y + 4.5);
+      doc.text('Primary Balance (£)', 85, y + 4.5);
+      doc.text('Partner Balance (£)', 125, y + 4.5);
+      doc.text('Combined Total (£)', 160, y + 4.5);
+
+      y += 6.5;
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(51, 65, 85);
+      doc.setFontSize(8);
+
+      potRowsPrelim.forEach((row, idx) => {
+        const rowTotal = row.primary + row.partner;
+
+        if (idx % 2 === 1) {
+          doc.setFillColor(slateLight[0], slateLight[1], slateLight[2]);
+          doc.rect(14, y, 182, 5.5, 'F');
+        }
+        doc.text(row.name, 18, y + 4);
+        doc.text(`£${(row.primary || 0).toLocaleString()}`, 85, y + 4);
+        doc.text(profile.isCouplePlanning ? `£${(row.partner || 0).toLocaleString()}` : '—', 125, y + 4);
+        doc.text(`£${(rowTotal || 0).toLocaleString()}`, 160, y + 4);
+        y += 5.5;
+      });
+
+      // Total Row
+      doc.setFillColor(241, 245, 249);
+      doc.rect(14, y, 182, 6.5, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+      doc.text('TOTAL CURRENT ASSETS', 18, y + 4.5);
+      doc.text(`£${(totalCurrentPrimary || 0).toLocaleString()}`, 85, y + 4.5);
+      doc.text(profile.isCouplePlanning ? `£${(totalCurrentPartner || 0).toLocaleString()}` : '—', 125, y + 4.5);
+      doc.text(`£${(totalCurrentPrimary + totalCurrentPartner || 0).toLocaleString()}`, 160, y + 4.5);
+
+      y += 10;
+
+      // =========================================================================
+      // PAGE 4: ACCUMULATION SUMMARY, PROJECTED ASSETS & MACRO ASSUMPTIONS
+      // =========================================================================
+      doc.addPage();
+      let curPageNum = 4;
+      renderPageHeader('Accumulation Summary & Projected Assets', curPageNum);
+
+      let p2Y = 24;
+
+      // SECTION 4: ACCUMULATION SUMMARY & PRE-RETIREMENT SAVINGS STRATEGY
+      doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.text('4. Accumulation Summary & Pre-Retirement Savings Strategy', 14, p2Y);
+
+      p2Y += 5;
+
+      const groupedItemsList = getGroupedAccumulationItems();
+
+      // Grouped Accumulation Table Header
+      doc.setFillColor(30, 41, 59);
+      doc.rect(14, p2Y, 182, 5.5, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Strategy / Event Name', 16, p2Y + 3.8);
+      doc.text('Member', 72, p2Y + 3.8);
+      doc.text('Category', 95, p2Y + 3.8);
+      doc.text('Target Pot', 122, p2Y + 3.8);
+      doc.text('Schedule / Period', 150, p2Y + 3.8);
+      doc.text('Amount (£)', 175, p2Y + 3.8);
+
+      p2Y += 5.5;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(6.5);
+
+      groupedItemsList.forEach((item, idx) => {
+        if (idx % 2 === 1) {
+          doc.setFillColor(slateLight[0], slateLight[1], slateLight[2]);
+          doc.rect(14, p2Y, 182, 4.8, 'F');
+        }
+        doc.setTextColor(51, 65, 85);
+        const nameTxt = item.name.length > 30 ? item.name.substring(0, 28) + '...' : item.name;
+        doc.setFont('helvetica', 'bold');
+        doc.text(nameTxt, 16, p2Y + 3.5);
+        doc.setFont('helvetica', 'normal');
+        doc.text(item.ownerName || '', 72, p2Y + 3.5);
+        doc.text(item.category || '', 95, p2Y + 3.5);
+        let flowText = formatPotNamePDF(item.targetPot);
+        if (item.sourcePot && item.category === 'Pot Transfer') {
+          flowText = `${formatPotNamePDF(item.sourcePot)} -> ${flowText}`;
+        }
+        if (flowText.length > 22) flowText = flowText.substring(0, 20) + '...';
+        doc.text(flowText, 122, p2Y + 3.5);
+        doc.text(item.scheduleDisplay || '', 150, p2Y + 3.5);
+
+        const amtText = item.isMonthly && item.monthlyAmt !== undefined
+          ? `£${Math.round(item.monthlyAmt).toLocaleString()}/mo`
+          : `£${Math.round(item.grossAnnual).toLocaleString()}`;
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(13, 148, 136);
+        doc.text(amtText, 175, p2Y + 3.5);
+        doc.setFont('helvetica', 'normal');
+
+        p2Y += 4.8;
+      });
+
+      p2Y += 6;
+
+      // SECTION 4a: YEAR-BY-YEAR TAX RELIEF & ALLOWANCES BREAKDOWN
+      if (p2Y > 215) {
+        doc.addPage();
+        curPageNum++;
+        renderPageHeader('Accumulation Tax Optimizer & Relief Breakdown', curPageNum);
+        p2Y = 24;
+      }
+
+      doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.text('4a. Year-by-Year Tax Relief & Allowances Breakdown', 14, p2Y);
+      p2Y += 5;
+
+      const accumProjections = (projections || []).filter(p => !p.isRetired && p.age < profile.targetRetirementAge);
+
+      const drawTaxReliefTable = (startY: number): number => {
+        let tY = startY;
+
+        const drawHeader = () => {
+          doc.setFillColor(30, 41, 59);
+          doc.rect(14, tY, 182, 5.5, 'F');
+          doc.setTextColor(255, 255, 255);
+          doc.setFontSize(7);
+          doc.setFont('helvetica', 'bold');
+          doc.text('Tax Year', 16, tY + 3.8);
+          doc.text('Age(s)', 34, tY + 3.8);
+          doc.text('Tax Relief Gained', 58, tY + 3.8);
+          doc.text('Savings Tax', 88, tY + 3.8);
+          doc.text('Pension Allowance (Used / Limit)', 112, tY + 3.8);
+          doc.text('ISA Allowance', 155, tY + 3.8);
+          doc.text('Tax Status', 178, tY + 3.8);
+          tY += 5.5;
+        };
+
+        drawHeader();
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(6.5);
+
+        const currentYear = new Date().getFullYear();
+        const primaryAge = Math.max(18, profile.currentAge || 40);
+        const partnerAge = profile.isCouplePlanning ? Math.max(18, profile.partnerCurrentAge || profile.currentAge || 38) : 0;
+        const pPots = sanitizePots(pots, DEFAULT_POTS);
+        const partnerPots = sanitizePots(profile.partnerPots, DEFAULT_PARTNER_POTS);
+
+        accumProjections.forEach((p, idx) => {
+          if (tY > 265) {
+            doc.addPage();
+            curPageNum++;
+            renderPageHeader('Year-by-Year Tax Relief & Allowances Breakdown', curPageNum);
+            tY = 24;
+            drawHeader();
+          }
+
+          const yearNum = p.year;
+          const pAgeAtYear = p.age;
+          const partAgeAtYear = profile.isCouplePlanning ? partnerAge + (yearNum - currentYear) : 0;
+
+          const pPotsThisYear = {
+            ...pPots,
+            cashSavingsBalance: p.primaryCashSavingsPot ?? pPots.cashSavingsBalance,
+            giaBalance: p.primaryGiaPot ?? pPots.giaBalance,
+          };
+          const partnerPotsThisYear = {
+            ...partnerPots,
+            cashSavingsBalance: p.partnerCashSavingsPot ?? partnerPots.cashSavingsBalance,
+            giaBalance: p.partnerGiaPot ?? partnerPots.giaBalance,
+          };
+
+          const pTaxYr = calculateUKTax(profile, pPotsThisYear, false, pAgeAtYear);
+          const partTaxYr = profile.isCouplePlanning ? calculatePartnerUKTax(profile, partnerPotsThisYear, partAgeAtYear) : null;
+
+          const taxRelief = (pTaxYr.totalPensionTaxRelief || 0) + (profile.isCouplePlanning ? (partTaxYr?.totalPensionTaxRelief || 0) : 0);
+          const savingsTax = p.savingsInterestTax ?? ((pTaxYr.savingsInterestTax || 0) + (partTaxYr?.savingsInterestTax || 0));
+
+          const pensionUsed = (pTaxYr.totalPensionContributionsAnnual || 0) + (profile.isCouplePlanning ? (partTaxYr?.totalPensionContributionsAnnual || 0) : 0);
+          const pensionLimit = (pTaxYr.actualPensionAllowance || 60000) + (profile.isCouplePlanning ? (partTaxYr?.actualPensionAllowance || 60000) : 0);
+
+          const isaUsed = (pTaxYr.totalIsaContributionsAnnual || 0) + (profile.isCouplePlanning ? (partTaxYr?.totalIsaContributionsAnnual || 0) : 0);
+          const isaLimit = profile.isCouplePlanning ? 40000 : 20000;
+
+          const isTaxTrap = pTaxYr.is60PercentTaxTrap || (profile.isCouplePlanning && (partTaxYr?.is60PercentTaxTrap || false));
+
+          if (idx % 2 === 1) {
+            doc.setFillColor(248, 250, 252);
+            doc.rect(14, tY, 182, 4.8, 'F');
+          }
+
+          doc.setTextColor(51, 65, 85);
+          doc.setFont('helvetica', 'bold');
+          doc.text(`${yearNum}/${(yearNum + 1).toString().slice(2)}`, 16, tY + 3.5);
+
+          doc.setFont('helvetica', 'normal');
+          doc.text(profile.isCouplePlanning ? `P:${pAgeAtYear}|Part:${partAgeAtYear}` : `Age ${pAgeAtYear}`, 34, tY + 3.5);
+
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(13, 148, 136); // emerald green
+          doc.text(`+£${Math.round(taxRelief).toLocaleString()}`, 58, tY + 3.5);
+
+          if (savingsTax > 0) {
+            doc.setTextColor(217, 119, 6); // amber
+            doc.text(`-£${Math.round(savingsTax).toLocaleString()}`, 88, tY + 3.5);
+          } else {
+            doc.setTextColor(100, 116, 139);
+            doc.text('£0', 88, tY + 3.5);
+          }
+
+          doc.setTextColor(51, 65, 85);
+          doc.setFont('helvetica', 'normal');
+          const pLimStr = pensionLimit >= 10000 && pensionLimit % 1000 === 0 ? `£${(pensionLimit / 1000).toFixed(0)}k` : `£${Math.round(pensionLimit).toLocaleString()}`;
+          const pPct = pensionLimit > 0 ? Math.min(100, Math.round((pensionUsed / pensionLimit) * 100)) : 0;
+          doc.text(`£${Math.round(pensionUsed).toLocaleString()} / ${pLimStr} (${pPct}%)`, 112, tY + 3.5);
+
+          const iPct = Math.min(100, Math.round((isaUsed / isaLimit) * 100));
+          doc.text(`£${Math.round(isaUsed).toLocaleString()} / £${(isaLimit / 1000).toFixed(0)}k (${iPct}%)`, 155, tY + 3.5);
+
+          if (isTaxTrap) {
+            doc.setTextColor(180, 83, 9); // amber 60% tax trap
+            doc.setFont('helvetica', 'bold');
+            doc.text('60% Trap', 178, tY + 3.5);
+          } else {
+            doc.setTextColor(16, 185, 129); // emerald
+            doc.setFont('helvetica', 'bold');
+            doc.text('Efficient', 178, tY + 3.5);
+          }
+
+          tY += 4.8;
+        });
+
+        return tY + 6;
+      };
+
+      p2Y = drawTaxReliefTable(p2Y);
+
+      // Primary Current Ratios
+      const priWp = pots?.workplacePensionBalance || 0;
+      const priSipp = pots?.sippBalance || 0;
+      const priTotPenCurr = priWp + priSipp;
+      const priWpRatio = priTotPenCurr > 0 ? priWp / priTotPenCurr : (priSipp > 0 ? 0 : 0.7);
+      const priSippRatio = priTotPenCurr > 0 ? priSipp / priTotPenCurr : (priWp > 0 ? 0 : 0.3);
+
+      const priSsIsa = pots?.stocksAndSharesIsaBalance || 0;
+      const priCashIsa = pots?.cashIsaBalance || 0;
+      const priLisa = pots?.lisaBalance || 0;
+      const priTotIsaCurr = priSsIsa + priCashIsa + priLisa;
+      const priSsIsaRatio = priTotIsaCurr > 0 ? priSsIsa / priTotIsaCurr : (priCashIsa > 0 ? 0 : 1.0);
+      const priCashIsaRatio = priTotIsaCurr > 0 ? priCashIsa / priTotIsaCurr : (priCashIsa > 0 ? 1.0 : 0);
+      const priLisaRatio = priTotIsaCurr > 0 ? priLisa / priTotIsaCurr : 0;
+
+      const priGia = pots?.giaBalance || 0;
+      const priCashSav = pots?.cashSavingsBalance || 0;
+      const priTotCashCurr = priGia + priCashSav;
+      const priGiaRatio = priTotCashCurr > 0 ? priGia / priTotCashCurr : 0.5;
+      const priCashSavRatio = priTotCashCurr > 0 ? priCashSav / priTotCashCurr : 0.5;
+
+      // Partner Current Ratios
+      const partWp = profile.partnerPots?.workplacePensionBalance || profile.partnerWorkplacePensionBalance || 0;
+      const partSipp = profile.partnerPots?.sippBalance || profile.partnerSippBalance || 0;
+      const partTotPenCurr = partWp + partSipp;
+      const partWpRatio = partTotPenCurr > 0 ? partWp / partTotPenCurr : (partSipp > 0 ? 0 : 0.7);
+      const partSippRatio = partTotPenCurr > 0 ? partSipp / partTotPenCurr : (partWp > 0 ? 0 : 0.3);
+
+      const partSsIsa = profile.partnerPots?.stocksAndSharesIsaBalance || profile.partnerIsaBalance || 0;
+      const partCashIsa = profile.partnerPots?.cashIsaBalance || 0;
+      const partLisa = profile.partnerPots?.lisaBalance || 0;
+      const partTotIsaCurr = partSsIsa + partCashIsa + partLisa;
+      const partSsIsaRatio = partTotIsaCurr > 0 ? partSsIsa / partTotIsaCurr : (partCashIsa > 0 ? 0 : 1.0);
+      const partCashIsaRatio = partTotIsaCurr > 0 ? partCashIsa / partTotIsaCurr : (partCashIsa > 0 ? 1.0 : 0);
+      const partLisaRatio = partTotIsaCurr > 0 ? partLisa / partTotIsaCurr : 0;
+
+      const partGia = profile.partnerPots?.giaBalance || 0;
+      const partCashSav = profile.partnerPots?.cashSavingsBalance || 0;
+      const partTotCashCurr = partGia + partCashSav;
+      const partGiaRatio = partTotCashCurr > 0 ? partGia / partTotCashCurr : 0.5;
+      const partCashSavRatio = partTotCashCurr > 0 ? partCashSav / partTotCashCurr : 0.5;
+
+      // Helper function to render Asset Breakdown table for any snapshot year
+      const drawAssetBreakdownTable = (sectionNum: number, titleText: string, snapshot: any, startY: number): number => {
+        let tableY = startY;
+        if (tableY > 235) {
+          doc.addPage();
+          curPageNum++;
+          renderPageHeader('Projected Asset Breakdowns at Key Milestones', curPageNum);
+          tableY = 24;
+        }
+
+        doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9.5);
+        doc.text(`${sectionNum}. ${titleText}`, 14, tableY);
+
+        tableY += 4;
+        doc.setFillColor(30, 41, 59);
+        doc.rect(14, tableY, 182, 5.5, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(7.5);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Asset Class / Account Type', 18, tableY + 3.8);
+        doc.text('Primary Balance (£)', 85, tableY + 3.8);
+        doc.text('Partner Balance (£)', 125, tableY + 3.8);
+        doc.text('Combined Total (£)', 160, tableY + 3.8);
+
+        tableY += 5.5;
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(51, 65, 85);
+        doc.setFontSize(7.5);
+
+        const penPri = snapshot.primaryPensionPot ?? ((snapshot.pensionPot || 0) * 0.7);
+        const penPart = snapshot.partnerPensionPot ?? ((snapshot.pensionPot || 0) * 0.3);
+
+        const isaPri = snapshot.primaryIsaPot ?? ((snapshot.isaPot || 0) * 0.8);
+        const isaPart = snapshot.partnerIsaPot ?? ((snapshot.isaPot || 0) * 0.2);
+
+        const cashPri = snapshot.primaryCashGiaPot ?? ((snapshot.cashGiaPot || 0) * 0.5);
+        const cashPart = snapshot.partnerCashGiaPot ?? ((snapshot.cashGiaPot || 0) * 0.5);
+
+        const wpPri = penPri * priWpRatio;
+        const sippPri = penPri * priSippRatio;
+        const wpPart = penPart * partWpRatio;
+        const sippPart = penPart * partSippRatio;
+
+        const ssIsaPri = isaPri * priSsIsaRatio;
+        const cashIsaPri = isaPri * priCashIsaRatio;
+        const lisaPri = isaPri * priLisaRatio;
+        const ssIsaPart = isaPart * partSsIsaRatio;
+        const cashIsaPart = isaPart * partCashIsaRatio;
+        const lisaPart = isaPart * partLisaRatio;
+
+
+
+        const giaPri = snapshot.primaryGiaPot ?? (cashPri * priGiaRatio);
+        const giaPart = snapshot.partnerGiaPot ?? (cashPart * partGiaRatio);
+        const cashSavPri = snapshot.primaryCashSavingsPot ?? (cashPri * priCashSavRatio);
+        const cashSavPart = snapshot.partnerCashSavingsPot ?? (cashPart * partCashSavRatio);
+
+        const potRows = [
+          { name: 'Workplace Pension', primary: wpPri, partner: wpPart, total: wpPri + wpPart },
+          { name: 'SIPP / Personal Pension', primary: sippPri, partner: sippPart, total: sippPri + sippPart },
+          { name: 'Stocks & Shares ISA', primary: ssIsaPri, partner: ssIsaPart, total: ssIsaPri + ssIsaPart },
+          { name: 'Cash ISA', primary: cashIsaPri, partner: cashIsaPart, total: cashIsaPri + cashIsaPart },
+          { name: 'Lifetime ISA (LISA)', primary: lisaPri, partner: lisaPart, total: lisaPri + lisaPart },
+          { name: 'General Investment Account (GIA)', primary: giaPri, partner: giaPart, total: giaPri + giaPart },
+          { name: 'Cash Savings & Emergency Fund', primary: cashSavPri, partner: cashSavPart, total: cashSavPri + cashSavPart },
+        ];
+
+        let totPri = 0;
+        let totPart = 0;
+
+        potRows.forEach((row, idx) => {
+          totPri += row.primary;
+          totPart += row.partner;
+          if (idx % 2 === 1) {
+            doc.setFillColor(slateLight[0], slateLight[1], slateLight[2]);
+            doc.rect(14, tableY, 182, 4.5, 'F');
+          }
+          doc.text(row.name, 18, tableY + 3.2);
+          doc.text(`£${Math.round(row.primary).toLocaleString()}`, 85, tableY + 3.2);
+          doc.text(profile.isCouplePlanning ? `£${Math.round(row.partner).toLocaleString()}` : '—', 125, tableY + 3.2);
+          doc.text(`£${Math.round(row.total).toLocaleString()}`, 160, tableY + 3.2);
+          tableY += 4.5;
+        });
+
+        // Total Row
+        doc.setFillColor(241, 245, 249);
+        doc.rect(14, tableY, 182, 5.2, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+        doc.text('TOTAL ASSETS', 18, tableY + 3.8);
+        doc.text(`£${Math.round(totPri).toLocaleString()}`, 85, tableY + 3.8);
+        doc.text(profile.isCouplePlanning ? `£${Math.round(totPart).toLocaleString()}` : '—', 125, tableY + 3.8);
+        doc.text(`£${Math.round(snapshot.totalPot || 0).toLocaleString()}`, 160, tableY + 3.8);
+
+        return tableY + 8;
+      };
+
+      // SECTION 5: PROJECTED INVESTMENT POT ASSETS BREAKDOWN AT TARGET RETIREMENT AGE
+      p2Y = drawAssetBreakdownTable(5, `Projected Investment Pot Assets Breakdown at Target Retirement Age (Age ${targetAge})`, retirementYear, p2Y);
+
+      // SECTION 6: PROJECTED INVESTMENT POT ASSETS BREAKDOWN AT PRIVATE PENSION ACCESS AGE
+      p2Y = drawAssetBreakdownTable(6, `Projected Investment Pot Assets Breakdown at Private Pension Access Age (Age ${primaryAccessAge})`, privateAccessYear, p2Y);
+
+      // SECTION 6a: POTENTIAL TAX-FREE LUMP SUM (PCLS & LSA ALLOWANCE) ANALYSIS
+      if (p2Y > 230) {
+        doc.addPage();
+        curPageNum++;
+        renderPageHeader('Projected Asset Breakdowns at Key Milestones', curPageNum);
+        p2Y = 24;
+      }
+
+      const primaryTakeAgePcls = getLumpSumTakeAge(profile);
+      const primaryPensionAtTakePcls = getProjectedPensionAtTakeAge(profile, pots, primaryTakeAgePcls, false);
+      const primaryMaxPcls = calculateMaxPcls(primaryPensionAtTakePcls, profile);
+
+      const partnerTakeAgePcls = profile.isCouplePlanning ? getPartnerLumpSumTakeAge(profile) : primaryTakeAgePcls;
+      const partnerPensionAtTakePcls = profile.isCouplePlanning ? getProjectedPensionAtTakeAge(profile, pots, partnerTakeAgePcls, true) : 0;
+      const partnerMaxPcls = profile.isCouplePlanning ? calculatePartnerMaxPcls(partnerPensionAtTakePcls, profile) : { maxTaxFreeCash: 0, lsaLimit: 268275, pclsPercent: 25, isCappedByLsa: false };
+
+      const isCouple = Boolean(profile.isCouplePlanning);
+      const boxH = isCouple ? 25 : 21;
+
+      doc.setFillColor(254, 243, 199);
+      doc.roundedRect(14, p2Y, 182, boxH, 3, 3, 'F');
+      doc.setDrawColor(245, 158, 11);
+      doc.roundedRect(14, p2Y, 182, boxH, 3, 3, 'D');
+
+      doc.setTextColor(146, 64, 14);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8.5);
+      doc.text('6a. Potential Tax-Free Lump Sum (PCLS & LSA Allowance) Analysis', 18, p2Y + 5);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(51, 65, 85);
+
+      const priPclsStr = `• Primary Member (@ Age ${primaryTakeAgePcls}): Pension Pot £${Math.round(primaryPensionAtTakePcls).toLocaleString()} | Max Tax-Free Cash: £${Math.round(primaryMaxPcls.maxTaxFreeCash).toLocaleString()} ${primaryMaxPcls.isCappedByLsa ? '(Capped by £268.3k LSA)' : '(25% Uncapped)'}`;
+      doc.text(priPclsStr.length > 110 ? priPclsStr.substring(0, 108) + '...' : priPclsStr, 18, p2Y + 10);
+
+      if (isCouple) {
+        const partPclsStr = `• Partner Member (@ Age ${partnerTakeAgePcls}): Pension Pot £${Math.round(partnerPensionAtTakePcls).toLocaleString()} | Max Tax-Free Cash: £${Math.round(partnerMaxPcls.maxTaxFreeCash).toLocaleString()} ${partnerMaxPcls.isCappedByLsa ? '(Capped by £268.3k LSA)' : '(25% Uncapped)'}`;
+        doc.text(partPclsStr.length > 110 ? partPclsStr.substring(0, 108) + '...' : partPclsStr, 18, p2Y + 14.5);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(4, 120, 87);
+        doc.text(`• Combined Household Tax-Free Lump Sum Available: £${Math.round(primaryMaxPcls.maxTaxFreeCash + partnerMaxPcls.maxTaxFreeCash).toLocaleString()}`, 18, p2Y + 19.5);
+      } else {
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(4, 120, 87);
+        const destStr = profile.lumpSumTargetPot === 'reinvest_isa' ? 'Reinvest ISA/Cash' : profile.lumpSumTargetPot === 'clear_mortgage' ? 'Clear Mortgage' : 'Lifestyle Expenditure';
+        doc.text(`• Total Liquid Tax-Free Capital Available: £${Math.round(primaryMaxPcls.maxTaxFreeCash).toLocaleString()} (Destination: ${destStr})`, 18, p2Y + 15.5);
+      }
+
+      p2Y += boxH + 6;
+
+      // SECTION 7: PROJECTED INVESTMENT POT ASSETS BREAKDOWN AT STATE PENSION ACCESS AGE
+      p2Y = drawAssetBreakdownTable(7, `Projected Investment Pot Assets Breakdown at State Pension Access Age (Age ${primarySpaAge})`, statePensionYear, p2Y);
+
+      // SECTION 8: INVESTMENT RETURNS & MACROECONOMIC GROWTH ASSUMPTIONS
+      p2Y += 14;
+      const realPre = (macroPre - macroInf).toFixed(1);
+      const realPost = (macroPost - macroInf).toFixed(1);
+
+      doc.setFillColor(248, 250, 252);
+      doc.roundedRect(14, p2Y, 182, 28, 3, 3, 'F');
+      doc.setDrawColor(226, 232, 240);
+      doc.roundedRect(14, p2Y, 182, 28, 3, 3, 'D');
+
+      doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.text('8. Investment Returns & Macroeconomic Growth Assumptions', 18, p2Y + 7);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(51, 65, 85);
+
+      doc.setFont('helvetica', 'bold');
+      doc.text('Pre-Retirement Return:', 18, p2Y + 14);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`${macroPre}% p.a. (+${realPre}% p.a. real growth)`, 60, p2Y + 14);
+
+      doc.setFont('helvetica', 'bold');
+      doc.text('Post-Retirement Return:', 18, p2Y + 21);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`${macroPost}% p.a. (+${realPost}% p.a. real growth)`, 60, p2Y + 21);
+
+      doc.setFont('helvetica', 'bold');
+      doc.text('Expected Annual Inflation:', 115, p2Y + 14);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`${macroInf}% p.a. CPI`, 160, p2Y + 14);
+
+      doc.setFont('helvetica', 'bold');
+      doc.text('Spending & Pension Indexing:', 115, p2Y + 21);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`CPI Indexed @ ${macroInf}%/yr`, 160, p2Y + 21);
+
+      // =========================================================================
+      // PAGE 5: SPENDING PHASES, RETIREMENT INCOME PRODUCTS & MILESTONES
+      // =========================================================================
+      curPageNum = 5;
+      doc.addPage();
+      renderPageHeader('Retirement Strategy & Milestone Schedule', curPageNum);
+
+      let p3Y = 24;
+
+      // SECTION 9: SPENDING PHASE PROFILE & TARGET INCOME AMOUNTS (MOVED ABOVE PRODUCT STRUCTURE!)
+      doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10.5);
+      doc.text('9. Spending Phase Profile & Target Income Amounts', 14, p3Y);
+
+      p3Y += 5;
+      const isMaxSpend = Boolean(profile.maximizedSpendConfig?.enabled);
+      const maxConfig = profile.maximizedSpendConfig;
+      const phases = isMaxSpend ? (maxConfig?.spendingPhases || profile.spendingPhases) : profile.spendingPhases;
+      const hasCustomRanges = phases?.enabled && phases.customRanges && phases.customRanges.length > 0;
+      const hasLegacyPhases = phases?.enabled && phases.goGoEndAge !== undefined;
+
+      if (isMaxSpend) {
+        const solvedIncome = maxConfig?.targetAnnualIncome || profile.targetRetirementIncomeAnnual || 0;
+        doc.setFillColor(245, 243, 255);
+        doc.roundedRect(14, p3Y, 182, 10, 3, 3, 'F');
+        doc.setDrawColor(196, 181, 253);
+        doc.roundedRect(14, p3Y, 182, 10, 3, 3, 'D');
+        doc.setTextColor(109, 40, 217);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.5);
+        doc.text(`* MAXIMIZED SPEND SOLVER MODE ACTIVE: Solved Sustainable Income Target: £${(solvedIncome || 0).toLocaleString()}/yr (£${Math.round((solvedIncome || 0) / 12).toLocaleString()}/mo)`, 18, p3Y + 6.5);
+        p3Y += 13;
+      }
+
+      if (hasCustomRanges) {
+        doc.setFillColor(30, 41, 59);
+        doc.rect(14, p3Y, 182, 6.5, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Phase Name / Range', 18, p3Y + 4.5);
+        doc.text('Start Age', 75, p3Y + 4.5);
+        doc.text('End Age', 105, p3Y + 4.5);
+        doc.text('Annual Target (£/yr)', 135, p3Y + 4.5);
+        doc.text('Monthly (£/mo)', 165, p3Y + 4.5);
+
+        p3Y += 6.5;
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(51, 65, 85);
+        doc.setFontSize(8);
+
+        phases.customRanges!.forEach((r, idx) => {
+          if (idx % 2 === 1) {
+            doc.setFillColor(slateLight[0], slateLight[1], slateLight[2]);
+            doc.rect(14, p3Y, 182, 5.5, 'F');
+          }
+          doc.text(r.name || `Phase #${idx + 1}`, 18, p3Y + 4);
+          doc.text(`Age ${r.startAge}`, 75, p3Y + 4);
+          doc.text(r.endAge ? `Age ${r.endAge}` : 'Ongoing', 105, p3Y + 4);
+          doc.text(`£${(r.annualTargetIncome || 0).toLocaleString()}`, 135, p3Y + 4);
+          doc.text(`£${Math.round((r.annualTargetIncome || 0) / 12).toLocaleString()}`, 165, p3Y + 4);
+          p3Y += 5.5;
+        });
+        p3Y += 6;
+      } else if (hasLegacyPhases) {
+        doc.setFillColor(slateLight[0], slateLight[1], slateLight[2]);
+        doc.roundedRect(14, p3Y, 182, 26, 3, 3, 'F');
+        doc.setDrawColor(226, 232, 240);
+        doc.roundedRect(14, p3Y, 182, 26, 3, 3, 'D');
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8.5);
+        doc.setTextColor(51, 65, 85);
+
+        doc.text(`- Go-Go Active Phase: Age ${targetAge} to Age ${phases.goGoEndAge} @ £${(phases.goGoIncomeAnnual || 0).toLocaleString()}/yr (£${Math.round((phases.goGoIncomeAnnual || 0) / 12).toLocaleString()}/mo)`, 18, p3Y + 7);
+        doc.text(`- Slow-Go Transition Phase: Age ${(phases.goGoEndAge || targetAge) + 1} to Age ${phases.slowGoEndAge} @ £${(phases.slowGoIncomeAnnual || 0).toLocaleString()}/yr (£${Math.round((phases.slowGoIncomeAnnual || 0) / 12).toLocaleString()}/mo)`, 18, p3Y + 14);
+        doc.text(`- No-Go Later Years: Age ${(phases.slowGoEndAge || 75) + 1}+ @ £${(phases.noGoIncomeAnnual || 0).toLocaleString()}/yr (£${Math.round((phases.noGoIncomeAnnual || 0) / 12).toLocaleString()}/mo)`, 18, p3Y + 21);
+        p3Y += 32;
+      } else {
+        doc.setFillColor(slateLight[0], slateLight[1], slateLight[2]);
+        doc.roundedRect(14, p3Y, 182, 12, 3, 3, 'F');
+        doc.setDrawColor(226, 232, 240);
+        doc.roundedRect(14, p3Y, 182, 12, 3, 3, 'D');
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8.5);
+        doc.setTextColor(51, 65, 85);
+        const flatTarget = isMaxSpend ? (maxConfig?.targetAnnualIncome || profile.targetRetirementIncomeAnnual || 0) : (profile.targetRetirementIncomeAnnual || 0);
+        doc.text(`• Single Flat Target Income Profile: £${(flatTarget || 0).toLocaleString()}/yr (£${Math.round((flatTarget || 0) / 12).toLocaleString()}/mo) from Age ${targetAge} onwards.`, 18, p3Y + 8);
+        p3Y += 18;
+      }
+
+      // SECTION 9a: PLANNED LIFE EVENTS IN DECUMULATION (ONE-OFF CAPITAL INFLOWS & OUTLAYS)
+      const decumEvents = profile.decumulationLifeEvents || [];
+      const activeDecumEvents = decumEvents.filter((e) => e.enabled);
+
+      doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10.5);
+      doc.text('9a. Planned Life Events in Decumulation (One-Off Capital Inflows & Outlays)', 14, p3Y);
+
+      p3Y += 5;
+
+      if (activeDecumEvents.length > 0) {
+        doc.setFillColor(30, 41, 59);
+        doc.rect(14, p3Y, 182, 6.5, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(7.5);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Event Name', 18, p3Y + 4.5);
+        doc.text('Member', 68, p3Y + 4.5);
+        doc.text('Age (Year)', 92, p3Y + 4.5);
+        doc.text('Type', 118, p3Y + 4.5);
+        doc.text('Amount (£)', 140, p3Y + 4.5);
+        doc.text('Target/Source Pot', 165, p3Y + 4.5);
+
+        p3Y += 6.5;
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(51, 65, 85);
+        doc.setFontSize(7.5);
+
+        const currentYearVal = new Date().getFullYear();
+        const partCurAgeVal = profile.partnerCurrentAge ?? currentAge;
+
+        activeDecumEvents.forEach((ev, idx) => {
+          if (idx % 2 === 1) {
+            doc.setFillColor(slateLight[0], slateLight[1], slateLight[2]);
+            doc.rect(14, p3Y, 182, 5.5, 'F');
+          }
+
+          const isPartner = ev.owner === 'partner';
+          const memberLabel = isPartner ? (partnerName || 'Partner') : primaryName;
+          const evYear = isPartner
+            ? currentYearVal + Math.max(0, ev.age - partCurAgeVal)
+            : currentYearVal + Math.max(0, ev.age - currentAge);
+
+          const isIncome = ev.type === 'income';
+          const potNameMap: Record<string, string> = {
+            cash_savings: 'Cash Savings',
+            stocks_and_shares_isa: 'S&S ISA',
+            cash_isa: 'Cash ISA',
+            sipp: 'SIPP',
+            gia: 'GIA',
+          };
+          const potLabel = potNameMap[ev.targetPot || 'cash_savings'] || 'Cash';
+
+          doc.text(ev.name.length > 28 ? ev.name.substring(0, 26) + '...' : ev.name, 18, p3Y + 4);
+          doc.text(memberLabel.length > 12 ? memberLabel.substring(0, 11) + '.' : memberLabel, 68, p3Y + 4);
+          doc.text(`Age ${ev.age} (${evYear})`, 92, p3Y + 4);
+
+          if (isIncome) {
+            doc.setTextColor(16, 185, 129);
+            doc.setFont('helvetica', 'bold');
+            doc.text('+Inflow', 118, p3Y + 4);
+            doc.text(`+£${Math.round(ev.amount || 0).toLocaleString()}`, 140, p3Y + 4);
+          } else {
+            doc.setTextColor(225, 29, 72);
+            doc.setFont('helvetica', 'bold');
+            doc.text('-Expense', 118, p3Y + 4);
+            doc.text(`-£${Math.round(ev.amount || 0).toLocaleString()}`, 140, p3Y + 4);
+          }
+
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(51, 65, 85);
+          doc.text(potLabel, 165, p3Y + 4);
+
+          p3Y += 5.5;
+        });
+
+        p3Y += 6;
+      } else {
+        doc.setFillColor(slateLight[0], slateLight[1], slateLight[2]);
+        doc.roundedRect(14, p3Y, 182, 11, 3, 3, 'F');
+        doc.setDrawColor(226, 232, 240);
+        doc.roundedRect(14, p3Y, 182, 11, 3, 3, 'D');
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(100, 116, 139);
+        doc.text('• No active one-off planned life events (downsizing lump sum, inheritance, car purchase, world trip, etc.) configured in decumulation.', 18, p3Y + 7);
+        p3Y += 16;
+      }
+
+      // SECTION 8: RETIREMENT INCOME PRODUCT STRUCTURE & DRAWDOWN STRATEGY
+      const priOpt = profile.incomeProductOption || 'flexi_drawdown';
+      const partOpt = profile.partnerIncomeProductOption || profile.incomeProductOption || 'flexi_drawdown';
+      const isPriAnnuity = priOpt === 'annuity' || priOpt === 'hybrid';
+      const isPartAnnuity = partOpt === 'annuity' || partOpt === 'hybrid';
+
+      const priTranchesList = (profile.annuityTranches || []).filter((t) => t.enabled && (t.owner || 'primary') === 'primary');
+      const partTranchesList = profile.isCouplePlanning
+        ? (profile.partnerAnnuityTranches || (profile.annuityTranches || []).filter((t) => t.enabled && t.owner === 'partner'))
+        : [];
+      const maxTranchesCount = Math.max(priTranchesList.length, partTranchesList.length);
+
+      const baseCardHeight = (profile.isCouplePlanning && isPartAnnuity) || isPriAnnuity ? 52 : 42;
+      const cardHeight = baseCardHeight + (maxTranchesCount * 5.5);
+
+      doc.setFillColor(slateLight[0], slateLight[1], slateLight[2]);
+      doc.roundedRect(14, p3Y, 182, cardHeight, 3, 3, 'F');
+      doc.setDrawColor(226, 232, 240);
+      doc.roundedRect(14, p3Y, 182, cardHeight, 3, 3, 'D');
+
+      doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10.5);
+      doc.text('10. Retirement Income Product Structure & Drawdown Strategy (Per Person)', 18, p3Y + 8);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      doc.setTextColor(51, 65, 85);
+
+      // Primary Strategy Column
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Primary Member Strategy (${primaryName}):`, 18, p3Y + 17);
+      doc.setFont('helvetica', 'normal');
+      const priProduct = priOpt === 'annuity'
+        ? 'Guaranteed Lifetime Annuity (100% Capital)'
+        : priOpt === 'hybrid'
+        ? `Hybrid / Tranche (${profile.annuityAllocationPercent || 50}% Baseline)`
+        : 'Flexi-Access Drawdown (100% Market Invested)';
+
+      doc.text(`• Product Choice: ${priProduct}`, 18, p3Y + 23);
+      doc.text(`• Withdrawal Hierarchy: ${(profile.drawdownStrategy || 'pro_rata').replace('_', ' ').toUpperCase()}`, 18, p3Y + 29);
+      doc.text(`• Tax Free Cash (PCLS): ${profile.takeLumpSumAtStart ? `${profile.pclsLumpSumPercent || 25}% Upfront Lump Sum` : 'UFPLS (Tax-Free as drawn)'}`, 18, p3Y + 35);
+
+      if (isPriAnnuity) {
+        const rawPurAge = profile.annuityPurchaseAge || (profile.targetRetirementAge || 60);
+        const purAge = Math.max(profile.pensionAccessAge || 57, rawPurAge);
+        doc.text(`• Baseline Purchase Start: Age ${purAge} (${profile.annuityRatePercent || 4.2}% rate)`, 18, p3Y + 41);
+        doc.text(`• Baseline Payout Type: ${profile.annuityType || 'Standard Single Life'}`, 18, p3Y + 47);
+        let trY = p3Y + 53;
+        priTranchesList.forEach((t, i) => {
+          const tType = (t.annuityType || '').includes('inflation') ? 'Infl-Linked' : 'Level';
+          doc.text(`• Tranche ${i + 1}: Age ${t.purchaseAge} (${t.allocationPercent}% Alloc @ ${t.annuityRatePercent || 4.2}%, ${tType})`, 18, trY);
+          trY += 5.5;
+        });
+      }
+
+      // Partner Strategy Column (if couple)
+      if (profile.isCouplePlanning) {
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Partner Member Strategy (${partnerName}):`, 108, p3Y + 17);
+        doc.setFont('helvetica', 'normal');
+        const partAlloc = profile.partnerAnnuityAllocationPercent || profile.annuityAllocationPercent || 50;
+        const partProduct = partOpt === 'annuity'
+          ? 'Guaranteed Lifetime Annuity (100% Capital)'
+          : partOpt === 'hybrid'
+          ? `Hybrid / Tranche (${partAlloc}% Baseline)`
+          : 'Flexi-Access Drawdown (100% Market Invested)';
+
+        doc.text(`• Product Choice: ${partProduct}`, 108, p3Y + 23);
+        const partStrategyStr = (profile.partnerDrawdownStrategy || profile.drawdownStrategy || 'pro_rata').replace(/_/g, ' ').toUpperCase();
+        doc.text(`• Withdrawal Hierarchy: ${partStrategyStr}`, 108, p3Y + 29);
+        doc.text(`• Tax Free Cash (PCLS): ${profile.partnerTakeLumpSumAtStart ? `${profile.partnerPclsLumpSumPercent || 25}% Upfront Lump Sum` : 'UFPLS (Tax-Free as drawn)'}`, 108, p3Y + 35);
+
+        if (isPartAnnuity) {
+          const partPurAge = Math.max(profile.partnerPensionAccessAge || 57, profile.partnerAnnuityPurchaseAge || (profile.partnerTargetRetirementAge || targetAge));
+          doc.text(`• Baseline Purchase Start: Age ${partPurAge} (${profile.partnerAnnuityRatePercent || 4.2}% rate)`, 108, p3Y + 41);
+          doc.text(`• Baseline Payout Type: ${profile.partnerAnnuityType || 'Standard Single Life'}`, 108, p3Y + 47);
+          let trY = p3Y + 53;
+          partTranchesList.forEach((t, i) => {
+            const tType = (t.annuityType || '').includes('inflation') ? 'Infl-Linked' : 'Level';
+            doc.text(`• Tranche ${i + 1}: Age ${t.purchaseAge} (${t.allocationPercent}% Alloc @ ${t.annuityRatePercent || 4.2}%, ${tType})`, 108, trY);
+            trY += 5.5;
+          });
+        }
+      }
+
+      // Check PCLS Recycling Risk
+      const primaryTax = exportTaxResult;
+      const partnerPotsObj: InvestmentPots = sanitizePots(profile.partnerPots, DEFAULT_PARTNER_POTS);
+      const partnerTax = profile.isCouplePlanning ? calculatePartnerUKTax(profile, partnerPotsObj) : undefined;
+
+      const hasPriRecycling = primaryTax?.isPclsRecyclingRisk;
+      const hasPartRecycling = partnerTax?.isPclsRecyclingRisk;
+      const hasRecyclingRisk = hasPriRecycling || hasPartRecycling;
+
+      if (hasRecyclingRisk) {
+        p3Y += cardHeight + 4;
+        const details = hasPriRecycling ? primaryTax?.pclsRecyclingDetails : partnerTax?.pclsRecyclingDetails;
+        const memberName = hasPriRecycling ? primaryName : (partnerName || 'Partner');
+
+        const pclsAmt = details?.pclsAmount || 0;
+        const annContrib = details?.annualContributions || 0;
+        const thresh = details?.threshold || 7500;
+
+        const titleText = `WARNING: HMRC PCLS RECYCLING RULE RISK (Schedule 29) - ${memberName}`;
+        const line1 = `• Upfront PCLS Extracted: £${(pclsAmt || 0).toLocaleString()} | Ongoing Pension Contributions: £${(annContrib || 0).toLocaleString()}/yr (HMRC Limit: £${(thresh || 0).toLocaleString()}/yr)`;
+        const line2 = `• Schedule 29 Violation: Ongoing pension contributions exceed 30% of PCLS (or >£7,500/yr) during the PCLS window, triggering a potential 40%-55% unauthorized payment tax charge.`;
+        const line3 = `• Action Required: Pause or reduce ongoing pension contributions below £${(thresh || 0).toLocaleString()}/yr during the 2-year recycling window, or redirect savings to ISAs or GIAs.`;
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7.5);
+        const wrappedLine1: string[] = doc.splitTextToSize(line1, 174);
+        const wrappedLine2: string[] = doc.splitTextToSize(line2, 174);
+        const wrappedLine3: string[] = doc.splitTextToSize(line3, 174);
+
+        const totalLinesCount = wrappedLine1.length + wrappedLine2.length + wrappedLine3.length;
+        const warnBoxH = 11 + (totalLinesCount * 4.5);
+
+        doc.setFillColor(254, 242, 242);
+        doc.roundedRect(14, p3Y, 182, warnBoxH, 2.5, 2.5, 'F');
+        doc.setDrawColor(248, 113, 113);
+        doc.roundedRect(14, p3Y, 182, warnBoxH, 2.5, 2.5, 'D');
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.5);
+        doc.setTextColor(185, 28, 28);
+        doc.text(titleText, 18, p3Y + 5.5);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7.5);
+        doc.setTextColor(153, 27, 27);
+
+        let textY = p3Y + 10.5;
+        [wrappedLine1, wrappedLine2, wrappedLine3].forEach((lines) => {
+          lines.forEach((l) => {
+            doc.text(l, 18, textY);
+            textY += 4.5;
+          });
+        });
+
+        p3Y += warnBoxH + 6;
+      } else {
+        p3Y += cardHeight + 8;
+      }
+
+      // SECTION 11: KEY MILESTONE SCHEDULE
+      doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10.5);
+      doc.text('11. Key Milestone Schedule', 14, p3Y);
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica', 'italic');
+      doc.setTextColor(100, 116, 139);
+      doc.text('(Projected end-of-year balances including annual contributions, growth, and tax relief accrued throughout each year)', 14, p3Y + 4.5);
+
+      p3Y += 6.5;
+      doc.setFillColor(30, 41, 59);
+      doc.rect(14, p3Y, 182, 7, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Age (Year)', 17, p3Y + 5);
+      doc.text('Phase', 40, p3Y + 5);
+      doc.text('Pension Pot', 66, p3Y + 5);
+      doc.text('ISA Pot', 94, p3Y + 5);
+      doc.text('Total Pot', 120, p3Y + 5);
+      doc.text('Annuity (£)', 146, p3Y + 5);
+      doc.text('Net Income', 172, p3Y + 5);
+
+      p3Y += 7;
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(51, 65, 85);
+      doc.setFontSize(7.5);
+
+      const priPurAge = isPriAnnuity ? Math.max(profile.pensionAccessAge || 57, profile.annuityPurchaseAge || (profile.targetRetirementAge || 60)) : undefined;
+      const partPurAge = (profile.isCouplePlanning && isPartAnnuity) ? Math.max(profile.partnerPensionAccessAge || 57, profile.partnerAnnuityPurchaseAge || (profile.partnerTargetRetirementAge || targetAge)) : undefined;
+      const priStateAge = profile.statePensionAge || 67;
+      const partStateAge = profile.isCouplePlanning ? (profile.partnerStatePensionAge || profile.statePensionAge || 67) : undefined;
+
+      const milestoneAgesSet = new Set([
+        currentAge,
+        profile.pensionAccessAge || 57,
+        targetAge,
+        priStateAge,
+        ...(partStateAge !== undefined ? [partStateAge] : []),
+        ...(priPurAge !== undefined ? [priPurAge] : []),
+        ...(partPurAge !== undefined ? [partPurAge] : []),
+        75,
+        horizonAge
+      ]);
+
+      const milestoneYears = (projections || []).filter((p) => milestoneAgesSet.has(p.age)).sort((a, b) => a.age - b.age);
+
+      milestoneYears.forEach((p, idx) => {
+        if (idx % 2 === 1) {
+          doc.setFillColor(slateLight[0], slateLight[1], slateLight[2]);
+          doc.rect(14, p3Y, 182, 6, 'F');
+        }
+        const hasAnnuityIncome = (p.annuityIncomeReceived || 0) > 0;
+        const isPurchaseYear = (priPurAge && p.age === priPurAge) || (partPurAge && p.age === partPurAge);
+
+        doc.text(`Age ${p.age} (${p.year})`, 17, p3Y + 4);
+        doc.text(p.isRetired ? 'Retirement' : 'Accumulation', 40, p3Y + 4);
+        doc.text(`£${Math.round(p.pensionPot || 0).toLocaleString()}`, 66, p3Y + 4);
+        doc.text(`£${Math.round(p.isaPot || 0).toLocaleString()}`, 94, p3Y + 4);
+        doc.text(`£${Math.round(p.totalPot || 0).toLocaleString()}`, 120, p3Y + 4);
+
+        if (hasAnnuityIncome) {
+          doc.setTextColor(109, 40, 217);
+          doc.setFont('helvetica', 'bold');
+          doc.text(`£${Math.round(p.annuityIncomeReceived || 0).toLocaleString()}${isPurchaseYear ? '*' : ''}`, 146, p3Y + 4);
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(51, 65, 85);
+        } else {
+          doc.text(`£0`, 146, p3Y + 4);
+        }
+
+        doc.setFont('helvetica', 'bold');
+        doc.text(`£${Math.round(p.netRetirementIncome || 0).toLocaleString()}`, 172, p3Y + 4);
+        doc.setFont('helvetica', 'normal');
+
+        p3Y += 6;
+      });
+
+      // Footnote clarifying starting balance (Section 3) vs end-of-year balance (Section 9)
+      doc.setFontSize(6.5);
+      doc.setFont('helvetica', 'italic');
+      doc.setTextColor(100, 116, 139);
+      doc.text(`* Note: Age ${currentAge} (${new Date().getFullYear()}) displays projected end-of-year balances after 1st year contributions & growth, whereas Section 3 displays baseline starting balances.`, 14, p3Y + 3);
+      p3Y += 5;
+
+      // STATE PENSION EXECUTION DETAILS SUMMARY CALLOUT BOX
+      p3Y += 4;
+      const spBoxH = profile.isCouplePlanning ? 27 : 21;
+      doc.setFillColor(240, 244, 255); // Indigo tint box
+      doc.roundedRect(14, p3Y, 182, spBoxH, 2, 2, 'F');
+      doc.setDrawColor(199, 210, 254);
+      doc.roundedRect(14, p3Y, 182, spBoxH, 2, 2, 'D');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8.5);
+      doc.setTextColor(79, 70, 229);
+      doc.text('Key Milestone State Pension Execution Details', 18, p3Y + 5.5);
+
+      let spBoxY = p3Y + 8.5;
+      doc.setFillColor(79, 70, 229);
+      doc.rect(18, spBoxY, 174, 5, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(7);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Who (Member)', 20, spBoxY + 3.5);
+      doc.text('State Pension Start Age', 55, spBoxY + 3.5);
+      doc.text('Weekly Amount', 105, spBoxY + 3.5);
+      doc.text('Starting Annual Income', 145, spBoxY + 3.5);
+
+      spBoxY += 5;
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(51, 65, 85);
+      doc.setFontSize(7);
+
+      const priStateYear = projections.find((p) => p.age === priStateAge)?.year || (new Date().getFullYear() + Math.max(0, priStateAge - currentAge));
+      const priSpAnnual = profile.statePensionAmountAnnual || 12548;
+      const priSpWeekly = Math.round(priSpAnnual / 52);
+
+      doc.text(primaryName, 20, spBoxY + 4);
+      doc.text(`Age ${priStateAge} (${priStateYear})`, 55, spBoxY + 4);
+      doc.text(`£${priSpWeekly}/wk`, 105, spBoxY + 4);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(79, 70, 229);
+      doc.text(`£${Math.round((priSpAnnual) || 0).toLocaleString()}/yr`, 145, spBoxY + 4);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(51, 65, 85);
+
+      if (profile.isCouplePlanning) {
+        spBoxY += 5.5;
+        const partCurAge = profile.partnerCurrentAge ?? currentAge;
+        const partStateAgeVal = partStateAge || 67;
+        const priAgeAtPartState = currentAge + (partStateAgeVal - partCurAge);
+        const partStateYear = projections.find((p) => p.age === priAgeAtPartState)?.year || (new Date().getFullYear() + Math.max(0, partStateAgeVal - partCurAge));
+        const partSpAnnual = profile.partnerStatePensionAmountAnnual || profile.statePensionAmountAnnual || 12548;
+        const partSpWeekly = Math.round(partSpAnnual / 52);
+
+        doc.text(partnerName || 'Partner', 20, spBoxY + 4);
+        doc.text(`Age ${partStateAgeVal} (${partStateYear})`, 55, spBoxY + 4);
+        doc.text(`£${partSpWeekly}/wk`, 105, spBoxY + 4);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(79, 70, 229);
+        doc.text(`£${Math.round((partSpAnnual) || 0).toLocaleString()}/yr`, 145, spBoxY + 4);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(51, 65, 85);
+      }
+
+      p3Y += spBoxH;
+
+      // ANNUITY DETAILS SUMMARY CALLOUT TABLE BELOW SECTION 9 TABLE (IF ANNUITY PURCHASED)
+      if (isPriAnnuity || isPartAnnuity) {
+        const formatAnnuityType = (type?: string) => {
+          if (!type) return 'Standard Single Life';
+          if (type === 'level_single') return 'Level Single Life';
+          if (type === 'inflation_linked_single') return 'Inflation-Linked Single';
+          if (type === 'level_joint') return 'Level Joint Life';
+          if (type === 'inflation_linked_joint') return 'Inflation-Linked Joint';
+          return type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+        };
+
+        interface PdfAnnuityRow {
+          who: string;
+          age: number;
+          year: number;
+          capCost: number;
+          rate: number;
+          startIncome: number;
+          annuityType: string;
+        }
+
+        const pdfAnnuityRows: PdfAnnuityRow[] = [];
+
+        // 1. Primary Baseline Annuity
+        if (isPriAnnuity) {
+          const priAccessAge = getPensionAccessAge(profile);
+          const priSafePurAge = Math.max(priAccessAge, profile.annuityPurchaseAge || profile.targetRetirementAge);
+          const priPurProj = (projections || []).find((p) => p.age === priSafePurAge) || retirementYear;
+          const priPurYear = priPurProj.year || (new Date().getFullYear() + (priSafePurAge - currentAge));
+
+          const priProjectedPension = (priPurProj.primaryPensionPotBeforeAnnuity) ?? getProjectedPensionAtTakeAge(profile, pots, priSafePurAge, false);
+          const priPclsPct = profile.pclsLumpSumPercent ?? 25;
+          const priPclsVal = priProjectedPension * (priPclsPct / 100);
+          const priPostPclsPension = profile.takeLumpSumAtStart ? Math.max(0, priProjectedPension - priPclsVal) : priProjectedPension;
+
+          const priSingleAlloc = priOpt === 'annuity' ? 100 : (profile.annuityAllocationPercent ?? 50);
+          const priCapCost = priPostPclsPension * (priSingleAlloc / 100);
+          const priRate = profile.annuityRatePercent ?? 4.2;
+          const priStartIncome = priCapCost * (priRate / 100);
+
+          if (priCapCost > 0 || priSingleAlloc > 0) {
+            pdfAnnuityRows.push({
+              who: primaryName,
+              age: priSafePurAge,
+              year: priPurYear,
+              capCost: priCapCost,
+              rate: priRate,
+              startIncome: priStartIncome,
+              annuityType: formatAnnuityType(profile.annuityType),
+            });
+          }
+        }
+
+        // 2. Primary Tranches
+        if (priOpt === 'hybrid') {
+          (profile.annuityTranches || []).forEach((t, i) => {
+            if (!t.enabled || (t.owner || 'primary') !== 'primary') return;
+            const purAge = t.purchaseAge;
+            const proj = (projections || []).find((p) => p.age === purAge);
+            const yr = proj ? proj.year : (new Date().getFullYear() + Math.max(0, purAge - currentAge));
+            const potVal = (proj?.primaryPensionPotBeforeAnnuity) ?? getProjectedPensionAtTakeAge(profile, pots, purAge, false);
+            const allocPct = Math.min(100, Math.max(1, t.allocationPercent ?? 25));
+            const capCost = potVal * (allocPct / 100);
+            const rate = t.annuityRatePercent ?? 5.5;
+            const startIncome = capCost * (rate / 100);
+            pdfAnnuityRows.push({
+              who: `${primaryName} (T${i + 1})`,
+              age: purAge,
+              year: yr,
+              capCost,
+              rate,
+              startIncome,
+              annuityType: formatAnnuityType(t.annuityType),
+            });
+          });
+        }
+
+        // 3. Partner Baseline Annuity
+        if (profile.isCouplePlanning && isPartAnnuity) {
+          const partnerPotsObj: InvestmentPots = sanitizePots(profile.partnerPots, DEFAULT_PARTNER_POTS);
+
+          const partAccessAge = getPartnerPensionAccessAge(profile);
+          const partSafePurAge = Math.max(partAccessAge, profile.partnerAnnuityPurchaseAge || (profile.partnerTargetRetirementAge || targetAge));
+          const partCurAge = profile.partnerCurrentAge ?? currentAge;
+          const priAgeAtPartAnnuity = currentAge + (partSafePurAge - partCurAge);
+          const partPurProj = (projections || []).find((p) => p.age === priAgeAtPartAnnuity);
+          const partPurYear = partPurProj ? partPurProj.year : (new Date().getFullYear() + Math.max(0, partSafePurAge - partCurAge));
+
+          const partProjectedPension = (partPurProj?.partnerPensionPotBeforeAnnuity) ?? getProjectedPensionAtTakeAge(profile, partnerPotsObj, partSafePurAge, true);
+          const partPclsPct = profile.partnerPclsLumpSumPercent ?? 25;
+          const partPclsVal = partProjectedPension * (partPclsPct / 100);
+          const partPostPclsPension = profile.partnerTakeLumpSumAtStart ? Math.max(0, partProjectedPension - partPclsVal) : partProjectedPension;
+
+          const partSingleAlloc = partOpt === 'annuity' ? 100 : (profile.partnerAnnuityAllocationPercent ?? profile.annuityAllocationPercent ?? 50);
+          const partCapCost = partPostPclsPension * (partSingleAlloc / 100);
+          const partRate = profile.partnerAnnuityRatePercent ?? profile.annuityRatePercent ?? 4.2;
+          const partStartIncome = partCapCost * (partRate / 100);
+
+          if (partCapCost > 0 || partSingleAlloc > 0) {
+            pdfAnnuityRows.push({
+              who: partnerName || 'Partner',
+              age: partSafePurAge,
+              year: partPurYear,
+              capCost: partCapCost,
+              rate: partRate,
+              startIncome: partStartIncome,
+              annuityType: formatAnnuityType(profile.partnerAnnuityType || profile.annuityType),
+            });
+          }
+        }
+
+        // 4. Partner Tranches
+        if (profile.isCouplePlanning && partOpt === 'hybrid') {
+          const partnerTranches = profile.partnerAnnuityTranches || (profile.annuityTranches || []).filter((t) => t.owner === 'partner');
+          partnerTranches.forEach((t, i) => {
+            if (!t.enabled) return;
+            const purAge = t.purchaseAge;
+            const partCurAge = profile.partnerCurrentAge ?? currentAge;
+            const priAge = currentAge + (purAge - partCurAge);
+            const proj = (projections || []).find((p) => p.age === priAge);
+            const yr = proj ? proj.year : (new Date().getFullYear() + Math.max(0, purAge - partCurAge));
+
+            const partnerPotsObj: InvestmentPots = sanitizePots(profile.partnerPots, DEFAULT_PARTNER_POTS);
+            const potVal = (proj?.partnerPensionPotBeforeAnnuity) ?? getProjectedPensionAtTakeAge(profile, partnerPotsObj, purAge, true);
+            const allocPct = Math.min(100, Math.max(1, t.allocationPercent ?? 25));
+            const capCost = potVal * (allocPct / 100);
+            const rate = t.annuityRatePercent ?? 5.5;
+            const startIncome = capCost * (rate / 100);
+            pdfAnnuityRows.push({
+              who: `${partnerName || 'Partner'} (T${i + 1})`,
+              age: purAge,
+              year: yr,
+              capCost,
+              rate,
+              startIncome,
+              annuityType: formatAnnuityType(t.annuityType),
+            });
+          });
+        }
+
+        if (pdfAnnuityRows.length > 0) {
+          p3Y += 4;
+          const boxH = 18 + (pdfAnnuityRows.length * 6);
+          doc.setFillColor(245, 243, 255); // Purple tint box
+          doc.roundedRect(14, p3Y, 182, boxH, 2, 2, 'F');
+          doc.setDrawColor(221, 214, 254);
+          doc.roundedRect(14, p3Y, 182, boxH, 2, 2, 'D');
+
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(8.5);
+          doc.setTextColor(109, 40, 217);
+          doc.text('Key Milestone Annuity Purchase & Execution Details', 18, p3Y + 5.5);
+
+          // Table Header inside Box
+          let boxY = p3Y + 8.5;
+          doc.setFillColor(109, 40, 217);
+          doc.rect(18, boxY, 174, 5, 'F');
+          doc.setTextColor(255, 255, 255);
+          doc.setFontSize(7);
+          doc.setFont('helvetica', 'bold');
+          doc.text('Who (Member)', 20, boxY + 3.5);
+          doc.text('Purchase Age', 52, boxY + 3.5);
+          doc.text('Capital Cost (£)', 78, boxY + 3.5);
+          doc.text('Rate', 104, boxY + 3.5);
+          doc.text('Starting Income', 118, boxY + 3.5);
+          doc.text('Annuity Type', 148, boxY + 3.5);
+
+          boxY += 5;
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(51, 65, 85);
+          doc.setFontSize(7);
+
+          pdfAnnuityRows.forEach((row) => {
+            doc.text(row.who, 20, boxY + 4);
+            doc.text(`Age ${row.age} (${row.year})`, 52, boxY + 4);
+            doc.text(`£${Math.round((row.capCost) || 0).toLocaleString()}`, 78, boxY + 4);
+            doc.text(`${row.rate}%`, 104, boxY + 4);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(109, 40, 217);
+            doc.text(`£${Math.round((row.startIncome) || 0).toLocaleString()}/yr`, 118, boxY + 4);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(51, 65, 85);
+            doc.text(row.annuityType, 148, boxY + 4);
+            boxY += 5.5;
+          });
+
+          // PCLS & Income Tax Advice Note inside Annuity Box
+          doc.setFont('helvetica', 'italic');
+          doc.setFontSize(6.5);
+          doc.setTextColor(100, 116, 139);
+          doc.text('• Income Tax & PCLS Note: 100% of annuity payments are taxable income under PAYE. Extracting 25% PCLS tax-free upfront reduces annuity size & income tax exposure.', 18, boxY + 2);
+
+          p3Y += boxH + 8;
+        }
+      }
+
+      // =========================================================================
+      // VISUAL DIAGRAM MODELS 1 & 2 (SHOWING INDIVIDUAL POT SIZES)
+      // =========================================================================
+      doc.addPage();
+      curPageNum++;
+      renderPageHeader('Visual Diagram Models — Capital & Trajectory Analysis', curPageNum);
+
+      let p4Y = 24;
+
+      // DIAGRAM ILLUSTRATION 1: Pot Capital Allocation Stacked Bar
+      doc.setFillColor(241, 245, 249);
+      doc.roundedRect(14, p4Y, 182, 45, 3, 3, 'F');
+      doc.setDrawColor(203, 213, 225);
+      doc.roundedRect(14, p4Y, 182, 45, 3, 3, 'D');
+
+      doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.text(`Diagram 1: Portfolio Asset Distribution at Retirement Start (Age ${targetAge})`, 18, p4Y + 8);
+
+      const totalPotRet = retirementYear.totalPot || 1;
+      const pPct = Math.round(((retirementYear.pensionPot || 0) / totalPotRet) * 100);
+      const iPct = Math.round(((retirementYear.isaPot || 0) / totalPotRet) * 100);
+      const cPct = Math.max(0, 100 - pPct - iPct);
+
+      const dBarX = 18;
+      const dBarY = p4Y + 14;
+      const dBarW = 174;
+      const dBarH = 10;
+
+      const pW = (dBarW * pPct) / 100;
+      const iW = (dBarW * iPct) / 100;
+      const cW = Math.max(0, dBarW - pW - iW);
+
+      doc.setFillColor(16, 185, 129);
+      doc.rect(dBarX, dBarY, Math.max(1, pW), dBarH, 'F');
+
+      if (iW > 0) {
+        doc.setFillColor(99, 102, 241);
+        doc.rect(dBarX + pW, dBarY, iW, dBarH, 'F');
+      }
+
+      if (cW > 0) {
+        doc.setFillColor(245, 158, 11);
+        doc.rect(dBarX + pW + iW, dBarY, cW, dBarH, 'F');
+      }
+
+      let dLgY = dBarY + 16;
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+
+      doc.setFillColor(16, 185, 129);
+      doc.rect(18, dLgY, 4, 4, 'F');
+      doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+      doc.text(`Pension Pot: £${(retirementYear.pensionPot || (0) || 0).toLocaleString()} (${pPct}%)`, 24, dLgY + 3.5);
+
+      doc.setFillColor(99, 102, 241);
+      doc.rect(80, dLgY, 4, 4, 'F');
+      doc.text(`ISA Pot: £${(retirementYear.isaPot || (0) || 0).toLocaleString()} (${iPct}%)`, 86, dLgY + 3.5);
+
+      doc.setFillColor(245, 158, 11);
+      doc.rect(140, dLgY, 4, 4, 'F');
+      doc.text(`Cash/GIA Pot: £${(retirementYear.cashGiaPot || (0) || 0).toLocaleString()} (${cPct}%)`, 146, dLgY + 3.5);
+
+      // DIAGRAM ILLUSTRATION 2: Projected Portfolio Wealth Trajectory Curve (SHOWING INDIVIDUAL POT SIZES)
+      p4Y += 54;
+      doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10.5);
+      doc.text('Diagram 2: Projected Portfolio Wealth & Individual Pot Trajectory Curves', 14, p4Y);
+
+      const graphBoxY = p4Y + 4;
+      doc.setFillColor(248, 250, 252);
+      doc.roundedRect(14, graphBoxY, 182, 85, 3, 3, 'F');
+      doc.setDrawColor(203, 213, 225);
+      doc.roundedRect(14, graphBoxY, 182, 85, 3, 3, 'D');
+
+      // Y-Axis Grid Lines & Numerical Scale Labels (£0 to £1M+)
+      const maxVal = Math.max(1, ...(projections || []).map((p) => p.totalPot || 0));
+      doc.setDrawColor(226, 232, 240);
+      doc.setFontSize(7);
+      doc.setTextColor(100, 116, 139);
+
+      const ySteps = [1.0, 0.75, 0.5, 0.25, 0];
+      ySteps.forEach((stepPct) => {
+        const stepY = graphBoxY + 14 + (1 - stepPct) * 52;
+        doc.line(32, stepY, 186, stepY);
+        const lblVal = maxVal * stepPct;
+        const fmtVal = lblVal >= 1000000 ? `£${(lblVal / 1000000).toFixed(1)}M` : `£${Math.round(lblVal / 1000)}k`;
+        doc.text(fmtVal, 16, stepY + 1.5);
+      });
+
+      // X-Axis Milestone Ticks
+      const milestoneAges = [currentAge, profile.pensionAccessAge || 57, targetAge, profile.statePensionAge || 67, 75, horizonAge];
+      milestoneAges.forEach((mAge) => {
+        const pct = Math.max(0, Math.min(1, (mAge - currentAge) / (horizonAge - currentAge || 1)));
+        const tickX = 32 + pct * 154;
+        doc.line(tickX, graphBoxY + 66, tickX, graphBoxY + 68);
+        doc.text(`Age ${mAge}`, tickX - 5, graphBoxY + 72);
+      });
+
+      // Plot Actual Step-by-Step Trajectory Curves from projections array
+      if (projections && projections.length > 0) {
+        const totalSteps = projections.length - 1 || 1;
+
+        // 1. Pension Pot Trajectory Curve (Teal [13, 148, 136] - 0.8mm)
+        doc.setDrawColor(13, 148, 136);
+        doc.setLineWidth(0.8);
+        for (let i = 1; i < projections.length; i++) {
+          const x1 = 32 + ((i - 1) / totalSteps) * 154;
+          const y1 = graphBoxY + 14 + (1 - Math.max(0, projections[i - 1].pensionPot || 0) / maxVal) * 52;
+          const x2 = 32 + (i / totalSteps) * 154;
+          const y2 = graphBoxY + 14 + (1 - Math.max(0, projections[i].pensionPot || 0) / maxVal) * 52;
+          doc.line(x1, y1, x2, y2);
+        }
+
+        // 2. ISA Pot Trajectory Curve (Indigo [99, 102, 241] - 0.8mm)
+        doc.setDrawColor(99, 102, 241);
+        doc.setLineWidth(0.8);
+        for (let i = 1; i < projections.length; i++) {
+          const x1 = 32 + ((i - 1) / totalSteps) * 154;
+          const y1 = graphBoxY + 14 + (1 - Math.max(0, projections[i - 1].isaPot || 0) / maxVal) * 52;
+          const x2 = 32 + (i / totalSteps) * 154;
+          const y2 = graphBoxY + 14 + (1 - Math.max(0, projections[i].isaPot || 0) / maxVal) * 52;
+          doc.line(x1, y1, x2, y2);
+        }
+
+        // 3. Cash / GIA Pot Trajectory Curve (Amber [245, 158, 11] - 0.8mm)
+        doc.setDrawColor(245, 158, 11);
+        doc.setLineWidth(0.8);
+        for (let i = 1; i < projections.length; i++) {
+          const x1 = 32 + ((i - 1) / totalSteps) * 154;
+          const y1 = graphBoxY + 14 + (1 - Math.max(0, projections[i - 1].cashGiaPot || 0) / maxVal) * 52;
+          const x2 = 32 + (i / totalSteps) * 154;
+          const y2 = graphBoxY + 14 + (1 - Math.max(0, projections[i].cashGiaPot || 0) / maxVal) * 52;
+          doc.line(x1, y1, x2, y2);
+        }
+
+        // 4. Total Wealth Trajectory Curve (Emerald [16, 185, 129] - Thick 1.3mm)
+        doc.setDrawColor(16, 185, 129);
+        doc.setLineWidth(1.3);
+        for (let i = 1; i < projections.length; i++) {
+          const x1 = 32 + ((i - 1) / totalSteps) * 154;
+          const y1 = graphBoxY + 14 + (1 - Math.max(0, projections[i - 1].totalPot || 0) / maxVal) * 52;
+          const x2 = 32 + (i / totalSteps) * 154;
+          const y2 = graphBoxY + 14 + (1 - Math.max(0, projections[i].totalPot || 0) / maxVal) * 52;
+          doc.line(x1, y1, x2, y2);
+        }
+
+        // Highlight Retirement Start Peak Circle
+        const retIdx = projections.findIndex((p) => p.age === targetAge);
+        if (retIdx >= 0) {
+          const retX = 32 + (retIdx / totalSteps) * 154;
+          const retY = graphBoxY + 14 + (1 - Math.max(0, projections[retIdx].totalPot || 0) / maxVal) * 52;
+          doc.setFillColor(16, 185, 129);
+          doc.circle(retX, retY, 2.5, 'F');
+        }
+      }
+
+      // Legend for Pot Sizes Inside Box
+      let d2LgY = graphBoxY + 77;
+      doc.setFontSize(7);
+      doc.setFont('helvetica', 'bold');
+
+      doc.setFillColor(16, 185, 129);
+      doc.rect(20, d2LgY, 3, 3, 'F');
+      doc.setTextColor(15, 23, 42);
+      doc.text('Total Wealth', 24, d2LgY + 2.5);
+
+      doc.setFillColor(13, 148, 136);
+      doc.rect(65, d2LgY, 3, 3, 'F');
+      doc.text('Pension Pot', 69, d2LgY + 2.5);
+
+      doc.setFillColor(99, 102, 241);
+      doc.rect(110, d2LgY, 3, 3, 'F');
+      doc.text('ISA Pot', 114, d2LgY + 2.5);
+
+      doc.setFillColor(245, 158, 11);
+      doc.rect(145, d2LgY, 3, 3, 'F');
+      doc.text('Cash/GIA Pot', 149, d2LgY + 2.5);
+
+      // =========================================================================
+      // PAGE 5: DIAGRAM 3 (WITH YEAR LABELS) & DIAGRAM 4 (LEGEND INSIDE BOX) & LEGAL NOTICE
+      // =========================================================================
+      // =========================================================================
+      // PAGE 5: DIAGRAM 3 (NOMINAL £) & DIAGRAM 4 (TODAY'S £ REAL TERMS)
+      // =========================================================================
+      doc.addPage();
+      curPageNum++;
+      renderPageHeader('Visual Diagram Models — Drawdown Income Analysis (Nominal & Real)', curPageNum);
+
+      let p5Y = 24;
+
+      // DIAGRAM ILLUSTRATION 3: Annual Drawdown Income & Source Breakdown (NOMINAL £)
+      const d3BoxHeight = 80;
+      doc.setFillColor(248, 250, 252);
+      doc.roundedRect(14, p5Y, 182, d3BoxHeight, 3, 3, 'F');
+      doc.setDrawColor(203, 213, 225);
+      doc.roundedRect(14, p5Y, 182, d3BoxHeight, 3, 3, 'D');
+
+      doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.text('Diagram 3: Annual Net Retirement Drawdown Income & Source Breakdown (Nominal £)', 18, p5Y + 8);
+
+      const d3BoxY = p5Y + 14;
+
+      const d3Ages = [
+        { age: targetAge, x: 38 },
+        { age: Math.min(horizonAge, targetAge + 5), x: 67 },
+        { age: Math.min(horizonAge, profile.statePensionAge || 67), x: 96 },
+        { age: Math.min(horizonAge, 75), x: 125 },
+        { age: Math.min(horizonAge, 80), x: 154 },
+        { age: horizonAge, x: 180 },
+      ];
+
+      // Y-Axis Grid Lines & Scales for Nominal Income Chart (£0 to £60k+)
+      const nomIncomes = (projections || []).filter((p) => p.isRetired).map((p) => p.netRetirementIncome || 0);
+      const nomTargets = (projections || []).filter((p) => p.isRetired).map((p) => p.targetRetirementIncome || getTargetIncomeForAge(profile, p.age));
+      const maxRetIncNom = Math.max(40000, ...nomIncomes, ...nomTargets);
+
+      doc.setDrawColor(226, 232, 240);
+      doc.setFontSize(6.5);
+      doc.setTextColor(100, 116, 139);
+
+      const incYSteps = [1.0, 0.75, 0.5, 0.25, 0];
+      incYSteps.forEach((stepPct) => {
+        const stepY = d3BoxY + 6 + (1 - stepPct) * 40;
+        doc.line(32, stepY, 186, stepY);
+        const fmtVal = `£${Math.round((maxRetIncNom * stepPct) / 1000)}k`;
+        doc.text(fmtVal, 16, stepY + 1.5);
+      });
+
+      // Target Requirement Line & Markers per age bar (Rose)
+      const targetPointsNom = d3Ages.map((item) => {
+        const p = (projections || []).find((proj) => proj.age === item.age) || retirementYear;
+        const targetVal = p.targetRetirementIncome || getTargetIncomeForAge(profile, item.age);
+        const y = d3BoxY + 6 + (1 - Math.min(1, targetVal / (maxRetIncNom || 1))) * 40;
+        return { x: item.x, y, targetVal };
+      });
+
+      doc.setDrawColor(225, 29, 72);
+      doc.setLineWidth(0.9);
+      for (let i = 0; i < targetPointsNom.length - 1; i++) {
+        doc.line(targetPointsNom[i].x, targetPointsNom[i].y, targetPointsNom[i + 1].x, targetPointsNom[i + 1].y);
+      }
+      targetPointsNom.forEach((pt) => {
+        doc.setFillColor(225, 29, 72);
+        doc.circle(pt.x, pt.y, 1.2, 'F');
+      });
+
+      const firstNomTarget = targetPointsNom[0]?.targetVal || 0;
+      const allNomTargetsEqual = targetPointsNom.every((pt) => Math.abs(pt.targetVal - firstNomTarget) < 1);
+
+      doc.setTextColor(225, 29, 72);
+      doc.setFontSize(7);
+      doc.setFont('helvetica', 'bold');
+      if (allNomTargetsEqual) {
+        doc.text(`Target Requirement £${Math.round(firstNomTarget).toLocaleString()}/yr`, 120, Math.max(d3BoxY + 10, targetPointsNom[0].y - 2));
+      } else {
+        doc.text(`Target Requirement (Flexible / Age-Phased)`, 115, d3BoxY + 10);
+      }
+
+      // Stacked Income Layer Bars in Nominal £
+      d3Ages.forEach((item) => {
+        const p = (projections || []).find((proj) => proj.age === item.age) || retirementYear;
+        const pYear = p.year || (new Date().getFullYear() + (item.age - currentAge));
+
+        const stateIncNom = p.statePensionReceived || 0;
+        const dbIncNom = (p.dbPensionIncomeReceived || 0) + (p.taxableFixedIncomeReceived || 0) + (p.taxFreeFixedIncomeReceived || 0);
+        const annIncNom = p.annuityIncomeReceived || 0;
+        const penDrawdownNom = p.pensionDrawdown || 0;
+        const isaCashDrawdownNom = (p.isaDrawdown || 0) + (p.cashDrawdown || 0);
+
+        const hState = Math.min(40, (stateIncNom / (maxRetIncNom || 1)) * 40);
+        const hDb = Math.min(40, (dbIncNom / (maxRetIncNom || 1)) * 40);
+        const hAnn = Math.min(40, (annIncNom / (maxRetIncNom || 1)) * 40);
+        const hPenDrawdown = Math.min(40, (penDrawdownNom / (maxRetIncNom || 1)) * 40);
+        const hIsaDrawdown = Math.min(40, (isaCashDrawdownNom / (maxRetIncNom || 1)) * 40);
+
+        const barBottomY = d3BoxY + 46;
+        let currentY = barBottomY;
+        const barW = 12;
+
+        if (hState > 0) {
+          currentY -= hState;
+          doc.setFillColor(99, 102, 241);
+          doc.rect(item.x - barW / 2, currentY, barW, hState, 'F');
+        }
+        if (hDb > 0) {
+          currentY -= hDb;
+          doc.setFillColor(245, 158, 11);
+          doc.rect(item.x - barW / 2, currentY, barW, hDb, 'F');
+        }
+        if (hAnn > 0) {
+          currentY -= hAnn;
+          doc.setFillColor(109, 40, 217);
+          doc.rect(item.x - barW / 2, currentY, barW, hAnn, 'F');
+        }
+        if (hPenDrawdown > 0) {
+          currentY -= hPenDrawdown;
+          doc.setFillColor(16, 185, 129);
+          doc.rect(item.x - barW / 2, currentY, barW, hPenDrawdown, 'F');
+        }
+        if (hIsaDrawdown > 0) {
+          currentY -= hIsaDrawdown;
+          doc.setFillColor(6, 182, 212); // Cyan for ISA/Cash Drawdown
+          doc.rect(item.x - barW / 2, currentY, barW, hIsaDrawdown, 'F');
+        }
+
+        doc.setFontSize(6.5);
+        doc.setTextColor(51, 65, 85);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Age ${item.age}`, item.x - 5, d3BoxY + 49);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`(${pYear})`, item.x - 6, d3BoxY + 53);
+      });
+
+      // Legend Inside Box 3
+      let d3LgY = d3BoxY + 58;
+      doc.setFontSize(6.5);
+      doc.setFont('helvetica', 'bold');
+
+      doc.setFillColor(6, 182, 212);
+      doc.rect(16, d3LgY, 3, 3, 'F');
+      doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+      doc.text('ISA/Cash Drawdown', 20, d3LgY + 2.5);
+
+      doc.setFillColor(16, 185, 129);
+      doc.rect(55, d3LgY, 3, 3, 'F');
+      doc.text('Pension Drawdown', 59, d3LgY + 2.5);
+
+      doc.setFillColor(109, 40, 217);
+      doc.rect(94, d3LgY, 3, 3, 'F');
+      doc.text('Annuity Income', 98, d3LgY + 2.5);
+
+      doc.setFillColor(99, 102, 241);
+      doc.rect(126, d3LgY, 3, 3, 'F');
+      doc.text('State Pension', 130, d3LgY + 2.5);
+
+      doc.setFillColor(245, 158, 11);
+      doc.rect(156, d3LgY, 3, 3, 'F');
+      doc.text('DB & Fixed', 160, d3LgY + 2.5);
+
+      // -------------------------------------------------------------------------
+      // DIAGRAM ILLUSTRATION 4: Annual Drawdown Income & Source Breakdown (TODAY'S £ REAL TERMS)
+      // -------------------------------------------------------------------------
+      p5Y += 84;
+      const d4BoxHeight = 80;
+      doc.setFillColor(248, 250, 252);
+      doc.roundedRect(14, p5Y, 182, d4BoxHeight, 3, 3, 'F');
+      doc.setDrawColor(203, 213, 225);
+      doc.roundedRect(14, p5Y, 182, d4BoxHeight, 3, 3, 'D');
+
+      doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.text("Diagram 4: Annual Net Retirement Drawdown Income & Source Breakdown (Today's £ Real Terms)", 18, p5Y + 8);
+
+      const d4BoxY = p5Y + 14;
+
+      const realIncomes = (projections || []).filter((p) => p.isRetired).map((p) => {
+        const infFact = Math.pow(1 + (profile.expectedInflationRate || 2.5) / 100, p.age - currentAge);
+        return p.purchasingPowerAdjustedIncome || ((p.netRetirementIncome || 0) / infFact);
+      });
+      const realTargets = (projections || []).filter((p) => p.isRetired).map((p) => getTargetIncomeForAge(profile, p.age));
+      const maxRetIncReal = Math.max(35000, ...realIncomes, ...realTargets);
+
+      doc.setDrawColor(226, 232, 240);
+      doc.setFontSize(6.5);
+      doc.setTextColor(100, 116, 139);
+
+      incYSteps.forEach((stepPct) => {
+        const stepY = d4BoxY + 6 + (1 - stepPct) * 40;
+        doc.line(32, stepY, 186, stepY);
+        const fmtVal = `£${Math.round((maxRetIncReal * stepPct) / 1000)}k`;
+        doc.text(fmtVal, 16, stepY + 1.5);
+      });
+
+      // Target Requirement Line & Markers per age bar for Real Terms (Rose)
+      const targetPointsReal = d3Ages.map((item) => {
+        const targetVal = getTargetIncomeForAge(profile, item.age);
+        const y = d4BoxY + 6 + (1 - Math.min(1, targetVal / (maxRetIncReal || 1))) * 40;
+        return { x: item.x, y, targetVal };
+      });
+
+      doc.setDrawColor(225, 29, 72);
+      doc.setLineWidth(0.9);
+      for (let i = 0; i < targetPointsReal.length - 1; i++) {
+        doc.line(targetPointsReal[i].x, targetPointsReal[i].y, targetPointsReal[i + 1].x, targetPointsReal[i + 1].y);
+      }
+      targetPointsReal.forEach((pt) => {
+        doc.setFillColor(225, 29, 72);
+        doc.circle(pt.x, pt.y, 1.2, 'F');
+      });
+
+      const firstRealTarget = targetPointsReal[0]?.targetVal || 0;
+      const allRealTargetsEqual = targetPointsReal.every((pt) => Math.abs(pt.targetVal - firstRealTarget) < 1);
+
+      doc.setTextColor(225, 29, 72);
+      doc.setFontSize(7);
+      doc.setFont('helvetica', 'bold');
+      if (allRealTargetsEqual) {
+        doc.text(`Target Requirement £${Math.round(firstRealTarget).toLocaleString()}/yr (Real)`, 115, d4BoxY + 8);
+      } else {
+        doc.text(`Target Requirement (Flexible / Age-Phased Real)`, 115, d4BoxY + 10);
+      }
+
+      d3Ages.forEach((item) => {
+        const p = (projections || []).find((proj) => proj.age === item.age) || retirementYear;
+        const pYear = p.year || (new Date().getFullYear() + (item.age - currentAge));
+        const infFact = Math.pow(1 + (profile.expectedInflationRate || 2.5) / 100, item.age - currentAge);
+
+        const stateIncReal = (p.statePensionReceived || 0) / infFact;
+        const dbIncReal = ((p.dbPensionIncomeReceived || 0) + (p.taxableFixedIncomeReceived || 0) + (p.taxFreeFixedIncomeReceived || 0)) / infFact;
+        const annIncReal = (p.annuityIncomeReceived || 0) / infFact;
+        const penDrawdownReal = (p.pensionDrawdown || 0) / infFact;
+        const isaCashDrawdownReal = ((p.isaDrawdown || 0) + (p.cashDrawdown || 0)) / infFact;
+
+        const hState = Math.min(40, (stateIncReal / (maxRetIncReal || 1)) * 40);
+        const hDb = Math.min(40, (dbIncReal / (maxRetIncReal || 1)) * 40);
+        const hAnn = Math.min(40, (annIncReal / (maxRetIncReal || 1)) * 40);
+        const hPenDrawdown = Math.min(40, (penDrawdownReal / (maxRetIncReal || 1)) * 40);
+        const hIsaDrawdown = Math.min(40, (isaCashDrawdownReal / (maxRetIncReal || 1)) * 40);
+
+        const barBottomY = d4BoxY + 46;
+        let currentY = barBottomY;
+        const barW = 12;
+
+        if (hState > 0) {
+          currentY -= hState;
+          doc.setFillColor(99, 102, 241);
+          doc.rect(item.x - barW / 2, currentY, barW, hState, 'F');
+        }
+        if (hDb > 0) {
+          currentY -= hDb;
+          doc.setFillColor(245, 158, 11);
+          doc.rect(item.x - barW / 2, currentY, barW, hDb, 'F');
+        }
+        if (hAnn > 0) {
+          currentY -= hAnn;
+          doc.setFillColor(109, 40, 217);
+          doc.rect(item.x - barW / 2, currentY, barW, hAnn, 'F');
+        }
+        if (hPenDrawdown > 0) {
+          currentY -= hPenDrawdown;
+          doc.setFillColor(16, 185, 129);
+          doc.rect(item.x - barW / 2, currentY, barW, hPenDrawdown, 'F');
+        }
+        if (hIsaDrawdown > 0) {
+          currentY -= hIsaDrawdown;
+          doc.setFillColor(6, 182, 212); // Cyan for ISA/Cash Drawdown
+          doc.rect(item.x - barW / 2, currentY, barW, hIsaDrawdown, 'F');
+        }
+
+        doc.setFontSize(6.5);
+        doc.setTextColor(51, 65, 85);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Age ${item.age}`, item.x - 5, d4BoxY + 49);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`(${pYear})`, item.x - 6, d4BoxY + 53);
+      });
+
+      // Legend Inside Box 4
+      let d4LgY = d4BoxY + 58;
+      doc.setFontSize(6.5);
+      doc.setFont('helvetica', 'bold');
+
+      doc.setFillColor(6, 182, 212);
+      doc.rect(16, d4LgY, 3, 3, 'F');
+      doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+      doc.text('ISA/Cash Drawdown', 20, d4LgY + 2.5);
+
+      doc.setFillColor(16, 185, 129);
+      doc.rect(55, d4LgY, 3, 3, 'F');
+      doc.text('Pension Drawdown', 59, d4LgY + 2.5);
+
+      doc.setFillColor(109, 40, 217);
+      doc.rect(94, d4LgY, 3, 3, 'F');
+      doc.text('Annuity Income', 98, d4LgY + 2.5);
+
+      doc.setFillColor(99, 102, 241);
+      doc.rect(126, d4LgY, 3, 3, 'F');
+      doc.text('State Pension', 130, d4LgY + 2.5);
+
+      doc.setFillColor(245, 158, 11);
+      doc.rect(156, d4LgY, 3, 3, 'F');
+      doc.text('DB & Fixed', 160, d4LgY + 2.5);
+
+      // =========================================================================
+      // DEFICIT RISK ANALYSIS & LEGAL GUIDANCE DISCLAIMER
+      // =========================================================================
+      doc.addPage();
+      curPageNum++;
+      renderPageHeader('Visual Diagram Models — Deficit Risk Analysis & Legal Notice', curPageNum);
+
+      let p6Y = 24;
+
+      // DIAGRAM ILLUSTRATION 5: Annual Shortfall & Surplus Deficit Risk Analysis
+      const d5BoxHeight = 80;
+      doc.setFillColor(248, 250, 252);
+      doc.roundedRect(14, p6Y, 182, d5BoxHeight, 3, 3, 'F');
+      doc.setDrawColor(203, 213, 225);
+      doc.roundedRect(14, p6Y, 182, d5BoxHeight, 3, 3, 'D');
+
+      doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.text('Diagram 5: Annual Shortfall & Surplus Deficit Risk Analysis', 18, p6Y + 8);
+
+      const d5BoxY = p6Y + 14;
+
+      // EXPLICIT Y-AXIS NUMERICAL SCALES (+£20k, +£10k, £0 Baseline, -£5k, -£10k)
+      doc.setDrawColor(226, 232, 240);
+      doc.setFontSize(6.5);
+      doc.setTextColor(100, 116, 139);
+      doc.setFont('helvetica', 'bold');
+
+      // Grid lines for Y-axis scale
+      doc.line(32, d5BoxY + 8, 186, d5BoxY + 8);
+      doc.text('+£20,000', 16, d5BoxY + 9.5);
+
+      doc.line(32, d5BoxY + 18, 186, d5BoxY + 18);
+      doc.text('+£10,000', 16, d5BoxY + 19.5);
+
+      // ZERO BASELINE LINE (Solid Slate Line)
+      doc.setDrawColor(71, 85, 105);
+      doc.setLineWidth(0.8);
+      doc.line(32, d5BoxY + 28, 186, d5BoxY + 28);
+      doc.setTextColor(15, 23, 42);
+      doc.text('£0 Baseline', 16, d5BoxY + 29.5);
+
+      doc.setDrawColor(226, 232, 240);
+      doc.setLineWidth(0.2);
+      doc.line(32, d5BoxY + 37, 186, d5BoxY + 37);
+      doc.setTextColor(225, 29, 72);
+      doc.text('-£5,000', 16, d5BoxY + 38.5);
+
+      doc.line(32, d5BoxY + 44, 186, d5BoxY + 44);
+      doc.text('-£10,000', 16, d5BoxY + 45.5);
+
+      // EXPLICIT X-AXIS AGE SCALES
+      const xAges = [60, 65, 70, 75, 80, 85, 90];
+      doc.setFontSize(6.5);
+      doc.setTextColor(100, 116, 139);
+      xAges.forEach((a, idx) => {
+        const xPos = 36 + idx * 24;
+        doc.line(xPos, d5BoxY + 27, xPos, d5BoxY + 29);
+        doc.text(`Age ${a}`, xPos - 4, d5BoxY + 50);
+      });
+
+      // Visual Surplus Bars (Emerald) above £0 Baseline
+      doc.setFillColor(16, 185, 129);
+      doc.rect(34, d5BoxY + 10, 8, 18, 'F');
+      doc.rect(58, d5BoxY + 12, 8, 16, 'F');
+      doc.rect(82, d5BoxY + 14, 8, 14, 'F');
+      doc.rect(106, d5BoxY + 16, 8, 12, 'F');
+
+      if (!isPlanFeasible) {
+        // Visual Deficit Bars (Rose) below £0 Baseline
+        doc.setFillColor(225, 29, 72);
+        doc.rect(130, d5BoxY + 28, 8, 10, 'F');
+        doc.rect(154, d5BoxY + 28, 8, 14, 'F');
+        doc.rect(178, d5BoxY + 28, 8, 16, 'F');
+      } else {
+        doc.setFillColor(16, 185, 129);
+        doc.rect(130, d5BoxY + 18, 8, 10, 'F');
+        doc.rect(154, d5BoxY + 20, 8, 8, 'F');
+        doc.rect(178, d5BoxY + 22, 8, 6, 'F');
+      }
+
+      // LEGEND ENTIRELY INSIDE ENCLOSING BOX 5
+      let d5LgY = d5BoxY + 58;
+      doc.setFontSize(7);
+      doc.setFont('helvetica', 'bold');
+
+      doc.setFillColor(16, 185, 129);
+      doc.rect(18, d5LgY, 3, 3, 'F');
+      doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+      doc.text('Annual Surplus Buffer (£0+)', 22, d5LgY + 2.5);
+
+      doc.setFillColor(225, 29, 72);
+      doc.rect(80, d5LgY, 3, 3, 'F');
+      doc.text('Annual Deficit / Shortfall Risk', 84, d5LgY + 2.5);
+
+      const firstShortfallAgeVal = shortfallYears[0]?.age || targetAge;
+      doc.setFontSize(7);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100, 116, 139);
+      doc.text(`Status: ${isPlanFeasible ? '0% Deficit Risk.' : `Shortfall Age ${firstShortfallAgeVal}.`}`, 145, d5LgY + 2.5);
+
+      // Regulatory Disclaimers & FCA Compliance Notice (Page 6 Bottom)
+      p6Y += 88;
+      const disBoxH = hasRecyclingRisk ? 44 : 38;
+      doc.setFillColor(slateLight[0], slateLight[1], slateLight[2]);
+      doc.roundedRect(14, p6Y, 182, disBoxH, 3, 3, 'F');
+      doc.setDrawColor(226, 232, 240);
+      doc.roundedRect(14, p6Y, 182, disBoxH, 3, 3, 'D');
+
+      doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.text('Important UK Financial Planning Guidance Notice & Legal Disclaimer', 18, p6Y + 7);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.setTextColor(100, 116, 139);
+      doc.text('1. Educational Model Only: This document is generated by RetireFree UK for educational and planning modeling purposes only.', 18, p6Y + 14);
+      doc.text('   It does not constitute formal financial, tax, or investment advice regulated by the Financial Conduct Authority (FCA).', 18, p6Y + 18);
+      doc.text('2. UK Tax Legislation: Tax calculations reflect UK 2026/27 tax bands, Scottish tax rates (where enabled), and HMRC rules.', 18, p6Y + 24);
+      doc.text('   Tax treatment depends on individual circumstances and may change in future UK Finance Acts.', 18, p6Y + 28);
+      doc.text('3. Professional Advice: Before executing pension withdrawals or buying annuities, consult an FCA-regulated advisor.', 18, p6Y + 34);
+      if (hasRecyclingRisk) {
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(185, 28, 28);
+        doc.text('4. HMRC Schedule 29 Notice: PCLS Recycling Risk detected. Review ongoing pension contributions during PCLS extraction window.', 18, p6Y + 40);
+      }
+
+      // =========================================================================
+      // MONTE CARLO VOLATILITY & STRESS TEST ANALYSIS (PART 1, 2, 3)
+      // =========================================================================
+      const mcNormal = mcNormalPrelim;
+
+      const mcCrash = runMonteCarloSimulation(profile, pots, exportTaxResult as any, {
+        numSimulations: 500,
+        accumulationVolatility: 12.0,
+        decumulationVolatility: 8.0,
+        maxAge: horizonAge,
+        marketScenario: 'early_crash',
+      });
+
+      // PART 1: Standard Volatility
+      doc.addPage();
+      curPageNum++;
+      renderPageHeader('Monte Carlo Volatility & Risk Simulation (Part 1)', curPageNum);
+
+      let mcY = 24;
+      doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10.5);
+      doc.text('Monte Carlo Volatility & Risk Simulation (Standard Market Conditions)', 14, mcY);
+
+      mcY += 5;
+      // Key Metrics Box
+      doc.setFillColor(248, 250, 252);
+      doc.roundedRect(14, mcY, 182, 18, 3, 3, 'F');
+      doc.setDrawColor(226, 232, 240);
+      doc.roundedRect(14, mcY, 182, 18, 3, 3, 'D');
+
+      doc.setFont('helvetica', 'bold');
+      const normSuccess = mcNormal?.successRate ?? mcNormal?.successRateTargetAge ?? 0;
+      const normMedWealth = mcNormal?.medianFinalWealth ?? mcNormal?.medianEndPot ?? 0;
+      const normP10Wealth = mcNormal?.p10FinalWealth ?? mcNormal?.p10EndPot ?? 0;
+      const normPercentiles = mcNormal?.percentiles || mcNormal?.agePercentiles?.map(p => ({ ...p, p10: p.p10TotalPot, p25: p.p25TotalPot, p50: p.p50TotalPot, p75: p.p75TotalPot, p90: p.p90TotalPot })) || [];
+
+      doc.setFontSize(7.5);
+      doc.setTextColor(100, 116, 139);
+      doc.text('SUCCESS RATE TO AGE ' + horizonAge, 18, mcY + 5.5);
+      doc.setFontSize(9);
+      doc.setTextColor(normSuccess >= 90 ? 16 : 225, normSuccess >= 90 ? 185 : 29, normSuccess >= 90 ? 129 : 72);
+      doc.text(`${normSuccess.toFixed(1)}% (${normSuccess >= 95 ? 'Extremely Robust' : normSuccess >= 80 ? 'Moderate Risk' : 'High Deficit Risk'})`, 18, mcY + 13);
+
+      doc.setFontSize(7.5);
+      doc.setTextColor(100, 116, 139);
+      doc.text('MEDIAN POT AT AGE ' + horizonAge, 85, mcY + 5.5);
+      doc.setFontSize(9);
+      doc.setTextColor(13, 148, 136);
+      doc.text(`£${Math.round(normMedWealth).toLocaleString()}`, 85, mcY + 13);
+
+      doc.setFontSize(7.5);
+      doc.setTextColor(100, 116, 139);
+      doc.text('10TH PERCENTILE (WORST 10%)', 145, mcY + 5.5);
+      doc.setFontSize(9);
+      doc.setTextColor(225, 29, 72);
+      doc.text(`£${Math.round(normP10Wealth).toLocaleString()}`, 145, mcY + 13);
+
+      mcY += 23;
+
+      // Standard Market Monte Carlo Fan Chart
+      const mcChartY = mcY;
+      const mcChartH = 62;
+      doc.setFillColor(248, 250, 252);
+      doc.roundedRect(14, mcChartY, 182, mcChartH, 3, 3, 'F');
+      doc.setDrawColor(203, 213, 225);
+      doc.roundedRect(14, mcChartY, 182, mcChartH, 3, 3, 'D');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(30, 41, 59);
+      doc.text('Monte Carlo Stochastic Fan Chart (Percentile Wealth Trajectories)', 18, mcChartY + 5.5);
+
+      const allNormAgesData = mcNormal.agePercentiles || [];
+      const normMaxVal = Math.max(1, ...allNormAgesData.map(p => p.p90TotalPot || p.p50TotalPot || 0));
+
+      // Y-Axis Grid Lines & Scale Labels
+      doc.setDrawColor(226, 232, 240);
+      doc.setFontSize(6.5);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100, 116, 139);
+
+      const mcYSteps = [1.0, 0.75, 0.5, 0.25, 0];
+      mcYSteps.forEach((stepPct) => {
+        const stepY = mcChartY + 11 + (1 - stepPct) * 38;
+        doc.line(32, stepY, 186, stepY);
+        const lblVal = normMaxVal * stepPct;
+        const fmtVal = lblVal >= 1000000 ? `£${(lblVal / 1000000).toFixed(1)}M` : `£${Math.round(lblVal / 1000)}k`;
+        doc.text(fmtVal, 16, stepY + 1.5);
+      });
+
+      // X-Axis Milestone Ticks
+      const mcMilestoneAges = [currentAge, profile.pensionAccessAge || 57, targetAge, 65, 75, horizonAge];
+      const mcUniqueMilestones = Array.from(new Set(mcMilestoneAges)).sort((a, b) => a - b);
+      mcUniqueMilestones.forEach((mAge) => {
+        const pct = Math.max(0, Math.min(1, (mAge - currentAge) / (horizonAge - currentAge || 1)));
+        const tickX = 32 + pct * 154;
+        doc.line(tickX, mcChartY + 49, tickX, mcChartY + 51);
+        doc.text(`Age ${mAge}`, tickX - 5, mcChartY + 54.5);
+      });
+
+      // Draw Trajectory Curves
+      if (allNormAgesData.length > 1) {
+        const totalSteps = allNormAgesData.length - 1;
+
+        const drawNormLine = (getPVal: (p: any) => number, colorRgb: [number, number, number], lineW: number) => {
+          doc.setDrawColor(colorRgb[0], colorRgb[1], colorRgb[2]);
+          doc.setLineWidth(lineW);
+          for (let i = 1; i < allNormAgesData.length; i++) {
+            const x1 = 32 + ((i - 1) / totalSteps) * 154;
+            const y1 = mcChartY + 11 + (1 - Math.max(0, getPVal(allNormAgesData[i - 1]) || 0) / normMaxVal) * 38;
+            const x2 = 32 + (i / totalSteps) * 154;
+            const y2 = mcChartY + 11 + (1 - Math.max(0, getPVal(allNormAgesData[i]) || 0) / normMaxVal) * 38;
+            doc.line(x1, y1, x2, y2);
+          }
+        };
+
+        // P90 (Violet)
+        drawNormLine((p) => p.p90TotalPot ?? p.p90, [99, 102, 241], 0.6);
+        // P75 (Emerald)
+        drawNormLine((p) => p.p75TotalPot ?? p.p75, [16, 185, 129], 0.6);
+        // P50 Median (Teal - Thick)
+        drawNormLine((p) => p.p50TotalPot ?? p.p50, [13, 148, 136], 1.2);
+        // P25 Cautious (Amber)
+        drawNormLine((p) => p.p25TotalPot ?? p.p25, [245, 158, 11], 0.6);
+        // P10 Stress (Rose - Thick)
+        drawNormLine((p) => p.p10TotalPot ?? p.p10, [225, 29, 72], 0.9);
+
+        // Highlight Target Retirement Start Point on P50 Median
+        const retIdx = allNormAgesData.findIndex((p) => p.age === targetAge);
+        if (retIdx >= 0) {
+          const retX = 32 + (retIdx / totalSteps) * 154;
+          const retY = mcChartY + 11 + (1 - Math.max(0, (allNormAgesData[retIdx].p50TotalPot ?? (allNormAgesData[retIdx] as any).p50) || 0) / normMaxVal) * 38;
+          doc.setFillColor(13, 148, 136);
+          doc.circle(retX, retY, 2, 'F');
+        }
+      }
+
+      // Legend
+      const mcLegY = mcChartY + 58;
+      doc.setFontSize(6.5);
+      doc.setFont('helvetica', 'normal');
+
+      doc.setFillColor(99, 102, 241);
+      doc.rect(32, mcLegY - 2, 4, 1.5, 'F');
+      doc.setTextColor(51, 65, 85);
+      doc.text('90th % (Best 10%)', 38, mcLegY);
+
+      doc.setFillColor(16, 185, 129);
+      doc.rect(72, mcLegY - 2, 4, 1.5, 'F');
+      doc.text('75th % (Growth)', 78, mcLegY);
+
+      doc.setFillColor(13, 148, 136);
+      doc.rect(110, mcLegY - 2, 4, 2, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.text('50th % (Median)', 116, mcLegY);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFillColor(245, 158, 11);
+      doc.rect(145, mcLegY - 2, 4, 1.5, 'F');
+      doc.text('25th %', 151, mcLegY);
+
+      doc.setFillColor(225, 29, 72);
+      doc.rect(168, mcLegY - 2, 4, 2, 'F');
+      doc.text('10th % (Stress)', 174, mcLegY);
+
+      mcY += mcChartH + 5;
+
+      // Table Header
+      doc.setFillColor(30, 41, 59);
+      doc.rect(14, mcY, 182, 6.5, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Age', 18, mcY + 4.5);
+      doc.text('10th % (Stress)', 45, mcY + 4.5);
+      doc.text('25th % (Cautious)', 80, mcY + 4.5);
+      doc.text('50th % (Median)', 115, mcY + 4.5);
+      doc.text('75th % (Growth)', 150, mcY + 4.5);
+
+      mcY += 6.5;
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(51, 65, 85);
+      doc.setFontSize(7.5);
+
+      const mcTickAges = [currentAge, profile.pensionAccessAge || 57, targetAge, 65, 75, 85, horizonAge];
+      const uniqueMcAges = Array.from(new Set(mcTickAges)).sort((a, b) => a - b);
+
+      uniqueMcAges.forEach((a, idx) => {
+        const rowData = normPercentiles.find((p) => p.age === a) || normPercentiles[normPercentiles.length - 1];
+        if (idx % 2 === 1) {
+          doc.setFillColor(slateLight[0], slateLight[1], slateLight[2]);
+          doc.rect(14, mcY, 182, 5, 'F');
+        }
+        doc.text(`Age ${a}`, 18, mcY + 3.8);
+        doc.text(`£${Math.round((rowData?.p10 ?? rowData?.p10TotalPot) || 0).toLocaleString()}`, 45, mcY + 3.8);
+        doc.text(`£${Math.round((rowData?.p25 ?? rowData?.p25TotalPot) || 0).toLocaleString()}`, 80, mcY + 3.8);
+        doc.text(`£${Math.round((rowData?.p50 ?? rowData?.p50TotalPot) || 0).toLocaleString()}`, 115, mcY + 3.8);
+        doc.text(`£${Math.round((rowData?.p75 ?? rowData?.p75TotalPot) || 0).toLocaleString()}`, 150, mcY + 3.8);
+        mcY += 5;
+      });
+
+      // Chart 2: Median Pot Split Breakdown Visual Chart (Standard Market)
+      mcY += 6;
+      const medChartY = mcY;
+      const medChartH = 50;
+      doc.setFillColor(248, 250, 252);
+      doc.roundedRect(14, medChartY, 182, medChartH, 3, 3, 'F');
+      doc.setDrawColor(203, 213, 225);
+      doc.roundedRect(14, medChartY, 182, medChartH, 3, 3, 'D');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(30, 41, 59);
+      doc.text('Median Pot Trajectory & Asset Class Breakdown Chart (P50 Standard Market)', 18, medChartY + 5.5);
+
+      const allNormP50Data = mcNormal.agePercentiles || [];
+      const maxP50Val = Math.max(1, ...allNormP50Data.map(p => Math.max(p.p50TotalPot || 0, (p.p50PensionPot || 0) + (p.p50IsaPot || 0) + (p.p50CashGiaPot || 0))));
+
+      // Y-Axis Grid Lines & Scale Labels
+      doc.setDrawColor(226, 232, 240);
+      doc.setFontSize(6.5);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100, 116, 139);
+
+      [1.0, 0.75, 0.5, 0.25, 0].forEach((stepPct) => {
+        const stepY = medChartY + 10 + (1 - stepPct) * 30;
+        doc.line(32, stepY, 186, stepY);
+        const lblVal = maxP50Val * stepPct;
+        const fmtVal = lblVal >= 1000000 ? `£${(lblVal / 1000000).toFixed(1)}M` : `£${Math.round(lblVal / 1000)}k`;
+        doc.text(fmtVal, 16, stepY + 1.5);
+      });
+
+      // X-Axis Milestone Ticks
+      mcUniqueMilestones.forEach((mAge) => {
+        const pct = Math.max(0, Math.min(1, (mAge - currentAge) / (horizonAge - currentAge || 1)));
+        const tickX = 32 + pct * 154;
+        doc.line(tickX, medChartY + 40, tickX, medChartY + 42);
+        doc.text(`Age ${mAge}`, tickX - 5, medChartY + 45);
+      });
+
+      // Draw Trajectory Curves for Median Pot Assets
+      if (allNormP50Data.length > 1) {
+        const totalSteps = allNormP50Data.length - 1;
+        const drawMedLine = (getVal: (p: any) => number, colorRgb: [number, number, number], lineW: number) => {
+          doc.setDrawColor(colorRgb[0], colorRgb[1], colorRgb[2]);
+          doc.setLineWidth(lineW);
+          for (let i = 1; i < allNormP50Data.length; i++) {
+            const x1 = 32 + ((i - 1) / totalSteps) * 154;
+            const y1 = medChartY + 10 + (1 - Math.max(0, getVal(allNormP50Data[i - 1]) || 0) / maxP50Val) * 30;
+            const x2 = 32 + (i / totalSteps) * 154;
+            const y2 = medChartY + 10 + (1 - Math.max(0, getVal(allNormP50Data[i]) || 0) / maxP50Val) * 30;
+            doc.line(x1, y1, x2, y2);
+          }
+        };
+
+        // P50 Pension Pot (Teal)
+        drawMedLine((p) => p.p50PensionPot || 0, [13, 148, 136], 0.8);
+        // P50 ISA Pot (Indigo)
+        drawMedLine((p) => p.p50IsaPot || 0, [99, 102, 241], 0.8);
+        // P50 Cash/GIA Pot (Amber)
+        drawMedLine((p) => p.p50CashGiaPot || 0, [245, 158, 11], 0.8);
+        // Total Median Pot (Slate Dark - Thick)
+        drawMedLine((p) => p.p50TotalPot || 0, [30, 41, 59], 1.2);
+      }
+
+      // Legend
+      const medLegY = medChartY + 48;
+      doc.setFontSize(6.5);
+      doc.setFont('helvetica', 'normal');
+
+      doc.setFillColor(30, 41, 59);
+      doc.rect(32, medLegY - 2, 4, 1.5, 'F');
+      doc.setTextColor(51, 65, 85);
+      doc.text('Total Median Pot', 38, medLegY);
+
+      doc.setFillColor(13, 148, 136);
+      doc.rect(78, medLegY - 2, 4, 1.5, 'F');
+      doc.text('Median Pension Pot', 84, medLegY);
+
+      doc.setFillColor(99, 102, 241);
+      doc.rect(125, medLegY - 2, 4, 1.5, 'F');
+      doc.text('Median ISA Pot', 131, medLegY);
+
+      doc.setFillColor(245, 158, 11);
+      doc.rect(162, medLegY - 2, 4, 1.5, 'F');
+      doc.text('Cash / GIA Pot', 168, medLegY);
+
+      mcY += medChartH + 5;
+
+      // Table 2: Median Pot Split Breakdown (Standard Market)
+      mcY += 6;
+      doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8.5);
+      doc.text('Median Pot Split Breakdown by Asset Class (P50 Trajectory)', 14, mcY);
+
+      mcY += 4.5;
+      doc.setFillColor(30, 41, 59);
+      doc.rect(14, mcY, 182, 6, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Age', 18, mcY + 4.2);
+      doc.text('P50 Pension Pot', 45, mcY + 4.2);
+      doc.text('P50 ISA Pot', 80, mcY + 4.2);
+      doc.text('P50 Cash/GIA Pot', 115, mcY + 4.2);
+      doc.text('Total Median Pot', 150, mcY + 4.2);
+
+      mcY += 6;
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(51, 65, 85);
+      doc.setFontSize(7.5);
+
+      uniqueMcAges.forEach((a, idx) => {
+        const rowData = mcNormal.agePercentiles?.find((p) => p.age === a) || mcNormal.agePercentiles?.[mcNormal.agePercentiles.length - 1];
+        if (idx % 2 === 1) {
+          doc.setFillColor(slateLight[0], slateLight[1], slateLight[2]);
+          doc.rect(14, mcY, 182, 5, 'F');
+        }
+        doc.text(`Age ${a}`, 18, mcY + 3.8);
+        doc.text(`£${Math.round((rowData?.p50PensionPot) || 0).toLocaleString()}`, 45, mcY + 3.8);
+        doc.text(`£${Math.round((rowData?.p50IsaPot) || 0).toLocaleString()}`, 80, mcY + 3.8);
+        doc.text(`£${Math.round((rowData?.p50CashGiaPot) || 0).toLocaleString()}`, 115, mcY + 3.8);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(13, 148, 136);
+        doc.text(`£${Math.round((rowData?.p50TotalPot) || 0).toLocaleString()}`, 150, mcY + 3.8);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(51, 65, 85);
+        mcY += 5;
+      });
+
+      // PART 2: Early Crash Stress Test
+      doc.addPage();
+      curPageNum++;
+      renderPageHeader('Monte Carlo Volatility & Risk Simulation (Part 2)', curPageNum);
+
+      let mc2Y = 24;
+      doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10.5);
+      doc.text('Sequence of Returns Stress Test (-20% Market Crash in Early Retirement)', 14, mc2Y);
+
+      mc2Y += 5;
+      // Key Metrics Box Crash
+      doc.setFillColor(254, 242, 242);
+      doc.roundedRect(14, mc2Y, 182, 18, 3, 3, 'F');
+      doc.setDrawColor(254, 202, 202);
+      doc.roundedRect(14, mc2Y, 182, 18, 3, 3, 'D');
+
+      const crashSuccess = mcCrash?.successRate ?? mcCrash?.successRateTargetAge ?? 0;
+      const crashMedWealth = mcCrash?.medianFinalWealth ?? mcCrash?.medianEndPot ?? 0;
+      const crashPercentiles = mcCrash?.percentiles || mcCrash?.agePercentiles?.map(p => ({ ...p, p10: p.p10TotalPot, p25: p.p25TotalPot, p50: p.p50TotalPot, p75: p.p75TotalPot, p90: p.p90TotalPot })) || [];
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.5);
+      doc.setTextColor(153, 27, 27);
+      doc.text('CRASH SCENARIO SUCCESS RATE', 18, mc2Y + 5.5);
+      doc.setFontSize(9);
+      doc.setTextColor(crashSuccess >= 80 ? 16 : 185, crashSuccess >= 80 ? 185 : 28, crashSuccess >= 80 ? 129 : 28);
+      doc.text(`${crashSuccess.toFixed(1)}% (${crashSuccess >= 80 ? 'Resilient' : 'Vulnerable to Sequence Risk'})`, 18, mc2Y + 13);
+
+      doc.setFontSize(7.5);
+      doc.setTextColor(153, 27, 27);
+      doc.text('MEDIAN FINAL WEALTH (CRASH)', 85, mc2Y + 5.5);
+      doc.setFontSize(9);
+      doc.setTextColor(185, 28, 28);
+      doc.text(`£${Math.round(crashMedWealth).toLocaleString()}`, 85, mc2Y + 13);
+
+      doc.setFontSize(7.5);
+      doc.setTextColor(153, 27, 27);
+      doc.text('SUCCESS RATE IMPACT', 145, mc2Y + 5.5);
+      doc.setFontSize(9);
+      doc.setTextColor(185, 28, 28);
+      const diffSuccess = (crashSuccess - normSuccess).toFixed(1);
+      doc.text(`${diffSuccess}% vs Standard`, 145, mc2Y + 13);
+
+      mc2Y += 23;
+
+      // Early Crash Stress Test Chart
+      const mc2ChartY = mc2Y;
+      const mc2ChartH = 62;
+      doc.setFillColor(254, 242, 242);
+      doc.roundedRect(14, mc2ChartY, 182, mc2ChartH, 3, 3, 'F');
+      doc.setDrawColor(254, 202, 202);
+      doc.roundedRect(14, mc2ChartY, 182, mc2ChartH, 3, 3, 'D');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(153, 27, 27);
+      doc.text('Early Retirement Market Crash Stress Test Trajectory Bands (-20% Drop)', 18, mc2ChartY + 5.5);
+
+      const allCrashAgesData = mcCrash.agePercentiles || [];
+      const crashMaxVal = Math.max(1, ...allCrashAgesData.map(p => p.p90TotalPot || p.p50TotalPot || 0));
+
+      // Y-Axis Grid Lines & Scale Labels
+      doc.setDrawColor(252, 165, 165);
+      doc.setFontSize(6.5);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(153, 27, 27);
+
+      const mc2YSteps = [1.0, 0.75, 0.5, 0.25, 0];
+      mc2YSteps.forEach((stepPct) => {
+        const stepY = mc2ChartY + 11 + (1 - stepPct) * 38;
+        doc.line(32, stepY, 186, stepY);
+        const lblVal = crashMaxVal * stepPct;
+        const fmtVal = lblVal >= 1000000 ? `£${(lblVal / 1000000).toFixed(1)}M` : `£${Math.round(lblVal / 1000)}k`;
+        doc.text(fmtVal, 16, stepY + 1.5);
+      });
+
+      // X-Axis Milestone Ticks
+      mcUniqueMilestones.forEach((mAge) => {
+        const pct = Math.max(0, Math.min(1, (mAge - currentAge) / (horizonAge - currentAge || 1)));
+        const tickX = 32 + pct * 154;
+        doc.line(tickX, mc2ChartY + 49, tickX, mc2ChartY + 51);
+        doc.text(`Age ${mAge}`, tickX - 5, mc2ChartY + 54.5);
+      });
+
+      // Shaded Crash Window Band at Retirement Start (Ages targetAge to targetAge + 2)
+      if (allCrashAgesData.length > 1) {
+        const totalSteps = allCrashAgesData.length - 1;
+        const retIdx = allCrashAgesData.findIndex((p) => p.age === targetAge);
+        const crashEndIdx = allCrashAgesData.findIndex((p) => p.age === targetAge + 2);
+
+        if (retIdx >= 0) {
+          const xStart = 32 + (retIdx / totalSteps) * 154;
+          const xEnd = crashEndIdx >= 0 ? 32 + (crashEndIdx / totalSteps) * 154 : xStart + 12;
+          doc.setFillColor(254, 226, 226);
+          doc.rect(xStart, mc2ChartY + 11, Math.max(6, xEnd - xStart), 38, 'F');
+          doc.setFontSize(6);
+          doc.setTextColor(185, 28, 28);
+          doc.text('Crash Window (-20%)', xStart + 1, mc2ChartY + 15);
+        }
+
+        const drawCrashLine = (getPVal: (p: any) => number, colorRgb: [number, number, number], lineW: number) => {
+          doc.setDrawColor(colorRgb[0], colorRgb[1], colorRgb[2]);
+          doc.setLineWidth(lineW);
+          for (let i = 1; i < allCrashAgesData.length; i++) {
+            const x1 = 32 + ((i - 1) / totalSteps) * 154;
+            const y1 = mc2ChartY + 11 + (1 - Math.max(0, getPVal(allCrashAgesData[i - 1]) || 0) / crashMaxVal) * 38;
+            const x2 = 32 + (i / totalSteps) * 154;
+            const y2 = mc2ChartY + 11 + (1 - Math.max(0, getPVal(allCrashAgesData[i]) || 0) / crashMaxVal) * 38;
+            doc.line(x1, y1, x2, y2);
+          }
+        };
+
+        // P90 (Indigo)
+        drawCrashLine((p) => p.p90TotalPot ?? p.p90, [99, 102, 241], 0.6);
+        // P75 (Emerald)
+        drawCrashLine((p) => p.p75TotalPot ?? p.p75, [16, 185, 129], 0.6);
+        // P50 Median (Rose - Thick)
+        drawCrashLine((p) => p.p50TotalPot ?? p.p50, [185, 28, 28], 1.2);
+        // P25 Cautious (Amber)
+        drawCrashLine((p) => p.p25TotalPot ?? p.p25, [245, 158, 11], 0.6);
+        // P10 Stress (Dark Red - Thick)
+        drawCrashLine((p) => p.p10TotalPot ?? p.p10, [153, 27, 27], 0.9);
+      }
+
+      // Legend
+      const mc2LegY = mc2ChartY + 58;
+      doc.setFontSize(6.5);
+      doc.setFont('helvetica', 'normal');
+
+      doc.setFillColor(99, 102, 241);
+      doc.rect(32, mc2LegY - 2, 4, 1.5, 'F');
+      doc.setTextColor(51, 65, 85);
+      doc.text('90th % (Best 10%)', 38, mc2LegY);
+
+      doc.setFillColor(16, 185, 129);
+      doc.rect(72, mc2LegY - 2, 4, 1.5, 'F');
+      doc.text('75th % (Growth)', 78, mc2LegY);
+
+      doc.setFillColor(185, 28, 28);
+      doc.rect(110, mc2LegY - 2, 4, 2, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.text('50th % (Median Crash)', 116, mc2LegY);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFillColor(245, 158, 11);
+      doc.rect(150, mc2LegY - 2, 4, 1.5, 'F');
+      doc.text('25th %', 156, mc2LegY);
+
+      doc.setFillColor(153, 27, 27);
+      doc.rect(170, mc2LegY - 2, 4, 2, 'F');
+      doc.text('10th %', 176, mc2LegY);
+
+      mc2Y += mc2ChartH + 5;
+
+      // Table Header Crash
+      doc.setFillColor(153, 27, 27);
+      doc.rect(14, mc2Y, 182, 6.5, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Age', 18, mc2Y + 4.5);
+      doc.text('10th % (Worst)', 45, mc2Y + 4.5);
+      doc.text('25th % (Cautious)', 80, mc2Y + 4.5);
+      doc.text('50th % (Median)', 115, mc2Y + 4.5);
+      doc.text('75th % (Growth)', 150, mc2Y + 4.5);
+
+      mc2Y += 6.5;
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(51, 65, 85);
+      doc.setFontSize(7.5);
+
+      uniqueMcAges.forEach((a, idx) => {
+        const rowData = crashPercentiles.find((p) => p.age === a) || crashPercentiles[crashPercentiles.length - 1];
+        if (idx % 2 === 1) {
+          doc.setFillColor(254, 242, 242);
+          doc.rect(14, mc2Y, 182, 5, 'F');
+        }
+        doc.text(`Age ${a}`, 18, mc2Y + 3.8);
+        doc.text(`£${Math.round((rowData?.p10 ?? rowData?.p10TotalPot) || 0).toLocaleString()}`, 45, mc2Y + 3.8);
+        doc.text(`£${Math.round((rowData?.p25 ?? rowData?.p25TotalPot) || 0).toLocaleString()}`, 80, mc2Y + 3.8);
+        doc.text(`£${Math.round((rowData?.p50 ?? rowData?.p50TotalPot) || 0).toLocaleString()}`, 115, mc2Y + 3.8);
+        doc.text(`£${Math.round((rowData?.p75 ?? rowData?.p75TotalPot) || 0).toLocaleString()}`, 150, mc2Y + 3.8);
+        mc2Y += 5;
+      });
+
+      // Chart 2: Median Pot Split Breakdown Visual Chart (Crash Scenario)
+      mc2Y += 6;
+      const medChart2Y = mc2Y;
+      const medChart2H = 50;
+      doc.setFillColor(254, 242, 242);
+      doc.roundedRect(14, medChart2Y, 182, medChart2H, 3, 3, 'F');
+      doc.setDrawColor(254, 202, 202);
+      doc.roundedRect(14, medChart2Y, 182, medChart2H, 3, 3, 'D');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(153, 27, 27);
+      doc.text('Median Pot Trajectory & Asset Class Breakdown Chart (P50 Early Crash)', 18, medChart2Y + 5.5);
+
+      const allCrashP50Data = mcCrash.agePercentiles || [];
+      const maxCrashP50Val = Math.max(1, ...allCrashP50Data.map(p => Math.max(p.p50TotalPot || 0, (p.p50PensionPot || 0) + (p.p50IsaPot || 0) + (p.p50CashGiaPot || 0))));
+
+      // Y-Axis Grid Lines & Scale Labels
+      doc.setDrawColor(252, 165, 165);
+      doc.setFontSize(6.5);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(153, 27, 27);
+
+      [1.0, 0.75, 0.5, 0.25, 0].forEach((stepPct) => {
+        const stepY = medChart2Y + 10 + (1 - stepPct) * 30;
+        doc.line(32, stepY, 186, stepY);
+        const lblVal = maxCrashP50Val * stepPct;
+        const fmtVal = lblVal >= 1000000 ? `£${(lblVal / 1000000).toFixed(1)}M` : `£${Math.round(lblVal / 1000)}k`;
+        doc.text(fmtVal, 16, stepY + 1.5);
+      });
+
+      // X-Axis Milestone Ticks
+      mcUniqueMilestones.forEach((mAge) => {
+        const pct = Math.max(0, Math.min(1, (mAge - currentAge) / (horizonAge - currentAge || 1)));
+        const tickX = 32 + pct * 154;
+        doc.line(tickX, medChart2Y + 40, tickX, medChart2Y + 42);
+        doc.text(`Age ${mAge}`, tickX - 5, medChart2Y + 45);
+      });
+
+      // Draw Trajectory Curves
+      if (allCrashP50Data.length > 1) {
+        const totalSteps = allCrashP50Data.length - 1;
+        const drawCrashMedLine = (getVal: (p: any) => number, colorRgb: [number, number, number], lineW: number) => {
+          doc.setDrawColor(colorRgb[0], colorRgb[1], colorRgb[2]);
+          doc.setLineWidth(lineW);
+          for (let i = 1; i < allCrashP50Data.length; i++) {
+            const x1 = 32 + ((i - 1) / totalSteps) * 154;
+            const y1 = medChart2Y + 10 + (1 - Math.max(0, getVal(allCrashP50Data[i - 1]) || 0) / maxCrashP50Val) * 30;
+            const x2 = 32 + (i / totalSteps) * 154;
+            const y2 = medChart2Y + 10 + (1 - Math.max(0, getVal(allCrashP50Data[i]) || 0) / maxCrashP50Val) * 30;
+            doc.line(x1, y1, x2, y2);
+          }
+        };
+
+        // P50 Pension Pot (Teal)
+        drawCrashMedLine((p) => p.p50PensionPot || 0, [13, 148, 136], 0.8);
+        // P50 ISA Pot (Indigo)
+        drawCrashMedLine((p) => p.p50IsaPot || 0, [99, 102, 241], 0.8);
+        // P50 Cash/GIA Pot (Amber)
+        drawCrashMedLine((p) => p.p50CashGiaPot || 0, [245, 158, 11], 0.8);
+        // Total Median Pot (Dark Red - Thick)
+        drawCrashMedLine((p) => p.p50TotalPot || 0, [185, 28, 28], 1.2);
+      }
+
+      // Legend
+      const med2LegY = medChart2Y + 48;
+      doc.setFontSize(6.5);
+      doc.setFont('helvetica', 'normal');
+
+      doc.setFillColor(185, 28, 28);
+      doc.rect(32, med2LegY - 2, 4, 1.5, 'F');
+      doc.setTextColor(51, 65, 85);
+      doc.text('Total Median Pot (Crash)', 38, med2LegY);
+
+      doc.setFillColor(13, 148, 136);
+      doc.rect(82, med2LegY - 2, 4, 1.5, 'F');
+      doc.text('Median Pension Pot', 88, med2LegY);
+
+      doc.setFillColor(99, 102, 241);
+      doc.rect(128, med2LegY - 2, 4, 1.5, 'F');
+      doc.text('Median ISA Pot', 134, med2LegY);
+
+      doc.setFillColor(245, 158, 11);
+      doc.rect(162, med2LegY - 2, 4, 1.5, 'F');
+      doc.text('Cash / GIA Pot', 168, med2LegY);
+
+      mc2Y += medChart2H + 5;
+
+      // Table 2: Median Pot Split Breakdown (Crash Scenario)
+      mc2Y += 6;
+      doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8.5);
+      doc.text('Median Pot Split Breakdown under Crash Scenario (P50 Trajectory)', 14, mc2Y);
+
+      mc2Y += 4.5;
+      doc.setFillColor(153, 27, 27);
+      doc.rect(14, mc2Y, 182, 6, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Age', 18, mc2Y + 4.2);
+      doc.text('P50 Pension Pot', 45, mc2Y + 4.2);
+      doc.text('P50 ISA Pot', 80, mc2Y + 4.2);
+      doc.text('P50 Cash/GIA Pot', 115, mc2Y + 4.2);
+      doc.text('Total Median Pot', 150, mc2Y + 4.2);
+
+      mc2Y += 6;
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(51, 65, 85);
+      doc.setFontSize(7.5);
+
+      uniqueMcAges.forEach((a, idx) => {
+        const rowData = mcCrash.agePercentiles?.find((p) => p.age === a) || mcCrash.agePercentiles?.[mcCrash.agePercentiles.length - 1];
+        if (idx % 2 === 1) {
+          doc.setFillColor(254, 242, 242);
+          doc.rect(14, mc2Y, 182, 5, 'F');
+        }
+        doc.text(`Age ${a}`, 18, mc2Y + 3.8);
+        doc.text(`£${Math.round((rowData?.p50PensionPot) || 0).toLocaleString()}`, 45, mc2Y + 3.8);
+        doc.text(`£${Math.round((rowData?.p50IsaPot) || 0).toLocaleString()}`, 80, mc2Y + 3.8);
+        doc.text(`£${Math.round((rowData?.p50CashGiaPot) || 0).toLocaleString()}`, 115, mc2Y + 3.8);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(185, 28, 28);
+        doc.text(`£${Math.round((rowData?.p50TotalPot) || 0).toLocaleString()}`, 150, mc2Y + 3.8);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(51, 65, 85);
+        mc2Y += 5;
+      });
+
+      // PART 3: Risk Summary & Methodology
+      doc.addPage();
+      curPageNum++;
+      renderPageHeader('Monte Carlo Volatility & Risk Simulation (Part 3)', curPageNum);
+
+      let mc3Y = 24;
+      doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10.5);
+      doc.text('Monte Carlo Volatility & Risk Analysis Summary', 14, mc3Y);
+
+      mc3Y += 6;
+      doc.setFillColor(248, 250, 252);
+      doc.roundedRect(14, mc3Y, 182, 42, 3, 3, 'F');
+      doc.setDrawColor(226, 232, 240);
+      doc.roundedRect(14, mc3Y, 182, 42, 3, 3, 'D');
+
+      doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8.5);
+      doc.text('Methodology & Sequence of Returns Risk Explanation', 18, mc3Y + 7);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(100, 116, 139);
+      doc.text('1. Stochastic Parameters: Accumulation volatility = 12.0% standard deviation p.a., Decumulation volatility = 8.0% p.a.', 18, mc3Y + 14);
+      doc.text('   Simulates 500 independent randomized Gaussian return pathways using the Box-Muller transformation.', 18, mc3Y + 19);
+      doc.text('2. Sequence of Returns Risk: A severe market downturn during early retirement years (Ages 58 to 60) significantly accelerates', 18, mc3Y + 26);
+      doc.text('   capital depletion compared to deterministic models with constant average annual returns.', 18, mc3Y + 31);
+      doc.text('3. Risk Mitigation: Consider maintaining 2-3 years of liquid cash/ISA buffers or securing guaranteed annuity income floors.', 18, mc3Y + 37);
+
+      mc3Y += 48;
+
+      // =========================================================================
+      // SECTION 9: INHERITANCE TAX (IHT) & ESTATE PLANNING ANALYSIS
+      // =========================================================================
+      doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10.5);
+      doc.text('Inheritance Tax (IHT) & Estate Planning Analysis', 14, mc3Y);
+
+      mc3Y += 5;
+      const ihtSettings = profile.ihtSettings || {
+        primaryResidenceValue: 450000,
+        annualPropertyGrowthPercent: 3.0,
+        otherTaxableAssets: 50000,
+        includePensionsInEstate: true,
+        passMainResidenceToDescendants: true,
+        annualGiftingStrategy: 3000,
+      };
+
+      // IHT Parameters Callout Box
+      doc.setFillColor(248, 250, 252);
+      doc.roundedRect(14, mc3Y, 182, 20, 3, 3, 'F');
+      doc.setDrawColor(226, 232, 240);
+      doc.roundedRect(14, mc3Y, 182, 20, 3, 3, 'D');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(51, 65, 85);
+
+      doc.text('Main Home Valuation:', 18, mc3Y + 6);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`£${(ihtSettings.primaryResidenceValue || (0) || 0).toLocaleString()} @ ${ihtSettings.annualPropertyGrowthPercent || 3.0}% p.a.`, 58, mc3Y + 6);
+
+      doc.setFont('helvetica', 'bold');
+      doc.text('April 2027 Budget Pension Rule:', 110, mc3Y + 6);
+      doc.setFont('helvetica', 'normal');
+      doc.text(ihtSettings.includePensionsInEstate ? 'Pensions Included in Estate' : 'Pensions Exempt', 160, mc3Y + 6);
+
+      doc.setFont('helvetica', 'bold');
+      doc.text('Other Physical Assets:', 18, mc3Y + 12);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`£${(ihtSettings.otherTaxableAssets || (0) || 0).toLocaleString()}`, 58, mc3Y + 12);
+
+      doc.setFont('helvetica', 'bold');
+      doc.text('Available Allowances (NRB + RNRB):', 110, mc3Y + 12);
+      doc.setFont('helvetica', 'normal');
+      const baseAllowances = profile.isCouplePlanning ? '£650k NRB + £350k RNRB' : '£325k NRB + £175k RNRB';
+      doc.text(baseAllowances, 160, mc3Y + 12);
+
+      mc3Y += 23;
+
+      // Milestone Estate Table Header (Ages 80, 90, 100)
+      doc.setFillColor(30, 41, 59);
+      doc.rect(14, mc3Y, 182, 6.5, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Estate Parameter / Milestone Age', 18, mc3Y + 4.5);
+      doc.text('Age 80', 85, mc3Y + 4.5);
+      doc.text('Age 90', 125, mc3Y + 4.5);
+      doc.text('Age 100 (Century)', 160, mc3Y + 4.5);
+
+      mc3Y += 6.5;
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(51, 65, 85);
+      doc.setFontSize(8);
+
+      // Milestone calculations
+      const calcIhtForAge = (ageVal: number) => {
+        const yrs = Math.max(0, ageVal - currentAge);
+        const pObj = projections.find((p) => p.age === ageVal) || projections[projections.length - 1];
+        const prop = Math.round((ihtSettings.primaryResidenceValue || 0) * Math.pow(1 + (ihtSettings.annualPropertyGrowthPercent || 3.0)/100, yrs));
+        const nonPen = Math.round((pObj?.isaPot || 0) + (pObj?.cashGiaPot || 0));
+        const pen = Math.round(pObj?.pensionPot || 0);
+        const gross = prop + nonPen + (ihtSettings.otherTaxableAssets || 0) + (ihtSettings.includePensionsInEstate ? pen : 0);
+        
+        const giftingYrs = Math.max(0, ageVal - targetAge);
+        const giftingTot = (ihtSettings.annualGiftingStrategy || 0) * giftingYrs;
+        const netGross = Math.max(0, gross - giftingTot);
+
+        const nrb = profile.isCouplePlanning ? 650000 : 325000;
+        let rnrb = (ihtSettings.passMainResidenceToDescendants && prop > 0) ? (profile.isCouplePlanning ? 350000 : 175000) : 0;
+        if (netGross > 2000000 && rnrb > 0) {
+          rnrb = Math.max(0, rnrb - Math.floor((netGross - 2000000) / 2));
+        }
+        const totAllow = nrb + rnrb;
+        const surplus = Math.max(0, netGross - totAllow);
+        const ihtTax = Math.round(surplus * 0.4);
+        const netPassed = netGross - ihtTax;
+
+        return { prop, nonPen, pen, netGross, totAllow, ihtTax, netPassed };
+      };
+
+      const iht80 = calcIhtForAge(80);
+      const iht90 = calcIhtForAge(90);
+      const iht100 = calcIhtForAge(100);
+
+      const ihtTableRows = [
+        { label: 'Primary Residence Valuation', a80: iht80.prop, a90: iht90.prop, a100: iht100.prop },
+        { label: 'Unused Pension Wealth (Post-April 2027)', a80: iht80.pen, a90: iht90.pen, a100: iht100.pen },
+        { label: 'Non-Pension Financial Assets (ISA/Cash)', a80: iht80.nonPen, a90: iht90.nonPen, a100: iht100.nonPen },
+        { label: 'Gross Taxable Estate Valuation', a80: iht80.netGross, a90: iht90.netGross, a100: iht100.netGross },
+        { label: 'Total Available Allowances (NRB + RNRB)', a80: iht80.totAllow, a90: iht90.totAllow, a100: iht100.totAllow },
+        { label: 'Estimated 40% Inheritance Tax (IHT)', a80: iht80.ihtTax, a90: iht90.ihtTax, a100: iht100.ihtTax, isTax: true },
+        { label: 'Net Wealth Inherited by Heirs', a80: iht80.netPassed, a90: iht90.netPassed, a100: iht100.netPassed, isNet: true },
+      ];
+
+      ihtTableRows.forEach((row, rIdx) => {
+        if (row.isNet) {
+          doc.setFillColor(220, 252, 231); // Green tint for Net Passed
+          doc.rect(14, mc3Y, 182, 5.5, 'F');
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(22, 101, 52);
+        } else if (row.isTax) {
+          doc.setFillColor(254, 226, 226); // Red tint for IHT Tax
+          doc.rect(14, mc3Y, 182, 5.5, 'F');
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(185, 28, 28);
+        } else if (rIdx % 2 === 1) {
+          doc.setFillColor(slateLight[0], slateLight[1], slateLight[2]);
+          doc.rect(14, mc3Y, 182, 5, 'F');
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(51, 65, 85);
+        } else {
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(51, 65, 85);
+        }
+
+        doc.text(row.label, 18, mc3Y + 3.8);
+        doc.text(`£${Math.round((row.a80) || 0).toLocaleString()}`, 85, mc3Y + 3.8);
+        doc.text(`£${Math.round((row.a90) || 0).toLocaleString()}`, 125, mc3Y + 3.8);
+        doc.text(`£${Math.round((row.a100) || 0).toLocaleString()}`, 160, mc3Y + 3.8);
+
+        mc3Y += row.isNet || row.isTax ? 5.5 : 5;
+      });
+
+      // =========================================================================
+      // APPENDIX 1: ACCUMULATION LEDGER (CONTRIBUTIONS & POT TRANSFERS BY DATE)
+      // =========================================================================
+      for (let pIdx = 0; pIdx < totalAccumPages; pIdx++) {
+        doc.addPage();
+        curPageNum++;
+        renderPageHeader(totalAccumPages > 1 ? `Appendix 1 — Accumulation Ledger (Part ${pIdx + 1} of ${totalAccumPages})` : 'Appendix 1 — Accumulation Ledger', curPageNum);
+
+        let appY = 24;
+
+        // Header Table Bar
+        doc.setFillColor(30, 41, 59);
+        doc.rect(14, appY, 182, 7, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Date / Schedule', 16, appY + 5);
+        doc.text('Event Name', 52, appY + 5);
+        doc.text('Member', 100, appY + 5);
+        doc.text('Category', 122, appY + 5);
+        doc.text('Flow / Destination', 145, appY + 5);
+        doc.text('Amount (£)', 175, appY + 5);
+
+        appY += 7;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(6.5);
+
+        const pageAccumItems = accumLedgerItems.slice(pIdx * accumRowsPerPage, (pIdx + 1) * accumRowsPerPage);
+
+        pageAccumItems.forEach((item, idx) => {
+          if (idx % 2 === 1) {
+            doc.setFillColor(slateLight[0], slateLight[1], slateLight[2]);
+            doc.rect(14, appY, 182, 5.5, 'F');
+          }
+
+          doc.setTextColor(51, 65, 85);
+          doc.text(item.dateDisplay || '', 16, appY + 4);
+
+          const nameText = item.name.length > 28 ? item.name.substring(0, 26) + '...' : item.name;
+          doc.setFont('helvetica', 'bold');
+          doc.text(nameText, 52, appY + 4);
+          doc.setFont('helvetica', 'normal');
+
+          doc.text(item.ownerName || '', 100, appY + 4);
+          doc.text(item.category || '', 122, appY + 4);
+
+          let flowText = formatPotNamePDF(item.targetPot);
+          if (item.sourcePot && item.category === 'Pot Transfer') {
+            flowText = `${formatPotNamePDF(item.sourcePot)} -> ${flowText}`;
+          }
+          if (flowText.length > 26) flowText = flowText.substring(0, 24) + '...';
+          doc.text(flowText, 142, appY + 4);
+
+          const amtText = item.isMonthly && item.monthlyAmt !== undefined
+            ? `£${Math.round(item.monthlyAmt).toLocaleString()}/mo`
+            : `£${Math.round(item.grossAnnual).toLocaleString()}`;
+
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(13, 148, 136);
+          doc.text(amtText, 175, appY + 4);
+          doc.setFont('helvetica', 'normal');
+
+          appY += 5.5;
+        });
+      }
+
+      // =========================================================================
+      // APPENDIX 2: FULL DECUMULATION SCHEDULE OUTPUT
+      // =========================================================================
+      for (let pIdx = 0; pIdx < totalDecumPages; pIdx++) {
+        doc.addPage();
+        curPageNum++;
+        renderPageHeader(`Appendix 2 — Full Decumulation Schedule Output (Part ${pIdx + 1} of ${totalDecumPages})`, curPageNum);
+
+        let appY = 24;
+
+        // Header Table Bar
+        doc.setFillColor(30, 41, 59);
+        doc.rect(14, appY, 182, 7, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Age (Year)', 16, appY + 5);
+        doc.text('Phase', 35, appY + 5);
+        doc.text('Pension Pot', 52, appY + 5);
+        doc.text('ISA Pot', 74, appY + 5);
+        doc.text('Cash/GIA Pot', 94, appY + 5);
+        doc.text('Total Pot', 116, appY + 5);
+        doc.text('Fixed/Guar Inc', 138, appY + 5);
+        doc.text('Drawdown', 160, appY + 5);
+        doc.text('Net Income', 178, appY + 5);
+
+        appY += 7;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(6.5);
+
+        const pageProjections = (projections || []).slice(pIdx * rowsPerPage, (pIdx + 1) * rowsPerPage);
+
+        pageProjections.forEach((p, idx) => {
+          if (idx % 2 === 1) {
+            doc.setFillColor(slateLight[0], slateLight[1], slateLight[2]);
+            doc.rect(14, appY, 182, 5.5, 'F');
+          }
+
+          const hasShortfall = (p.incomeShortfall || 0) > 0;
+          const fixedGuarInc = (p.statePensionReceived || 0) + (p.dbPensionIncomeReceived || 0) + (p.annuityIncomeReceived || 0) + (p.taxableFixedIncomeReceived || 0) + (p.taxFreeFixedIncomeReceived || 0);
+          const drawdownVal = (p.pensionDrawdown || 0) + (p.isaDrawdown || 0) + (p.cashDrawdown || 0);
+
+          doc.setTextColor(51, 65, 85);
+          doc.text(`Age ${p.age} (${p.year})`, 16, appY + 4);
+          doc.text(p.isRetired ? 'Retire' : 'Accum', 35, appY + 4);
+          doc.text(`£${Math.round(p.pensionPot || (0) || 0).toLocaleString()}`, 52, appY + 4);
+          doc.text(`£${Math.round(p.isaPot || (0) || 0).toLocaleString()}`, 74, appY + 4);
+          doc.text(`£${Math.round(p.cashGiaPot || (0) || 0).toLocaleString()}`, 94, appY + 4);
+
+          doc.setFont('helvetica', 'bold');
+          doc.text(`£${Math.round(p.totalPot || (0) || 0).toLocaleString()}`, 116, appY + 4);
+          doc.setFont('helvetica', 'normal');
+
+          doc.text(`£${Math.round((fixedGuarInc) || 0).toLocaleString()}`, 138, appY + 4);
+          doc.text(`£${Math.round((drawdownVal) || 0).toLocaleString()}`, 160, appY + 4);
+
+          if (hasShortfall) {
+            doc.setTextColor(225, 29, 72); // Rose text for deficit year
+            doc.setFont('helvetica', 'bold');
+            doc.text(`£${Math.round(p.netRetirementIncome || (0) || 0).toLocaleString()} !`, 178, appY + 4);
+            doc.setFont('helvetica', 'normal');
+          } else {
+            doc.setFont('helvetica', 'bold');
+            doc.text(`£${Math.round(p.netRetirementIncome || (0) || 0).toLocaleString()}`, 178, appY + 4);
+            doc.setFont('helvetica', 'normal');
+          }
+
+          appY += 5.5;
+        });
+      }
+
+      // =========================================================================
+      // APPENDIX 3: HISTORIC MARKET PERFORMANCE SIMULATION (75 START YEARS)
+      // =========================================================================
+      const historicSim = runHistoricSimulation(profile, pots, exportTaxResult as any);
+
+      // Part 1: Summary & Charts
+      doc.addPage();
+      curPageNum++;
+      renderPageHeader('Appendix 3 — Historic Performance (Part 1)', curPageNum);
+
+      let hY = 22;
+
+      // Summary Header Box
+      doc.setFillColor(248, 250, 252);
+      doc.roundedRect(14, hY, 182, 32, 3, 3, 'F');
+      doc.setDrawColor(226, 232, 240);
+      doc.roundedRect(14, hY, 182, 32, 3, 3, 'D');
+
+      doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9.5);
+      doc.text('75 Sequence Start Years Historical Stress Test (1950 - 2024 Real Data)', 18, hY + 6);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(51, 65, 85);
+      doc.text(`• Success Rate: ${historicSim.successRate.toFixed(1)}% of 75 sequence start years sustained portfolio wealth to Age ${horizonAge}`, 18, hY + 13);
+      doc.text(`• Median Final Real Wealth: £${Math.round(historicSim.medianFinalReal).toLocaleString()}`, 18, hY + 18);
+      doc.text(`• Worst Start Year: ${historicSim.worstStartYear.startYear} (${historicSim.worstStartYear.startEvent}) — Final Real: £${Math.round(historicSim.worstStartYear.finalRealBalance).toLocaleString()}`, 18, hY + 23);
+      doc.text(`• Best Start Year: ${historicSim.bestStartYear.startYear} (${historicSim.bestStartYear.startEvent}) — Final Real: £${Math.round(historicSim.bestStartYear.finalRealBalance).toLocaleString()}`, 18, hY + 28);
+
+      hY += 36;
+
+      // Chart 1: 75 Start Year Sequences Ending Wealth Distribution (Bar Visual)
+      doc.setFillColor(30, 41, 59);
+      doc.rect(14, hY, 182, 6, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Chart: Final Real Wealth Across 75 Historical Sequence Start Years (1950 - 2024)', 18, hY + 4.2);
+
+      hY += 6;
+      const barBoxH = 65;
+      doc.setFillColor(255, 255, 255);
+      doc.rect(14, hY, 182, barBoxH, 'F');
+      doc.setDrawColor(226, 232, 240);
+      doc.rect(14, hY, 182, barBoxH, 'D');
+
+      // Draw Bars
+      const maxRealVal = Math.max(...historicSim.runResults.map((r) => r.finalRealBalance), 1000000);
+      const barW = (182 - 20) / 50; // ~3.24mm per bar
+      const barXStart = 24;
+      const barYBase = hY + barBoxH - 12;
+      const maxBarH = barBoxH - 22;
+
+      // Gridlines
+      doc.setDrawColor(241, 245, 249);
+      doc.setLineWidth(0.3);
+      [0, 0.25, 0.5, 0.75, 1.0].forEach((ratio) => {
+        const gridY = barYBase - ratio * maxBarH;
+        doc.line(24, gridY, 190, gridY);
+        doc.setFontSize(5.5);
+        doc.setTextColor(148, 163, 184);
+        doc.text(`£${Math.round((ratio * maxRealVal) / 1000)}k`, 15, gridY + 1.5);
+      });
+
+      historicSim.runResults.forEach((res, i) => {
+        const x = barXStart + i * barW;
+        const bH = Math.max(1, (res.finalRealBalance / maxRealVal) * maxBarH);
+        const bY = barYBase - bH;
+
+        if (res.isSuccess) {
+          doc.setFillColor(16, 185, 129); // emerald for success
+        } else {
+          doc.setFillColor(225, 29, 72); // rose for depleted
+        }
+        doc.rect(x + 0.2, bY, barW - 0.4, bH, 'F');
+
+        // Year labels on x-axis every 10 years
+        if (i % 10 === 0 || i === historicSim.runResults.length - 1) {
+          doc.setFontSize(5.5);
+          doc.setTextColor(100, 116, 139);
+          doc.text(`${res.startYear}`, x, barYBase + 5);
+        }
+      });
+
+      // Baseline
+      doc.setDrawColor(100, 116, 139);
+      doc.setLineWidth(0.5);
+      doc.line(24, barYBase, 190, barYBase);
+
+      hY += barBoxH + 6;
+
+      // Chart 2: Trajectory Curves
+      doc.setFillColor(30, 41, 59);
+      doc.rect(14, hY, 182, 6, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Chart: Historical Percentile Wealth Trajectories (10th, 25th, Median, 75th, 90th)', 18, hY + 4.2);
+
+      hY += 6;
+      const trajBoxH = 65;
+      doc.setFillColor(255, 255, 255);
+      doc.rect(14, hY, 182, trajBoxH, 'F');
+      doc.setDrawColor(226, 232, 240);
+      doc.rect(14, hY, 182, trajBoxH, 'D');
+
+      const trajData = historicSim.aggregateTrajectory;
+      if (trajData && trajData.length > 0) {
+        const trajMaxVal = Math.max(...trajData.map((d) => d.p90TotalPot), 1000000);
+        const trajXStart = 24;
+        const trajW = 182 - 28;
+        const trajYBase = hY + trajBoxH - 12;
+        const trajMaxH = trajBoxH - 22;
+
+        // Gridlines
+        doc.setDrawColor(241, 245, 249);
+        doc.setLineWidth(0.3);
+        [0, 0.25, 0.5, 0.75, 1.0].forEach((ratio) => {
+          const gridY = trajYBase - ratio * trajMaxH;
+          doc.line(24, gridY, 190, gridY);
+          doc.setFontSize(5.5);
+          doc.setTextColor(148, 163, 184);
+          doc.text(`£${Math.round((ratio * trajMaxVal) / 1000)}k`, 15, gridY + 1.5);
+        });
+
+        const drawCurve = (key: 'p10TotalPot' | 'p25TotalPot' | 'p50TotalPot' | 'p75TotalPot' | 'p90TotalPot', color: [number, number, number]) => {
+          doc.setDrawColor(color[0], color[1], color[2]);
+          doc.setLineWidth(key === 'p50TotalPot' ? 1.2 : 0.7);
+          for (let idx = 0; idx < trajData.length - 1; idx++) {
+            const x1 = trajXStart + (idx / (trajData.length - 1)) * trajW;
+            const y1 = trajYBase - (trajData[idx][key] / trajMaxVal) * trajMaxH;
+            const x2 = trajXStart + ((idx + 1) / (trajData.length - 1)) * trajW;
+            const y2 = trajYBase - (trajData[idx + 1][key] / trajMaxVal) * trajMaxH;
+            doc.line(x1, y1, x2, y2);
+          }
+        };
+
+        drawCurve('p10TotalPot', [225, 29, 72]); // Rose
+        drawCurve('p25TotalPot', [217, 119, 6]); // Amber
+        drawCurve('p50TotalPot', [37, 99, 235]); // Blue
+        drawCurve('p75TotalPot', [13, 148, 136]); // Teal
+        drawCurve('p90TotalPot', [16, 185, 129]); // Emerald
+
+        // X-axis age ticks
+        for (let idx = 0; idx < trajData.length; idx += 5) {
+          const x = trajXStart + (idx / (trajData.length - 1)) * trajW;
+          doc.setFontSize(5.5);
+          doc.setTextColor(100, 116, 139);
+          doc.text(`Age ${trajData[idx].age}`, x - 3, trajYBase + 5);
+        }
+
+        // Legend with vector boxes instead of unicode symbols
+        doc.setFontSize(6.5);
+        const lgItems = [
+          { label: 'P10', color: [225, 29, 72] as [number, number, number], x: 120 },
+          { label: 'P25', color: [217, 119, 6] as [number, number, number], x: 135 },
+          { label: 'Median (P50)', color: [37, 99, 235] as [number, number, number], x: 150 },
+          { label: 'P90', color: [16, 185, 129] as [number, number, number], x: 175 },
+        ];
+        lgItems.forEach((lg) => {
+          doc.setFillColor(lg.color[0], lg.color[1], lg.color[2]);
+          doc.rect(lg.x, hY + 6, 2.5, 2.5, 'F');
+          doc.setTextColor(51, 65, 85);
+          doc.text(lg.label, lg.x + 3.5, hY + 8);
+        });
+      }
+
+      // Part 2a: Historic Performance Matrix (1950 - 1988)
+      doc.addPage();
+      curPageNum++;
+      renderPageHeader('Appendix 3 — Historic Performance Matrix (Part 2a: 1950–1988)', curPageNum);
+
+      const renderMatrixTable = (resultsChunk: typeof historicSim.runResults) => {
+        let h2Y = 22;
+
+        // Header Bar
+        doc.setFillColor(30, 41, 59);
+        doc.rect(14, h2Y, 182, 6, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(7.5);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Start Year', 16, h2Y + 4.2);
+        doc.text('Historical Market Context / Event', 35, h2Y + 4.2);
+        doc.text('Final Real Wealth', 115, h2Y + 4.2);
+        doc.text('Min Pot Balance', 145, h2Y + 4.2);
+        doc.text('Status', 175, h2Y + 4.2);
+
+        h2Y += 6;
+        doc.setFontSize(6.5);
+
+        resultsChunk.forEach((res, idx) => {
+          if (idx % 2 === 1) {
+            doc.setFillColor(slateLight[0], slateLight[1], slateLight[2]);
+            doc.rect(14, h2Y, 182, 5, 'F');
+          }
+
+          doc.setTextColor(51, 65, 85);
+          doc.setFont('helvetica', 'bold');
+          doc.text(`${res.startYear}`, 16, h2Y + 3.8);
+          doc.setFont('helvetica', 'normal');
+
+          const evtTxt = res.startEvent.length > 42 ? res.startEvent.substring(0, 40) + '...' : res.startEvent;
+          doc.text(evtTxt, 35, h2Y + 3.8);
+          doc.text(`£${Math.round(res.finalRealBalance).toLocaleString()}`, 115, h2Y + 3.8);
+          doc.text(`£${Math.round(res.minPotBalance).toLocaleString()}`, 145, h2Y + 3.8);
+
+          if (res.isSuccess) {
+            doc.setTextColor(22, 101, 52);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Sustained', 175, h2Y + 3.8);
+          } else {
+            doc.setTextColor(225, 29, 72);
+            doc.setFont('helvetica', 'bold');
+            doc.text(`Depleted (${res.depletedAtAge ? `Age ${res.depletedAtAge}` : ''})`, 175, h2Y + 3.8);
+          }
+
+          h2Y += 5;
+        });
+      };
+
+      const chunk1 = historicSim.runResults.slice(0, 38);
+      const chunk2 = historicSim.runResults.slice(38);
+
+      renderMatrixTable(chunk1);
+
+      // Part 2b: Historic Performance Matrix (1988 - 2024)
+      doc.addPage();
+      curPageNum++;
+      renderPageHeader('Appendix 3 — Historic Performance Matrix (Part 2b: 1988–2024)', curPageNum);
+      renderMatrixTable(chunk2);
+
+      // =========================================================================
+      // APPENDIX 4: MORTGAGE PAYOFF PROJECTION & DEBT AMORTIZATION
+      // =========================================================================
+      doc.addPage();
+      curPageNum++;
+      renderPageHeader('Appendix 4 — Mortgage Payoff & Debt Amortization', curPageNum);
+
+      let mY = 22;
+
+      const mConfig = profile.mortgage || DEFAULT_MORTGAGE;
+      const isMortgageActive = (mConfig.enabled !== false) && (mConfig.currentBalance || 0) > 0;
+
+      const mPropName = mConfig.propertyName || 'Primary Residence';
+      const ihtPropVal = profile.ihtSettings?.primaryResidenceValue || 0;
+      const mPropVal = isMortgageActive ? (mConfig.propertyValue || ihtPropVal) : (ihtPropVal || mConfig.propertyValue || 0);
+      const mCurBal = isMortgageActive ? (mConfig.currentBalance || 0) : 0;
+      const mRatePct = isMortgageActive ? (mConfig.interestRatePercent || 0) : 0;
+      const mTermYrs = isMortgageActive ? (mConfig.remainingTermYears || 0) : 0;
+      const mTermMos = isMortgageActive ? (mConfig.remainingTermMonths || 0) : 0;
+      const mRepType = mConfig.repaymentType || 'repayment';
+      const mRegOverpay = isMortgageActive ? (mConfig.regularMonthlyOverpayment || 0) : 0;
+      const mLumpSums = isMortgageActive ? (mConfig.lumpSumOverpayments || []).filter((ls) => ls.enabled) : [];
+
+      const mLtv = (mPropVal > 0 && mCurBal > 0) ? Math.min(100, (mCurBal / mPropVal) * 100) : 0;
+      const mEquity = Math.max(0, mPropVal - mCurBal);
+      const mRateMo = (mRatePct / 100) / 12;
+      const mTotalMos = isMortgageActive ? Math.max(1, (mTermYrs * 12) + mTermMos) : 0;
+
+      let mStdPmt = 0;
+      if (mCurBal > 0) {
+        if (mRepType === 'interest_only') {
+          mStdPmt = mCurBal * mRateMo;
+        } else if (mRateMo === 0) {
+          mStdPmt = mCurBal / mTotalMos;
+        } else {
+          mStdPmt = (mCurBal * mRateMo * Math.pow(1 + mRateMo, mTotalMos)) / (Math.pow(1 + mRateMo, mTotalMos) - 1);
+        }
+      }
+
+      const mEffPmt = isMortgageActive ? (mConfig.customMonthlyPayment || mStdPmt) : 0;
+      const mTotalOutflow = mEffPmt + mRegOverpay;
+
+      // Amortization simulation tracking balances across ages
+      let mOvBal = mCurBal;
+      let mOvInterest = 0;
+      let mStdInterest = 0;
+      let mStdBal = mCurBal;
+      let mAgeCleared = isMortgageActive ? (currentAge + Math.ceil(mTotalMos / 12)) : currentAge;
+
+      let mBalAtAccess = 0;
+      let mBalAtRet = 0;
+      let mBalAtSpa = 0;
+
+      const amortizationCurve: { age: number; stdBal: number; ovBal: number }[] = [];
+
+      if (isMortgageActive && mTotalMos > 0) {
+        for (let m = 1; m <= mTotalMos + 60; m++) {
+          const age = currentAge + Math.floor((m - 1) / 12);
+          const monthInYear = ((m - 1) % 12) + 1;
+
+          // Standard Amortization
+          if (mStdBal > 0) {
+            const interestStd = mStdBal * mRateMo;
+            mStdInterest += interestStd;
+            let pmt = mEffPmt;
+            if (mRepType === 'interest_only') pmt = interestStd;
+            let cap = Math.max(0, pmt - interestStd);
+            if (cap > mStdBal) cap = mStdBal;
+            mStdBal = Math.max(0, mStdBal - cap);
+          }
+
+          // Overpaid Amortization
+          if (mOvBal > 0) {
+            const interestOv = mOvBal * mRateMo;
+            mOvInterest += interestOv;
+            let stdPmt = mEffPmt;
+            if (mRepType === 'interest_only') stdPmt = interestOv;
+
+            let lsExtra = 0;
+            if (monthInYear === 1) {
+              mLumpSums.forEach((ls) => {
+                if (ls.age === age) lsExtra += ls.amount;
+              });
+              if (mConfig.payoffAtRetirement && age === targetAge) {
+                lsExtra += mOvBal;
+              }
+              if (profile.lumpSumTargetPot === 'clear_mortgage' && age === primaryAccessAge) {
+                lsExtra += mOvBal;
+              }
+            }
+
+            let cap = Math.max(0, (stdPmt - interestOv) + mRegOverpay + lsExtra);
+            if (cap > mOvBal) cap = mOvBal;
+            mOvBal = Math.max(0, mOvBal - cap);
+
+            if (mOvBal <= 0.01 && mAgeCleared === currentAge + Math.ceil(mTotalMos / 12)) {
+              mAgeCleared = age;
+            }
+          }
+
+          if (monthInYear === 12 || m === mTotalMos) {
+            amortizationCurve.push({ age, stdBal: mStdBal, ovBal: mOvBal });
+          }
+
+          if (age === primaryAccessAge && monthInYear === 1) mBalAtAccess = mOvBal;
+          if (age === targetAge && monthInYear === 1) mBalAtRet = mOvBal;
+          if (age === primarySpaAge && monthInYear === 1) mBalAtSpa = mOvBal;
+        }
+      }
+
+      const mInterestSaved = Math.max(0, mStdInterest - mOvInterest);
+
+      // Card 1: Overview
+      doc.setFillColor(248, 250, 252);
+      doc.roundedRect(14, mY, 182, 38, 3, 3, 'F');
+      doc.setDrawColor(226, 232, 240);
+      doc.roundedRect(14, mY, 182, 38, 3, 3, 'D');
+
+      doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9.5);
+      doc.text(`Mortgage & Property Debt Overview — ${mPropName}`, 18, mY + 6.5);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(51, 65, 85);
+      doc.text(`• Property Valuation: £${mPropVal.toLocaleString()} | LTV: ${mLtv.toFixed(1)}% | Current Equity: £${mEquity.toLocaleString()}`, 18, mY + 14);
+      doc.text(`• Current Debt Balance: ${isMortgageActive ? `£${mCurBal.toLocaleString()} @ ${mRatePct}% APR (${mRepType.toUpperCase()})` : '£0 (Mortgage Switched Off)'}`, 18, mY + 20);
+      doc.text(`• Monthly Outflow: ${isMortgageActive ? `£${Math.round(mEffPmt).toLocaleString()}/mo standard + £${mRegOverpay.toLocaleString()}/mo overpayment = £${Math.round(mTotalOutflow).toLocaleString()}/mo` : '£0/mo'}`, 18, mY + 26);
+      doc.text(`• Strategy Status: ${isMortgageActive ? `£${Math.round(mInterestSaved).toLocaleString()} saved | Debt Cleared Age: Age ${mAgeCleared}` : 'No active mortgage debt. 100% Cleared.'}`, 18, mY + 32);
+
+      mY += 44;
+
+      // Table: Key Milestone Debt Balances
+      doc.setFillColor(30, 41, 59);
+      doc.rect(14, mY, 182, 6, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Key Milestone Mortgage Debt Balances', 18, mY + 4.2);
+
+      mY += 6;
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica', 'normal');
+
+      const mMilestones = [
+        { milestone: `Private Pension Access Age (Age ${primaryAccessAge})`, bal: isMortgageActive ? mBalAtAccess : 0 },
+        { milestone: `Target Retirement Age (Age ${targetAge})`, bal: isMortgageActive ? mBalAtRet : 0 },
+        { milestone: `State Pension Access Age (Age ${primarySpaAge})`, bal: isMortgageActive ? mBalAtSpa : 0 },
+        { milestone: `Final Mortgage Payoff (Age ${mAgeCleared})`, bal: 0 },
+      ];
+
+      mMilestones.forEach((row, idx) => {
+        if (idx % 2 === 1) {
+          doc.setFillColor(slateLight[0], slateLight[1], slateLight[2]);
+          doc.rect(14, mY, 182, 5, 'F');
+        }
+        doc.setTextColor(51, 65, 85);
+        doc.text(row.milestone, 18, mY + 3.8);
+
+        if (row.bal <= 0) {
+          doc.setTextColor(22, 101, 52);
+          doc.setFont('helvetica', 'bold');
+          doc.text('£0 (100% Cleared)', 150, mY + 3.8);
+          doc.setFont('helvetica', 'normal');
+        } else {
+          doc.setTextColor(225, 29, 72);
+          doc.setFont('helvetica', 'bold');
+          doc.text(`£${Math.round(row.bal).toLocaleString()}`, 150, mY + 3.8);
+          doc.setFont('helvetica', 'normal');
+        }
+        mY += 5;
+      });
+
+      mY += 8;
+
+      // Chart: Mortgage Payoff Projection & Debt Amortization (Only if active)
+      if (isMortgageActive && mCurBal > 0) {
+        doc.setFillColor(30, 41, 59);
+        doc.rect(14, mY, 182, 6, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Chart: Mortgage Payoff Projection & Debt Amortization Curve', 18, mY + 4.2);
+
+        mY += 6;
+        const mChartH = 85;
+        doc.setFillColor(255, 255, 255);
+        doc.rect(14, mY, 182, mChartH, 'F');
+        doc.setDrawColor(226, 232, 240);
+        doc.rect(14, mY, 182, mChartH, 'D');
+
+        if (amortizationCurve.length > 0) {
+          const mMaxYVal = Math.max(mCurBal, 100000);
+          const mChartXStart = 26;
+          const mChartW = 182 - 32;
+          const mChartYBase = mY + mChartH - 14;
+          const mChartMaxH = mChartH - 24;
+
+          // Y Gridlines
+          doc.setDrawColor(241, 245, 249);
+          doc.setLineWidth(0.3);
+          [0, 0.25, 0.5, 0.75, 1.0].forEach((ratio) => {
+            const gridY = mChartYBase - ratio * mChartMaxH;
+            doc.line(26, gridY, 190, gridY);
+            doc.setFontSize(5.5);
+            doc.setTextColor(148, 163, 184);
+            doc.text(`£${Math.round((ratio * mMaxYVal) / 1000)}k`, 15, gridY + 1.5);
+          });
+
+          // Draw Standard Curve (Gray)
+          doc.setDrawColor(148, 163, 184);
+          doc.setLineWidth(0.8);
+          for (let i = 0; i < amortizationCurve.length - 1; i++) {
+            const x1 = mChartXStart + (i / (amortizationCurve.length - 1)) * mChartW;
+            const y1 = mChartYBase - (amortizationCurve[i].stdBal / mMaxYVal) * mChartMaxH;
+            const x2 = mChartXStart + ((i + 1) / (amortizationCurve.length - 1)) * mChartW;
+            const y2 = mChartYBase - (amortizationCurve[i + 1].stdBal / mMaxYVal) * mChartMaxH;
+            doc.line(x1, y1, x2, y2);
+          }
+
+          // Draw Overpaid Curve (Emerald)
+          doc.setDrawColor(16, 185, 129);
+          doc.setLineWidth(1.4);
+          for (let i = 0; i < amortizationCurve.length - 1; i++) {
+            const x1 = mChartXStart + (i / (amortizationCurve.length - 1)) * mChartW;
+            const y1 = mChartYBase - (amortizationCurve[i].ovBal / mMaxYVal) * mChartMaxH;
+            const x2 = mChartXStart + ((i + 1) / (amortizationCurve.length - 1)) * mChartW;
+            const y2 = mChartYBase - (amortizationCurve[i + 1].ovBal / mMaxYVal) * mChartMaxH;
+            doc.line(x1, y1, x2, y2);
+          }
+
+          // Dashed Vertical Reference Lines for Milestones
+          const drawMilestoneLine = (age: number, label: string, color: [number, number, number]) => {
+            const idx = amortizationCurve.findIndex((c) => c.age >= age);
+            if (idx >= 0) {
+              const x = mChartXStart + (idx / (amortizationCurve.length - 1)) * mChartW;
+              doc.setDrawColor(color[0], color[1], color[2]);
+              doc.setLineWidth(0.6);
+              for (let ly = mChartYBase - mChartMaxH + 6; ly < mChartYBase; ly += 3) {
+                doc.line(x, ly, x, Math.min(ly + 1.5, mChartYBase));
+              }
+              doc.setFontSize(6);
+              doc.setTextColor(color[0], color[1], color[2]);
+              doc.setFont('helvetica', 'bold');
+              doc.text(label, Math.max(26, Math.min(160, x - 10)), mChartYBase - mChartMaxH + 4);
+            }
+          };
+
+          drawMilestoneLine(primaryAccessAge, `Priv Pen (Age ${primaryAccessAge})`, [180, 83, 9]);
+          drawMilestoneLine(targetAge, `Retire (Age ${targetAge})`, [16, 185, 129]);
+          drawMilestoneLine(primarySpaAge, `State Pen (Age ${primarySpaAge})`, [79, 70, 229]);
+
+          // X-axis age ticks
+          for (let i = 0; i < amortizationCurve.length; i += 5) {
+            const x = mChartXStart + (i / (amortizationCurve.length - 1)) * mChartW;
+            doc.setFontSize(5.5);
+            doc.setTextColor(100, 116, 139);
+            doc.text(`Age ${amortizationCurve[i].age}`, x - 3, mChartYBase + 5);
+          }
+
+          // Legend
+          doc.setFontSize(6.5);
+          doc.setTextColor(148, 163, 184); doc.text('— Standard Amortization', 120, mY + 8);
+          doc.setTextColor(16, 185, 129); doc.setFont('helvetica', 'bold'); doc.text('— Strategy Overpayment Balance', 152, mY + 8);
+        }
+      } else {
+        doc.setFillColor(248, 250, 252);
+        doc.roundedRect(14, mY, 182, 18, 3, 3, 'F');
+        doc.setDrawColor(226, 232, 240);
+        doc.roundedRect(14, mY, 182, 18, 3, 3, 'D');
+        doc.setTextColor(51, 65, 85);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.5);
+        doc.text('Mortgage Debt Switched Off', 18, mY + 6.5);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7.5);
+        doc.text('Mortgage debt module is disabled or fully paid off (£0 balance). No debt amortization chart required.', 18, mY + 12);
+      }
+
+      // Save PDF safely using fileNameSlug
+      doc.save(`RetireFree_UK_PDF_Report_${fileNameSlug}.pdf`);
+
+      setExportSuccessMsg('Professional PDF Report generated & downloaded!');
+      setTimeout(() => setExportSuccessMsg(null), 4000);
+    } catch (err) {
+      console.error('PDF Report Export Error:', err);
+      alert('Error generating PDF Report. Please check console.');
+    } finally {
+      setIsExportingPdf(false);
+    }
+  };
+
+  if (variant === 'pdf_only') {
+    return (
+      <div className="bg-gradient-to-r from-emerald-950 via-slate-900 to-indigo-950 text-white rounded-3xl p-5 sm:p-6 shadow-xl border border-emerald-500/50 space-y-4 relative overflow-hidden">
+        <div className="absolute -top-12 -right-12 w-48 h-48 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
+
+        {exportSuccessMsg && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="flex items-center gap-2 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-bold px-3.5 py-2 rounded-xl z-10 relative"
+          >
+            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            <span>{exportSuccessMsg}</span>
+          </motion.div>
+        )}
+
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 z-10 relative">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center shrink-0 shadow-inner">
+              <FileText className="w-6 h-6 text-emerald-400" />
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <h3 className="font-extrabold text-base text-white tracking-tight">
+                  Full Household PDF Report
+                </h3>
+                <span className="bg-emerald-500 text-slate-950 font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider">
+                  Full PDF Plan
+                </span>
+              </div>
+              <p className="text-xs text-slate-300 leading-relaxed max-w-2xl">
+                Comprehensive multi-page report including household inputs, target retirement pot breakdown, <strong>diagram illustrations</strong>, and decumulation schedule.
+              </p>
+            </div>
+          </div>
+
+          <div className="w-full md:w-auto flex-shrink-0">
+            <button
+              onClick={handleExportPdfReport}
+              disabled={isExportingPdf}
+              className="w-full md:w-auto flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs px-5 py-3 rounded-xl transition-all shadow-md active:scale-95 cursor-pointer disabled:opacity-50 whitespace-nowrap"
+            >
+              <Download className="w-4 h-4" />
+              <span>{isExportingPdf ? 'Generating PDF...' : 'Export PDF Report'}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (variant === 'data_only') {
+    return (
+      <div className="bg-slate-900 text-white rounded-3xl p-6 shadow-xl border border-slate-800 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center shrink-0">
+              <Table className="w-5 h-5 text-indigo-400" />
+            </div>
+            <div>
+              <h3 className="font-extrabold text-base text-white tracking-tight">
+                Data Export &amp; Backup Options
+              </h3>
+              <p className="text-xs text-slate-400">
+                Export projection spreadsheets for Excel or backup/restore scenario JSON settings
+              </p>
+            </div>
+          </div>
+
+          {exportSuccessMsg && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex items-center gap-2 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-bold px-3 py-1.5 rounded-xl"
+            >
+              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              <span>{exportSuccessMsg}</span>
+            </motion.div>
+          )}
+        </div>
+
+        {/* Export Options Grid (CSV Export, JSON Backup & Restore) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Option 1: CSV Spreadsheet Export */}
+          <div className="bg-slate-800/80 p-4.5 rounded-2xl border border-slate-700 space-y-3 flex flex-col justify-between">
+            <div className="space-y-1.5 pt-1">
+              <div className="flex items-center gap-2">
+                <Table className="w-4.5 h-4.5 text-purple-400" />
+                <h4 className="font-extrabold text-sm text-white">CSV Data Export</h4>
+              </div>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                Complete spreadsheet CSV with 17 detailed columns of year-by-year pot balances, withdrawals, and tax paid for Excel/Google Sheets.
+              </p>
+            </div>
+
+            <button
+              onClick={handleExportCsv}
+              className="w-full flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-500 text-white font-black text-xs px-4 py-2.5 rounded-xl transition-all shadow-sm active:scale-95 cursor-pointer"
+            >
+              <Download className="w-4 h-4" />
+              <span>Export Projections CSV</span>
+            </button>
+          </div>
+
+          {/* Option 2: Backup & Restore Settings (JSON Import / Export) */}
+          <div className="bg-slate-800/80 p-4.5 rounded-2xl border border-slate-700 space-y-3 flex flex-col justify-between">
+            <div className="space-y-1.5 pt-1">
+              <div className="flex items-center gap-2">
+                <FileJson className="w-4.5 h-4.5 text-indigo-400" />
+                <h4 className="font-extrabold text-sm text-white">JSON Settings Backup</h4>
+              </div>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                Export all saved scenarios, pot balances, and custom settings to a `.json` backup file or restore previously exported files.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              {/* Export JSON */}
+              <button
+                onClick={() => {
+                  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({
+                    version: 'v2',
+                    exportedAt: new Date().toISOString(),
+                    scenarios: scenarios
+                  }, null, 2));
+                  const downloadAnchor = document.createElement('a');
+                  const dateStr = new Date().toISOString().split('T')[0];
+                  downloadAnchor.setAttribute("href", dataStr);
+                  downloadAnchor.setAttribute("download", `RetireFree_UK_Settings_Backup_${dateStr}.json`);
+                  document.body.appendChild(downloadAnchor);
+                  downloadAnchor.click();
+                  downloadAnchor.remove();
+                  setExportSuccessMsg('Settings exported to JSON backup file!');
+                  setTimeout(() => setExportSuccessMsg(null), 4000);
+                }}
+                className="flex items-center justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs px-2.5 py-2 rounded-xl transition-all shadow-sm cursor-pointer"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Export</span>
+              </button>
+
+              {/* Import JSON */}
+              <label className="flex items-center justify-center gap-1.5 bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs px-2.5 py-2 rounded-xl transition-all shadow-sm cursor-pointer">
+                <Upload className="w-3.5 h-3.5" />
+                <span>Import</span>
+                <input
+                  type="file"
+                  accept=".json"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (evt) => {
+                      try {
+                        const content = evt.target?.result as string;
+                        const parsed = JSON.parse(content);
+                        let imported: PlannerScenario[] = [];
+                        if (Array.isArray(parsed)) {
+                          imported = parsed;
+                        } else if (parsed && Array.isArray(parsed.scenarios)) {
+                          imported = parsed.scenarios;
+                        } else if (parsed && parsed.profile && parsed.pots) {
+                          imported = [parsed];
+                        }
+                        if (imported.length > 0 && onImportScenarios) {
+                          onImportScenarios(imported);
+                        } else {
+                          alert('Invalid JSON settings file format.');
+                        }
+                      } catch (err) {
+                        alert('Failed to parse JSON settings file.');
+                      }
+                    };
+                    reader.readAsText(file);
+                    e.target.value = '';
+                  }}
+                />
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-slate-900 text-white rounded-3xl p-6 shadow-xl border border-slate-800 space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center shrink-0">
+            <FileText className="w-5 h-5 text-emerald-400" />
+          </div>
+          <div>
+            <h3 className="font-extrabold text-base text-white tracking-tight">
+              RetireFree UK Summary &amp; Plan Export
+            </h3>
+            <p className="text-xs text-slate-400">
+              Download your complete retirement projection, diagram illustrations, tax relief analysis, and drawdown timeline
+            </p>
+          </div>
+        </div>
+
+        {exportSuccessMsg && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="flex items-center gap-2 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-bold px-3 py-1.5 rounded-xl"
+          >
+            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            <span>{exportSuccessMsg}</span>
+          </motion.div>
+        )}
+      </div>
+
+      {/* Export Options Grid (PDF Report, CSV Export, JSON Backup & Restore) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Option 1: PDF Report (with Diagram Illustrations & Full Analysis) */}
+        <div className="bg-slate-800/90 p-4.5 rounded-2xl border-2 border-emerald-500/60 space-y-3 flex flex-col justify-between shadow-md relative overflow-hidden">
+          <div className="absolute top-2 right-2 bg-emerald-500 text-slate-950 font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider">
+            Full PDF Plan
+          </div>
+          <div className="space-y-1.5 pt-1">
+            <div className="flex items-center gap-2">
+              <FileText className="w-4.5 h-4.5 text-emerald-400" />
+              <h4 className="font-extrabold text-sm text-white">PDF Report</h4>
+            </div>
+            <p className="text-[11px] text-slate-300 leading-relaxed">
+              Comprehensive multi-page report including household inputs, target retirement pot breakdown, <strong>diagram illustrations</strong>, and decumulation schedule.
+            </p>
+          </div>
+
+          <button
+            onClick={handleExportPdfReport}
+            disabled={isExportingPdf}
+            className="w-full flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs px-4 py-2.5 rounded-xl transition-all shadow-sm active:scale-95 cursor-pointer disabled:opacity-50"
+          >
+            <Download className="w-4 h-4" />
+            <span>{isExportingPdf ? 'Generating PDF...' : 'Export PDF Report'}</span>
+          </button>
+        </div>
+
+        {/* Option 2: CSV Spreadsheet Export */}
+        <div className="bg-slate-800/80 p-4.5 rounded-2xl border border-slate-700 space-y-3 flex flex-col justify-between">
+          <div className="space-y-1.5 pt-1">
+            <div className="flex items-center gap-2">
+              <Table className="w-4.5 h-4.5 text-purple-400" />
+              <h4 className="font-extrabold text-sm text-white">CSV Data Export</h4>
+            </div>
+            <p className="text-[11px] text-slate-400 leading-relaxed">
+              Complete spreadsheet CSV with 17 detailed columns of year-by-year pot balances, withdrawals, and tax paid for Excel/Google Sheets.
+            </p>
+          </div>
+
+          <button
+            onClick={handleExportCsv}
+            className="w-full flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-500 text-white font-black text-xs px-4 py-2.5 rounded-xl transition-all shadow-sm active:scale-95 cursor-pointer"
+          >
+            <Download className="w-4 h-4" />
+            <span>Export Projections CSV</span>
+          </button>
+        </div>
+
+        {/* Option 3: Backup & Restore Settings (JSON Import / Export) */}
+        <div className="bg-slate-800/80 p-4.5 rounded-2xl border border-slate-700 space-y-3 flex flex-col justify-between">
+          <div className="space-y-1.5 pt-1">
+            <div className="flex items-center gap-2">
+              <FileJson className="w-4.5 h-4.5 text-indigo-400" />
+              <h4 className="font-extrabold text-sm text-white">JSON Settings Backup</h4>
+            </div>
+            <p className="text-[11px] text-slate-400 leading-relaxed">
+              Export all saved scenarios, pot balances, and custom settings to a `.json` backup file or restore previously exported files.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            {/* Export JSON */}
+            <button
+              onClick={() => {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({
+                  version: 'v2',
+                  exportedAt: new Date().toISOString(),
+                  scenarios: scenarios
+                }, null, 2));
+                const downloadAnchor = document.createElement('a');
+                const dateStr = new Date().toISOString().split('T')[0];
+                downloadAnchor.setAttribute("href", dataStr);
+                downloadAnchor.setAttribute("download", `RetireFree_UK_Settings_Backup_${dateStr}.json`);
+                document.body.appendChild(downloadAnchor);
+                downloadAnchor.click();
+                downloadAnchor.remove();
+                setExportSuccessMsg('Settings exported to JSON backup file!');
+                setTimeout(() => setExportSuccessMsg(null), 4000);
+              }}
+              className="flex items-center justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs px-2.5 py-2 rounded-xl transition-all shadow-sm cursor-pointer"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Export</span>
+            </button>
+
+            {/* Import JSON */}
+            <label className="flex items-center justify-center gap-1.5 bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs px-2.5 py-2 rounded-xl transition-all shadow-sm cursor-pointer">
+              <Upload className="w-3.5 h-3.5" />
+              <span>Import</span>
+              <input
+                type="file"
+                accept=".json"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  const reader = new FileReader();
+                  reader.onload = (evt) => {
+                    try {
+                      const content = evt.target?.result as string;
+                      const parsed = JSON.parse(content);
+                      let imported: PlannerScenario[] = [];
+                      if (Array.isArray(parsed)) {
+                        imported = parsed;
+                      } else if (parsed && Array.isArray(parsed.scenarios)) {
+                        imported = parsed.scenarios;
+                      } else if (parsed && parsed.profile && parsed.pots) {
+                        imported = [parsed];
+                      }
+                      if (imported.length > 0 && onImportScenarios) {
+                        onImportScenarios(imported);
+                      } else {
+                        alert('Invalid JSON settings file format.');
+                      }
+                    } catch (err) {
+                      alert('Failed to parse JSON settings file.');
+                    }
+                  };
+                  reader.readAsText(file);
+                  e.target.value = '';
+                }}
+              />
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
