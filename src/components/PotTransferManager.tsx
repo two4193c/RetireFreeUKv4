@@ -422,7 +422,7 @@ export const PotTransferManager: React.FC<PotTransferManagerProps> = ({
           </div>
           <div>
             <h2 className="font-extrabold text-slate-800 dark:text-slate-100 text-base flex items-center gap-2">
-              <span>Investment Pot Transfer</span>
+              <span>Investment Transfers</span>
               <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950 text-emerald-900 dark:text-emerald-200 px-2.5 py-0.5 rounded-full border border-emerald-200/50 dark:border-emerald-800/50">
                 Non-Pension → Other Pots
               </span>

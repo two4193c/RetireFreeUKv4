@@ -41,15 +41,15 @@ import { TaxGuideModal } from './components/TaxGuideModal';
 import { AccumulationLedgerCard } from './components/AccumulationLedgerCard';
 import { MortgageDebtCard } from './components/MortgageDebtCard';
 import { LifeEventsDecumulationCard } from './components/LifeEventsDecumulationCard';
-import { Sparkles, ArrowUpRight, RotateCcw, Pencil, X, Check, LayoutDashboard, Wallet, Percent, LineChart, Shield, Landmark, Download, ArrowRightLeft, TrendingUp, Home, Trash2, AlertTriangle } from 'lucide-react';
+import { PlanManagementCard } from './components/PlanManagementCard';
+import { Sparkles, ArrowUpRight, RotateCcw, Pencil, X, Check, LayoutDashboard, Wallet, Percent, LineChart, Shield, Landmark, Download, ArrowRightLeft, TrendingUp, Home, Trash2, AlertTriangle, BookOpen } from 'lucide-react';
+import { SidebarNav } from './components/SidebarNav';
 import { PlanErrorBoundary } from './components/PlanErrorBoundary';
-
-import { KpiImpactBar } from './components/KpiImpactBar';
 
 const STORAGE_KEY = 'uk_retirement_planner_scenarios_v2';
 const THEME_STORAGE_KEY = 'retireready_theme_v1';
 
-export type DashboardTab = 'inputs' | 'accumulation_review' | 'strategy' | 'projections' | 'risk' | 'estate' | 'overview' | 'compare' | 'mortgage';
+export type DashboardTab = 'plan_management' | 'inputs' | 'accumulation_review' | 'strategy' | 'projections' | 'risk' | 'estate' | 'overview' | 'compare' | 'mortgage' | 'other';
 
 interface AppErrorBoundaryProps {
   children: ReactNode;
@@ -189,6 +189,8 @@ function App() {
   });
 
   const [activeTab, setActiveTab] = useState<DashboardTab>('inputs');
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [activeCardId, setActiveCardId] = useState<string>('');
   const [compareScenarioAId, setCompareScenarioAId] = useState<string>('');
   const [compareScenarioBId, setCompareScenarioBId] = useState<string>('');
 
@@ -595,8 +597,44 @@ function App() {
   }, [profile, pots]);
 
   return (
-    <div className="min-h-screen bg-slate-100/70 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans flex flex-col antialiased selection:bg-emerald-500 selection:text-white transition-colors duration-200">
+    <div className="min-h-screen bg-slate-100/70 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans flex antialiased selection:bg-emerald-500 selection:text-white transition-colors duration-200">
       
+      {/* Left Collapsible Navigation Sidebar (Flush against left edge) */}
+      <SidebarNav
+        activeTab={activeTab}
+        onSelectTab={(tab) => {
+          setActiveTab(tab);
+          setActiveCardId('');
+        }}
+        activeCardId={activeCardId}
+        onSelectCard={(tabId, cardId) => {
+          setActiveTab(tabId);
+          setActiveCardId(cardId);
+          setTimeout(() => {
+            const elem = document.getElementById(cardId);
+            if (elem) {
+              elem.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          }, 50);
+        }}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+        theme={theme}
+        onToggleTheme={handleToggleTheme}
+        scenarios={scenarios}
+        activeScenarioId={activeScenarioId}
+        onSelectScenario={handleSelectScenario}
+        onNewScenario={handleOpenNewPlanModal}
+        onSaveScenario={handleSaveScenario}
+        onOpenManagePlans={() => setIsManagePlansModalOpen(true)}
+        onImportScenarios={handleImportScenarios}
+        onOpenGuide={() => setShowGuideModal(true)}
+        onOpenAiAdvisor={() => setShowAiModal(true)}
+      />
+
+      {/* Main Right App Content Area */}
+      <div className="flex-1 min-w-0 flex flex-col">
+
       {/* Top Navigation */}
       <Header
         scenarios={scenarios}
@@ -615,326 +653,386 @@ function App() {
         onToggleTheme={handleToggleTheme}
       />
 
-      {/* Sticky Real-Time KPI Impact Header Bar */}
-      <KpiImpactBar
-        profile={profile}
-        pots={pots}
-        taxResult={taxResult}
-        projections={projections}
-        onOptimizeTaxTrap={handleOptimizeTaxTrap}
-      />
-
       {/* Main Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         
-        {/* Scenario Title Banner */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
-          <div className="flex items-center gap-3">
-            <div className="w-3 h-8 bg-emerald-600 rounded-full shrink-0" />
-            <div>
-              {isEditingInlineName ? (
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={inlineNameText}
-                    onChange={(e) => setInlineNameText(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleRenameScenario(activeScenarioId, inlineNameText);
-                      if (e.key === 'Escape') setIsEditingInlineName(false);
-                    }}
-                    autoFocus
-                    className="px-2.5 py-1 text-base font-extrabold bg-slate-50 dark:bg-slate-800 border border-emerald-500 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+        {/* Main Dashboard Content Area */}
+
+        {/* Main Dashboard Content Area */}
+        <div className="w-full space-y-6">
+            {/* Plan Loading Failure Fallback Banner */}
+            {calculationError && (
+              <div className="bg-rose-50 dark:bg-rose-950/60 p-6 rounded-3xl border border-rose-300 dark:border-rose-800 space-y-4 text-center my-4">
+                <div className="flex items-center justify-center gap-2 text-rose-700 dark:text-rose-300 font-extrabold text-base">
+                  <AlertTriangle className="w-5 h-5" />
+                  <span>Unable to Load Retirement Plan: "{activeScenario.name}"</span>
+                </div>
+                <p className="text-xs text-rose-600 dark:text-rose-400 max-w-xl mx-auto">
+                  An error occurred while computing tax rules or financial projections for this plan: {calculationError}
+                </p>
+                <div className="flex items-center justify-center gap-3 pt-1">
+                  <button
+                    onClick={() => handleDeleteScenario(activeScenario.id)}
+                    className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span>Remove Plan</span>
+                  </button>
+                  <button
+                    onClick={() => handleResetPlanData(activeScenario.id)}
+                    className="px-4 py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 text-slate-800 dark:text-slate-200 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    <span>Reset Plan Data</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Dashboard Content Wrapped in Plan Error Boundary */}
+            <PlanErrorBoundary
+              key={activeScenarioId}
+              activeScenario={activeScenario}
+              onDeleteScenario={handleDeleteScenario}
+              onResetPlanData={handleResetPlanData}
+            >
+            {/* Tab: Plan Management */}
+            {activeTab === 'plan_management' && (
+              <div className="space-y-6">
+                <PlanManagementCard
+                  scenarios={scenarios}
+                  activeScenarioId={activeScenarioId}
+                  onSelectScenario={handleSelectScenario}
+                  onSaveScenario={handleSaveScenario}
+                  onNewScenario={handleOpenNewPlanModal}
+                  onRequestDeleteScenario={(id, name) => setPlanToDelete({ id, name })}
+                  onRenameScenario={handleRenameScenario}
+                  onOpenManagePlans={() => setIsManagePlansModalOpen(true)}
+                  onImportScenarios={handleImportScenarios}
+                />
+              </div>
+            )}
+
+            {/* Tab 1: Inputs & Assets */}
+            {activeTab === 'inputs' && (
+              <div className="space-y-6">
+                <div id="card-inputs-couple" className="scroll-mt-24 transition-all duration-300">
+                  <CouplePlanningCard profile={profile} onChange={handleProfileChange} />
+                </div>
+                <div id="card-inputs-profile" className="scroll-mt-24 transition-all duration-300">
+                  <ProfileInputs profile={profile} onChange={handleProfileChange} pots={pots} />
+                </div>
+                <div id="card-inputs-pots" className="scroll-mt-24 transition-all duration-300">
+                  <PotManager
+                    pots={pots}
+                    onChange={handlePotsChange}
+                    taxResult={taxResult}
+                    profile={profile}
+                    partnerPots={profile.partnerPots}
+                    onPartnerPotsChange={handlePartnerPotsChange}
                   />
-                  <button
-                    onClick={() => handleRenameScenario(activeScenarioId, inlineNameText)}
-                    className="p-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer"
-                    title="Save name"
-                  >
-                    <Check className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => setIsEditingInlineName(false)}
-                    className="p-1.5 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors cursor-pointer"
-                    title="Cancel"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
                 </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <h1 className="font-extrabold text-slate-900 dark:text-white text-lg">
-                    {activeScenario.name}
-                  </h1>
-                  <button
-                    onClick={() => {
-                      setInlineNameText(activeScenario.name);
-                      setIsEditingInlineName(true);
-                    }}
-                    className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 font-bold px-2.5 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 transition-colors cursor-pointer"
-                  >
-                    <Pencil className="w-3.5 h-3.5" />
-                    <span>Rename</span>
-                  </button>
+                <div id="card-inputs-oneoff" className="scroll-mt-24 transition-all duration-300">
+                  <OneOffContributionManager profile={profile} onChange={handleProfileChange} />
                 </div>
-              )}
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Salary £{(Number(profile.grossAnnualSalary) || 0).toLocaleString()} • Age {profile.currentAge} → {profile.targetRetirementAge}
-              </p>
-            </div>
+                <div id="card-inputs-transfers" className="scroll-mt-24 transition-all duration-300">
+                  <PotTransferManager profile={profile} onChange={handleProfileChange} pots={pots} />
+                </div>
+                <div id="card-inputs-statepension" className="scroll-mt-24 transition-all duration-300">
+                  <StatePensionCard profile={profile} onChange={handleProfileChange} />
+                </div>
+                <div id="card-inputs-dbpension" className="scroll-mt-24 transition-all duration-300">
+                  <DbPensionManager profile={profile} onChange={handleProfileChange} />
+                </div>
+                <div id="card-inputs-fixedincome" className="scroll-mt-24 transition-all duration-300">
+                  <FixedIncomeManager profile={profile} onChange={handleProfileChange} />
+                </div>
+                <div id="card-inputs-lifeevents" className="scroll-mt-24 transition-all duration-300">
+                  <LifeEventsDecumulationCard profile={profile} onChange={handleProfileChange} />
+                </div>
+              </div>
+            )}
+
+            {/* Tab 2: Accumulation Review */}
+            {activeTab === 'accumulation_review' && (
+              <div className="space-y-6">
+                <div id="card-accum-savings" className="scroll-mt-24 transition-all duration-300">
+                  <MonthlySavingsRateCard profile={profile} pots={pots} />
+                </div>
+                <div id="card-accum-efficiency" className="scroll-mt-24 transition-all duration-300">
+                  <IsaVsPensionEfficiencyCard
+                    profile={profile}
+                    pots={pots}
+                    taxResult={taxResult}
+                    projections={projections}
+                    onChange={handleProfileChange}
+                  />
+                </div>
+                <div id="card-accum-tax" className="scroll-mt-24 transition-all duration-300">
+                  <TaxOptimizerCard
+                    taxResult={taxResult}
+                    profile={profile}
+                    pots={pots}
+                    onOptimizeTaxTrap={handleOptimizeTaxTrap}
+                  />
+                </div>
+                <div id="card-accum-ledger" className="scroll-mt-24 transition-all duration-300">
+                  <AccumulationLedgerCard
+                    profile={profile}
+                    pots={pots}
+                    onChange={handleProfileChange}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Tab 3: Strategy */}
+            {activeTab === 'strategy' && (
+              <div className="space-y-6">
+                <div id="card-strat-planner" className="scroll-mt-24 transition-all duration-300">
+                  <DrawdownPlanner
+                    profile={profile}
+                    pots={pots}
+                    projections={projections}
+                    onChange={handleProfileChange}
+                    scenarios={scenarios}
+                    activeScenarioId={activeScenarioId}
+                    onCreateStrategyVariants={handleCreateStrategyVariants}
+                    onNavigateToCompare={() => setActiveTab('compare')}
+                    onOpenMaximizedSpendModal={() => setIsMaximizedSpendModalOpen(true)}
+                  />
+                </div>
+                <div id="card-strat-phases" className="scroll-mt-24 transition-all duration-300">
+                  <SpendingPhasesCard
+                    profile={profile}
+                    onChange={handleProfileChange}
+                    onOpenMaximizedSpendModal={() => setIsMaximizedSpendModalOpen(true)}
+                  />
+                </div>
+                <div id="card-strat-lifeevents" className="scroll-mt-24 transition-all duration-300">
+                  <LifeEventsDecumulationCard profile={profile} onChange={handleProfileChange} />
+                </div>
+              </div>
+            )}
+
+            {/* Tab 4: Projection */}
+            {activeTab === 'projections' && (
+              <div className="space-y-6">
+                <div id="card-proj-chart" className="scroll-mt-24 transition-all duration-300">
+                  <ProjectionChart
+                    projections={projections}
+                    profile={profile}
+                    pots={pots}
+                    onChange={handleProfileChange}
+                    onOpenMaximizedSpendModal={() => setIsMaximizedSpendModalOpen(true)}
+                  />
+                </div>
+                <div id="card-proj-macro" className="scroll-mt-24 transition-all duration-300">
+                  <MacroSettingsCard profile={profile} onChange={handleProfileChange} />
+                </div>
+                <div id="card-proj-table" className="scroll-mt-24 transition-all duration-300">
+                  <AnnualBreakdownTable projections={projections} profile={profile} taxResult={taxResult} onChange={handleProfileChange} />
+                </div>
+              </div>
+            )}
+
+            {/* Tab 5: Risk */}
+            {activeTab === 'risk' && (
+              <div className="space-y-6">
+                <div id="card-risk-monte" className="scroll-mt-24 transition-all duration-300">
+                  <MonteCarloCard profile={profile} pots={pots} taxResult={taxResult} onChange={handleProfileChange} />
+                </div>
+                <div id="card-risk-macro" className="scroll-mt-24 transition-all duration-300">
+                  <MacroSettingsCard profile={profile} onChange={handleProfileChange} />
+                </div>
+                <div id="card-risk-historic" className="scroll-mt-24 transition-all duration-300">
+                  <HistoricModelingCard profile={profile} pots={pots} taxResult={taxResult} onChange={handleProfileChange} />
+                </div>
+              </div>
+            )}
+
+            {/* Tab 6: Estate */}
+            {activeTab === 'estate' && (
+              <div className="space-y-6">
+                <div id="card-estate-iht" className="scroll-mt-24 transition-all duration-300">
+                  <IhtEstatePlanningCard profile={profile} projections={projections} onChange={handleProfileChange} />
+                </div>
+              </div>
+            )}
+
+            {/* Tab 7: Summary */}
+            {activeTab === 'overview' && (
+              <div className="space-y-6">
+                <div id="card-summary-pdf" className="scroll-mt-24 transition-all duration-300">
+                  <ExportSection
+                    variant="pdf_only"
+                    profile={profile}
+                    pots={pots}
+                    projections={projections}
+                    taxResult={taxResult}
+                    planName={activeScenario.name}
+                  />
+                </div>
+
+                <div id="card-summary-strat" className="scroll-mt-24 transition-all duration-300">
+                  <StrategySummaryCard
+                    profile={profile}
+                    pots={pots}
+                    taxResult={taxResult}
+                    projections={projections}
+                    onChange={handleProfileChange}
+                    onOpenMaximizedSpendModal={() => setIsMaximizedSpendModalOpen(true)}
+                  />
+                </div>
+                <div id="card-summary-chart" className="scroll-mt-24 transition-all duration-300">
+                  <ProjectionChart projections={projections} profile={profile} pots={pots} onChange={handleProfileChange} showAllCharts={true} />
+                </div>
+                <div id="card-summary-monte" className="scroll-mt-24 transition-all duration-300">
+                  <MonteCarloCard profile={profile} pots={pots} taxResult={taxResult} onChange={handleProfileChange} showAllScenarios={true} />
+                </div>
+                <div id="card-summary-estate" className="scroll-mt-24 transition-all duration-300">
+                  <IhtEstatePlanningCard profile={profile} projections={projections} onChange={handleProfileChange} hideInputs={true} />
+                </div>
+                <div id="card-summary-comments" className="scroll-mt-24 transition-all duration-300">
+                  <SummaryCommentsCard profile={profile} taxResult={taxResult} />
+                </div>
+
+                <div id="card-summary-csv" className="scroll-mt-24 transition-all duration-300">
+                  <ExportSection
+                    variant="data_only"
+                    profile={profile}
+                    pots={pots}
+                    projections={projections}
+                    taxResult={taxResult}
+                    planName={activeScenario.name}
+                    scenarios={scenarios}
+                    onImportScenarios={handleImportScenarios}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Tab 8: Compare */}
+            {activeTab === 'compare' && (
+              <div className="space-y-6">
+                <div id="card-compare-scenarios" className="scroll-mt-24 transition-all duration-300">
+                  <ScenarioComparer
+                    scenarios={scenarios}
+                    activeScenarioId={activeScenarioId}
+                    scenarioAId={effectiveCompareAId}
+                    scenarioBId={effectiveCompareBId}
+                    onSelectScenarioA={setCompareScenarioAId}
+                    onSelectScenarioB={setCompareScenarioBId}
+                    onClose={() => setActiveTab('overview')}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Tab 9: Mortgage Debt */}
+            {activeTab === 'mortgage' && (
+              <div className="space-y-6">
+                <div id="card-mortgage-debt" className="scroll-mt-24 transition-all duration-300">
+                  <MortgageDebtCard profile={profile} onChange={handleProfileChange} />
+                </div>
+              </div>
+            )}
+
+            {/* Tab 10: Other (Tax Rules & AI Tax Advisor) */}
+            {activeTab === 'other' && (
+              <div className="space-y-6">
+                <div className="bg-gradient-to-r from-emerald-900 via-slate-900 to-slate-950 p-6 sm:p-8 rounded-3xl text-white shadow-xl relative overflow-hidden border border-emerald-800/50">
+                  <div className="absolute right-0 top-0 translate-x-12 -translate-y-12 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+                  <div className="relative z-10 space-y-2 max-w-2xl">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold">
+                      <BookOpen className="w-4 h-4" />
+                      <span>Tax Rules & AI Assistance</span>
+                    </div>
+                    <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+                      UK Tax Rules & AI Advisor Hub
+                    </h2>
+                    <p className="text-slate-300 text-xs sm:text-sm leading-relaxed">
+                      Access complete UK tax threshold reference guides, allowance rules, and real-time AI pension tax optimization advisor.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Card 1: Tax Rules Guide */}
+                  <div id="card-other-taxrules" className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-5 flex flex-col justify-between">
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
+                        <div className="p-3 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 rounded-2xl">
+                          <BookOpen className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100">
+                            UK Tax Rules & Allowances
+                          </h3>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            Interactive reference guide covering Income Tax, Lump Sum Allowance (LSA), ISA limits, and Pension tax relief.
+                          </p>
+                        </div>
+                      </div>
+
+                      <ul className="text-xs text-slate-600 dark:text-slate-300 space-y-2 list-disc list-inside">
+                        <li>Standard Personal Allowance: £12,570</li>
+                        <li>Higher Rate Tax Threshold: £50,270 (40%)</li>
+                        <li>Additional Rate Threshold: £125,140 (45%)</li>
+                        <li>Lump Sum Allowance (LSA): £268,275 max tax-free cash</li>
+                        <li>Pension Annual Allowance: £60,000</li>
+                      </ul>
+                    </div>
+
+                    <button
+                      onClick={() => setShowGuideModal(true)}
+                      className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-xs font-extrabold transition-all cursor-pointer shadow-xs flex items-center justify-center gap-2"
+                    >
+                      <BookOpen className="w-4 h-4" />
+                      <span>Open Full Tax Rules Guide</span>
+                    </button>
+                  </div>
+
+                  {/* Card 2: AI Tax Advisor */}
+                  <div id="card-other-aitaxadvisor" className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-5 flex flex-col justify-between">
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
+                        <div className="p-3 bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 rounded-2xl">
+                          <Sparkles className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100">
+                            AI Tax & Pension Advisor
+                          </h3>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            Smart AI assistant tailored to your specific active scenario parameters and UK tax queries.
+                          </p>
+                        </div>
+                      </div>
+
+                      <ul className="text-xs text-slate-600 dark:text-slate-300 space-y-2 list-disc list-inside">
+                        <li>Personalized drawdown tax optimization recommendations</li>
+                        <li>60% tax trap mitigation strategies</li>
+                        <li>Inheritance tax (IHT) planning & gifting rules</li>
+                        <li>Instant answers to complex UK pension questions</li>
+                      </ul>
+                    </div>
+
+                    <button
+                      onClick={() => setShowAiModal(true)}
+                      className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-extrabold transition-all cursor-pointer shadow-xs flex items-center justify-center gap-2"
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      <span>Launch AI Tax Advisor</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+            </PlanErrorBoundary>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setPlanToDelete({ id: activeScenario.id, name: activeScenario.name })}
-              className="text-xs font-semibold text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 flex items-center gap-1.5 px-3 py-1.5 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-rose-200/60 dark:border-rose-900/50 transition-colors cursor-pointer"
-              title="Remove this retirement plan"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              <span>Remove Plan</span>
-            </button>
-            <button
-              onClick={() => setIsResetPresetsModalOpen(true)}
-              className="text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 flex items-center gap-1.5 px-3 py-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>Reset Presets</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Category Dashboard Tab Bar */}
-        <div className="sticky top-2 z-40 flex items-center gap-1.5 p-1.5 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200/80 dark:border-slate-800 rounded-2xl overflow-x-auto shadow-md no-scrollbar">
-          {[
-            { id: 'inputs', label: 'Inputs & Assets', icon: Wallet },
-            { id: 'accumulation_review', label: 'Accumulation Review', icon: TrendingUp },
-            { id: 'strategy', label: 'Strategy', icon: Percent },
-            { id: 'projections', label: 'Projection', icon: LineChart },
-            { id: 'risk', label: 'Risk', icon: Shield },
-            { id: 'estate', label: 'Estate', icon: Landmark },
-            { id: 'overview', label: 'Summary', icon: LayoutDashboard },
-            { id: 'compare', label: 'Compare', icon: ArrowRightLeft },
-            { id: 'mortgage', label: 'Mortgage Debt', icon: Home },
-          ].map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as DashboardTab)}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                  isActive
-                    ? 'bg-emerald-600 text-white shadow-xs'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
-                }`}
-              >
-                <Icon className="w-4 h-4" />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Plan Loading Failure Fallback Banner */}
-        {calculationError && (
-          <div className="bg-rose-50 dark:bg-rose-950/60 p-6 rounded-3xl border border-rose-300 dark:border-rose-800 space-y-4 text-center my-4">
-            <div className="flex items-center justify-center gap-2 text-rose-700 dark:text-rose-300 font-extrabold text-base">
-              <AlertTriangle className="w-5 h-5" />
-              <span>Unable to Load Retirement Plan: "{activeScenario.name}"</span>
-            </div>
-            <p className="text-xs text-rose-600 dark:text-rose-400 max-w-xl mx-auto">
-              An error occurred while computing tax rules or financial projections for this plan: {calculationError}
-            </p>
-            <div className="flex items-center justify-center gap-3 pt-1">
-              <button
-                onClick={() => handleDeleteScenario(activeScenario.id)}
-                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
-              >
-                <Trash2 className="w-4 h-4" />
-                <span>Remove Plan</span>
-              </button>
-              <button
-                onClick={() => handleResetPlanData(activeScenario.id)}
-                className="px-4 py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 text-slate-800 dark:text-slate-200 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer"
-              >
-                <RotateCcw className="w-4 h-4" />
-                <span>Reset Plan Data</span>
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Dashboard Content Wrapped in Plan Error Boundary */}
-        <PlanErrorBoundary
-          key={activeScenarioId}
-          activeScenario={activeScenario}
-          onDeleteScenario={handleDeleteScenario}
-          onResetPlanData={handleResetPlanData}
-        >
-        {/* Tab 1: Inputs & Assets */}
-        {activeTab === 'inputs' && (
-          <div className="space-y-6">
-            <CouplePlanningCard profile={profile} onChange={handleProfileChange} />
-            <ProfileInputs profile={profile} onChange={handleProfileChange} pots={pots} />
-            <PotManager
-              pots={pots}
-              onChange={handlePotsChange}
-              taxResult={taxResult}
-              profile={profile}
-              partnerPots={profile.partnerPots}
-              onPartnerPotsChange={handlePartnerPotsChange}
-            />
-            <OneOffContributionManager profile={profile} onChange={handleProfileChange} />
-            <PotTransferManager profile={profile} onChange={handleProfileChange} pots={pots} />
-            <StatePensionCard profile={profile} onChange={handleProfileChange} />
-            <DbPensionManager profile={profile} onChange={handleProfileChange} />
-            <FixedIncomeManager profile={profile} onChange={handleProfileChange} />
-            <LifeEventsDecumulationCard profile={profile} onChange={handleProfileChange} />
-          </div>
-        )}
-
-        {/* Tab 2: Accumulation Review */}
-        {activeTab === 'accumulation_review' && (
-          <div className="space-y-6">
-            <MonthlySavingsRateCard profile={profile} pots={pots} />
-            <IsaVsPensionEfficiencyCard
-              profile={profile}
-              pots={pots}
-              taxResult={taxResult}
-              projections={projections}
-              onChange={handleProfileChange}
-            />
-            <TaxOptimizerCard
-              taxResult={taxResult}
-              profile={profile}
-              pots={pots}
-              onOptimizeTaxTrap={handleOptimizeTaxTrap}
-            />
-            <AccumulationLedgerCard
-              profile={profile}
-              pots={pots}
-              onChange={handleProfileChange}
-            />
-          </div>
-        )}
-
-        {/* Tab 3: Strategy */}
-        {activeTab === 'strategy' && (
-          <div className="space-y-6">
-            <DrawdownPlanner
-              profile={profile}
-              pots={pots}
-              projections={projections}
-              onChange={handleProfileChange}
-              scenarios={scenarios}
-              activeScenarioId={activeScenarioId}
-              onCreateStrategyVariants={handleCreateStrategyVariants}
-              onNavigateToCompare={() => setActiveTab('compare')}
-              onOpenMaximizedSpendModal={() => setIsMaximizedSpendModalOpen(true)}
-            />
-            <LifeEventsDecumulationCard profile={profile} onChange={handleProfileChange} />
-            <SpendingPhasesCard
-              profile={profile}
-              onChange={handleProfileChange}
-              onOpenMaximizedSpendModal={() => setIsMaximizedSpendModalOpen(true)}
-            />
-          </div>
-        )}
-
-        {/* Tab 4: Projection */}
-        {activeTab === 'projections' && (
-          <div className="space-y-6">
-            <ProjectionChart
-              projections={projections}
-              profile={profile}
-              pots={pots}
-              onChange={handleProfileChange}
-              onOpenMaximizedSpendModal={() => setIsMaximizedSpendModalOpen(true)}
-            />
-            <MacroSettingsCard profile={profile} onChange={handleProfileChange} />
-            <AnnualBreakdownTable projections={projections} profile={profile} taxResult={taxResult} onChange={handleProfileChange} />
-          </div>
-        )}
-
-        {/* Tab 5: Risk */}
-        {activeTab === 'risk' && (
-          <div className="space-y-6">
-            <MonteCarloCard profile={profile} pots={pots} taxResult={taxResult} onChange={handleProfileChange} />
-            <MacroSettingsCard profile={profile} onChange={handleProfileChange} />
-            <HistoricModelingCard profile={profile} pots={pots} taxResult={taxResult} onChange={handleProfileChange} />
-          </div>
-        )}
-
-        {/* Tab 6: Estate */}
-        {activeTab === 'estate' && (
-          <div className="space-y-6">
-            <IhtEstatePlanningCard profile={profile} projections={projections} onChange={handleProfileChange} />
-          </div>
-        )}
-
-        {/* Tab 7: Summary */}
-        {activeTab === 'overview' && (
-          <div className="space-y-6">
-            {/* Top PDF Report Export Card */}
-            <ExportSection
-              variant="pdf_only"
-              profile={profile}
-              pots={pots}
-              projections={projections}
-              taxResult={taxResult}
-              planName={activeScenario.name}
-            />
-
-            <StrategySummaryCard
-              profile={profile}
-              pots={pots}
-              taxResult={taxResult}
-              projections={projections}
-              onChange={handleProfileChange}
-              onOpenMaximizedSpendModal={() => setIsMaximizedSpendModalOpen(true)}
-            />
-            <ProjectionChart projections={projections} profile={profile} pots={pots} onChange={handleProfileChange} showAllCharts={true} />
-            <MonteCarloCard profile={profile} pots={pots} taxResult={taxResult} onChange={handleProfileChange} showAllScenarios={true} />
-            <IhtEstatePlanningCard profile={profile} projections={projections} onChange={handleProfileChange} hideInputs={true} />
-            <SummaryCommentsCard profile={profile} taxResult={taxResult} />
-
-            {/* Bottom CSV Data Export & JSON Backup Section */}
-            <ExportSection
-              variant="data_only"
-              profile={profile}
-              pots={pots}
-              projections={projections}
-              taxResult={taxResult}
-              planName={activeScenario.name}
-              scenarios={scenarios}
-              onImportScenarios={handleImportScenarios}
-            />
-          </div>
-        )}
-
-        {/* Tab 8: Compare */}
-        {activeTab === 'compare' && (
-          <div className="space-y-6">
-            <ScenarioComparer
-              scenarios={scenarios}
-              activeScenarioId={activeScenarioId}
-              scenarioAId={effectiveCompareAId}
-              scenarioBId={effectiveCompareBId}
-              onSelectScenarioA={setCompareScenarioAId}
-              onSelectScenarioB={setCompareScenarioBId}
-              onClose={() => setActiveTab('overview')}
-            />
-          </div>
-        )}
-
-        {/* Tab 9: Mortgage Debt */}
-        {activeTab === 'mortgage' && (
-          <div className="space-y-6">
-            <MortgageDebtCard profile={profile} onChange={handleProfileChange} />
-          </div>
-        )}
-        </PlanErrorBoundary>
-
-            <NewPlanModal
+        <NewPlanModal
         isOpen={isNewPlanModalOpen}
         onClose={() => setIsNewPlanModalOpen(false)}
         scenarios={scenarios}
@@ -1125,6 +1223,7 @@ function App() {
         />
       )}
 
+      </div>
     </div>
   );
 }

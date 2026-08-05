@@ -240,7 +240,7 @@ export const InvestmentContributionManager: React.FC<InvestmentContributionManag
         <div>
           <h2 className="font-bold text-slate-800 dark:text-slate-100 text-base flex items-center gap-2">
             <Coins className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-            <span>Investment Contributions</span>
+            <span>Contributions</span>
           </h2>
           <p className="text-xs text-slate-400 dark:text-slate-500">
             Manage regular monthly contributions and one-off lump sums across your pension, ISA, and investment pots
