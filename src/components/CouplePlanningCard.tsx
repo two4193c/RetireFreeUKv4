@@ -78,9 +78,6 @@ export const CouplePlanningCard: React.FC<CouplePlanningCardProps> = ({ profile,
                 <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 <span>UK Individual Tax & Retirement Allowances</span>
               </div>
-              <span className="text-[10px] bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 rounded-full font-semibold border border-emerald-300 dark:border-emerald-500/30">
-                2024/25 Rules
-              </span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
               <div className="bg-white/80 dark:bg-white/10 rounded-xl p-3 border border-emerald-100 dark:border-white/10">
@@ -110,9 +107,6 @@ export const CouplePlanningCard: React.FC<CouplePlanningCardProps> = ({ profile,
                 <Sparkles className="w-4 h-4 text-amber-500 dark:text-amber-300" />
                 <span>UK Joint Couple Tax & Retirement Advantages</span>
               </div>
-              <span className="text-[10px] bg-indigo-100 dark:bg-indigo-500/20 text-indigo-800 dark:text-indigo-200 px-2 py-0.5 rounded-full font-semibold border border-indigo-300 dark:border-indigo-400/30">
-                2024/25 Rules
-              </span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
               <div className="bg-white/80 dark:bg-white/10 rounded-xl p-3 border border-indigo-100 dark:border-white/10">

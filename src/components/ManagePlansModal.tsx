@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
-import { X, Layers, Plus, Trash2, Check, Pencil, Copy, Calendar, ArrowRight } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { X, Layers, Plus, Trash2, Check, Pencil, Calendar, ArrowRight, ArrowUpDown } from 'lucide-react';
 import { PlannerScenario } from '../types';
+
+export type PlanSortOption = 'updated_desc' | 'updated_asc' | 'name_asc' | 'name_desc' | 'custom';
 
 interface ManagePlansModalProps {
   isOpen: boolean;
@@ -25,6 +27,32 @@ export const ManagePlansModal: React.FC<ManagePlansModalProps> = ({
 }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState<string>('');
+  const [sortBy, setSortBy] = useState<PlanSortOption>('updated_desc');
+
+  const sortedScenarios = useMemo(() => {
+    const list = [...scenarios];
+    switch (sortBy) {
+      case 'updated_desc':
+        return list.sort((a, b) => {
+          const timeA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+          const timeB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+          return timeB - timeA;
+        });
+      case 'updated_asc':
+        return list.sort((a, b) => {
+          const timeA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+          const timeB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+          return timeA - timeB;
+        });
+      case 'name_asc':
+        return list.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
+      case 'name_desc':
+        return list.sort((a, b) => b.name.localeCompare(a.name, undefined, { numeric: true, sensitivity: 'base' }));
+      case 'custom':
+      default:
+        return list;
+    }
+  }, [scenarios, sortBy]);
 
   if (!isOpen) return null;
 
@@ -41,9 +69,24 @@ export const ManagePlansModal: React.FC<ManagePlansModalProps> = ({
     setEditingId(null);
   };
 
+  const formatDate = (isoString?: string) => {
+    if (!isoString) return null;
+    try {
+      const d = new Date(isoString);
+      if (isNaN(d.getTime())) return null;
+      return d.toLocaleDateString('en-GB', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      });
+    } catch {
+      return null;
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-6 relative overflow-hidden max-h-[90vh] flex flex-col">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-5 relative overflow-hidden max-h-[90vh] flex flex-col">
         
         {/* Modal Header */}
         <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4 shrink-0">
@@ -65,11 +108,37 @@ export const ManagePlansModal: React.FC<ManagePlansModalProps> = ({
           </button>
         </div>
 
+        {/* Sort Controls Bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 shrink-0 bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-xl border border-slate-200/80 dark:border-slate-800">
+          <span className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
+            Saved Plans ({sortedScenarios.length})
+          </span>
+          <div className="flex items-center gap-2">
+            <label htmlFor="plan-sort-select" className="text-xs font-semibold text-slate-600 dark:text-slate-400 flex items-center gap-1.5 shrink-0">
+              <ArrowUpDown className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              <span>Sort by:</span>
+            </label>
+            <select
+              id="plan-sort-select"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as PlanSortOption)}
+              className="px-2.5 py-1 text-xs font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 cursor-pointer shadow-2xs"
+            >
+              <option value="updated_desc">Last Updated (Newest First)</option>
+              <option value="updated_asc">Last Updated (Oldest First)</option>
+              <option value="name_asc">Plan Name (A → Z)</option>
+              <option value="name_desc">Plan Name (Z → A)</option>
+              <option value="custom">Default Order</option>
+            </select>
+          </div>
+        </div>
+
         {/* Plans List */}
         <div className="overflow-y-auto space-y-3 pr-1 flex-1">
-          {scenarios.map((s) => {
+          {sortedScenarios.map((s) => {
             const isActive = s.id === activeScenarioId;
             const isEditing = editingId === s.id;
+            const updatedDateStr = formatDate(s.updatedAt);
 
             return (
               <div
@@ -129,10 +198,19 @@ export const ManagePlansModal: React.FC<ManagePlansModalProps> = ({
                           <Pencil className="w-3.5 h-3.5" />
                         </button>
                       </div>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-3">
+                      <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2 flex-wrap">
                         <span>Salary £{(Number(s.profile?.grossAnnualSalary) || 0).toLocaleString()}</span>
                         <span>•</span>
                         <span>Retire Age {s.profile?.targetRetirementAge ?? 60}</span>
+                        {updatedDateStr && (
+                          <>
+                            <span>•</span>
+                            <span className="inline-flex items-center gap-1 text-slate-500 dark:text-slate-400">
+                              <Calendar className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                              Updated {updatedDateStr}
+                            </span>
+                          </>
+                        )}
                       </p>
                     </div>
                   )}

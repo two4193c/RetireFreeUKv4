@@ -785,7 +785,7 @@ export const AccumulationLedgerCard: React.FC<AccumulationLedgerCardProps> = ({
   };
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-6">
+    <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-6 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
         <div className="space-y-1">
@@ -803,11 +803,11 @@ export const AccumulationLedgerCard: React.FC<AccumulationLedgerCardProps> = ({
         </div>
 
         {/* View Mode Segmented Control & Quick Filter Toggles */}
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center p-0.5 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200/60 dark:border-slate-700/60">
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+          <div className="grid grid-cols-3 sm:flex items-center p-0.5 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200/60 dark:border-slate-700/60 w-full sm:w-auto">
             <button
               onClick={() => setExpandMode('grouped')}
-              className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+              className={`px-2 sm:px-2.5 py-1 text-[11px] sm:text-xs font-bold rounded-lg transition-all cursor-pointer text-center truncate ${
                 expandMode === 'grouped'
                   ? 'bg-white dark:bg-slate-700 text-purple-700 dark:text-purple-300 shadow-xs'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
@@ -818,7 +818,7 @@ export const AccumulationLedgerCard: React.FC<AccumulationLedgerCardProps> = ({
             </button>
             <button
               onClick={() => setExpandMode('annual')}
-              className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+              className={`px-2 sm:px-2.5 py-1 text-[11px] sm:text-xs font-bold rounded-lg transition-all cursor-pointer text-center truncate ${
                 expandMode === 'annual'
                   ? 'bg-white dark:bg-slate-700 text-purple-700 dark:text-purple-300 shadow-xs'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
@@ -829,7 +829,7 @@ export const AccumulationLedgerCard: React.FC<AccumulationLedgerCardProps> = ({
             </button>
             <button
               onClick={() => setExpandMode('monthly')}
-              className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+              className={`px-2 sm:px-2.5 py-1 text-[11px] sm:text-xs font-bold rounded-lg transition-all cursor-pointer text-center truncate ${
                 expandMode === 'monthly'
                   ? 'bg-white dark:bg-slate-700 text-purple-700 dark:text-purple-300 shadow-xs'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
@@ -840,26 +840,28 @@ export const AccumulationLedgerCard: React.FC<AccumulationLedgerCardProps> = ({
             </button>
           </div>
 
-          <button
-            onClick={() => setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
-            title="Toggle Date Order"
-          >
-            <ArrowUpDown className="w-3.5 h-3.5" />
-            <span>{sortOrder === 'asc' ? 'Earliest First' : 'Latest First'}</span>
-          </button>
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
+            <button
+              onClick={() => setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))}
+              className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 transition-colors cursor-pointer flex-1 sm:flex-initial"
+              title="Toggle Date Order"
+            >
+              <ArrowUpDown className="w-3.5 h-3.5 shrink-0" />
+              <span>{sortOrder === 'asc' ? 'Earliest First' : 'Latest First'}</span>
+            </button>
 
-          <button
-            onClick={() => setShowDisabled((prev) => !prev)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
-              showDisabled
-                ? 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
-                : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200/50 dark:border-amber-800/40'
-            }`}
-          >
-            {showDisabled ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-            <span>{showDisabled ? 'Showing Inactive' : 'Active Only'}</span>
-          </button>
+            <button
+              onClick={() => setShowDisabled((prev) => !prev)}
+              className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer flex-1 sm:flex-initial ${
+                showDisabled
+                  ? 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+                  : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200/50 dark:border-amber-800/40'
+              }`}
+            >
+              {showDisabled ? <Eye className="w-3.5 h-3.5 shrink-0" /> : <EyeOff className="w-3.5 h-3.5 shrink-0" />}
+              <span>{showDisabled ? 'Showing Inactive' : 'Active Only'}</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -916,10 +918,10 @@ export const AccumulationLedgerCard: React.FC<AccumulationLedgerCardProps> = ({
       </div>
 
       {/* Pension Annual Allowance Review Box */}
-      <div className="p-4 bg-purple-50/60 dark:bg-purple-950/30 rounded-2xl border border-purple-100 dark:border-purple-800/50 space-y-3">
-        <div className="flex items-center justify-between">
+      <div className="p-3.5 sm:p-4 bg-purple-50/60 dark:bg-purple-950/30 rounded-2xl border border-purple-100 dark:border-purple-800/50 space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pb-1 border-b sm:border-b-0 border-purple-200/40 dark:border-purple-800/40">
           <div className="flex items-center gap-2">
-            <Landmark className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+            <Landmark className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" />
             <span className="font-extrabold text-xs text-purple-950 dark:text-purple-100 uppercase tracking-wider">
               Pension Annual Allowance Review (2025/26)
             </span>
@@ -933,30 +935,30 @@ export const AccumulationLedgerCard: React.FC<AccumulationLedgerCardProps> = ({
           {/* Primary Allowance */}
           {primaryTaxResult && (
             <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-purple-100 dark:border-purple-900/40 space-y-2.5">
-              <div className="flex items-center justify-between text-xs font-bold text-slate-900 dark:text-slate-100">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs font-bold text-slate-900 dark:text-slate-100">
                 <span>{primaryName}'s Pension Allowance</span>
-                <span className="text-purple-700 dark:text-purple-300 font-extrabold text-[11px] bg-purple-50 dark:bg-purple-950/80 px-2 py-0.5 rounded-md border border-purple-200/60 dark:border-purple-800/60">
+                <span className="text-purple-700 dark:text-purple-300 font-extrabold text-[11px] bg-purple-50 dark:bg-purple-950/80 px-2 py-0.5 rounded-md border border-purple-200/60 dark:border-purple-800/60 self-start sm:self-auto">
                   Actual: £{Math.round(primaryTaxResult.actualPensionAllowance).toLocaleString()}/yr
                 </span>
               </div>
 
-              <div className="grid grid-cols-3 gap-1.5 p-2 bg-purple-50/60 dark:bg-purple-950/30 rounded-lg text-[10px]">
+              <div className="grid grid-cols-3 gap-1 sm:gap-1.5 p-2 bg-purple-50/60 dark:bg-purple-950/30 rounded-lg text-[10px]">
                 <div>
-                  <span className="block text-slate-500 dark:text-slate-400 font-medium">Actual Allowance</span>
-                  <span className="font-extrabold text-purple-900 dark:text-purple-200 text-xs">
+                  <span className="block text-slate-500 dark:text-slate-400 font-medium truncate">Actual Allowance</span>
+                  <span className="font-extrabold text-purple-900 dark:text-purple-200 text-[11px] sm:text-xs">
                     £{Math.round(primaryTaxResult.actualPensionAllowance).toLocaleString()}
                   </span>
                 </div>
                 <div>
-                  <span className="block text-slate-500 dark:text-slate-400 font-medium">Statutory Cap</span>
-                  <span className="font-bold text-slate-700 dark:text-slate-300">
+                  <span className="block text-slate-500 dark:text-slate-400 font-medium truncate">Statutory Cap</span>
+                  <span className="font-bold text-slate-700 dark:text-slate-300 text-[11px] sm:text-xs">
                     £{primaryTaxResult.pensionAnnualAllowanceLimit.toLocaleString()}
-                    {primaryTaxResult.pensionAnnualAllowanceLimit < 60000 && <span className="text-amber-600 dark:text-amber-400 text-[9px] ml-0.5">(Tapered)</span>}
+                    {primaryTaxResult.pensionAnnualAllowanceLimit < 60000 && <span className="text-amber-600 dark:text-amber-400 text-[9px] ml-0.5 block sm:inline">(Tapered)</span>}
                   </span>
                 </div>
                 <div>
-                  <span className="block text-slate-500 dark:text-slate-400 font-medium">Relevant Earnings</span>
-                  <span className="font-bold text-slate-700 dark:text-slate-300">
+                  <span className="block text-slate-500 dark:text-slate-400 font-medium truncate">Relevant Earnings</span>
+                  <span className="font-bold text-slate-700 dark:text-slate-300 text-[11px] sm:text-xs">
                     £{Math.round(primaryTaxResult.eligibleEarnings).toLocaleString()}
                   </span>
                 </div>
@@ -974,7 +976,7 @@ export const AccumulationLedgerCard: React.FC<AccumulationLedgerCardProps> = ({
                   style={{ width: `${Math.min(100, primaryTaxResult.actualPensionAllowance > 0 ? (primaryTaxResult.pensionAnnualAllowanceUsed / primaryTaxResult.actualPensionAllowance) * 100 : 0)}%` }}
                 />
               </div>
-              <div className="flex items-center justify-between text-[11px] font-medium text-slate-500 dark:text-slate-400">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px] font-medium text-slate-500 dark:text-slate-400">
                 <span>
                   Used: £{Math.round(primaryTaxResult.pensionAnnualAllowanceUsed).toLocaleString()}
                   {' • '}
@@ -1022,30 +1024,30 @@ export const AccumulationLedgerCard: React.FC<AccumulationLedgerCardProps> = ({
           {/* Partner Allowance */}
           {isCouple && partnerTaxResult && (
             <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-purple-100 dark:border-purple-900/40 space-y-2.5">
-              <div className="flex items-center justify-between text-xs font-bold text-slate-900 dark:text-slate-100">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs font-bold text-slate-900 dark:text-slate-100">
                 <span>{partnerName}'s Pension Allowance</span>
-                <span className="text-purple-700 dark:text-purple-300 font-extrabold text-[11px] bg-purple-50 dark:bg-purple-950/80 px-2 py-0.5 rounded-md border border-purple-200/60 dark:border-purple-800/60">
+                <span className="text-purple-700 dark:text-purple-300 font-extrabold text-[11px] bg-purple-50 dark:bg-purple-950/80 px-2 py-0.5 rounded-md border border-purple-200/60 dark:border-purple-800/60 self-start sm:self-auto">
                   Actual: £{Math.round(partnerTaxResult.actualPensionAllowance).toLocaleString()}/yr
                 </span>
               </div>
 
-              <div className="grid grid-cols-3 gap-1.5 p-2 bg-purple-50/60 dark:bg-purple-950/30 rounded-lg text-[10px]">
+              <div className="grid grid-cols-3 gap-1 sm:gap-1.5 p-2 bg-purple-50/60 dark:bg-purple-950/30 rounded-lg text-[10px]">
                 <div>
-                  <span className="block text-slate-500 dark:text-slate-400 font-medium">Actual Allowance</span>
-                  <span className="font-extrabold text-purple-900 dark:text-purple-200 text-xs">
+                  <span className="block text-slate-500 dark:text-slate-400 font-medium truncate">Actual Allowance</span>
+                  <span className="font-extrabold text-purple-900 dark:text-purple-200 text-[11px] sm:text-xs">
                     £{Math.round(partnerTaxResult.actualPensionAllowance).toLocaleString()}
                   </span>
                 </div>
                 <div>
-                  <span className="block text-slate-500 dark:text-slate-400 font-medium">Statutory Cap</span>
-                  <span className="font-bold text-slate-700 dark:text-slate-300">
+                  <span className="block text-slate-500 dark:text-slate-400 font-medium truncate">Statutory Cap</span>
+                  <span className="font-bold text-slate-700 dark:text-slate-300 text-[11px] sm:text-xs">
                     £{partnerTaxResult.pensionAnnualAllowanceLimit.toLocaleString()}
-                    {partnerTaxResult.pensionAnnualAllowanceLimit < 60000 && <span className="text-amber-600 dark:text-amber-400 text-[9px] ml-0.5">(Tapered)</span>}
+                    {partnerTaxResult.pensionAnnualAllowanceLimit < 60000 && <span className="text-amber-600 dark:text-amber-400 text-[9px] ml-0.5 block sm:inline">(Tapered)</span>}
                   </span>
                 </div>
                 <div>
-                  <span className="block text-slate-500 dark:text-slate-400 font-medium">Relevant Earnings</span>
-                  <span className="font-bold text-slate-700 dark:text-slate-300">
+                  <span className="block text-slate-500 dark:text-slate-400 font-medium truncate">Relevant Earnings</span>
+                  <span className="font-bold text-slate-700 dark:text-slate-300 text-[11px] sm:text-xs">
                     £{Math.round(partnerTaxResult.eligibleEarnings).toLocaleString()}
                   </span>
                 </div>
@@ -1063,7 +1065,7 @@ export const AccumulationLedgerCard: React.FC<AccumulationLedgerCardProps> = ({
                   style={{ width: `${Math.min(100, partnerTaxResult.actualPensionAllowance > 0 ? (partnerTaxResult.pensionAnnualAllowanceUsed / partnerTaxResult.actualPensionAllowance) * 100 : 0)}%` }}
                 />
               </div>
-              <div className="flex items-center justify-between text-[11px] font-medium text-slate-500 dark:text-slate-400">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px] font-medium text-slate-500 dark:text-slate-400">
                 <span>
                   Used: £{Math.round(partnerTaxResult.pensionAnnualAllowanceUsed).toLocaleString()}
                   {' • '}
@@ -1113,46 +1115,46 @@ export const AccumulationLedgerCard: React.FC<AccumulationLedgerCardProps> = ({
       {/* Filter Toolbar */}
       <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between pt-1">
         {/* Category Tabs */}
-        <div className="inline-flex p-1 bg-slate-100 dark:bg-slate-800 rounded-xl">
+        <div className="grid grid-cols-3 sm:flex p-1 bg-slate-100 dark:bg-slate-800 rounded-xl w-full sm:w-auto">
           <button
             onClick={() => setCategoryFilter('all')}
-            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+            className={`px-2 sm:px-3 py-1.5 text-[11px] sm:text-xs font-bold rounded-lg transition-all cursor-pointer text-center truncate ${
               categoryFilter === 'all'
                 ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-sm'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
-            All Events ({ledgerItems.length})
+            All ({ledgerItems.length})
           </button>
           <button
             onClick={() => setCategoryFilter('contribution')}
-            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+            className={`px-2 sm:px-3 py-1.5 text-[11px] sm:text-xs font-bold rounded-lg transition-all cursor-pointer text-center truncate ${
               categoryFilter === 'contribution'
                 ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-sm'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
-            Contributions ({ledgerItems.filter((i) => i.category === 'contribution').length})
+            Contribs ({ledgerItems.filter((i) => i.category === 'contribution').length})
           </button>
           <button
             onClick={() => setCategoryFilter('transfer')}
-            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+            className={`px-2 sm:px-3 py-1.5 text-[11px] sm:text-xs font-bold rounded-lg transition-all cursor-pointer text-center truncate ${
               categoryFilter === 'transfer'
                 ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-sm'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
-            Pot Transfers ({ledgerItems.filter((i) => i.category === 'transfer').length})
+            Transfers ({ledgerItems.filter((i) => i.category === 'transfer').length})
           </button>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
           {/* Owner Filter (If Couple) */}
           {isCouple && (
-            <div className="inline-flex p-1 bg-slate-100 dark:bg-slate-800 rounded-xl text-xs">
+            <div className="grid grid-cols-3 sm:flex p-1 bg-slate-100 dark:bg-slate-800 rounded-xl text-xs w-full sm:w-auto">
               <button
                 onClick={() => setOwnerFilter('all')}
-                className={`px-2.5 py-1 font-bold rounded-lg transition-all cursor-pointer ${
+                className={`px-2.5 py-1 font-bold rounded-lg transition-all cursor-pointer text-center truncate ${
                   ownerFilter === 'all'
                     ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-sm'
                     : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
@@ -1162,7 +1164,7 @@ export const AccumulationLedgerCard: React.FC<AccumulationLedgerCardProps> = ({
               </button>
               <button
                 onClick={() => setOwnerFilter('primary')}
-                className={`px-2.5 py-1 font-bold rounded-lg transition-all cursor-pointer ${
+                className={`px-2.5 py-1 font-bold rounded-lg transition-all cursor-pointer text-center truncate ${
                   ownerFilter === 'primary'
                     ? 'bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-sm'
                     : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
@@ -1172,7 +1174,7 @@ export const AccumulationLedgerCard: React.FC<AccumulationLedgerCardProps> = ({
               </button>
               <button
                 onClick={() => setOwnerFilter('partner')}
-                className={`px-2.5 py-1 font-bold rounded-lg transition-all cursor-pointer ${
+                className={`px-2.5 py-1 font-bold rounded-lg transition-all cursor-pointer text-center truncate ${
                   ownerFilter === 'partner'
                     ? 'bg-white dark:bg-slate-900 text-indigo-700 dark:text-indigo-400 shadow-sm'
                     : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
@@ -1216,65 +1218,65 @@ export const AccumulationLedgerCard: React.FC<AccumulationLedgerCardProps> = ({
               return (
                 <div
                   key={item.id}
-                  className={`p-4 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-4 ${
+                  className={`p-3.5 sm:p-4 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4 ${
                     !item.enabled
                       ? 'bg-slate-50/70 dark:bg-slate-900/40 opacity-60'
                       : 'hover:bg-slate-50/60 dark:hover:bg-slate-800/40'
                   }`}
                 >
                   {/* Left: Date & Core Details */}
-                  <div className="flex items-start gap-3.5 min-w-0">
+                  <div className="flex items-start gap-2.5 sm:gap-3.5 min-w-0">
                     {/* Date Badge */}
-                    <div className="shrink-0 text-center bg-slate-100 dark:bg-slate-800/80 px-3 py-2 rounded-xl border border-slate-200/50 dark:border-slate-700/50 min-w-[100px]">
-                      <div className="flex items-center justify-center gap-1 text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                        <Calendar className="w-3 h-3 text-slate-400" />
-                        <span>{item.year ? `Year ${item.year}` : 'Date'}</span>
+                    <div className="shrink-0 text-center bg-slate-100 dark:bg-slate-800/80 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl border border-slate-200/50 dark:border-slate-700/50 min-w-[72px] sm:min-w-[100px]">
+                      <div className="flex items-center justify-center gap-1 text-[9px] sm:text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                        <Calendar className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-slate-400 shrink-0" />
+                        <span className="truncate">{item.year ? `Year ${item.year}` : 'Date'}</span>
                       </div>
-                      <div className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-0.5 leading-tight">
+                      <div className="text-[11px] sm:text-xs font-bold text-slate-800 dark:text-slate-200 mt-0.5 leading-tight">
                         {item.dateDisplay}
                       </div>
                     </div>
 
                     {/* Info */}
-                    <div className="space-y-1 min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-extrabold text-sm text-slate-900 dark:text-slate-100 truncate">
+                    <div className="space-y-1 min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                        <span className="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-slate-100 break-words">
                           {item.name}
                         </span>
 
                         {/* Owner Tag */}
                         {isCouple && (
                           <span
-                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            className={`inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold ${
                               item.owner === 'partner'
                                 ? 'bg-indigo-100/70 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300'
                                 : 'bg-emerald-100/70 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300'
                             }`}
                           >
-                            <User className="w-2.5 h-2.5" />
+                            <User className="w-2.5 h-2.5 shrink-0" />
                             {item.ownerName}
                           </span>
                         )}
 
                         {/* Event Category Tag */}
                         {isTransfer ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100/70 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200/50 dark:border-purple-800/40">
-                            <ArrowRightLeft className="w-2.5 h-2.5" />
+                          <span className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold bg-purple-100/70 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200/50 dark:border-purple-800/40">
+                            <ArrowRightLeft className="w-2.5 h-2.5 shrink-0" />
                             Pot Transfer
                           </span>
                         ) : isDbLump ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100/70 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200/50 dark:border-amber-800/40">
-                            <Coins className="w-2.5 h-2.5" />
+                          <span className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold bg-amber-100/70 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200/50 dark:border-amber-800/40">
+                            <Coins className="w-2.5 h-2.5 shrink-0" />
                             DB Lump Sum
                           </span>
                         ) : isOneOff ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100/70 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/50 dark:border-blue-800/40">
-                            <PiggyBank className="w-2.5 h-2.5" />
+                          <span className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold bg-blue-100/70 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/50 dark:border-blue-800/40">
+                            <PiggyBank className="w-2.5 h-2.5 shrink-0" />
                             One-off Lump Sum
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100/70 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/40">
-                            <TrendingUp className="w-2.5 h-2.5" />
+                          <span className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold bg-emerald-100/70 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/40">
+                            <TrendingUp className="w-2.5 h-2.5 shrink-0" />
                             Monthly Savings
                           </span>
                         )}
@@ -1285,19 +1287,19 @@ export const AccumulationLedgerCard: React.FC<AccumulationLedgerCardProps> = ({
                         {isTransfer && item.sourcePot ? (
                           <>
                             <span className="text-slate-500 dark:text-slate-400 font-medium">From:</span>
-                            <span className={`px-2 py-0.5 rounded-lg text-[11px] font-bold border ${getPotBadgeColor(item.sourcePot)}`}>
+                            <span className={`px-2 py-0.5 rounded-lg text-[10px] sm:text-[11px] font-bold border ${getPotBadgeColor(item.sourcePot)}`}>
                               {getPotName(item.sourcePot)}
                             </span>
-                            <ArrowRight className="w-3.5 h-3.5 text-purple-500" />
+                            <ArrowRight className="w-3 h-3 text-purple-500 shrink-0" />
                             <span className="text-slate-500 dark:text-slate-400 font-medium">To:</span>
-                            <span className={`px-2 py-0.5 rounded-lg text-[11px] font-bold border ${getPotBadgeColor(item.targetPot)}`}>
+                            <span className={`px-2 py-0.5 rounded-lg text-[10px] sm:text-[11px] font-bold border ${getPotBadgeColor(item.targetPot)}`}>
                               {getPotName(item.targetPot)}
                             </span>
                           </>
                         ) : (
                           <>
                             <span className="text-slate-500 dark:text-slate-400 font-medium">Target Pot:</span>
-                            <span className={`px-2 py-0.5 rounded-lg text-[11px] font-bold border ${getPotBadgeColor(item.targetPot)}`}>
+                            <span className={`px-2 py-0.5 rounded-lg text-[10px] sm:text-[11px] font-bold border ${getPotBadgeColor(item.targetPot)}`}>
                               {getPotName(item.targetPot)}
                             </span>
                           </>
@@ -1306,11 +1308,11 @@ export const AccumulationLedgerCard: React.FC<AccumulationLedgerCardProps> = ({
 
                       {/* Description / Tax Relief Note */}
                       {(item.description || item.taxReliefEstimate) && (
-                        <div className="text-[11px] text-slate-500 dark:text-slate-400 pt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1">
-                          {item.description && <span>{item.description}</span>}
+                        <div className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 pt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+                          {item.description && <span className="leading-tight">{item.description}</span>}
                           {item.taxReliefEstimate && item.taxReliefEstimate > 0 && (
                             <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold">
-                              <Sparkles className="w-3 h-3 text-emerald-500" />
+                              <Sparkles className="w-3 h-3 text-emerald-500 shrink-0" />
                               +£{Math.round(item.taxReliefEstimate).toLocaleString()}{expandMode === 'monthly' ? '/mo' : '/yr'} Govt Tax Relief
                             </span>
                           )}
@@ -1320,9 +1322,9 @@ export const AccumulationLedgerCard: React.FC<AccumulationLedgerCardProps> = ({
                   </div>
 
                   {/* Right: Amount & Action Toggle */}
-                  <div className="flex items-center justify-between md:justify-end gap-4 shrink-0 border-t md:border-t-0 pt-2 md:pt-0 border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center justify-between md:justify-end gap-3 sm:gap-4 shrink-0 border-t md:border-t-0 pt-2 md:pt-0 border-slate-100 dark:border-slate-800 w-full md:w-auto">
                     {/* Amount Display */}
-                    <div className="text-right">
+                    <div className="text-left md:text-right">
                       {expandMode === 'monthly' && !isTransfer && !isOneOff ? (
                         <div>
                           <div className="text-base font-black text-slate-900 dark:text-slate-100">
@@ -1381,7 +1383,7 @@ export const AccumulationLedgerCard: React.FC<AccumulationLedgerCardProps> = ({
 
         {/* Pagination Toolbar */}
         {totalPages > 1 && (
-          <div className="px-4 py-3 bg-slate-50 dark:bg-slate-800/60 border-t border-slate-200/80 dark:border-slate-800 flex items-center justify-between text-xs">
+          <div className="px-3 sm:px-4 py-3 bg-slate-50 dark:bg-slate-800/60 border-t border-slate-200/80 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-2.5 text-xs text-center sm:text-left">
             <span className="text-slate-500 dark:text-slate-400 font-medium">
               Showing {Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, filteredItems.length)}–
               {Math.min(currentPage * ITEMS_PER_PAGE, filteredItems.length)} of {filteredItems.length} items
@@ -1410,14 +1412,14 @@ export const AccumulationLedgerCard: React.FC<AccumulationLedgerCardProps> = ({
       </div>
 
       {/* Footer Info */}
-      <div className="bg-slate-50 dark:bg-slate-800/40 p-3.5 rounded-xl border border-slate-200/50 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+      <div className="bg-slate-50 dark:bg-slate-800/40 p-3.5 rounded-xl border border-slate-200/50 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
         <div className="flex items-center gap-2">
           <Info className="w-4 h-4 text-emerald-600 shrink-0" />
           <span>
             Events are automatically processed in chronological order during retirement projection calculations.
           </span>
         </div>
-        <span className="font-bold text-slate-700 dark:text-slate-300">
+        <span className="font-bold text-slate-700 dark:text-slate-300 shrink-0">
           {filteredItems.length} of {ledgerItems.length} items shown
         </span>
       </div>

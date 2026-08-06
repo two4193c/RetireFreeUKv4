@@ -167,41 +167,41 @@ export const FixedIncomeManager: React.FC<FixedIncomeManagerProps> = ({ profile,
 
       {/* Person Filter Tabs (Couple Planning) */}
       {isCouple && (
-        <div className="flex items-center justify-between bg-indigo-50/60 dark:bg-slate-800/60 p-1.5 rounded-2xl border border-indigo-200/70 dark:border-slate-700 text-xs font-bold">
-          <span className="text-indigo-900 dark:text-indigo-300 px-3 text-[11px] uppercase tracking-wider font-extrabold">Filter Person:</span>
-          <div className="flex items-center gap-1">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-indigo-50/60 dark:bg-slate-800/60 p-2.5 sm:p-1.5 rounded-2xl border border-indigo-200/70 dark:border-slate-700 text-xs font-bold gap-2">
+          <span className="text-indigo-900 dark:text-indigo-300 px-1 sm:px-3 text-[11px] uppercase tracking-wider font-extrabold shrink-0">Filter Person:</span>
+          <div className="grid grid-cols-3 sm:flex items-center gap-1.5 w-full sm:w-auto">
             <button
               onClick={() => setActivePersonFilter('all')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+              className={`flex items-center justify-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-xl transition-all cursor-pointer min-w-0 ${
                 activePersonFilter === 'all'
                   ? 'bg-indigo-600 text-white shadow-xs'
                   : 'text-slate-600 dark:text-slate-300 hover:bg-indigo-100/70 dark:hover:bg-slate-700/70'
               }`}
             >
-              <Users className="w-3.5 h-3.5" />
-              <span>All Streams ({streams.length})</span>
+              <Users className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">All ({streams.length})</span>
             </button>
             <button
               onClick={() => setActivePersonFilter('primary')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+              className={`flex items-center justify-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-xl transition-all cursor-pointer min-w-0 ${
                 activePersonFilter === 'primary'
                   ? 'bg-indigo-600 text-white shadow-xs'
                   : 'text-indigo-900 dark:text-indigo-300 hover:bg-indigo-100/70 dark:hover:bg-slate-700/70'
               }`}
             >
-              <User className="w-3.5 h-3.5 text-indigo-300" />
-              <span>{profile.name || 'Primary'} ({streams.filter((s) => (s.owner || 'primary') === 'primary').length})</span>
+              <User className="w-3.5 h-3.5 text-indigo-300 shrink-0" />
+              <span className="truncate">{profile.name || 'Primary'} ({streams.filter((s) => (s.owner || 'primary') === 'primary').length})</span>
             </button>
             <button
               onClick={() => setActivePersonFilter('partner')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+              className={`flex items-center justify-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-xl transition-all cursor-pointer min-w-0 ${
                 activePersonFilter === 'partner'
                   ? 'bg-rose-600 text-white shadow-xs'
                   : 'text-rose-900 dark:text-rose-300 hover:bg-rose-100/70 dark:hover:bg-slate-700/70'
               }`}
             >
-              <Heart className="w-3.5 h-3.5 text-rose-300 fill-rose-300" />
-              <span>{profile.partnerName || 'Partner'} ({streams.filter((s) => s.owner === 'partner').length})</span>
+              <Heart className="w-3.5 h-3.5 text-rose-300 fill-rose-300 shrink-0" />
+              <span className="truncate">{profile.partnerName || 'Partner'} ({streams.filter((s) => s.owner === 'partner').length})</span>
             </button>
           </div>
         </div>
@@ -291,35 +291,40 @@ export const FixedIncomeManager: React.FC<FixedIncomeManagerProps> = ({ profile,
               >
                 {/* Card Top Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200/60 dark:border-slate-700/60">
-                  <div className="flex items-center gap-3">
-                    <span
-                      className={`w-6 h-6 rounded-lg font-black text-xs flex items-center justify-center ${
-                        isTaxFree ? 'bg-emerald-200 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-200' : 'bg-blue-200 dark:bg-blue-900 text-blue-900 dark:text-blue-200'
-                      }`}
-                    >
-                      #{index + 1}
-                    </span>
-                    <input
-                      type="text"
-                      value={stream.name}
-                      onChange={(e) => handleUpdateStream(stream.id, { name: e.target.value })}
-                      className="font-bold text-sm text-slate-900 dark:text-slate-100 bg-transparent border-b border-dashed border-slate-300 dark:border-slate-700 focus:border-indigo-600 focus:outline-none px-1 py-0.5"
-                      placeholder="Income Name (e.g. PIP Payment)"
-                    />
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-1 min-w-[180px]">
+                      <span
+                        className={`w-6 h-6 rounded-lg font-black text-xs flex items-center justify-center shrink-0 ${
+                          isTaxFree ? 'bg-emerald-200 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-200' : 'bg-blue-200 dark:bg-blue-900 text-blue-900 dark:text-blue-200'
+                        }`}
+                      >
+                        #{index + 1}
+                      </span>
+                      <input
+                        type="text"
+                        value={stream.name}
+                        onChange={(e) => handleUpdateStream(stream.id, { name: e.target.value })}
+                        className="font-bold text-sm text-slate-900 dark:text-slate-100 bg-transparent border-b border-dashed border-slate-300 dark:border-slate-700 focus:border-indigo-600 focus:outline-none px-1 py-0.5 w-full min-w-0"
+                        placeholder="Income Name (e.g. PIP Payment)"
+                      />
+                    </div>
 
                     {profile.isCouplePlanning && (
-                      <select
-                        value={stream.owner || 'primary'}
-                        onChange={(e) => handleUpdateStream(stream.id, { owner: e.target.value as 'primary' | 'partner' })}
-                        className="text-xs font-bold px-2 py-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                      >
-                        <option value="primary">{profile.name || 'Primary'}</option>
-                        <option value="partner">{profile.partnerName || 'Partner'}</option>
-                      </select>
+                      <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700 shrink-0">
+                        <User className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                        <select
+                          value={stream.owner || 'primary'}
+                          onChange={(e) => handleUpdateStream(stream.id, { owner: e.target.value as 'primary' | 'partner' })}
+                          className="text-xs font-bold bg-transparent text-slate-800 dark:text-slate-100 focus:outline-none cursor-pointer max-w-[120px] sm:max-w-none truncate"
+                        >
+                          <option value="primary" className="bg-white dark:bg-slate-900">{profile.name || 'Primary'}</option>
+                          <option value="partner" className="bg-white dark:bg-slate-900">{profile.partnerName || 'Partner'}</option>
+                        </select>
+                      </div>
                     )}
                   </div>
 
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center justify-between sm:justify-end gap-4 shrink-0">
                     <label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
                       <input
                         type="checkbox"

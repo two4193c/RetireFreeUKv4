@@ -14,7 +14,7 @@ import {
   CartesianGrid,
   ReferenceLine,
 } from 'recharts';
-import { YearProjection, UserProfile, InvestmentPots } from '../types';
+import { YearProjection, UserProfile, InvestmentPots, AppMode } from '../types';
 import { getTargetIncomeForAge, generateProjections } from '../utils/projectionEngine';
 import { calculateUKTax, getPensionAccessAge, getPartnerPensionAccessAge } from '../utils/ukTaxEngine';
 import { DEFAULT_POTS, DEFAULT_PARTNER_POTS } from '../utils/defaultData';
@@ -28,9 +28,10 @@ interface ProjectionChartProps {
   onChange?: (updatedProfile: UserProfile) => void;
   onOpenMaximizedSpendModal?: () => void;
   showAllCharts?: boolean;
+  appMode?: AppMode;
 }
 
-export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, profile, pots, onChange, onOpenMaximizedSpendModal, showAllCharts = false }) => {
+export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, profile, pots, onChange, onOpenMaximizedSpendModal, showAllCharts = false, appMode = 'basic' }) => {
   const [chartMode, setChartMode] = useState<'pots' | 'income' | 'shortfall'>('pots');
   const [potChartType, setPotChartType] = useState<'area' | 'line'>('area');
   const [portfolioViewMode, setPortfolioViewMode] = useState<'combined' | 'primary' | 'partner'>('combined');
@@ -2200,6 +2201,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
           pots={pots || DEFAULT_POTS}
           onChangeProfile={onChange}
           onOpenMaximizedSpendModal={onOpenMaximizedSpendModal}
+          appMode={appMode}
         />
       )}
     </motion.div>

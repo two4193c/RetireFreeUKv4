@@ -126,35 +126,6 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
         </div>
       </div>
 
-      {/* EARLY RETIREMENT NOTICES (NMPA GAP WARNINGS) */}
-      <div className="space-y-3">
-        {isPrimaryEarlyRetirement && (
-          <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-2xl p-3.5 flex items-start gap-3 text-xs text-amber-900 dark:text-amber-200">
-            <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-            <div>
-              <p className="font-bold">Early Retirement Access Notice ({profile.name || 'Primary User'})</p>
-              <p className="mt-0.5 text-amber-800 dark:text-amber-300 leading-relaxed">
-                You plan to retire at age <strong>{profile.targetRetirementAge}</strong>, but under UK Normal Minimum Pension Age (NMPA) rules, private pensions cannot be drawn until age <strong>{primaryAccessAge}</strong>.
-                In years {profile.targetRetirementAge} to {primaryAccessAge - 1}, your income will be drawn exclusively from <strong>ISAs and Cash pots</strong>.
-              </p>
-            </div>
-          </div>
-        )}
-
-        {isPartnerEarlyRetirement && (
-          <div className="bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 rounded-2xl p-3.5 flex items-start gap-3 text-xs text-rose-900 dark:text-rose-200">
-            <AlertTriangle className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
-            <div>
-              <p className="font-bold">Partner Early Retirement Access Notice ({profile.partnerName || 'Partner'})</p>
-              <p className="mt-0.5 text-rose-800 dark:text-rose-300 leading-relaxed">
-                Partner plans to retire at age <strong>{partnerRetireAge}</strong>, but under UK NMPA rules, partner private pensions cannot be accessed until age <strong>{partnerAccessAge}</strong>.
-                In partner ages {partnerRetireAge} to {partnerAccessAge - 1}, partner income will rely on partner tax-free <strong>ISAs and Cash reserves</strong>.
-              </p>
-            </div>
-          </div>
-        )}
-      </div>
-
       {/* PRIMARY & PARTNER PROFILE INPUTS */}
       {isCouple ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -339,6 +310,20 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
                 </div>
               </div>
             </div>
+
+            {/* Primary Early Retirement Access Notice */}
+            {isPrimaryEarlyRetirement && (
+              <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-2xl p-3.5 flex items-start gap-3 text-xs text-amber-900 dark:text-amber-200 mt-3">
+                <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-bold">Early Retirement Access Notice ({profile.name || 'Primary User'})</p>
+                  <p className="mt-0.5 text-amber-800 dark:text-amber-300 leading-relaxed">
+                    You plan to retire at age <strong>{profile.targetRetirementAge}</strong>, but under UK Normal Minimum Pension Age (NMPA) rules, private pensions cannot be drawn until age <strong>{primaryAccessAge}</strong>.
+                    In years {profile.targetRetirementAge} to {primaryAccessAge - 1}, your income will be drawn exclusively from <strong>ISAs and Cash pots</strong>.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* PARTNER USER CARD */}
@@ -521,6 +506,20 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
                 </div>
               </div>
             </div>
+
+            {/* Partner Early Retirement Access Notice */}
+            {isPartnerEarlyRetirement && (
+              <div className="bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 rounded-2xl p-3.5 flex items-start gap-3 text-xs text-rose-900 dark:text-rose-200 mt-3">
+                <AlertTriangle className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-bold">Partner Early Retirement Access Notice ({profile.partnerName || 'Partner'})</p>
+                  <p className="mt-0.5 text-rose-800 dark:text-rose-300 leading-relaxed">
+                    Partner plans to retire at age <strong>{partnerRetireAge}</strong>, but under UK NMPA rules, partner private pensions cannot be accessed until age <strong>{partnerAccessAge}</strong>.
+                    In partner ages {partnerRetireAge} to {partnerAccessAge - 1}, partner income will rely on partner tax-free <strong>ISAs and Cash reserves</strong>.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       ) : (
@@ -696,6 +695,20 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
               </div>
             </div>
           </div>
+
+          {/* Primary Early Retirement Access Notice for Single Mode */}
+          {isPrimaryEarlyRetirement && (
+            <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-2xl p-3.5 flex items-start gap-3 text-xs text-amber-900 dark:text-amber-200 mt-3 sm:col-span-2 lg:col-span-3 xl:col-span-5">
+              <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold">Early Retirement Access Notice ({profile.name || 'Primary User'})</p>
+                <p className="mt-0.5 text-amber-800 dark:text-amber-300 leading-relaxed">
+                  You plan to retire at age <strong>{profile.targetRetirementAge}</strong>, but under UK Normal Minimum Pension Age (NMPA) rules, private pensions cannot be drawn until age <strong>{primaryAccessAge}</strong>.
+                  In years {profile.targetRetirementAge} to {primaryAccessAge - 1}, your income will be drawn exclusively from <strong>ISAs and Cash pots</strong>.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -741,447 +754,6 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
           </select>
         </div>
       </div>
-
-      {/* INCOME TAX BANDS OVERRIDE SECTION */}
-      {(() => {
-        const customBands = profile.customTaxBands || DEFAULT_CUSTOM_TAX_BANDS;
-        const isCustomEnabled = Boolean(customBands.enabled);
-        const isScottish = profile.taxRegion === 'scotland';
-
-        const updateCustomTaxBand = <K extends keyof CustomTaxBandOverrides>(field: K, value: CustomTaxBandOverrides[K]) => {
-          onChange({
-            ...profile,
-            customTaxBands: {
-              ...(profile.customTaxBands || DEFAULT_CUSTOM_TAX_BANDS),
-              [field]: value,
-            },
-          });
-        };
-
-        const resetCustomTaxBands = () => {
-          onChange({
-            ...profile,
-            customTaxBands: {
-              ...DEFAULT_CUSTOM_TAX_BANDS,
-              enabled: true,
-            },
-          });
-        };
-
-        return (
-          <div className="pt-5 border-t border-slate-100 dark:border-slate-800 space-y-4">
-            {/* Inflation Indexing Toggle */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/60">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center border bg-indigo-100 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800/60">
-                  <Receipt className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm">
-                    Tax Bands & Allowance Inflation Indexing
-                  </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    {(profile.indexTaxBands ?? true)
-                      ? 'Personal allowance & tax thresholds expand each year with CPI inflation'
-                      : 'Tax bands & allowances remain frozen in nominal terms (simulating fiscal drag)'}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 bg-white dark:bg-slate-900 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => onChange({ ...profile, indexTaxBands: true })}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
-                    (profile.indexTaxBands ?? true)
-                      ? 'bg-emerald-600 text-white shadow-sm'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                  }`}
-                >
-                  Indexed (Default)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onChange({ ...profile, indexTaxBands: false })}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
-                    !(profile.indexTaxBands ?? true)
-                      ? 'bg-amber-600 text-white shadow-sm'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                  }`}
-                >
-                  Frozen (Fiscal Drag)
-                </button>
-              </div>
-            </div>
-
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/60">
-              <div className="flex items-center gap-3">
-                <div className={`w-9 h-9 rounded-xl flex items-center justify-center border transition-colors ${
-                  isCustomEnabled
-                    ? 'bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800/60'
-                    : 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/60'
-                }`}>
-                  <Sliders className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm">
-                      Income Tax Bands & Allowances Overrides
-                    </h3>
-                    {isCustomEnabled && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
-                        <Sparkles className="w-3 h-3" /> Custom Overrides Active
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    {isCustomEnabled
-                      ? 'Custom tax bands and rates are active across all tax calculations and projection models'
-                      : 'Currently using standard HMRC UK 2026/27 default tax bands (£12,570 PA, 20%, 40%, 45%)'}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={isCustomEnabled}
-                    onChange={(e) => updateCustomTaxBand('enabled', e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none dark:bg-slate-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
-                </label>
-                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  {isCustomEnabled ? 'Override Enabled' : 'Use Default UK Bands'}
-                </span>
-              </div>
-            </div>
-
-            {/* CUSTOM TAX BANDS EDITOR */}
-            {isCustomEnabled && (
-              <div className="bg-amber-50/40 dark:bg-slate-800/40 border border-amber-200/80 dark:border-slate-700/80 rounded-2xl p-4 space-y-4 transition-all">
-                <div className="flex items-center justify-between pb-2 border-b border-amber-200/50 dark:border-slate-700/50">
-                  <div className="flex items-center gap-2">
-                    <Receipt className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wide">
-                      {isScottish ? 'Scottish Income Tax Bands Override' : 'rUK (England/NI/Wales) Income Tax Bands Override'}
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={resetCustomTaxBands}
-                    className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-lg transition-colors cursor-pointer"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5" />
-                    Reset to HMRC Defaults
-                  </button>
-                </div>
-
-                {/* Standard rUK Tax Bands Inputs */}
-                {!isScottish ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                    {/* Personal Allowance */}
-                    <div className="space-y-1">
-                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between">
-                        <span>Personal Allowance (£)</span>
-                        <span className="text-[10px] text-slate-400">0% Tax</span>
-                      </label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-2.5 text-slate-400 text-xs font-bold">£</span>
-                        <input
-                          type="number"
-                          step="100"
-                          min="0"
-                          value={customBands.personalAllowance}
-                          onChange={(e) => updateCustomTaxBand('personalAllowance', Math.max(0, Number(e.target.value)))}
-                          className="w-full pl-7 pr-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
-                        />
-                      </div>
-                      <p className="text-[10px] text-slate-400">Tax-free threshold (Std: £12,570)</p>
-                    </div>
-
-                    {/* PA Taper Threshold */}
-                    <div className="space-y-1">
-                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between">
-                        <span>PA Taper Start (£)</span>
-                        <span className="text-[10px] text-slate-400">£1 per £2</span>
-                      </label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-2.5 text-slate-400 text-xs font-bold">£</span>
-                        <input
-                          type="number"
-                          step="1000"
-                          min="0"
-                          value={customBands.paTaperThreshold}
-                          onChange={(e) => updateCustomTaxBand('paTaperThreshold', Math.max(0, Number(e.target.value)))}
-                          className="w-full pl-7 pr-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
-                        />
-                      </div>
-                      <p className="text-[10px] text-slate-400">PA clawback start (Std: £100,000)</p>
-                    </div>
-
-                    {/* Basic Rate % */}
-                    <div className="space-y-1">
-                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between">
-                        <span>Basic Rate (%)</span>
-                        <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">Basic</span>
-                      </label>
-                      <div className="relative">
-                        <input
-                          type="number"
-                          step="0.5"
-                          min="0"
-                          max="100"
-                          value={customBands.basicRatePercent}
-                          onChange={(e) => updateCustomTaxBand('basicRatePercent', Number(e.target.value))}
-                          className="w-full pl-3 pr-7 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
-                        />
-                        <span className="absolute right-3 top-2.5 text-slate-400 text-xs font-bold">%</span>
-                      </div>
-                      <p className="text-[10px] text-slate-400">Basic tax rate (Std: 20%)</p>
-                    </div>
-
-                    {/* Basic Rate Band Limit */}
-                    <div className="space-y-1">
-                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between">
-                        <span>Basic Band Width (£)</span>
-                        <span className="text-[10px] text-slate-400">Taxable</span>
-                      </label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-2.5 text-slate-400 text-xs font-bold">£</span>
-                        <input
-                          type="number"
-                          step="100"
-                          min="0"
-                          value={customBands.basicRateThreshold}
-                          onChange={(e) => updateCustomTaxBand('basicRateThreshold', Math.max(0, Number(e.target.value)))}
-                          className="w-full pl-7 pr-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
-                        />
-                      </div>
-                      <p className="text-[10px] text-slate-400">Width of basic rate band (Std: £37,700)</p>
-                    </div>
-
-                    {/* Higher Rate % */}
-                    <div className="space-y-1">
-                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between">
-                        <span>Higher Rate (%)</span>
-                        <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold">Higher</span>
-                      </label>
-                      <div className="relative">
-                        <input
-                          type="number"
-                          step="0.5"
-                          min="0"
-                          max="100"
-                          value={customBands.higherRatePercent}
-                          onChange={(e) => updateCustomTaxBand('higherRatePercent', Number(e.target.value))}
-                          className="w-full pl-3 pr-7 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
-                        />
-                        <span className="absolute right-3 top-2.5 text-slate-400 text-xs font-bold">%</span>
-                      </div>
-                      <p className="text-[10px] text-slate-400">Higher tax rate (Std: 40%)</p>
-                    </div>
-
-                    {/* Higher Rate Gross Limit */}
-                    <div className="space-y-1">
-                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between">
-                        <span>Higher Rate Gross Limit (£)</span>
-                        <span className="text-[10px] text-slate-400">Gross</span>
-                      </label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-2.5 text-slate-400 text-xs font-bold">£</span>
-                        <input
-                          type="number"
-                          step="500"
-                          min="0"
-                          value={customBands.higherRateThreshold}
-                          onChange={(e) => updateCustomTaxBand('higherRateThreshold', Math.max(0, Number(e.target.value)))}
-                          className="w-full pl-7 pr-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
-                        />
-                      </div>
-                      <p className="text-[10px] text-slate-400">Gross income where additional rate starts (Std: £125,140)</p>
-                    </div>
-
-                    {/* Additional Rate % */}
-                    <div className="space-y-1">
-                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between">
-                        <span>Additional Rate (%)</span>
-                        <span className="text-[10px] text-rose-600 dark:text-rose-400 font-bold">Additional</span>
-                      </label>
-                      <div className="relative">
-                        <input
-                          type="number"
-                          step="0.5"
-                          min="0"
-                          max="100"
-                          value={customBands.additionalRatePercent}
-                          onChange={(e) => updateCustomTaxBand('additionalRatePercent', Number(e.target.value))}
-                          className="w-full pl-3 pr-7 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
-                        />
-                        <span className="absolute right-3 top-2.5 text-slate-400 text-xs font-bold">%</span>
-                      </div>
-                      <p className="text-[10px] text-slate-400">Top tax rate above higher threshold (Std: 45%)</p>
-                    </div>
-                  </div>
-                ) : (
-                  /* Scottish Tax Bands Overrides */
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    <div className="space-y-1">
-                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Starter Rate (%)</label>
-                      <input
-                        type="number"
-                        step="0.5"
-                        value={customBands.scotStarterRatePercent ?? 19}
-                        onChange={(e) => updateCustomTaxBand('scotStarterRatePercent', Number(e.target.value))}
-                        className="w-full px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100"
-                      />
-                      <p className="text-[10px] text-slate-400">Std: 19% up to £2,306 taxable</p>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Basic Rate (%)</label>
-                      <input
-                        type="number"
-                        step="0.5"
-                        value={customBands.scotBasicRatePercent ?? 20}
-                        onChange={(e) => updateCustomTaxBand('scotBasicRatePercent', Number(e.target.value))}
-                        className="w-full px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100"
-                      />
-                      <p className="text-[10px] text-slate-400">Std: 20% up to £13,991 taxable</p>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Intermediate Rate (%)</label>
-                      <input
-                        type="number"
-                        step="0.5"
-                        value={customBands.scotIntermediateRatePercent ?? 21}
-                        onChange={(e) => updateCustomTaxBand('scotIntermediateRatePercent', Number(e.target.value))}
-                        className="w-full px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100"
-                      />
-                      <p className="text-[10px] text-slate-400">Std: 21% up to £31,092 taxable</p>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Higher Rate (%)</label>
-                      <input
-                        type="number"
-                        step="0.5"
-                        value={customBands.scotHigherRatePercent ?? 42}
-                        onChange={(e) => updateCustomTaxBand('scotHigherRatePercent', Number(e.target.value))}
-                        className="w-full px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100"
-                      />
-                      <p className="text-[10px] text-slate-400">Std: 42% up to £62,430 taxable</p>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Advanced Rate (%)</label>
-                      <input
-                        type="number"
-                        step="0.5"
-                        value={customBands.scotAdvancedRatePercent ?? 45}
-                        onChange={(e) => updateCustomTaxBand('scotAdvancedRatePercent', Number(e.target.value))}
-                        className="w-full px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100"
-                      />
-                      <p className="text-[10px] text-slate-400">Std: 45% up to £125,140 taxable</p>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Top Rate (%)</label>
-                      <input
-                        type="number"
-                        step="0.5"
-                        value={customBands.scotTopRatePercent ?? 48}
-                        onChange={(e) => updateCustomTaxBand('scotTopRatePercent', Number(e.target.value))}
-                        className="w-full px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100"
-                      />
-                      <p className="text-[10px] text-slate-400">Std: 48% over £125,140 taxable</p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Statutory Allowances Overrides (Max Pension Annual Allowance & ISA Allowance) */}
-                <div className="pt-3 border-t border-amber-200/80 dark:border-slate-700/80 space-y-2">
-                  <h5 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
-                    <ShieldCheck className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                    Statutory Annual Allowances Overrides
-                  </h5>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {/* Max Pension Annual Allowance */}
-                    <div className="space-y-1">
-                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between">
-                        <span>Max Pension Annual Allowance (£)</span>
-                        <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold">Annual Limit</span>
-                      </label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-2.5 text-slate-400 text-xs font-bold">£</span>
-                        <input
-                          type="number"
-                          step="1000"
-                          min="0"
-                          value={customBands.pensionAnnualAllowance ?? 60000}
-                          onChange={(e) => updateCustomTaxBand('pensionAnnualAllowance', Math.max(0, Number(e.target.value)))}
-                          className="w-full pl-7 pr-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
-                        />
-                      </div>
-                      <p className="text-[10px] text-slate-400">Statutory pension annual contribution allowance limit (Std: £60,000)</p>
-                    </div>
-
-                    {/* ISA Annual Allowance */}
-                    <div className="space-y-1">
-                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between">
-                        <span>ISA Annual Allowance (£)</span>
-                        <span className="text-[10px] text-sky-600 dark:text-sky-400 font-bold">Annual Limit</span>
-                      </label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-2.5 text-slate-400 text-xs font-bold">£</span>
-                        <input
-                          type="number"
-                          step="1000"
-                          min="0"
-                          value={customBands.isaAnnualAllowance ?? 20000}
-                          onChange={(e) => updateCustomTaxBand('isaAnnualAllowance', Math.max(0, Number(e.target.value)))}
-                          className="w-full pl-7 pr-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
-                        />
-                      </div>
-                      <p className="text-[10px] text-slate-400">Annual tax-free ISA subscription allowance limit (Std: £20,000)</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* LIVE TAX BAND SUMMARY BADGES */}
-                <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-amber-200/60 dark:border-slate-700/60 flex flex-wrap items-center justify-between gap-2 text-xs">
-                  <span className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                    Active Custom Tax Schedule:
-                  </span>
-                  <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold text-slate-600 dark:text-slate-400">
-                    <span className="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800">
-                      0% up to £{customBands.personalAllowance.toLocaleString()}
-                    </span>
-                    <span className="bg-blue-50 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 px-2.5 py-1 rounded-lg border border-blue-200 dark:border-blue-800">
-                      {customBands.basicRatePercent}% up to £{(customBands.personalAllowance + customBands.basicRateThreshold).toLocaleString()} gross
-                    </span>
-                    <span className="bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 px-2.5 py-1 rounded-lg border border-amber-200 dark:border-amber-800">
-                      {customBands.higherRatePercent}% up to £{customBands.higherRateThreshold.toLocaleString()} gross
-                    </span>
-                    <span className="bg-rose-50 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 px-2.5 py-1 rounded-lg border border-rose-200 dark:border-rose-800">
-                      {customBands.additionalRatePercent}% over £{customBands.higherRateThreshold.toLocaleString()} gross
-                    </span>
-                    <span className="bg-purple-50 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300 px-2.5 py-1 rounded-lg border border-purple-200 dark:border-purple-800">
-                      Pension AA: £{(customBands.pensionAnnualAllowance ?? 60000).toLocaleString()}
-                    </span>
-                    <span className="bg-indigo-50 dark:bg-indigo-950/60 text-indigo-800 dark:text-indigo-300 px-2.5 py-1 rounded-lg border border-indigo-200 dark:border-indigo-800">
-                      ISA AA: £{(customBands.isaAnnualAllowance ?? 20000).toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        );
-      })()}
     </div>
   );
 };

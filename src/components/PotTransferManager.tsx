@@ -603,7 +603,7 @@ export const PotTransferManager: React.FC<PotTransferManagerProps> = ({
                   </div>
 
                   {/* Form Inputs Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
                     
                     {/* Source Pot Selection */}
                     <div className="space-y-1">
@@ -615,14 +615,14 @@ export const PotTransferManager: React.FC<PotTransferManagerProps> = ({
                           </span>
                         )}
                       </label>
-                      <div className="flex gap-1">
+                      <div className="flex flex-col sm:flex-row gap-1">
                         {isCouple && (
                           <select
                             value={srcOwner}
                             onChange={(e) =>
                               handleUpdateTransfer(transfer.id, { owner: e.target.value as 'primary' | 'partner' })
                             }
-                            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 rounded-xl px-2 py-2 text-xs font-medium focus:ring-2 focus:ring-emerald-500 outline-none shrink-0"
+                            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 rounded-xl px-2 py-2 text-xs font-medium focus:ring-2 focus:ring-emerald-500 outline-none w-full sm:w-auto shrink-0"
                           >
                             <option value="primary">{primaryName}</option>
                             <option value="partner">{partnerName}</option>
@@ -656,7 +656,7 @@ export const PotTransferManager: React.FC<PotTransferManagerProps> = ({
                           </span>
                         )}
                       </label>
-                      <div className="flex gap-1">
+                      <div className="flex flex-col sm:flex-row gap-1">
                         {isCouple && (
                           <select
                             value={dstOwner}
@@ -665,7 +665,7 @@ export const PotTransferManager: React.FC<PotTransferManagerProps> = ({
                                 destinationOwner: e.target.value as 'primary' | 'partner',
                               })
                             }
-                            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 rounded-xl px-2 py-2 text-xs font-medium focus:ring-2 focus:ring-indigo-500 outline-none shrink-0"
+                            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 rounded-xl px-2 py-2 text-xs font-medium focus:ring-2 focus:ring-indigo-500 outline-none w-full sm:w-auto shrink-0"
                           >
                             <option value="primary">{primaryName}</option>
                             <option value="partner">{partnerName}</option>
@@ -724,11 +724,11 @@ export const PotTransferManager: React.FC<PotTransferManagerProps> = ({
                   </div>
 
                   {/* DISPLAY BANNER: SOURCE POT BALANCE ON TRANSFER DATE & NEW DESTINATION BALANCE */}
-                  <div className="bg-slate-100 dark:bg-slate-900 text-slate-900 dark:text-white p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3 shadow-md transition-colors">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-200 dark:border-slate-800/80">
+                  <div className="bg-slate-100 dark:bg-slate-900 text-slate-900 dark:text-white p-3.5 sm:p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3 shadow-md transition-colors">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 pb-2 border-b border-slate-200 dark:border-slate-800/80">
                       <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                        <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
+                        <Calendar className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                        <span className="text-xs font-bold text-slate-700 dark:text-slate-200 leading-snug">
                           Transfer Execution Date: <strong className="text-slate-900 dark:text-white">{transfer.transferDate || `${targetYear}-04-06`}</strong> (Tax Year {targetYear}/{(targetYear + 1).toString().slice(2)})
                         </span>
                       </div>
@@ -746,7 +746,7 @@ export const PotTransferManager: React.FC<PotTransferManagerProps> = ({
                       
                       {/* SOURCE POT BOX */}
                       <div className="bg-white dark:bg-slate-950/80 p-3.5 rounded-xl border border-rose-200 dark:border-rose-900/40 space-y-2">
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pb-1 border-b border-rose-100 dark:border-rose-900/30">
                           <span className="text-[11px] font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400 flex items-center gap-1.5">
                             <span>📤 Source Pot</span>
                             <span className="text-slate-500 dark:text-slate-400 font-normal">({srcOwnerName})</span>
@@ -754,27 +754,27 @@ export const PotTransferManager: React.FC<PotTransferManagerProps> = ({
                           <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{getPotLabel(transfer.sourcePot)}</span>
                         </div>
 
-                        <div className="space-y-1 text-xs">
-                          <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                        <div className="space-y-1.5 text-xs">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-0.5 text-slate-600 dark:text-slate-400">
                             <span>Balance on Transfer Date (Before):</span>
-                            <strong className="text-slate-900 dark:text-white">£{Math.round(srcBalanceBefore).toLocaleString()}</strong>
+                            <strong className="text-slate-900 dark:text-white sm:text-right">£{Math.round(srcBalanceBefore).toLocaleString()}</strong>
                           </div>
 
-                          <div className="flex justify-between text-rose-600 dark:text-rose-400 font-bold">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-0.5 text-rose-600 dark:text-rose-400 font-bold">
                             <span>Transfer Amount Deducted:</span>
-                            <span>-£{Math.round(actualTransferred).toLocaleString()}</span>
+                            <span className="sm:text-right">-£{Math.round(actualTransferred).toLocaleString()}</span>
                           </div>
 
-                          <div className="flex justify-between text-slate-800 dark:text-slate-200 font-bold pt-1.5 border-t border-slate-200 dark:border-slate-800">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-0.5 text-slate-800 dark:text-slate-200 font-bold pt-1.5 border-t border-slate-200 dark:border-slate-800">
                             <span>Remaining Source Balance:</span>
-                            <strong className="text-amber-600 dark:text-amber-300">£{Math.round(srcBalanceAfter).toLocaleString()}</strong>
+                            <strong className="text-amber-600 dark:text-amber-300 sm:text-right">£{Math.round(srcBalanceAfter).toLocaleString()}</strong>
                           </div>
                         </div>
                       </div>
 
                       {/* DESTINATION POT BOX */}
                       <div className="bg-white dark:bg-slate-950/80 p-3.5 rounded-xl border border-emerald-200 dark:border-emerald-900/40 space-y-2">
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pb-1 border-b border-emerald-100 dark:border-emerald-900/30">
                           <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
                             <span>📥 Destination Pot</span>
                             <span className="text-slate-500 dark:text-slate-400 font-normal">({dstOwnerName})</span>
@@ -782,16 +782,16 @@ export const PotTransferManager: React.FC<PotTransferManagerProps> = ({
                           <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{getPotLabel(transfer.destinationPot)}</span>
                         </div>
 
-                        <div className="space-y-1 text-xs">
-                          <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                        <div className="space-y-1.5 text-xs">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-0.5 text-slate-600 dark:text-slate-400">
                             <span>Balance on Transfer Date (Before):</span>
-                            <strong className="text-slate-900 dark:text-white">£{Math.round(dstBalanceBefore).toLocaleString()}</strong>
+                            <strong className="text-slate-900 dark:text-white sm:text-right">£{Math.round(dstBalanceBefore).toLocaleString()}</strong>
                           </div>
 
-                          <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-bold">
-                            <span>Transferred Amount Added:</span>
-                            <span className="text-right">
-                              +£{Math.round(amountAddedToDst).toLocaleString()}
+                          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-0.5 text-emerald-600 dark:text-emerald-400 font-bold">
+                            <span className="shrink-0">Transferred Amount Added:</span>
+                            <div className="sm:text-right">
+                              <span>+£{Math.round(amountAddedToDst).toLocaleString()}</span>
                               {transfer.destinationPot === 'sipp' && taxReliefAmount > 0 && (
                                 <span className="block text-[10px] text-emerald-600 dark:text-emerald-300 font-normal">
                                   (net £{Math.round(actualTransferred).toLocaleString()} + £{Math.round(taxReliefAmount).toLocaleString()} tax relief)
@@ -802,12 +802,12 @@ export const PotTransferManager: React.FC<PotTransferManagerProps> = ({
                                   (net £{Math.round(actualTransferred).toLocaleString()} + £{Math.round(taxReliefAmount).toLocaleString()} LISA bonus)
                                 </span>
                               )}
-                            </span>
+                            </div>
                           </div>
 
-                          <div className="flex justify-between text-slate-800 dark:text-slate-200 font-bold pt-1.5 border-t border-slate-200 dark:border-slate-800">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-0.5 text-slate-800 dark:text-slate-200 font-bold pt-1.5 border-t border-slate-200 dark:border-slate-800">
                             <span>New Balance on Transfer Date:</span>
-                            <strong className="text-emerald-600 dark:text-emerald-400 text-sm">£{Math.round(dstBalanceAfter).toLocaleString()}</strong>
+                            <strong className="text-emerald-600 dark:text-emerald-400 text-sm sm:text-right">£{Math.round(dstBalanceAfter).toLocaleString()}</strong>
                           </div>
                         </div>
                       </div>
@@ -835,14 +835,14 @@ export const PotTransferManager: React.FC<PotTransferManagerProps> = ({
 
                     {/* SIPP Tax Relief Bonus Banner */}
                     {transfer.destinationPot === 'sipp' && actualTransferred > 0 && (
-                      <div className="flex items-center justify-between p-2.5 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800/80 text-indigo-900 dark:text-indigo-200 text-xs rounded-xl">
-                        <div className="flex items-center gap-2 font-semibold">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800/80 text-indigo-900 dark:text-indigo-200 text-xs rounded-xl gap-2.5">
+                        <div className="flex items-center gap-2 font-semibold flex-1 min-w-0">
                           <Sparkles className="w-4 h-4 text-amber-500 dark:text-amber-400 shrink-0" />
-                          <span>
+                          <span className="leading-snug">
                             SIPP Pension Top-Up: Transfer of £{Math.round(actualTransferred).toLocaleString()} qualifies for 20%+ UK Pension Tax Relief!
                           </span>
                         </div>
-                        <span className="font-extrabold text-amber-700 dark:text-amber-300 bg-indigo-100 dark:bg-indigo-900/90 px-2.5 py-1 rounded-lg border border-indigo-200 dark:border-indigo-700/80 shrink-0">
+                        <span className="font-extrabold text-amber-700 dark:text-amber-300 bg-indigo-100 dark:bg-indigo-900/90 px-2.5 py-1.5 rounded-lg border border-indigo-200 dark:border-indigo-700/80 shrink-0 self-start sm:self-auto text-center">
                           +£{Math.round(actualTransferred * 0.25).toLocaleString()} Basic Relief Added
                         </span>
                       </div>

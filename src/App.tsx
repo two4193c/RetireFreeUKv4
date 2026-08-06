@@ -29,6 +29,7 @@ import { DrawdownPlanner } from './components/DrawdownPlanner';
 import { ExportSection } from './components/ExportSection';
 import { ScenarioComparer } from './components/ScenarioComparer';
 import { MacroSettingsCard } from './components/MacroSettingsCard';
+import { AdvancedSettingsCard } from './components/AdvancedSettingsCard';
 import { HistoricModelingCard } from './components/HistoricModelingCard';
 import { IhtEstatePlanningCard } from './components/IhtEstatePlanningCard';
 import { SummaryCommentsCard } from './components/SummaryCommentsCard';
@@ -49,7 +50,7 @@ import { PlanErrorBoundary } from './components/PlanErrorBoundary';
 const STORAGE_KEY = 'uk_retirement_planner_scenarios_v2';
 const THEME_STORAGE_KEY = 'retireready_theme_v1';
 
-export type DashboardTab = 'plan_management' | 'inputs' | 'accumulation_review' | 'strategy' | 'projections' | 'risk' | 'estate' | 'overview' | 'compare' | 'mortgage' | 'other';
+export type DashboardTab = 'plan_management' | 'inputs' | 'accumulation_review' | 'strategy' | 'projections' | 'risk' | 'estate' | 'overview' | 'compare' | 'mortgage' | 'advanced_settings' | 'other';
 
 interface AppErrorBoundaryProps {
   children: ReactNode;
@@ -206,7 +207,7 @@ function App() {
   // Redirect to inputs tab if switching to basic mode while on an advanced-only tab
   useEffect(() => {
     if (appMode === 'basic') {
-      const advancedTabs: DashboardTab[] = ['accumulation_review', 'estate', 'compare', 'mortgage', 'other'];
+      const advancedTabs: DashboardTab[] = ['accumulation_review', 'estate', 'compare', 'mortgage', 'advanced_settings', 'other'];
       if (advancedTabs.includes(activeTab)) {
         setActiveTab('inputs');
       }
@@ -860,6 +861,7 @@ function App() {
                     pots={pots}
                     onChange={handleProfileChange}
                     onOpenMaximizedSpendModal={() => setIsMaximizedSpendModalOpen(true)}
+                    appMode={appMode}
                   />
                 </div>
                 {appMode === 'advanced' && (
@@ -978,6 +980,13 @@ function App() {
                 <div id="card-mortgage-debt" className="scroll-mt-24 transition-all duration-300">
                   <MortgageDebtCard profile={profile} onChange={handleProfileChange} />
                 </div>
+              </div>
+            )}
+
+            {/* Tab: Advanced Settings */}
+            {activeTab === 'advanced_settings' && (
+              <div className="space-y-6">
+                <AdvancedSettingsCard profile={profile} onChange={handleProfileChange} />
               </div>
             )}
 

@@ -267,41 +267,41 @@ export const InvestmentContributionManager: React.FC<InvestmentContributionManag
 
       {/* Person Filter Tabs (Couple Planning) */}
       {isCouple && (
-        <div className="flex items-center justify-between bg-indigo-50/60 dark:bg-slate-800/60 p-1.5 rounded-2xl border border-indigo-200/70 dark:border-slate-700 text-xs font-bold">
-          <span className="text-indigo-900 dark:text-indigo-300 px-3 text-[11px] uppercase tracking-wider font-extrabold">Filter Person:</span>
-          <div className="flex items-center gap-1">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-indigo-50/60 dark:bg-slate-800/60 p-2.5 sm:p-1.5 rounded-2xl border border-indigo-200/70 dark:border-slate-700 text-xs font-bold gap-2">
+          <span className="text-indigo-900 dark:text-indigo-300 px-1 sm:px-3 text-[11px] uppercase tracking-wider font-extrabold shrink-0">Filter Person:</span>
+          <div className="grid grid-cols-3 sm:flex items-center gap-1.5 w-full sm:w-auto">
             <button
               onClick={() => setActivePersonFilter('all')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+              className={`flex items-center justify-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-xl transition-all cursor-pointer min-w-0 ${
                 activePersonFilter === 'all'
                   ? 'bg-indigo-600 text-white shadow-xs'
                   : 'text-slate-600 dark:text-slate-300 hover:bg-indigo-100/70 dark:hover:bg-slate-700/70'
               }`}
             >
-              <Users className="w-3.5 h-3.5" />
-              <span>All Contributions ({contributions.length})</span>
+              <Users className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">All ({contributions.length})</span>
             </button>
             <button
               onClick={() => setActivePersonFilter('primary')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+              className={`flex items-center justify-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-xl transition-all cursor-pointer min-w-0 ${
                 activePersonFilter === 'primary'
                   ? 'bg-indigo-600 text-white shadow-xs'
                   : 'text-indigo-900 dark:text-indigo-300 hover:bg-indigo-100/70 dark:hover:bg-slate-700/70'
               }`}
             >
-              <User className="w-3.5 h-3.5 text-indigo-300" />
-              <span>{profile.name || 'Primary'} ({contributions.filter((c) => (c.owner || 'primary') === 'primary').length})</span>
+              <User className="w-3.5 h-3.5 text-indigo-300 shrink-0" />
+              <span className="truncate">{profile.name || 'Primary'} ({contributions.filter((c) => (c.owner || 'primary') === 'primary').length})</span>
             </button>
             <button
               onClick={() => setActivePersonFilter('partner')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+              className={`flex items-center justify-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-xl transition-all cursor-pointer min-w-0 ${
                 activePersonFilter === 'partner'
                   ? 'bg-rose-600 text-white shadow-xs'
                   : 'text-rose-900 dark:text-rose-300 hover:bg-rose-100/70 dark:hover:bg-slate-700/70'
               }`}
             >
-              <Heart className="w-3.5 h-3.5 text-rose-300 fill-rose-300" />
-              <span>{profile.partnerName || 'Partner'} ({contributions.filter((c) => c.owner === 'partner').length})</span>
+              <Heart className="w-3.5 h-3.5 text-rose-300 fill-rose-300 shrink-0" />
+              <span className="truncate">{profile.partnerName || 'Partner'} ({contributions.filter((c) => c.owner === 'partner').length})</span>
             </button>
           </div>
         </div>
@@ -386,36 +386,41 @@ export const InvestmentContributionManager: React.FC<InvestmentContributionManag
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     
-                    {/* Name & Enable Switch */}
-                    <div className="flex items-center gap-3 flex-1">
-                      <input
-                        type="checkbox"
-                        checked={item.enabled}
-                        onChange={(e) => handleUpdateContribution(item.id, { enabled: e.target.checked })}
-                        className="w-4 h-4 text-indigo-600 rounded border-slate-300 dark:border-slate-700 focus:ring-indigo-500 cursor-pointer"
-                      />
-                      <input
-                        type="text"
-                        value={item.name}
-                        onChange={(e) => handleUpdateContribution(item.id, { name: e.target.value })}
-                        placeholder="Contribution Name"
-                        className="font-extrabold text-slate-900 dark:text-slate-100 text-sm bg-transparent border-b border-transparent hover:border-slate-300 dark:hover:border-slate-600 focus:border-indigo-500 focus:outline-none px-1 py-0.5 flex-1"
-                      />
+                    {/* Name & Enable Switch & Person Select */}
+                    <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-1 min-w-[180px]">
+                        <input
+                          type="checkbox"
+                          checked={item.enabled}
+                          onChange={(e) => handleUpdateContribution(item.id, { enabled: e.target.checked })}
+                          className="w-4 h-4 text-indigo-600 rounded border-slate-300 dark:border-slate-700 focus:ring-indigo-500 cursor-pointer shrink-0"
+                        />
+                        <input
+                          type="text"
+                          value={item.name}
+                          onChange={(e) => handleUpdateContribution(item.id, { name: e.target.value })}
+                          placeholder="Contribution Name"
+                          className="font-extrabold text-slate-900 dark:text-slate-100 text-sm bg-transparent border-b border-transparent hover:border-slate-300 dark:hover:border-slate-600 focus:border-indigo-500 focus:outline-none px-1 py-0.5 w-full min-w-0"
+                        />
+                      </div>
 
                       {profile.isCouplePlanning && (
-                        <select
-                          value={item.owner || 'primary'}
-                          onChange={(e) => handleUpdateContribution(item.id, { owner: e.target.value as 'primary' | 'partner' })}
-                          className="text-xs font-bold px-2 py-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                        >
-                          <option value="primary">{profile.name || 'Primary'}</option>
-                          <option value="partner">{profile.partnerName || 'Partner'}</option>
-                        </select>
+                        <div className="flex items-center gap-1 bg-indigo-50 dark:bg-slate-800 px-2 py-1 rounded-lg border border-indigo-100 dark:border-slate-700 shrink-0">
+                          <User className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                          <select
+                            value={item.owner || 'primary'}
+                            onChange={(e) => handleUpdateContribution(item.id, { owner: e.target.value as 'primary' | 'partner' })}
+                            className="text-xs font-bold bg-transparent text-slate-800 dark:text-slate-100 focus:outline-none cursor-pointer max-w-[120px] sm:max-w-none truncate"
+                          >
+                            <option value="primary" className="bg-white dark:bg-slate-900">{profile.name || 'Primary'}</option>
+                            <option value="partner" className="bg-white dark:bg-slate-900">{profile.partnerName || 'Partner'}</option>
+                          </select>
+                        </div>
                       )}
                     </div>
 
                     {/* Frequency Badge & Controls */}
-                    <div className="flex items-center gap-2 text-[10px] font-bold">
+                    <div className="flex items-center justify-between sm:justify-end gap-2 text-[10px] font-bold shrink-0">
                       <select
                         value={frequency}
                         onChange={(e) => handleUpdateContribution(item.id, { frequency: e.target.value as 'one_off' | 'regular_monthly' })}

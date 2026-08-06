@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { DashboardTab } from '../App';
 import { PlannerScenario, AppMode } from '../types';
 import {
@@ -164,6 +164,17 @@ export const NAV_STRUCTURE: TabGroup[] = [
     ],
   },
   {
+    id: 'advanced_settings',
+    label: 'Advanced Settings',
+    icon: SlidersHorizontal,
+    description: 'Custom tax band overrides, inflation indexing, and pot growth overrides',
+    cards: [
+      { id: 'card-adv-tax-indexing', label: 'Tax Bands Inflation Indexing' },
+      { id: 'card-adv-tax-overrides', label: 'Income Tax Bands Overrides' },
+      { id: 'card-adv-growth-overrides', label: 'Pot Growth Rate Overrides' },
+    ],
+  },
+  {
     id: 'other',
     label: 'Other',
     icon: BookOpen,
@@ -177,11 +188,11 @@ export const NAV_STRUCTURE: TabGroup[] = [
 
 export function getFilteredNavStructure(mode: AppMode = 'basic'): TabGroup[] {
   if (mode === 'advanced') {
-    return NAV_STRUCTURE;
+    return NAV_STRUCTURE.filter((group) => group.id !== 'advanced_settings');
   }
 
-  // Hidden tabs in basic mode: accumulation_review, estate, compare, mortgage, other
-  const hiddenTabs = new Set(['accumulation_review', 'estate', 'compare', 'mortgage', 'other']);
+  // Hidden tabs in basic mode: accumulation_review, estate, compare, mortgage, other, advanced_settings
+  const hiddenTabs = new Set(['accumulation_review', 'estate', 'compare', 'mortgage', 'other', 'advanced_settings']);
 
   // Hidden cards in basic mode:
   const hiddenCards = new Set([
@@ -277,34 +288,52 @@ export function SidebarNav({
     setOpenTabGroups(allClosed);
   };
 
-  const areAllExpanded = filteredNavStructure.every((group) => openTabGroups[group.id]);
+  // Automatically collapse all sidebar menu items when switching appMode (Basic / Advanced)
+  const isInitialMount = useRef(true);
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+    handleCollapseAll();
+  }, [appMode]);
+
+  const handleModeChange = (newMode: AppMode) => {
+    if (onSetAppMode) {
+      onSetAppMode(newMode);
+      handleCollapseAll();
+    }
+  };
 
   const toggleGroup = (tabId: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    setOpenTabGroups((prev) => {
-      const willExpand = !prev[tabId];
-      if (willExpand) {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
-      return {
-        ...prev,
-        [tabId]: willExpand,
-      };
-    });
+    setOpenTabGroups((prev) => ({
+      ...prev,
+      [tabId]: !prev[tabId],
+    }));
   };
 
   const handleTabClick = (tabId: DashboardTab) => {
-    onSelectTab(tabId);
-    setOpenTabGroups((prev) => {
-      const willExpand = !prev[tabId];
-      if (willExpand) {
+    const isCurrentlyOpen = Boolean(openTabGroups[tabId]);
+
+    if (isCurrentlyOpen) {
+      // Collapsing the menu item - do NOT change page/tab
+      setOpenTabGroups((prev) => ({
+        ...prev,
+        [tabId]: false,
+      }));
+    } else {
+      // Opening the menu item - switch active tab/page
+      const isPageChanging = tabId !== activeTab;
+      onSelectTab(tabId);
+      if (isPageChanging) {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
-      return {
+      setOpenTabGroups((prev) => ({
         ...prev,
-        [tabId]: willExpand,
-      };
-    });
+        [tabId]: true,
+      }));
+    }
   };
 
   const handleSubCardClick = (tabId: DashboardTab, cardId: string) => {
@@ -528,7 +557,7 @@ export function SidebarNav({
             <div className="flex items-center gap-1 bg-white dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xs">
               <button
                 type="button"
-                onClick={() => onSetAppMode('basic')}
+                onClick={() => handleModeChange('basic')}
                 className={`flex-1 flex items-center justify-center gap-1 py-1 px-2 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
                   appMode === 'basic'
                     ? 'bg-emerald-600 text-white shadow-2xs'
@@ -540,7 +569,7 @@ export function SidebarNav({
               </button>
               <button
                 type="button"
-                onClick={() => onSetAppMode('advanced')}
+                onClick={() => handleModeChange('advanced')}
                 className={`flex-1 flex items-center justify-center gap-1 py-1 px-2 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
                   appMode === 'advanced'
                     ? 'bg-indigo-600 text-white shadow-2xs'
