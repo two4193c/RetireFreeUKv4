@@ -30,7 +30,7 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-full flex items-center justify-between gap-3">
         
         {/* Active Plan Title Bar */}
-        <div className="flex items-center gap-2.5 py-1 min-w-0 w-full">
+        <div className="flex items-center gap-2.5 py-1 min-w-0 flex-1">
           <div className="w-7 h-7 sm:w-8 sm:h-8 bg-emerald-600 dark:bg-emerald-500/20 border border-emerald-500/30 rounded-xl flex items-center justify-center text-white dark:text-emerald-400 shadow-xs shrink-0">
             <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-emerald-400 dark:bg-emerald-400 animate-pulse" />
           </div>
@@ -49,5 +49,6 @@ export const Header: React.FC<HeaderProps> = ({
     </header>
   );
 };
+
 
 

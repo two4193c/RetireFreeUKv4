@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { UserProfile, InvestmentPots, DrawdownStrategy, PlannerScenario } from '../types';
+import { UserProfile, InvestmentPots, DrawdownStrategy, PlannerScenario, AppMode } from '../types';
 import { calculateUKTax } from '../utils/ukTaxEngine';
 import { generateProjections } from '../utils/projectionEngine';
 import { solveMaximizedSpend, disableMaximizedSpend } from '../utils/maximizedSpendSolver';
@@ -32,6 +32,7 @@ interface QuickDrawdownStrategyBarProps {
   onOpenMaximizedSpendModal?: () => void;
   className?: string;
   compact?: boolean;
+  appMode?: AppMode;
 }
 
 export interface StrategyDefinition {
@@ -170,10 +171,19 @@ export const QuickDrawdownStrategyBar: React.FC<QuickDrawdownStrategyBarProps> =
   onOpenMaximizedSpendModal,
   className = '',
   compact = false,
+  appMode = 'basic',
 }) => {
   const isCouple = Boolean(profile.isCouplePlanning);
   const [targetPerson, setTargetPerson] = useState<'primary' | 'partner' | 'both'>('primary');
   const [showCloneSuccess, setShowCloneSuccess] = useState(false);
+
+  const availableStrategyDefinitions = useMemo(() => {
+    if (appMode === 'advanced') {
+      return STRATEGY_DEFINITIONS;
+    }
+    const basicAllowed = new Set<DrawdownStrategy>(['tax_free_bracket', 'isa_first', 'pension_first']);
+    return STRATEGY_DEFINITIONS.filter((s) => basicAllowed.has(s.id));
+  }, [appMode]);
 
   const activePrimaryStrategy = profile.drawdownStrategy || 'isa_first';
   const activePartnerStrategy = profile.partnerDrawdownStrategy || profile.drawdownStrategy || 'isa_first';
@@ -353,31 +363,33 @@ export const QuickDrawdownStrategyBar: React.FC<QuickDrawdownStrategyBarProps> =
         </div>
 
         {/* Right Action Controls */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Quick Clone / Compare Action */}
-          {onCreateStrategyVariants && activeScenarioId && (
-            <button
-              type="button"
-              onClick={handleCloneVariants}
-              className="px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/80 text-emerald-700 dark:text-emerald-300 rounded-xl border border-emerald-200 dark:border-emerald-800 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
-              title="Create strategy variation plans (including Max Spender) to compare side-by-side in the Compare tab"
-            >
-              <Copy className="w-3.5 h-3.5" />
-              <span>Clone Strategy Variants</span>
-            </button>
-          )}
+        {appMode === 'advanced' && (
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Quick Clone / Compare Action */}
+            {onCreateStrategyVariants && activeScenarioId && (
+              <button
+                type="button"
+                onClick={handleCloneVariants}
+                className="px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/80 text-emerald-700 dark:text-emerald-300 rounded-xl border border-emerald-200 dark:border-emerald-800 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                title="Create strategy variation plans (including Max Spender) to compare side-by-side in the Compare tab"
+              >
+                <Copy className="w-3.5 h-3.5" />
+                <span>Clone Strategy Variants</span>
+              </button>
+            )}
 
-          {onNavigateToCompare && (
-            <button
-              type="button"
-              onClick={onNavigateToCompare}
-              className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
-            >
-              <ArrowRightLeft className="w-3.5 h-3.5 text-indigo-500" />
-              <span>Compare Plans</span>
-            </button>
-          )}
-        </div>
+            {onNavigateToCompare && (
+              <button
+                type="button"
+                onClick={onNavigateToCompare}
+                className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <ArrowRightLeft className="w-3.5 h-3.5 text-indigo-500" />
+                <span>Compare Plans</span>
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {showCloneSuccess && (
@@ -400,8 +412,8 @@ export const QuickDrawdownStrategyBar: React.FC<QuickDrawdownStrategyBarProps> =
       {/* Horizontal Strategy Buttons / Cards Grid */}
       {!isCouple ? (
         <div className="space-y-1.5">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2">
-            {STRATEGY_DEFINITIONS.map((def) => {
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+            {availableStrategyDefinitions.map((def) => {
               const isActive = activePrimaryStrategy === def.id;
               const metrics = strategyMetrics[def.id];
 
@@ -540,8 +552,8 @@ export const QuickDrawdownStrategyBar: React.FC<QuickDrawdownStrategyBarProps> =
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2">
-              {STRATEGY_DEFINITIONS.map((def) => {
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+              {availableStrategyDefinitions.map((def) => {
                 const isActive = activePrimaryStrategy === def.id;
                 const metrics = primaryStrategyMetrics[def.id];
 
@@ -649,8 +661,8 @@ export const QuickDrawdownStrategyBar: React.FC<QuickDrawdownStrategyBarProps> =
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2">
-              {STRATEGY_DEFINITIONS.map((def) => {
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+              {availableStrategyDefinitions.map((def) => {
                 const isActive = activePartnerStrategy === def.id;
                 const metrics = partnerStrategyMetrics[def.id];
 

@@ -1,5 +1,7 @@
 export type UKTaxRegion = 'england_ni_wales' | 'scotland';
 
+export type AppMode = 'basic' | 'advanced';
+
 export type ContributionMethod = 'salary_sacrifice' | 'relief_at_source' | 'net_pay';
 
 export type LsaProtectionType =

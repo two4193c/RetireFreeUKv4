@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, Component, ErrorInfo, ReactNode } from 'react';
-import { PlannerScenario, UserProfile, InvestmentPots, DrawdownStrategy } from './types';
+import { PlannerScenario, UserProfile, InvestmentPots, DrawdownStrategy, AppMode } from './types';
 import { STRATEGY_DEFINITIONS } from './components/QuickDrawdownStrategyBar';
 import { DEFAULT_PROFILE, DEFAULT_POTS, DEFAULT_PARTNER_POTS, PRESET_SCENARIOS, sanitizePots, sanitizeProfile, createBlankScenario } from './utils/defaultData';
 import { NewPlanModal } from './components/NewPlanModal';
@@ -189,6 +189,29 @@ function App() {
   });
 
   const [activeTab, setActiveTab] = useState<DashboardTab>('inputs');
+  const [appMode, setAppMode] = useState<AppMode>(() => {
+    try {
+      const saved = localStorage.getItem('retireready_mode_v1');
+      if (saved === 'basic' || saved === 'advanced') return saved;
+    } catch (e) {}
+    return 'basic';
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('retireready_mode_v1', appMode);
+    } catch (e) {}
+  }, [appMode]);
+
+  // Redirect to inputs tab if switching to basic mode while on an advanced-only tab
+  useEffect(() => {
+    if (appMode === 'basic') {
+      const advancedTabs: DashboardTab[] = ['accumulation_review', 'estate', 'compare', 'mortgage', 'other'];
+      if (advancedTabs.includes(activeTab)) {
+        setActiveTab('inputs');
+      }
+    }
+  }, [appMode, activeTab]);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [activeCardId, setActiveCardId] = useState<string>('');
   const [compareScenarioAId, setCompareScenarioAId] = useState<string>('');
@@ -619,6 +642,8 @@ function App() {
         }}
         isCollapsed={isSidebarCollapsed}
         onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+        appMode={appMode}
+        onSetAppMode={setAppMode}
         theme={theme}
         onToggleTheme={handleToggleTheme}
         scenarios={scenarios}
@@ -735,26 +760,32 @@ function App() {
                 <div id="card-inputs-oneoff" className="scroll-mt-24 transition-all duration-300">
                   <OneOffContributionManager profile={profile} onChange={handleProfileChange} />
                 </div>
-                <div id="card-inputs-transfers" className="scroll-mt-24 transition-all duration-300">
-                  <PotTransferManager profile={profile} onChange={handleProfileChange} pots={pots} />
-                </div>
-                <div id="card-inputs-statepension" className="scroll-mt-24 transition-all duration-300">
-                  <StatePensionCard profile={profile} onChange={handleProfileChange} />
-                </div>
+                {appMode === 'advanced' && (
+                  <>
+                    <div id="card-inputs-transfers" className="scroll-mt-24 transition-all duration-300">
+                      <PotTransferManager profile={profile} onChange={handleProfileChange} pots={pots} />
+                    </div>
+                    <div id="card-inputs-statepension" className="scroll-mt-24 transition-all duration-300">
+                      <StatePensionCard profile={profile} onChange={handleProfileChange} />
+                    </div>
+                  </>
+                )}
                 <div id="card-inputs-dbpension" className="scroll-mt-24 transition-all duration-300">
                   <DbPensionManager profile={profile} onChange={handleProfileChange} />
                 </div>
                 <div id="card-inputs-fixedincome" className="scroll-mt-24 transition-all duration-300">
                   <FixedIncomeManager profile={profile} onChange={handleProfileChange} />
                 </div>
-                <div id="card-inputs-lifeevents" className="scroll-mt-24 transition-all duration-300">
-                  <LifeEventsDecumulationCard profile={profile} onChange={handleProfileChange} />
-                </div>
+                {appMode === 'advanced' && (
+                  <div id="card-inputs-lifeevents" className="scroll-mt-24 transition-all duration-300">
+                    <LifeEventsDecumulationCard profile={profile} onChange={handleProfileChange} />
+                  </div>
+                )}
               </div>
             )}
 
-            {/* Tab 2: Accumulation Review */}
-            {activeTab === 'accumulation_review' && (
+            {/* Tab 2: Accumulation Review (Advanced Only) */}
+            {activeTab === 'accumulation_review' && appMode === 'advanced' && (
               <div className="space-y-6">
                 <div id="card-accum-savings" className="scroll-mt-24 transition-all duration-300">
                   <MonthlySavingsRateCard profile={profile} pots={pots} />
@@ -800,6 +831,7 @@ function App() {
                     onCreateStrategyVariants={handleCreateStrategyVariants}
                     onNavigateToCompare={() => setActiveTab('compare')}
                     onOpenMaximizedSpendModal={() => setIsMaximizedSpendModalOpen(true)}
+                    appMode={appMode}
                   />
                 </div>
                 <div id="card-strat-phases" className="scroll-mt-24 transition-all duration-300">
@@ -807,11 +839,14 @@ function App() {
                     profile={profile}
                     onChange={handleProfileChange}
                     onOpenMaximizedSpendModal={() => setIsMaximizedSpendModalOpen(true)}
+                    appMode={appMode}
                   />
                 </div>
-                <div id="card-strat-lifeevents" className="scroll-mt-24 transition-all duration-300">
-                  <LifeEventsDecumulationCard profile={profile} onChange={handleProfileChange} />
-                </div>
+                {appMode === 'advanced' && (
+                  <div id="card-strat-lifeevents" className="scroll-mt-24 transition-all duration-300">
+                    <LifeEventsDecumulationCard profile={profile} onChange={handleProfileChange} />
+                  </div>
+                )}
               </div>
             )}
 
@@ -827,12 +862,16 @@ function App() {
                     onOpenMaximizedSpendModal={() => setIsMaximizedSpendModalOpen(true)}
                   />
                 </div>
-                <div id="card-proj-macro" className="scroll-mt-24 transition-all duration-300">
-                  <MacroSettingsCard profile={profile} onChange={handleProfileChange} />
-                </div>
-                <div id="card-proj-table" className="scroll-mt-24 transition-all duration-300">
-                  <AnnualBreakdownTable projections={projections} profile={profile} taxResult={taxResult} onChange={handleProfileChange} />
-                </div>
+                {appMode === 'advanced' && (
+                  <>
+                    <div id="card-proj-macro" className="scroll-mt-24 transition-all duration-300">
+                      <MacroSettingsCard profile={profile} onChange={handleProfileChange} />
+                    </div>
+                    <div id="card-proj-table" className="scroll-mt-24 transition-all duration-300">
+                      <AnnualBreakdownTable projections={projections} profile={profile} taxResult={taxResult} onChange={handleProfileChange} />
+                    </div>
+                  </>
+                )}
               </div>
             )}
 
@@ -842,12 +881,16 @@ function App() {
                 <div id="card-risk-monte" className="scroll-mt-24 transition-all duration-300">
                   <MonteCarloCard profile={profile} pots={pots} taxResult={taxResult} onChange={handleProfileChange} />
                 </div>
-                <div id="card-risk-macro" className="scroll-mt-24 transition-all duration-300">
-                  <MacroSettingsCard profile={profile} onChange={handleProfileChange} />
-                </div>
-                <div id="card-risk-historic" className="scroll-mt-24 transition-all duration-300">
-                  <HistoricModelingCard profile={profile} pots={pots} taxResult={taxResult} onChange={handleProfileChange} />
-                </div>
+                {appMode === 'advanced' && (
+                  <>
+                    <div id="card-risk-macro" className="scroll-mt-24 transition-all duration-300">
+                      <MacroSettingsCard profile={profile} onChange={handleProfileChange} />
+                    </div>
+                    <div id="card-risk-historic" className="scroll-mt-24 transition-all duration-300">
+                      <HistoricModelingCard profile={profile} pots={pots} taxResult={taxResult} onChange={handleProfileChange} />
+                    </div>
+                  </>
+                )}
               </div>
             )}
 

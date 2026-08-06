@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { UserProfile, LsaProtectionType, IncomeProductOption, AnnuityType, AnnuityDurationOption, AnnuityTranche, InvestmentPots, YearProjection, LumpSumSplit, PlannerScenario, DrawdownStrategy } from '../types';
+import { UserProfile, LsaProtectionType, IncomeProductOption, AnnuityType, AnnuityDurationOption, AnnuityTranche, InvestmentPots, YearProjection, LumpSumSplit, PlannerScenario, DrawdownStrategy, AppMode } from '../types';
 import { DrawdownComparisonMatrix } from './DrawdownComparisonMatrix';
 import { AnnuityPclsTaxAdviceCard } from './AnnuityPclsTaxAdviceCard';
 import { QuickDrawdownStrategyBar } from './QuickDrawdownStrategyBar';
@@ -212,6 +212,7 @@ interface DrawdownPlannerProps {
   activeScenarioId?: string;
   onCreateStrategyVariants?: (baseScenarioId: string, strategiesToCreate: DrawdownStrategy[]) => void;
   onNavigateToCompare?: () => void;
+  appMode?: AppMode;
 }
 
 export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
@@ -224,6 +225,7 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
   activeScenarioId,
   onCreateStrategyVariants,
   onNavigateToCompare,
+  appMode = 'basic',
 }) => {
   const [activeDrawdownPerson, setActiveDrawdownPerson] = useState<'primary' | 'partner'>('primary');
   const [activeLumpSumPerson, setActiveLumpSumPerson] = useState<'primary' | 'partner'>('primary');
@@ -486,6 +488,7 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
         onCreateStrategyVariants={onCreateStrategyVariants}
         onNavigateToCompare={onNavigateToCompare}
         onOpenMaximizedSpendModal={onOpenMaximizedSpendModal}
+        appMode={appMode}
       />
 
       {/* Header */}
@@ -926,249 +929,251 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
       {/* SECTION 2: Drawdown Order & PCLS Maximum Tax-Free Cash */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2 border-t border-slate-100 dark:border-slate-800">
         
-        {/* Drawdown Order Strategy */}
-        <div className="p-5 bg-slate-50/80 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-              <span>Remaining Pot Drawdown Sequence</span>
-            </label>
-            <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 rounded-md border border-emerald-200/50 dark:border-emerald-800/50">
-              Tax Efficiency
-            </span>
-          </div>
-
-          {/* Person Selector Tabs for Couple Planning */}
-          {isCouple && (
-            <div className="flex items-center justify-between bg-white dark:bg-slate-900 p-1 rounded-2xl border border-slate-200 dark:border-slate-700 text-xs font-bold shadow-xs">
-              <span className="text-slate-500 dark:text-slate-400 px-3 text-[11px] uppercase tracking-wider font-extrabold">Sequence For:</span>
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => setActiveDrawdownPerson('primary')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
-                    activeDrawdownPerson === 'primary'
-                      ? 'bg-indigo-600 text-white shadow-xs'
-                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                  }`}
-                >
-                  <User className="w-3.5 h-3.5 text-indigo-200" />
-                  <span>{profile.name || 'Primary'}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveDrawdownPerson('partner')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
-                    activeDrawdownPerson === 'partner'
-                      ? 'bg-rose-600 text-white shadow-xs'
-                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                  }`}
-                >
-                  <Heart className="w-3.5 h-3.5 text-rose-200 fill-rose-200" />
-                  <span>{profile.partnerName || 'Partner'}</span>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Primary Person Drawdown Strategy */}
-          {(!isCouple || activeDrawdownPerson === 'primary') && (
-            <div className="space-y-3">
-              {isCouple && (
-                <div className="flex items-center gap-1.5 text-xs font-bold text-indigo-900 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 px-3 py-1 rounded-xl border border-indigo-100 dark:border-indigo-800/60">
-                  <User className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-                  <span>{profile.name || 'Primary'} Drawdown Strategy</span>
-                </div>
-              )}
-              <select
-                value={profile.drawdownStrategy || 'isa_first'}
-                onChange={(e) => updateField('drawdownStrategy', e.target.value as any)}
-                className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 cursor-pointer shadow-xs"
-              >
-                <option value="isa_first">ISA & Cash First (Preserve Pension Tax Shelter)</option>
-                <option value="tax_free_bracket">Tax-Free Allowance Fill (£12,570)</option>
-                <option value="basic_rate_bracket">Basic Rate Band Fill (£50,270)</option>
-                <option value="higher_rate_bracket">Higher Rate Band Fill (£125,140)</option>
-                <option value="pension_first">Pension First (Full Pension Drawdown First)</option>
-                <option value="cash_first">Cash Buffer First -&gt; ISA -&gt; Pension</option>
-                <option value="pro_rata">Pro Rata (Balanced Split Across Pots)</option>
-                <option value="annuity">Buy an Annuity (Guaranteed Lifetime Income)</option>
-                <option value="hybrid_annuity">Hybrid / Tranche Annuity (Partial Annuity + Flexi-Drawdown)</option>
-              </select>
-
-              <div className="text-[11px] text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-700 leading-relaxed">
-                {profile.drawdownStrategy === 'isa_first' && (
-                  <span>
-                    <strong>ISA First ({profile.name || 'Primary'}):</strong> Drawing tax-free ISA/Cash first lets your pension continue compounding tax-free while minimizing income tax in early retirement.
-                  </span>
-                )}
-                {profile.drawdownStrategy === 'tax_free_bracket' && (
-                  <span>
-                    <strong>Tax-Free Allowance Fill ({profile.name || 'Primary'}):</strong> Draws pension income up to your £12,570 Personal Allowance each year (0% tax), taking any remaining income needed from tax-free ISAs/Cash.
-                  </span>
-                )}
-                {profile.drawdownStrategy === 'basic_rate_bracket' && (
-                  <span>
-                    <strong>Basic Rate Band Fill ({profile.name || 'Primary'}):</strong> Draws pension income up to the £50,270 Basic Rate limit each year (max 20% tax), topping up any extra from tax-free ISAs.
-                  </span>
-                )}
-                {profile.drawdownStrategy === 'higher_rate_bracket' && (
-                  <span>
-                    <strong>Higher Rate Band Fill ({profile.name || 'Primary'}):</strong> Draws pension income up to the £125,140 Higher Rate limit (capping top tax rate before 45% & PA taper), taking remaining balance from ISAs.
-                  </span>
-                )}
-                {profile.drawdownStrategy === 'pension_first' && (
-                  <span>
-                    <strong>Pension First ({profile.name || 'Primary'}):</strong> Draws taxable pension income to satisfy total income requirement while keeping ISA funds intact for tax-free flexibility.
-                  </span>
-                )}
-                {profile.drawdownStrategy === 'pro_rata' && (
-                  <span>
-                    <strong>Pro Rata ({profile.name || 'Primary'}):</strong> Withdraws proportionally from all pots each year to balance tax exposure.
-                  </span>
-                )}
-                {profile.drawdownStrategy === 'cash_first' && (
-                  <span>
-                    <strong>Cash First ({profile.name || 'Primary'}):</strong> Clears non-tax-sheltered cash/GIA assets before touching tax-sheltered ISAs or Pensions.
-                  </span>
-                )}
-                {profile.drawdownStrategy === 'annuity' && (
-                  <span>
-                    <strong>Buy an Annuity ({profile.name || 'Primary'}):</strong> Converts 100% of pension pot into guaranteed annual income, eliminating investment market risk.
-                  </span>
-                )}
-                {profile.drawdownStrategy === 'hybrid_annuity' && (
-                  <span>
-                    <strong>Hybrid Annuity ({profile.name || 'Primary'}):</strong> Combines guaranteed annuity income for essential expenses with flexible drawdown for discretionary spending.
-                  </span>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Partner Person Drawdown Strategy */}
-          {isCouple && activeDrawdownPerson === 'partner' && (
-            <div className="space-y-3">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-rose-900 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/60 px-3 py-1 rounded-xl border border-rose-100 dark:border-rose-800/60">
-                <Heart className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 fill-rose-600 dark:fill-rose-400" />
-                <span>{profile.partnerName || 'Partner'} Drawdown Strategy</span>
-              </div>
-              <select
-                value={profile.partnerDrawdownStrategy || profile.drawdownStrategy || 'isa_first'}
-                onChange={(e) => updateField('partnerDrawdownStrategy', e.target.value as any)}
-                className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 cursor-pointer shadow-xs"
-              >
-                <option value="isa_first">ISA & Cash First (Preserve Pension Tax Shelter)</option>
-                <option value="tax_free_bracket">Tax-Free Allowance Fill (£12,570)</option>
-                <option value="basic_rate_bracket">Basic Rate Band Fill (£50,270)</option>
-                <option value="higher_rate_bracket">Higher Rate Band Fill (£125,140)</option>
-                <option value="pension_first">Pension First (Full Pension Drawdown First)</option>
-                <option value="cash_first">Cash Buffer First -&gt; ISA -&gt; Pension</option>
-                <option value="pro_rata">Pro Rata (Balanced Split Across Pots)</option>
-                <option value="annuity">Buy an Annuity (Guaranteed Lifetime Income)</option>
-                <option value="hybrid_annuity">Hybrid / Tranche Annuity (Partial Annuity + Flexi-Drawdown)</option>
-              </select>
-
-              <div className="text-[11px] text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-700 leading-relaxed">
-                {(profile.partnerDrawdownStrategy || profile.drawdownStrategy) === 'isa_first' && (
-                  <span>
-                    <strong>Partner ISA First ({profile.partnerName || 'Partner'}):</strong> Drawing tax-free ISA/Cash first lets partner pension continue compounding tax-free.
-                  </span>
-                )}
-                {(profile.partnerDrawdownStrategy || profile.drawdownStrategy) === 'tax_free_bracket' && (
-                  <span>
-                    <strong>Partner Tax-Free Allowance Fill ({profile.partnerName || 'Partner'}):</strong> Draws partner pension income up to £12,570 Personal Allowance each year (0% tax), taking remainder from ISA.
-                  </span>
-                )}
-                {(profile.partnerDrawdownStrategy || profile.drawdownStrategy) === 'basic_rate_bracket' && (
-                  <span>
-                    <strong>Partner Basic Rate Fill ({profile.partnerName || 'Partner'}):</strong> Draws partner pension income up to £50,270 Basic Rate limit each year (max 20% tax), taking extra from ISA.
-                  </span>
-                )}
-                {(profile.partnerDrawdownStrategy || profile.drawdownStrategy) === 'higher_rate_bracket' && (
-                  <span>
-                    <strong>Partner Higher Rate Fill ({profile.partnerName || 'Partner'}):</strong> Draws partner pension income up to £125,140 Higher Rate limit, taking remaining balance from ISA.
-                  </span>
-                )}
-                {(profile.partnerDrawdownStrategy || profile.drawdownStrategy) === 'pension_first' && (
-                  <span>
-                    <strong>Partner Pension First ({profile.partnerName || 'Partner'}):</strong> Draws partner pension income to satisfy required income while preserving partner ISA funds.
-                  </span>
-                )}
-                {(profile.partnerDrawdownStrategy || profile.drawdownStrategy) === 'pro_rata' && (
-                  <span>
-                    <strong>Partner Pro Rata ({profile.partnerName || 'Partner'}):</strong> Withdraws proportionally from all partner pots each year to balance tax exposure.
-                  </span>
-                )}
-                {(profile.partnerDrawdownStrategy || profile.drawdownStrategy) === 'cash_first' && (
-                  <span>
-                    <strong>Partner Cash First ({profile.partnerName || 'Partner'}):</strong> Clears partner cash/GIA assets before touching tax-sheltered ISAs or Pensions.
-                  </span>
-                )}
-                {(profile.partnerDrawdownStrategy || profile.drawdownStrategy) === 'annuity' && (
-                  <span>
-                    <strong>Partner Buy an Annuity ({profile.partnerName || 'Partner'}):</strong> Converts 100% of partner pension pot into guaranteed annual income.
-                  </span>
-                )}
-                {(profile.partnerDrawdownStrategy || profile.drawdownStrategy) === 'hybrid_annuity' && (
-                  <span>
-                    <strong>Partner Hybrid Annuity ({profile.partnerName || 'Partner'}):</strong> Combines guaranteed annuity income with flexible drawdown for partner.
-                  </span>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* EXCESS ANNUITY & RETIREMENT INCOME DESTINATION */}
-          <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-teal-200 dark:border-teal-900/60 space-y-3">
+        {/* Drawdown Order Strategy (Advanced Mode Only) */}
+        {appMode === 'advanced' && (
+          <div className="p-5 bg-slate-50/80 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                <PiggyBank className="w-4 h-4 text-teal-600 dark:text-teal-400" />
-                <span>Excess Income Reinvestment Destination</span>
+                <span>Remaining Pot Drawdown Sequence</span>
               </label>
-              <span className="text-[10px] font-bold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950 px-2 py-0.5 rounded-md border border-teal-200 dark:border-teal-800">
-                Surplus Pot Deposit
+              <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 rounded-md border border-emerald-200/50 dark:border-emerald-800/50">
+                Tax Efficiency
               </span>
             </div>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-              When guaranteed annuity or retirement income exceeds your target income requirement, select which non-pension pot your annual surplus cash should be deposited into:
-            </p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
-              {[
-                { id: 'stocks_and_shares_isa', label: '📈 S&S ISA', desc: 'Tax-Free Equity Growth' },
-                { id: 'cash_isa', label: '🏦 Cash ISA', desc: 'Tax-Free Cash Interest' },
-                { id: 'gia', label: '📊 GIA Account', desc: 'Taxable Growth' },
-                { id: 'cash_savings', label: '💰 Cash Savings', desc: 'Interest & PSA Tax' },
-                { id: 'none', label: '💸 Spend Surplus', desc: 'Do Not Reinvest' },
-              ].map((opt) => {
-                const currentOpt = profile.annuityExcessReinvestOption || 'cash';
-                const isSelected = currentOpt === opt.id || (opt.id === 'cash_savings' && currentOpt === 'cash') || (opt.id === 'stocks_and_shares_isa' && currentOpt === 'isa');
-                return (
-                  <label
-                    key={opt.id}
-                    className={`flex flex-col justify-between p-2.5 rounded-xl border cursor-pointer transition-all ${
-                      isSelected
-                        ? 'border-teal-600 bg-teal-50/50 dark:bg-teal-950/40 text-teal-950 dark:text-teal-200 font-bold shadow-xs'
-                        : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300'
+            {/* Person Selector Tabs for Couple Planning */}
+            {isCouple && (
+              <div className="flex items-center justify-between bg-white dark:bg-slate-900 p-1 rounded-2xl border border-slate-200 dark:border-slate-700 text-xs font-bold shadow-xs">
+                <span className="text-slate-500 dark:text-slate-400 px-3 text-[11px] uppercase tracking-wider font-extrabold">Sequence For:</span>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setActiveDrawdownPerson('primary')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+                      activeDrawdownPerson === 'primary'
+                        ? 'bg-indigo-600 text-white shadow-xs'
+                        : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
                     }`}
                   >
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <input
-                        type="radio"
-                        name="excessReinvest"
-                        checked={isSelected}
-                        onChange={() => updateField('annuityExcessReinvestOption', opt.id as any)}
-                        className="accent-teal-600 w-3.5 h-3.5"
-                      />
-                      <span className="text-xs font-bold">{opt.label}</span>
-                    </div>
-                    <span className="text-[10px] text-slate-400 dark:text-slate-400 block pl-5">{opt.desc}</span>
-                  </label>
-                );
-              })}
+                    <User className="w-3.5 h-3.5 text-indigo-200" />
+                    <span>{profile.name || 'Primary'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveDrawdownPerson('partner')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+                      activeDrawdownPerson === 'partner'
+                        ? 'bg-rose-600 text-white shadow-xs'
+                        : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    <Heart className="w-3.5 h-3.5 text-rose-200 fill-rose-200" />
+                    <span>{profile.partnerName || 'Partner'}</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Primary Person Drawdown Strategy */}
+            {(!isCouple || activeDrawdownPerson === 'primary') && (
+              <div className="space-y-3">
+                {isCouple && (
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-indigo-900 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 px-3 py-1 rounded-xl border border-indigo-100 dark:border-indigo-800/60">
+                    <User className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                    <span>{profile.name || 'Primary'} Drawdown Strategy</span>
+                  </div>
+                )}
+                <select
+                  value={profile.drawdownStrategy || 'isa_first'}
+                  onChange={(e) => updateField('drawdownStrategy', e.target.value as any)}
+                  className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 cursor-pointer shadow-xs"
+                >
+                  <option value="tax_free_bracket">Tax-Free Allowance Fill (£12,570)</option>
+                  <option value="isa_first">ISA &amp; Cash First (Preserve Pension Tax Shelter)</option>
+                  <option value="pension_first">Pension First (Full Pension Drawdown First)</option>
+                  <option value="basic_rate_bracket">Basic Rate Band Fill (£50,270)</option>
+                  <option value="higher_rate_bracket">Higher Rate Band Fill (£125,140)</option>
+                  <option value="cash_first">Cash Buffer First -&gt; ISA -&gt; Pension</option>
+                  <option value="pro_rata">Pro Rata (Balanced Split Across Pots)</option>
+                  <option value="annuity">Buy an Annuity (Guaranteed Lifetime Income)</option>
+                  <option value="hybrid_annuity">Hybrid / Tranche Annuity (Partial Annuity + Flexi-Drawdown)</option>
+                </select>
+
+                <div className="text-[11px] text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-700 leading-relaxed">
+                  {profile.drawdownStrategy === 'isa_first' && (
+                    <span>
+                      <strong>ISA First ({profile.name || 'Primary'}):</strong> Drawing tax-free ISA/Cash first lets your pension continue compounding tax-free while minimizing income tax in early retirement.
+                    </span>
+                  )}
+                  {profile.drawdownStrategy === 'tax_free_bracket' && (
+                    <span>
+                      <strong>Tax-Free Allowance Fill ({profile.name || 'Primary'}):</strong> Draws pension income up to your £12,570 Personal Allowance each year (0% tax), taking any remaining income needed from tax-free ISAs/Cash.
+                    </span>
+                  )}
+                  {profile.drawdownStrategy === 'basic_rate_bracket' && (
+                    <span>
+                      <strong>Basic Rate Band Fill ({profile.name || 'Primary'}):</strong> Draws pension income up to the £50,270 Basic Rate limit each year (max 20% tax), topping up any extra from tax-free ISAs.
+                    </span>
+                  )}
+                  {profile.drawdownStrategy === 'higher_rate_bracket' && (
+                    <span>
+                      <strong>Higher Rate Band Fill ({profile.name || 'Primary'}):</strong> Draws pension income up to the £125,140 Higher Rate limit (capping top tax rate before 45% &amp; PA taper), taking remaining balance from ISAs.
+                    </span>
+                  )}
+                  {profile.drawdownStrategy === 'pension_first' && (
+                    <span>
+                      <strong>Pension First ({profile.name || 'Primary'}):</strong> Draws taxable pension income to satisfy total income requirement while keeping ISA funds intact for tax-free flexibility.
+                    </span>
+                  )}
+                  {profile.drawdownStrategy === 'pro_rata' && (
+                    <span>
+                      <strong>Pro Rata ({profile.name || 'Primary'}):</strong> Withdraws proportionally from all pots each year to balance tax exposure.
+                    </span>
+                  )}
+                  {profile.drawdownStrategy === 'cash_first' && (
+                    <span>
+                      <strong>Cash First ({profile.name || 'Primary'}):</strong> Clears non-tax-sheltered cash/GIA assets before touching tax-sheltered ISAs or Pensions.
+                    </span>
+                  )}
+                  {profile.drawdownStrategy === 'annuity' && (
+                    <span>
+                      <strong>Buy an Annuity ({profile.name || 'Primary'}):</strong> Converts 100% of pension pot into guaranteed annual income, eliminating investment market risk.
+                    </span>
+                  )}
+                  {profile.drawdownStrategy === 'hybrid_annuity' && (
+                    <span>
+                      <strong>Hybrid Annuity ({profile.name || 'Primary'}):</strong> Combines guaranteed annuity income for essential expenses with flexible drawdown for discretionary spending.
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Partner Person Drawdown Strategy */}
+            {isCouple && activeDrawdownPerson === 'partner' && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-rose-900 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/60 px-3 py-1 rounded-xl border border-rose-100 dark:border-rose-800/60">
+                  <Heart className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 fill-rose-600 dark:fill-rose-400" />
+                  <span>{profile.partnerName || 'Partner'} Drawdown Strategy</span>
+                </div>
+                <select
+                  value={profile.partnerDrawdownStrategy || profile.drawdownStrategy || 'isa_first'}
+                  onChange={(e) => updateField('partnerDrawdownStrategy', e.target.value as any)}
+                  className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 cursor-pointer shadow-xs"
+                >
+                  <option value="tax_free_bracket">Tax-Free Allowance Fill (£12,570)</option>
+                  <option value="isa_first">ISA &amp; Cash First (Preserve Pension Tax Shelter)</option>
+                  <option value="pension_first">Pension First (Full Pension Drawdown First)</option>
+                  <option value="basic_rate_bracket">Basic Rate Band Fill (£50,270)</option>
+                  <option value="higher_rate_bracket">Higher Rate Band Fill (£125,140)</option>
+                  <option value="cash_first">Cash Buffer First -&gt; ISA -&gt; Pension</option>
+                  <option value="pro_rata">Pro Rata (Balanced Split Across Pots)</option>
+                  <option value="annuity">Buy an Annuity (Guaranteed Lifetime Income)</option>
+                  <option value="hybrid_annuity">Hybrid / Tranche Annuity (Partial Annuity + Flexi-Drawdown)</option>
+                </select>
+
+                <div className="text-[11px] text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-700 leading-relaxed">
+                  {(profile.partnerDrawdownStrategy || profile.drawdownStrategy) === 'isa_first' && (
+                    <span>
+                      <strong>Partner ISA First ({profile.partnerName || 'Partner'}):</strong> Drawing tax-free ISA/Cash first lets partner pension continue compounding tax-free.
+                    </span>
+                  )}
+                  {(profile.partnerDrawdownStrategy || profile.drawdownStrategy) === 'tax_free_bracket' && (
+                    <span>
+                      <strong>Partner Tax-Free Allowance Fill ({profile.partnerName || 'Partner'}):</strong> Draws partner pension income up to £12,570 Personal Allowance each year (0% tax), taking remainder from ISA.
+                    </span>
+                  )}
+                  {(profile.partnerDrawdownStrategy || profile.drawdownStrategy) === 'basic_rate_bracket' && (
+                    <span>
+                      <strong>Partner Basic Rate Fill ({profile.partnerName || 'Partner'}):</strong> Draws partner pension income up to £50,270 Basic Rate limit each year (max 20% tax), taking extra from ISA.
+                    </span>
+                  )}
+                  {(profile.partnerDrawdownStrategy || profile.drawdownStrategy) === 'higher_rate_bracket' && (
+                    <span>
+                      <strong>Partner Higher Rate Fill ({profile.partnerName || 'Partner'}):</strong> Draws partner pension income up to £125,140 Higher Rate limit, taking remaining balance from ISA.
+                    </span>
+                  )}
+                  {(profile.partnerDrawdownStrategy || profile.drawdownStrategy) === 'pension_first' && (
+                    <span>
+                      <strong>Partner Pension First ({profile.partnerName || 'Partner'}):</strong> Draws partner pension income to satisfy required income while preserving partner ISA funds.
+                    </span>
+                  )}
+                  {(profile.partnerDrawdownStrategy || profile.drawdownStrategy) === 'pro_rata' && (
+                    <span>
+                      <strong>Partner Pro Rata ({profile.partnerName || 'Partner'}):</strong> Withdraws proportionally from all partner pots each year to balance tax exposure.
+                    </span>
+                  )}
+                  {(profile.partnerDrawdownStrategy || profile.drawdownStrategy) === 'cash_first' && (
+                    <span>
+                      <strong>Partner Cash First ({profile.partnerName || 'Partner'}):</strong> Clears partner cash/GIA assets before touching tax-sheltered ISAs or Pensions.
+                    </span>
+                  )}
+                  {(profile.partnerDrawdownStrategy || profile.drawdownStrategy) === 'annuity' && (
+                    <span>
+                      <strong>Partner Buy an Annuity ({profile.partnerName || 'Partner'}):</strong> Converts 100% of partner pension pot into guaranteed annual income.
+                    </span>
+                  )}
+                  {(profile.partnerDrawdownStrategy || profile.drawdownStrategy) === 'hybrid_annuity' && (
+                    <span>
+                      <strong>Partner Hybrid Annuity ({profile.partnerName || 'Partner'}):</strong> Combines guaranteed annuity income with flexible drawdown for partner.
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* EXCESS ANNUITY & RETIREMENT INCOME DESTINATION */}
+            <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-teal-200 dark:border-teal-900/60 space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                  <PiggyBank className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+                  <span>Excess Income Reinvestment Destination</span>
+                </label>
+                <span className="text-[10px] font-bold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950 px-2 py-0.5 rounded-md border border-teal-200 dark:border-teal-800">
+                  Surplus Pot Deposit
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                When guaranteed annuity or retirement income exceeds your target income requirement, select which non-pension pot your annual surplus cash should be deposited into:
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
+                {[
+                  { id: 'stocks_and_shares_isa', label: '📈 S&S ISA', desc: 'Tax-Free Equity Growth' },
+                  { id: 'cash_isa', label: '🏦 Cash ISA', desc: 'Tax-Free Cash Interest' },
+                  { id: 'gia', label: '📊 GIA Account', desc: 'Taxable Growth' },
+                  { id: 'cash_savings', label: '💰 Cash Savings', desc: 'Interest & PSA Tax' },
+                  { id: 'none', label: '💸 Spend Surplus', desc: 'Do Not Reinvest' },
+                ].map((opt) => {
+                  const currentOpt = profile.annuityExcessReinvestOption || 'cash';
+                  const isSelected = currentOpt === opt.id || (opt.id === 'cash_savings' && currentOpt === 'cash') || (opt.id === 'stocks_and_shares_isa' && currentOpt === 'isa');
+                  return (
+                    <label
+                      key={opt.id}
+                      className={`flex flex-col justify-between p-2.5 rounded-xl border cursor-pointer transition-all ${
+                        isSelected
+                          ? 'border-teal-600 bg-teal-50/50 dark:bg-teal-950/40 text-teal-950 dark:text-teal-200 font-bold shadow-xs'
+                          : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300'
+                      }`}
+                    >
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <input
+                          type="radio"
+                          name="excessReinvest"
+                          checked={isSelected}
+                          onChange={() => updateField('annuityExcessReinvestOption', opt.id as any)}
+                          className="accent-teal-600 w-3.5 h-3.5"
+                        />
+                        <span className="text-xs font-bold">{opt.label}</span>
+                      </div>
+                      <span className="text-[10px] text-slate-400 dark:text-slate-400 block pl-5">{opt.desc}</span>
+                    </label>
+                  );
+                })}
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* 25% Tax-Free Pension Lump Sum (PCLS & LSA Protections) */}
         <div className="p-5 bg-slate-50/80 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-4">
@@ -1676,14 +1681,16 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
         </div>
 
         {/* Draw Down Comparison Matrix Card */}
-        <div className="col-span-1 md:col-span-2 w-full">
-          <DrawdownComparisonMatrix
-            profile={profile}
-            pots={pots}
-            projections={projections}
-            onChange={onChange}
-          />
-        </div>
+        {appMode === 'advanced' && (
+          <div className="col-span-1 md:col-span-2 w-full">
+            <DrawdownComparisonMatrix
+              profile={profile}
+              pots={pots}
+              projections={projections}
+              onChange={onChange}
+            />
+          </div>
+        )}
 
       </div>
     </div>

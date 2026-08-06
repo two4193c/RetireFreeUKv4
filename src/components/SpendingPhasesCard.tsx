@@ -1,5 +1,5 @@
 import React from 'react';
-import { UserProfile, SpendingPhasesConfig, SpendingAgeRange } from '../types';
+import { UserProfile, SpendingPhasesConfig, SpendingAgeRange, AppMode } from '../types';
 import { getPensionAccessAge } from '../utils/ukTaxEngine';
 import {
   Sparkles,
@@ -22,6 +22,7 @@ interface SpendingPhasesCardProps {
   profile: UserProfile;
   onChange: (updatedProfile: UserProfile) => void;
   onOpenMaximizedSpendModal?: () => void;
+  appMode?: AppMode;
 }
 
 // Color palettes for up to 6 custom ranges
@@ -251,7 +252,7 @@ export function getInitialSpendingRanges(profile: UserProfile): SpendingAgeRange
   ];
 }
 
-export const SpendingPhasesCard: React.FC<SpendingPhasesCardProps> = ({ profile, onChange, onOpenMaximizedSpendModal }) => {
+export const SpendingPhasesCard: React.FC<SpendingPhasesCardProps> = ({ profile, onChange, onOpenMaximizedSpendModal, appMode = 'basic' }) => {
   const retAge = profile.targetRetirementAge || 60;
   const baseTarget = profile.targetRetirementIncomeAnnual || 35000;
 
@@ -617,64 +618,66 @@ export const SpendingPhasesCard: React.FC<SpendingPhasesCardProps> = ({ profile,
         </div>
       </div>
 
-      {/* Spending Mode Options (Flat Spending vs Flexible Age-Based) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {/* Option 1: Flat Spending */}
-        <button
-          type="button"
-          onClick={() => handleToggleEnabled(false)}
-          className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex items-start gap-3 relative ${
-            !phasesConfig.enabled
-              ? 'bg-white dark:bg-slate-800 border-emerald-500 ring-2 ring-emerald-500/20 shadow-xs'
-              : 'bg-white/60 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700/80 hover:bg-white dark:hover:bg-slate-800'
-          }`}
-        >
-          <div className={`p-2 rounded-xl shrink-0 ${!phasesConfig.enabled ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400'}`}>
-            <Coins className="w-4 h-4" />
-          </div>
-          <div className="space-y-0.5 flex-1 pr-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-800 dark:text-slate-100">
-                Flat Annual Spending
-              </span>
-              {!phasesConfig.enabled && (
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-              )}
+      {/* Spending Mode Options (Flat Spending vs Flexible Age-Based in Advanced Mode) */}
+      {appMode === 'advanced' && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* Option 1: Flat Spending */}
+          <button
+            type="button"
+            onClick={() => handleToggleEnabled(false)}
+            className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex items-start gap-3 relative ${
+              !phasesConfig.enabled
+                ? 'bg-white dark:bg-slate-800 border-emerald-500 ring-2 ring-emerald-500/20 shadow-xs'
+                : 'bg-white/60 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700/80 hover:bg-white dark:hover:bg-slate-800'
+            }`}
+          >
+            <div className={`p-2 rounded-xl shrink-0 ${!phasesConfig.enabled ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400'}`}>
+              <Coins className="w-4 h-4" />
             </div>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug">
-              Single constant target income across all retirement years.
-            </p>
-          </div>
-        </button>
+            <div className="space-y-0.5 flex-1 pr-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-100">
+                  Flat Annual Spending
+                </span>
+                {!phasesConfig.enabled && (
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                )}
+              </div>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug">
+                Single constant target income across all retirement years.
+              </p>
+            </div>
+          </button>
 
-        {/* Option 2: Flexible Age-Based Spending */}
-        <button
-          type="button"
-          onClick={() => handleToggleEnabled(true)}
-          className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex items-start gap-3 relative ${
-            phasesConfig.enabled
-              ? 'bg-white dark:bg-slate-800 border-emerald-500 ring-2 ring-emerald-500/20 shadow-xs'
-              : 'bg-white/60 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700/80 hover:bg-white dark:hover:bg-slate-800'
-          }`}
-        >
-          <div className={`p-2 rounded-xl shrink-0 ${phasesConfig.enabled ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400'}`}>
-            <Sliders className="w-4 h-4" />
-          </div>
-          <div className="space-y-0.5 flex-1 pr-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-800 dark:text-slate-100">
-                Flexible Age-Based Spending
-              </span>
-              {phasesConfig.enabled && (
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-              )}
+          {/* Option 2: Flexible Age-Based Spending */}
+          <button
+            type="button"
+            onClick={() => handleToggleEnabled(true)}
+            className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex items-start gap-3 relative ${
+              phasesConfig.enabled
+                ? 'bg-white dark:bg-slate-800 border-emerald-500 ring-2 ring-emerald-500/20 shadow-xs'
+                : 'bg-white/60 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700/80 hover:bg-white dark:hover:bg-slate-800'
+            }`}
+          >
+            <div className={`p-2 rounded-xl shrink-0 ${phasesConfig.enabled ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400'}`}>
+              <Sliders className="w-4 h-4" />
             </div>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug">
-              Varying annual target incomes across custom age stages (e.g. Start to 55, 56–74, 75+).
-            </p>
-          </div>
-        </button>
-      </div>
+            <div className="space-y-0.5 flex-1 pr-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-100">
+                  Flexible Age-Based Spending
+                </span>
+                {phasesConfig.enabled && (
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                )}
+              </div>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug">
+                Varying annual target incomes across custom age stages (e.g. Start to 55, 56–74, 75+).
+              </p>
+            </div>
+          </button>
+        </div>
+      )}
 
       {/* Target Annual Household Income Field */}
       <div className="bg-white dark:bg-slate-800/80 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-700/80 space-y-3">
