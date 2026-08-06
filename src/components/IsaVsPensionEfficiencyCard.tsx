@@ -85,16 +85,16 @@ export const IsaVsPensionEfficiencyCard: React.FC<IsaVsPensionEfficiencyCardProp
       </div>
 
       {/* Headline Insight Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-xl p-4 border border-indigo-900/60 shadow-md space-y-2">
+      <div className="bg-gradient-to-r from-slate-100 via-indigo-50 to-slate-100 dark:from-slate-900 dark:via-indigo-950 dark:to-slate-900 text-slate-900 dark:text-white rounded-xl p-4 border border-indigo-200 dark:border-indigo-900/60 shadow-md space-y-2 transition-colors">
         <div className="flex items-start gap-3">
-          <div className="p-2 bg-indigo-500/20 text-indigo-300 rounded-lg mt-0.5 border border-indigo-500/30">
+          <div className="p-2 bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 rounded-lg mt-0.5 border border-indigo-200 dark:border-indigo-500/30">
             <Info className="w-5 h-5" />
           </div>
           <div className="space-y-1">
-            <h4 className="font-bold text-sm text-indigo-100 flex items-center gap-2">
+            <h4 className="font-bold text-sm text-slate-900 dark:text-indigo-100 flex items-center gap-2">
               <span>Projection Insight &amp; Crossover Age Strategy</span>
             </h4>
-            <p className="text-xs text-indigo-200/90 leading-relaxed">
+            <p className="text-xs text-slate-700 dark:text-indigo-200/90 leading-relaxed">
               {crossoverReason}
             </p>
           </div>

@@ -411,16 +411,18 @@ export function runHistoricModelingSimulation(
           const primaryFull = profile.fullStatePensionAmount ?? 12547.60;
           const primaryAnnualCalculated = Math.round((primaryYears / 35) * primaryFull * 100) / 100;
           const spAmount = profile.statePensionAmountAnnual ?? primaryAnnualCalculated;
-          statePensionThisYr += spAmount * cumulativeInflationFactor;
+          const primaryTripleLock = profile.enableTripleLock ?? true;
+          statePensionThisYr += spAmount * (primaryTripleLock ? cumulativeInflationFactor : 1);
         }
       }
       if (profile.isCouplePlanning && !partnerDead && (profile.partnerIncludeStatePension ?? true) && partnerAge >= (profile.partnerStatePensionAge || 67)) {
         const partnerYears = profile.partnerQualifyingYears ?? 35;
         if (partnerYears >= 10) {
+          const partnerTripleLock = profile.partnerEnableTripleLock ?? true;
           const partnerFull = profile.partnerFullStatePensionAmount ?? 12547.60;
           const partnerAnnualCalculated = Math.round((partnerYears / 35) * partnerFull * 100) / 100;
           const pSpAmount = profile.partnerStatePensionAmountAnnual ?? partnerAnnualCalculated;
-          statePensionThisYr += pSpAmount * cumulativeInflationFactor;
+          statePensionThisYr += pSpAmount * (partnerTripleLock ? cumulativeInflationFactor : 1);
         }
       }
 

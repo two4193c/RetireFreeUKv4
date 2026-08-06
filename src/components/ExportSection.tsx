@@ -4190,35 +4190,35 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
 
   if (variant === 'pdf_only') {
     return (
-      <div className="bg-gradient-to-r from-emerald-950 via-slate-900 to-indigo-950 text-white rounded-3xl p-5 sm:p-6 shadow-xl border border-emerald-500/50 space-y-4 relative overflow-hidden">
+      <div className="bg-gradient-to-r from-emerald-50 via-slate-50 to-indigo-50 dark:from-emerald-950 dark:via-slate-900 dark:to-indigo-950 text-slate-900 dark:text-white rounded-3xl p-5 sm:p-6 shadow-xl border border-emerald-300 dark:border-emerald-500/50 space-y-4 relative overflow-hidden transition-colors">
         <div className="absolute -top-12 -right-12 w-48 h-48 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
 
         {exportSuccessMsg && (
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="flex items-center gap-2 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-bold px-3.5 py-2 rounded-xl z-10 relative"
+            className="flex items-center gap-2 bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/40 text-xs font-bold px-3.5 py-2 rounded-xl z-10 relative"
           >
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             <span>{exportSuccessMsg}</span>
           </motion.div>
         )}
 
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 z-10 relative">
           <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center shrink-0 shadow-inner">
-              <FileText className="w-6 h-6 text-emerald-400" />
+            <div className="w-12 h-12 rounded-2xl bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/40 flex items-center justify-center shrink-0 shadow-inner">
+              <FileText className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
             </div>
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <h3 className="font-extrabold text-base text-white tracking-tight">
+                <h3 className="font-extrabold text-base text-slate-900 dark:text-white tracking-tight">
                   Full Household PDF Report
                 </h3>
                 <span className="bg-emerald-500 text-slate-950 font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider">
                   Full PDF Plan
                 </span>
               </div>
-              <p className="text-xs text-slate-300 leading-relaxed max-w-2xl">
+              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed max-w-2xl">
                 Comprehensive multi-page report including household inputs, target retirement pot breakdown, <strong>diagram illustrations</strong>, and decumulation schedule.
               </p>
             </div>
@@ -4241,17 +4241,17 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
 
   if (variant === 'data_only') {
     return (
-      <div className="bg-slate-900 text-white rounded-3xl p-6 shadow-xl border border-slate-800 space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+      <div className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white rounded-3xl p-6 shadow-xl border border-slate-200 dark:border-slate-800 space-y-6 transition-colors">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center shrink-0">
-              <Table className="w-5 h-5 text-indigo-400" />
+            <div className="w-10 h-10 rounded-2xl bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/30 flex items-center justify-center shrink-0">
+              <Table className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
             </div>
             <div>
-              <h3 className="font-extrabold text-base text-white tracking-tight">
+              <h3 className="font-extrabold text-base text-slate-900 dark:text-white tracking-tight">
                 Data Export &amp; Backup Options
               </h3>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Export projection spreadsheets for Excel or backup/restore scenario JSON settings
               </p>
             </div>
@@ -4261,9 +4261,9 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="flex items-center gap-2 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-bold px-3 py-1.5 rounded-xl"
+              className="flex items-center gap-2 bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/40 text-xs font-bold px-3 py-1.5 rounded-xl"
             >
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               <span>{exportSuccessMsg}</span>
             </motion.div>
           )}
@@ -4272,13 +4272,13 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
         {/* Export Options Grid (CSV Export, JSON Backup & Restore) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Option 1: CSV Spreadsheet Export */}
-          <div className="bg-slate-800/80 p-4.5 rounded-2xl border border-slate-700 space-y-3 flex flex-col justify-between">
+          <div className="bg-slate-50 dark:bg-slate-800/80 p-4.5 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3 flex flex-col justify-between">
             <div className="space-y-1.5 pt-1">
               <div className="flex items-center gap-2">
-                <Table className="w-4.5 h-4.5 text-purple-400" />
-                <h4 className="font-extrabold text-sm text-white">CSV Data Export</h4>
+                <Table className="w-4.5 h-4.5 text-purple-600 dark:text-purple-400" />
+                <h4 className="font-extrabold text-sm text-slate-900 dark:text-white">CSV Data Export</h4>
               </div>
-              <p className="text-[11px] text-slate-400 leading-relaxed">
+              <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
                 Complete spreadsheet CSV with 17 detailed columns of year-by-year pot balances, withdrawals, and tax paid for Excel/Google Sheets.
               </p>
             </div>
@@ -4293,13 +4293,13 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
           </div>
 
           {/* Option 2: Backup & Restore Settings (JSON Import / Export) */}
-          <div className="bg-slate-800/80 p-4.5 rounded-2xl border border-slate-700 space-y-3 flex flex-col justify-between">
+          <div className="bg-slate-50 dark:bg-slate-800/80 p-4.5 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3 flex flex-col justify-between">
             <div className="space-y-1.5 pt-1">
               <div className="flex items-center gap-2">
-                <FileJson className="w-4.5 h-4.5 text-indigo-400" />
-                <h4 className="font-extrabold text-sm text-white">JSON Settings Backup</h4>
+                <FileJson className="w-4.5 h-4.5 text-indigo-600 dark:text-indigo-400" />
+                <h4 className="font-extrabold text-sm text-slate-900 dark:text-white">JSON Settings Backup</h4>
               </div>
-              <p className="text-[11px] text-slate-400 leading-relaxed">
+              <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
                 Export all saved scenarios, pot balances, and custom settings to a `.json` backup file or restore previously exported files.
               </p>
             </div>
@@ -4330,7 +4330,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
               </button>
 
               {/* Import JSON */}
-              <label className="flex items-center justify-center gap-1.5 bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs px-2.5 py-2 rounded-xl transition-all shadow-sm cursor-pointer">
+              <label className="flex items-center justify-center gap-1.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-white font-bold text-xs px-2.5 py-2 rounded-xl transition-all shadow-sm cursor-pointer">
                 <Upload className="w-3.5 h-3.5" />
                 <span>Import</span>
                 <input
@@ -4375,17 +4375,17 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
   }
 
   return (
-    <div className="bg-slate-900 text-white rounded-3xl p-6 shadow-xl border border-slate-800 space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+    <div className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white rounded-3xl p-6 shadow-xl border border-slate-200 dark:border-slate-800 space-y-6 transition-colors">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center shrink-0">
-            <FileText className="w-5 h-5 text-emerald-400" />
+          <div className="w-10 h-10 rounded-2xl bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30 flex items-center justify-center shrink-0">
+            <FileText className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
           </div>
           <div>
-            <h3 className="font-extrabold text-base text-white tracking-tight">
+            <h3 className="font-extrabold text-base text-slate-900 dark:text-white tracking-tight">
               RetireFree UK Summary &amp; Plan Export
             </h3>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               Download your complete retirement projection, diagram illustrations, tax relief analysis, and drawdown timeline
             </p>
           </div>
@@ -4395,9 +4395,9 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="flex items-center gap-2 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-bold px-3 py-1.5 rounded-xl"
+            className="flex items-center gap-2 bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/40 text-xs font-bold px-3 py-1.5 rounded-xl"
           >
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             <span>{exportSuccessMsg}</span>
           </motion.div>
         )}
@@ -4406,16 +4406,16 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       {/* Export Options Grid (PDF Report, CSV Export, JSON Backup & Restore) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Option 1: PDF Report (with Diagram Illustrations & Full Analysis) */}
-        <div className="bg-slate-800/90 p-4.5 rounded-2xl border-2 border-emerald-500/60 space-y-3 flex flex-col justify-between shadow-md relative overflow-hidden">
+        <div className="bg-slate-50 dark:bg-slate-800/90 p-4.5 rounded-2xl border-2 border-emerald-500/60 space-y-3 flex flex-col justify-between shadow-md relative overflow-hidden">
           <div className="absolute top-2 right-2 bg-emerald-500 text-slate-950 font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider">
             Full PDF Plan
           </div>
           <div className="space-y-1.5 pt-1">
             <div className="flex items-center gap-2">
-              <FileText className="w-4.5 h-4.5 text-emerald-400" />
-              <h4 className="font-extrabold text-sm text-white">PDF Report</h4>
+              <FileText className="w-4.5 h-4.5 text-emerald-600 dark:text-emerald-400" />
+              <h4 className="font-extrabold text-sm text-slate-900 dark:text-white">PDF Report</h4>
             </div>
-            <p className="text-[11px] text-slate-300 leading-relaxed">
+            <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
               Comprehensive multi-page report including household inputs, target retirement pot breakdown, <strong>diagram illustrations</strong>, and decumulation schedule.
             </p>
           </div>
@@ -4431,13 +4431,13 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
         </div>
 
         {/* Option 2: CSV Spreadsheet Export */}
-        <div className="bg-slate-800/80 p-4.5 rounded-2xl border border-slate-700 space-y-3 flex flex-col justify-between">
+        <div className="bg-slate-50 dark:bg-slate-800/80 p-4.5 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3 flex flex-col justify-between">
           <div className="space-y-1.5 pt-1">
             <div className="flex items-center gap-2">
-              <Table className="w-4.5 h-4.5 text-purple-400" />
-              <h4 className="font-extrabold text-sm text-white">CSV Data Export</h4>
+              <Table className="w-4.5 h-4.5 text-purple-600 dark:text-purple-400" />
+              <h4 className="font-extrabold text-sm text-slate-900 dark:text-white">CSV Data Export</h4>
             </div>
-            <p className="text-[11px] text-slate-400 leading-relaxed">
+            <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
               Complete spreadsheet CSV with 17 detailed columns of year-by-year pot balances, withdrawals, and tax paid for Excel/Google Sheets.
             </p>
           </div>
@@ -4452,13 +4452,13 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
         </div>
 
         {/* Option 3: Backup & Restore Settings (JSON Import / Export) */}
-        <div className="bg-slate-800/80 p-4.5 rounded-2xl border border-slate-700 space-y-3 flex flex-col justify-between">
+        <div className="bg-slate-50 dark:bg-slate-800/80 p-4.5 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3 flex flex-col justify-between">
           <div className="space-y-1.5 pt-1">
             <div className="flex items-center gap-2">
-              <FileJson className="w-4.5 h-4.5 text-indigo-400" />
-              <h4 className="font-extrabold text-sm text-white">JSON Settings Backup</h4>
+              <FileJson className="w-4.5 h-4.5 text-indigo-600 dark:text-indigo-400" />
+              <h4 className="font-extrabold text-sm text-slate-900 dark:text-white">JSON Settings Backup</h4>
             </div>
-            <p className="text-[11px] text-slate-400 leading-relaxed">
+            <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
               Export all saved scenarios, pot balances, and custom settings to a `.json` backup file or restore previously exported files.
             </p>
           </div>
@@ -4489,7 +4489,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
             </button>
 
             {/* Import JSON */}
-            <label className="flex items-center justify-center gap-1.5 bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs px-2.5 py-2 rounded-xl transition-all shadow-sm cursor-pointer">
+            <label className="flex items-center justify-center gap-1.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-white font-bold text-xs px-2.5 py-2 rounded-xl transition-all shadow-sm cursor-pointer">
               <Upload className="w-3.5 h-3.5" />
               <span>Import</span>
               <input

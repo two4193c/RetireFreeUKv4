@@ -1171,57 +1171,57 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
 
       {/* SELECTED START YEAR INSPECTOR BANNER */}
       {selectedRun && (
-        <div className="bg-slate-900 text-white p-5 rounded-2xl border border-slate-800 space-y-4 shadow-md">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+        <div className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white p-5 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4 shadow-md transition-colors">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-pink-500/20 text-pink-400 flex items-center justify-center font-bold text-sm shrink-0">
+              <div className="w-8 h-8 rounded-xl bg-pink-100 dark:bg-pink-500/20 text-pink-700 dark:text-pink-400 flex items-center justify-center font-bold text-sm shrink-0">
                 {selectedRun.startYear}
               </div>
               <div>
-                <h3 className="font-extrabold text-sm text-slate-100 flex items-center gap-2">
+                <h3 className="font-extrabold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-2">
                   <span>Start Year {selectedRun.startYear} Strategy Deep-Dive</span>
                   {selectedRun.isSuccess ? (
-                    <span className="text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-md">
+                    <span className="text-[10px] font-bold bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30 px-2 py-0.5 rounded-md">
                       Succeeded to Age {maxAge}
                     </span>
                   ) : (
-                    <span className="text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30 px-2 py-0.5 rounded-md">
+                    <span className="text-[10px] font-bold bg-rose-100 dark:bg-rose-500/20 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-500/30 px-2 py-0.5 rounded-md">
                       Depleted at Age {selectedRun.depletedAtAge}
                     </span>
                   )}
                 </h3>
-                <p className="text-xs text-slate-400 mt-0.5">{selectedRun.startEvent}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{selectedRun.startEvent}</p>
               </div>
             </div>
 
             <div className="flex items-center gap-4 text-xs font-semibold self-end sm:self-auto">
               <div>
-                <span className="text-slate-400">Retirement Pot: </span>
-                <strong className="text-slate-100">{formatCurrency(selectedRun.retirementPotBalance)}</strong>
+                <span className="text-slate-500 dark:text-slate-400">Retirement Pot: </span>
+                <strong className="text-slate-900 dark:text-slate-100">{formatCurrency(selectedRun.retirementPotBalance)}</strong>
               </div>
               <div>
-                <span className="text-slate-400">Final Wealth: </span>
-                <strong className="text-emerald-400">{formatCurrency(adjustReal ? selectedRun.finalRealBalance : selectedRun.finalNominalBalance)}</strong>
+                <span className="text-slate-500 dark:text-slate-400">Final Wealth: </span>
+                <strong className="text-emerald-600 dark:text-emerald-400">{formatCurrency(adjustReal ? selectedRun.finalRealBalance : selectedRun.finalNominalBalance)}</strong>
               </div>
             </div>
           </div>
 
           {/* Timeline First 5 Sequence Years Highlight */}
           <div className="space-y-2">
-            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               Sequence Execution Highlights (First 5 Years of Plan)
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
               {selectedRun.trajectory.slice(0, 5).map((snap, idx) => (
-                <div key={idx} className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs space-y-1">
-                  <div className="flex justify-between font-bold text-slate-300">
+                <div key={idx} className="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800 text-xs space-y-1">
+                  <div className="flex justify-between font-bold text-slate-700 dark:text-slate-300">
                     <span>{snap.calendarYear} (Age {snap.age})</span>
-                    <span className="text-pink-400 font-extrabold">{snap.histYear}</span>
+                    <span className="text-pink-600 dark:text-pink-400 font-extrabold">{snap.histYear}</span>
                   </div>
-                  <div className="text-[11px] text-slate-400">
-                    Eq: <strong className={snap.histEquityReturn >= 0 ? 'text-emerald-400' : 'text-rose-400'}>{snap.histEquityReturn >= 0 ? '+' : ''}{snap.histEquityReturn}%</strong> | Inf: <strong className="text-amber-400">{snap.histInflation}%</strong>
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Eq: <strong className={snap.histEquityReturn >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}>{snap.histEquityReturn >= 0 ? '+' : ''}{snap.histEquityReturn}%</strong> | Inf: <strong className="text-amber-600 dark:text-amber-400">{snap.histInflation}%</strong>
                   </div>
-                  <div className="font-bold text-slate-100 text-xs pt-1 border-t border-slate-800/80">
+                  <div className="font-bold text-slate-900 dark:text-slate-100 text-xs pt-1 border-t border-slate-200 dark:border-slate-800/80">
                     Pot: {formatCurrency(adjustReal ? snap.totalPotReal : snap.totalPot)}
                   </div>
                 </div>

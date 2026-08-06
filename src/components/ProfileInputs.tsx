@@ -1101,6 +1101,55 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
                   </div>
                 )}
 
+                {/* Statutory Allowances Overrides (Max Pension Annual Allowance & ISA Allowance) */}
+                <div className="pt-3 border-t border-amber-200/80 dark:border-slate-700/80 space-y-2">
+                  <h5 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+                    <ShieldCheck className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                    Statutory Annual Allowances Overrides
+                  </h5>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Max Pension Annual Allowance */}
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                        <span>Max Pension Annual Allowance (£)</span>
+                        <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold">Annual Limit</span>
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-2.5 text-slate-400 text-xs font-bold">£</span>
+                        <input
+                          type="number"
+                          step="1000"
+                          min="0"
+                          value={customBands.pensionAnnualAllowance ?? 60000}
+                          onChange={(e) => updateCustomTaxBand('pensionAnnualAllowance', Math.max(0, Number(e.target.value)))}
+                          className="w-full pl-7 pr-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                        />
+                      </div>
+                      <p className="text-[10px] text-slate-400">Statutory pension annual contribution allowance limit (Std: £60,000)</p>
+                    </div>
+
+                    {/* ISA Annual Allowance */}
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                        <span>ISA Annual Allowance (£)</span>
+                        <span className="text-[10px] text-sky-600 dark:text-sky-400 font-bold">Annual Limit</span>
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-2.5 text-slate-400 text-xs font-bold">£</span>
+                        <input
+                          type="number"
+                          step="1000"
+                          min="0"
+                          value={customBands.isaAnnualAllowance ?? 20000}
+                          onChange={(e) => updateCustomTaxBand('isaAnnualAllowance', Math.max(0, Number(e.target.value)))}
+                          className="w-full pl-7 pr-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                        />
+                      </div>
+                      <p className="text-[10px] text-slate-400">Annual tax-free ISA subscription allowance limit (Std: £20,000)</p>
+                    </div>
+                  </div>
+                </div>
+
                 {/* LIVE TAX BAND SUMMARY BADGES */}
                 <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-amber-200/60 dark:border-slate-700/60 flex flex-wrap items-center justify-between gap-2 text-xs">
                   <span className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
@@ -1119,6 +1168,12 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
                     </span>
                     <span className="bg-rose-50 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 px-2.5 py-1 rounded-lg border border-rose-200 dark:border-rose-800">
                       {customBands.additionalRatePercent}% over £{customBands.higherRateThreshold.toLocaleString()} gross
+                    </span>
+                    <span className="bg-purple-50 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300 px-2.5 py-1 rounded-lg border border-purple-200 dark:border-purple-800">
+                      Pension AA: £{(customBands.pensionAnnualAllowance ?? 60000).toLocaleString()}
+                    </span>
+                    <span className="bg-indigo-50 dark:bg-indigo-950/60 text-indigo-800 dark:text-indigo-300 px-2.5 py-1 rounded-lg border border-indigo-200 dark:border-indigo-800">
+                      ISA AA: £{(customBands.isaAnnualAllowance ?? 20000).toLocaleString()}
                     </span>
                   </div>
                 </div>

@@ -218,6 +218,10 @@ export interface CustomTaxBandOverrides {
   higherRateThreshold: number; // default 125140 (gross limit)
   additionalRatePercent: number; // default 45 (%)
 
+  // Pension & ISA allowance overrides
+  pensionAnnualAllowance?: number; // default 60000
+  isaAnnualAllowance?: number; // default 20000
+
   // Optional Scottish tax band overrides
   scotStarterRatePercent?: number; // default 19 (%)
   scotStarterThreshold?: number; // default 2306

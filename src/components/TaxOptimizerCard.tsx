@@ -401,22 +401,22 @@ export const TaxOptimizerCard: React.FC<TaxOptimizerCardProps> = ({
 
       {/* VIEW SWITCHER TABS (COUPLE PLANNING MODE) */}
       {isCouple && (
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-slate-900 text-white p-2.5 sm:p-3 rounded-2xl border border-slate-800 shadow-sm">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-slate-100 dark:bg-slate-900 text-slate-900 dark:text-white p-2.5 sm:p-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
           <div className="flex items-center gap-2.5 pl-2">
-            <Users className="w-4 h-4 text-emerald-400 shrink-0" />
+            <Users className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
             <div>
               <span className="text-xs font-black tracking-tight block">Tax & Allowance Perspective</span>
-              <span className="text-[10px] text-slate-400 font-medium">Switch views to inspect joint household totals or individual partner allowances</span>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Switch views to inspect joint household totals or individual partner allowances</span>
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 bg-slate-800/90 p-1 rounded-xl border border-slate-700/80 w-full sm:w-auto justify-stretch sm:justify-start">
+          <div className="flex items-center gap-1.5 bg-slate-200 dark:bg-slate-800/90 p-1 rounded-xl border border-slate-300 dark:border-slate-700/80 w-full sm:w-auto justify-stretch sm:justify-start">
             <button
               onClick={() => setActiveView('combined')}
               className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                 activeView === 'combined'
-                  ? 'bg-emerald-500 text-slate-950 shadow-sm'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
+                  ? 'bg-emerald-500 text-slate-950 shadow-sm font-extrabold'
+                  : 'text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-300/50 dark:hover:bg-slate-700/50'
               }`}
             >
               <Users className="w-3.5 h-3.5" />
@@ -427,8 +427,8 @@ export const TaxOptimizerCard: React.FC<TaxOptimizerCardProps> = ({
               onClick={() => setActiveView('primary')}
               className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                 activeView === 'primary'
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
+                  ? 'bg-indigo-600 text-white shadow-sm font-extrabold'
+                  : 'text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-300/50 dark:hover:bg-slate-700/50'
               }`}
             >
               <User className="w-3.5 h-3.5" />
@@ -439,8 +439,8 @@ export const TaxOptimizerCard: React.FC<TaxOptimizerCardProps> = ({
               onClick={() => setActiveView('partner')}
               className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                 activeView === 'partner'
-                  ? 'bg-rose-600 text-white shadow-sm'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
+                  ? 'bg-rose-600 text-white shadow-sm font-extrabold'
+                  : 'text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-300/50 dark:hover:bg-slate-700/50'
               }`}
             >
               <Heart className="w-3.5 h-3.5 fill-current" />
@@ -454,11 +454,11 @@ export const TaxOptimizerCard: React.FC<TaxOptimizerCardProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
 
         {/* CARD 1: TOTAL TAX RELIEF GAINED */}
-        <div className="bg-slate-900 text-white rounded-3xl p-5 shadow-xl border border-slate-800 flex flex-col justify-between space-y-4">
+        <div className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white rounded-3xl p-5 shadow-xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between space-y-4 transition-colors">
           <div>
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Tax Relief Gained</span>
-              <span className="bg-emerald-900/50 text-emerald-400 font-bold text-[10px] px-2 py-0.5 rounded-full border border-emerald-500/30">
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Tax Relief Gained</span>
+              <span className="bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-400 font-bold text-[10px] px-2 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-500/30">
                 {currentView === 'combined' && partnerTaxResult
                   ? `${primaryTaxResult.marginalTaxRate}% / ${partnerTaxResult.marginalTaxRate}%`
                   : currentView === 'partner' && partnerTaxResult
@@ -466,7 +466,7 @@ export const TaxOptimizerCard: React.FC<TaxOptimizerCardProps> = ({
                   : `${primaryTaxResult.marginalTaxRate}% Tax Rate`}
               </span>
             </div>
-            <div className="text-2xl xl:text-3xl font-black text-white mt-2 tracking-tight">
+            <div className="text-2xl xl:text-3xl font-black text-slate-900 dark:text-white mt-2 tracking-tight">
               £{
                 currentView === 'combined'
                   ? (combinedTotalTaxRelief || 0).toLocaleString()
@@ -475,34 +475,34 @@ export const TaxOptimizerCard: React.FC<TaxOptimizerCardProps> = ({
                   : (primaryTaxResult?.totalPensionTaxRelief || 0).toLocaleString()
               }
             </div>
-            <p className="text-[11px] text-slate-400 mt-1">
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
               HMRC tax relief + NI saved on contributions
             </p>
           </div>
 
-          <div className="space-y-1.5 text-[11px] border-t border-slate-800 pt-2.5">
+          <div className="space-y-1.5 text-[11px] border-t border-slate-100 dark:border-slate-800 pt-2.5">
             {currentView === 'combined' && partnerTaxResult ? (
               <>
-                <div className="flex justify-between items-center text-slate-300">
+                <div className="flex justify-between items-center text-slate-700 dark:text-slate-300">
                   <span className="flex items-center gap-1">
-                    <User className="w-3 h-3 text-indigo-400" />
+                    <User className="w-3 h-3 text-indigo-600 dark:text-indigo-400" />
                     <span>{profile.name || 'Primary'}:</span>
                   </span>
-                  <span className="font-bold text-indigo-300">£{(primaryTaxResult?.totalPensionTaxRelief || 0).toLocaleString()}</span>
+                  <span className="font-bold text-indigo-700 dark:text-indigo-300">£{(primaryTaxResult?.totalPensionTaxRelief || 0).toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between items-center text-slate-300">
+                <div className="flex justify-between items-center text-slate-700 dark:text-slate-300">
                   <span className="flex items-center gap-1">
-                    <Heart className="w-3 h-3 text-rose-400 fill-rose-400/20" />
+                    <Heart className="w-3 h-3 text-rose-600 dark:text-rose-400 fill-rose-600/20 dark:fill-rose-400/20" />
                     <span>{profile.partnerName || 'Partner'}:</span>
                   </span>
-                  <span className="font-bold text-rose-300">£{(partnerTaxResult?.totalPensionTaxRelief || 0).toLocaleString()}</span>
+                  <span className="font-bold text-rose-700 dark:text-rose-300">£{(partnerTaxResult?.totalPensionTaxRelief || 0).toLocaleString()}</span>
                 </div>
               </>
             ) : (
               <>
-                <div className="flex justify-between text-slate-300">
+                <div className="flex justify-between text-slate-700 dark:text-slate-300">
                   <span>Basic Relief + NI:</span>
-                  <span className="font-bold text-emerald-400">
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400">
                     £{
                       (((currentView === 'partner' && partnerTaxResult ? partnerTaxResult : primaryTaxResult)?.pensionBasicRateTaxRelief || 0) +
                        ((currentView === 'partner' && partnerTaxResult ? partnerTaxResult : primaryTaxResult)?.salarySacrificeNicSavedEmployee || 0)).toLocaleString()
@@ -510,7 +510,7 @@ export const TaxOptimizerCard: React.FC<TaxOptimizerCardProps> = ({
                   </span>
                 </div>
                 {((currentView === 'partner' && partnerTaxResult ? partnerTaxResult : primaryTaxResult)?.pensionHigherRateTaxReliefClaimable || 0) > 0 && (
-                  <div className="flex justify-between text-amber-300 font-semibold">
+                  <div className="flex justify-between text-amber-700 dark:text-amber-300 font-semibold">
                     <span>Higher Rate Relief:</span>
                     <span>+£{((currentView === 'partner' && partnerTaxResult ? partnerTaxResult : primaryTaxResult)?.pensionHigherRateTaxReliefClaimable || 0).toLocaleString()}</span>
                   </div>
@@ -734,14 +734,14 @@ export const TaxOptimizerCard: React.FC<TaxOptimizerCardProps> = ({
       </div>
 
       {/* Year-by-Year Tax & Allowances Breakdown Table */}
-      <div className="bg-slate-900 text-white p-5 rounded-3xl border border-slate-800 space-y-3.5 shadow-xl">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-800">
+      <div className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white p-5 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-3.5 shadow-xl transition-colors">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
           <div>
-            <h4 className="font-extrabold text-sm text-white flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-emerald-400" />
+            <h4 className="font-extrabold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               <span>Year-by-Year Tax Relief & Allowances Breakdown</span>
             </h4>
-            <p className="text-[11px] text-slate-400 mt-0.5">
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
               Accumulation phase breakdown of tax relief gained, pension allowance used (£60k/£120k), ISA limit (£20k/£40k), and personal allowance.
             </p>
           </div>
@@ -749,7 +749,7 @@ export const TaxOptimizerCard: React.FC<TaxOptimizerCardProps> = ({
           {yearlyTaxBreakdown.length > 7 && (
             <button
               onClick={() => setShowAllTaxYears(!showAllTaxYears)}
-              className="text-xs font-bold text-indigo-300 hover:text-indigo-200 bg-indigo-950/80 border border-indigo-800 px-3 py-1.5 rounded-xl transition-all cursor-pointer self-start sm:self-auto"
+              className="text-xs font-bold text-indigo-700 dark:text-indigo-300 hover:text-indigo-800 dark:hover:text-indigo-200 bg-indigo-50 dark:bg-indigo-950/80 border border-indigo-200 dark:border-indigo-800 px-3 py-1.5 rounded-xl transition-all cursor-pointer self-start sm:self-auto"
             >
               {showAllTaxYears ? 'Show First 7 Years' : `Show All ${yearlyTaxBreakdown.length} Accumulation Years`}
             </button>
@@ -759,7 +759,7 @@ export const TaxOptimizerCard: React.FC<TaxOptimizerCardProps> = ({
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="border-b border-slate-800 text-slate-400 font-bold uppercase text-[10px] tracking-wider">
+              <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-bold uppercase text-[10px] tracking-wider">
                 <th className="py-2.5 px-3">Tax Year</th>
                 <th className="py-2.5 px-3">Age(s)</th>
                 <th className="py-2.5 px-3">Tax Relief Gained</th>
@@ -770,7 +770,7 @@ export const TaxOptimizerCard: React.FC<TaxOptimizerCardProps> = ({
                 <th className="py-2.5 px-3 text-right">Tax Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/80 text-slate-200">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 text-slate-800 dark:text-slate-200">
               {(showAllTaxYears ? yearlyTaxBreakdown : yearlyTaxBreakdown.slice(0, 7)).map((row) => {
                 const taxRelief =
                   currentView === 'combined'
@@ -836,20 +836,20 @@ export const TaxOptimizerCard: React.FC<TaxOptimizerCardProps> = ({
                     : !row.pAccumulating;
 
                 return (
-                  <tr key={row.yearNum} className="hover:bg-slate-800/50 transition-colors">
-                    <td className="py-2.5 px-3 font-semibold text-white whitespace-nowrap">
+                  <tr key={row.yearNum} className="hover:bg-slate-100/80 dark:hover:bg-slate-800/50 transition-colors">
+                    <td className="py-2.5 px-3 font-semibold text-slate-900 dark:text-white whitespace-nowrap">
                       {row.taxYear}
                     </td>
-                    <td className="py-2.5 px-3 text-slate-300 whitespace-nowrap">
+                    <td className="py-2.5 px-3 text-slate-700 dark:text-slate-300 whitespace-nowrap">
                       {isCouple ? (
                         <span>
-                          P: <strong className="text-white">{row.pAgeAtYear}</strong> | Part: <strong className="text-white">{row.partAgeAtYear}</strong>
+                          P: <strong className="text-slate-900 dark:text-white">{row.pAgeAtYear}</strong> | Part: <strong className="text-slate-900 dark:text-white">{row.partAgeAtYear}</strong>
                         </span>
                       ) : (
                         <span>Age {row.pAgeAtYear}</span>
                       )}
                     </td>
-                    <td className="py-2.5 px-3 font-extrabold text-emerald-400 whitespace-nowrap">
+                    <td className="py-2.5 px-3 font-extrabold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
                       +£{Math.round(taxRelief).toLocaleString()}
                     </td>
                     <td className="py-2.5 px-3 whitespace-nowrap">

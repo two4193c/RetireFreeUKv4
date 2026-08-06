@@ -224,17 +224,17 @@ export const DrawdownComparisonMatrix: React.FC<DrawdownComparisonMatrixProps> =
       </div>
 
       {/* Tax-Free Lump Sum (PCLS vs UFPLS) Active Context Banner */}
-      <div className="bg-gradient-to-r from-indigo-900 via-indigo-950 to-slate-900 text-white p-4 rounded-xl border border-indigo-800/80 shadow-xs space-y-3">
+      <div className="bg-gradient-to-r from-indigo-50 via-indigo-100 to-slate-100 dark:from-indigo-900 dark:via-indigo-950 dark:to-slate-900 text-slate-900 dark:text-white p-4 rounded-xl border border-indigo-200 dark:border-indigo-800/80 shadow-xs space-y-3 transition-colors">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
-            <span className="text-xs font-bold">
+            <Sparkles className="w-4 h-4 text-amber-500 dark:text-amber-400 shrink-0" />
+            <span className="text-xs font-bold text-slate-900 dark:text-white">
               Active Lump Sum Mode for {personName}:
             </span>
             <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-extrabold ${
               takeLumpSumAtStart 
-                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' 
-                : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/40' 
+                : 'bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-500/40'
             }`}>
               {takeLumpSumAtStart 
                 ? (pclsPct < 25 ? `Upfront ${pclsPct}% PCLS (+ Remaining Drip-Feed)` : 'Upfront 25% PCLS Taken') 
@@ -242,12 +242,12 @@ export const DrawdownComparisonMatrix: React.FC<DrawdownComparisonMatrixProps> =
             </span>
           </div>
 
-          <div className="text-[11px] text-slate-300">
-            Current Active Strategy: <strong className="text-white font-mono">{strategies.find((s) => s.id === currentStrategy)?.title || 'ISA First'}</strong>
+          <div className="text-[11px] text-slate-600 dark:text-slate-300">
+            Current Active Strategy: <strong className="text-slate-900 dark:text-white font-mono">{strategies.find((s) => s.id === currentStrategy)?.title || 'ISA First'}</strong>
           </div>
         </div>
 
-        <div className="text-xs text-indigo-100/90 leading-relaxed bg-white/5 p-3 rounded-lg border border-white/10">
+        <div className="text-xs text-slate-700 dark:text-indigo-100/90 leading-relaxed bg-white/80 dark:bg-white/5 p-3 rounded-lg border border-indigo-100 dark:border-white/10">
           {takeLumpSumAtStart ? (
             pclsPct < 25 ? (
               <p>

@@ -597,7 +597,7 @@ function App() {
   }, [profile, pots]);
 
   return (
-    <div className="min-h-screen bg-slate-100/70 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans flex antialiased selection:bg-emerald-500 selection:text-white transition-colors duration-200">
+    <div className="min-h-screen bg-slate-100/70 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans flex flex-col lg:flex-row antialiased selection:bg-emerald-500 selection:text-white transition-colors duration-200">
       
       {/* Left Collapsible Navigation Sidebar (Flush against left edge) */}
       <SidebarNav

@@ -285,77 +285,6 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
       {/* Market Scenario Controls (Only visible when not in Overview showAllScenarios mode) */}
       {!showAllScenarios && (
         <>
-          {/* Volatility & Simulation Parameters Controls */}
-          <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-extrabold text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
-                <Sliders className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                <span>Simulation Parameters & Asset Volatility (Standard Deviation)</span>
-              </span>
-              <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                Runs: <strong>{params.numSimulations}</strong> trials
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-bold">
-              <div>
-                <div className="flex justify-between text-slate-600 dark:text-slate-300 mb-1">
-                  <span>Accumulation Volatility:</span>
-                  <span className="text-indigo-700 dark:text-indigo-400">{localParams.accumulationVolatility}%</span>
-                </div>
-                <input
-                  type="range"
-                  min="5"
-                  max="25"
-                  step="1"
-                  value={localParams.accumulationVolatility}
-                  onChange={(e) =>
-                    setLocalParams((prev) => ({ ...prev, accumulationVolatility: Number(e.target.value) }))
-                  }
-                  className="w-full accent-indigo-600 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg cursor-pointer"
-                />
-                <p className="text-[10px] text-slate-400 dark:text-slate-500 font-normal mt-1">Pre-retirement equity/growth fluctuation</p>
-              </div>
-
-              <div>
-                <div className="flex justify-between text-slate-600 dark:text-slate-300 mb-1">
-                  <span>Decumulation Volatility:</span>
-                  <span className="text-indigo-700 dark:text-indigo-400">{localParams.decumulationVolatility}%</span>
-                </div>
-                <input
-                  type="range"
-                  min="2"
-                  max="18"
-                  step="1"
-                  value={localParams.decumulationVolatility}
-                  onChange={(e) =>
-                    setLocalParams((prev) => ({ ...prev, decumulationVolatility: Number(e.target.value) }))
-                  }
-                  className="w-full accent-indigo-600 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg cursor-pointer"
-                />
-                <p className="text-[10px] text-slate-400 dark:text-slate-500 font-normal mt-1">Post-retirement multi-asset fluctuation</p>
-              </div>
-
-              <div>
-                <div className="flex justify-between text-slate-600 dark:text-slate-300 mb-1">
-                  <span>Projection Horizon:</span>
-                  <span className="text-indigo-700 dark:text-indigo-400">Age {localParams.maxAge}</span>
-                </div>
-                <select
-                  value={localParams.maxAge}
-                  onChange={(e) => setLocalParams((prev) => ({ ...prev, maxAge: Number(e.target.value) }))}
-                  className="w-full px-2.5 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100"
-                >
-                  <option value={85}>To Age 85</option>
-                  <option value={90}>To Age 90</option>
-                  <option value={95}>To Age 95</option>
-                  <option value={100}>To Age 100</option>
-                </select>
-                <p className="text-[10px] text-slate-400 dark:text-slate-500 font-normal mt-1">Target age model length</p>
-              </div>
-            </div>
-          </div>
-
           {/* KPI Highlight Bento Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Success Rate */}
@@ -1319,6 +1248,79 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Volatility & Simulation Parameters Controls */}
+      {!showAllScenarios && (
+        <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-extrabold text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
+              <Sliders className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+              <span>Simulation Parameters & Asset Volatility (Standard Deviation)</span>
+            </span>
+            <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+              Runs: <strong>{params.numSimulations}</strong> trials
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-bold">
+            <div>
+              <div className="flex justify-between text-slate-600 dark:text-slate-300 mb-1">
+                <span>Accumulation Volatility:</span>
+                <span className="text-indigo-700 dark:text-indigo-400">{localParams.accumulationVolatility}%</span>
+              </div>
+              <input
+                type="range"
+                min="5"
+                max="25"
+                step="1"
+                value={localParams.accumulationVolatility}
+                onChange={(e) =>
+                  setLocalParams((prev) => ({ ...prev, accumulationVolatility: Number(e.target.value) }))
+                }
+                className="w-full accent-indigo-600 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg cursor-pointer"
+              />
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 font-normal mt-1">Pre-retirement equity/growth fluctuation</p>
+            </div>
+
+            <div>
+              <div className="flex justify-between text-slate-600 dark:text-slate-300 mb-1">
+                <span>Decumulation Volatility:</span>
+                <span className="text-indigo-700 dark:text-indigo-400">{localParams.decumulationVolatility}%</span>
+              </div>
+              <input
+                type="range"
+                min="2"
+                max="18"
+                step="1"
+                value={localParams.decumulationVolatility}
+                onChange={(e) =>
+                  setLocalParams((prev) => ({ ...prev, decumulationVolatility: Number(e.target.value) }))
+                }
+                className="w-full accent-indigo-600 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg cursor-pointer"
+              />
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 font-normal mt-1">Post-retirement multi-asset fluctuation</p>
+            </div>
+
+            <div>
+              <div className="flex justify-between text-slate-600 dark:text-slate-300 mb-1">
+                <span>Projection Horizon:</span>
+                <span className="text-indigo-700 dark:text-indigo-400">Age {localParams.maxAge}</span>
+              </div>
+              <select
+                value={localParams.maxAge}
+                onChange={(e) => setLocalParams((prev) => ({ ...prev, maxAge: Number(e.target.value) }))}
+                className="w-full px-2.5 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100"
+              >
+                <option value={85}>To Age 85</option>
+                <option value={90}>To Age 90</option>
+                <option value={95}>To Age 95</option>
+                <option value={100}>To Age 100</option>
+              </select>
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 font-normal mt-1">Target age model length</p>
+            </div>
+          </div>
         </div>
       )}
 

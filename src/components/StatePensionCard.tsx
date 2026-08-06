@@ -36,7 +36,7 @@ export const StatePensionCard: React.FC<StatePensionCardProps> = ({ profile, onC
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-sm font-extrabold text-slate-800 dark:text-slate-100 uppercase tracking-wider">
-                UK State Pension Entitlement
+                State Pension Forecast
               </h3>
               <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950 text-indigo-900 dark:text-indigo-300 border border-indigo-200/50 dark:border-indigo-800/50">
                 Guaranteed Income
@@ -91,7 +91,6 @@ export const StatePensionCard: React.FC<StatePensionCardProps> = ({ profile, onC
                       onChange({
                         ...profile,
                         enableTripleLock: val,
-                        partnerEnableTripleLock: val,
                       });
                     }}
                     className="w-4 h-4 text-emerald-600 rounded border-slate-300 dark:border-slate-700 focus:ring-emerald-500 cursor-pointer"

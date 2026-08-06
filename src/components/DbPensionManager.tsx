@@ -72,7 +72,7 @@ export const DbPensionManager: React.FC<DbPensionManagerProps> = ({ profile, onC
           </div>
           <div>
             <h2 className="font-extrabold text-slate-800 dark:text-slate-100 text-base flex items-center gap-2">
-              <span>Defined Benefit (DB) & Final Salary Pensions</span>
+              <span>Defined Benefit Pensions</span>
               <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-200 px-2.5 py-0.5 rounded-full border border-amber-200/50 dark:border-amber-800/50">
                 Guaranteed Income
               </span>

@@ -724,15 +724,15 @@ export const PotTransferManager: React.FC<PotTransferManagerProps> = ({
                   </div>
 
                   {/* DISPLAY BANNER: SOURCE POT BALANCE ON TRANSFER DATE & NEW DESTINATION BALANCE */}
-                  <div className="bg-slate-900 text-white p-4 rounded-2xl border border-slate-800 space-y-3 shadow-md">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-800/80">
+                  <div className="bg-slate-100 dark:bg-slate-900 text-slate-900 dark:text-white p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3 shadow-md transition-colors">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-200 dark:border-slate-800/80">
                       <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-emerald-400" />
-                        <span className="text-xs font-bold text-slate-200">
-                          Transfer Execution Date: <strong className="text-white">{transfer.transferDate || `${targetYear}-04-06`}</strong> (Tax Year {targetYear}/{(targetYear + 1).toString().slice(2)})
+                        <Calendar className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                        <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
+                          Transfer Execution Date: <strong className="text-slate-900 dark:text-white">{transfer.transferDate || `${targetYear}-04-06`}</strong> (Tax Year {targetYear}/{(targetYear + 1).toString().slice(2)})
                         </span>
                       </div>
-                      <div className="text-[11px] text-slate-400 font-medium">
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
                         {isCouple ? (
                           <span>{primaryName} Age {primaryAgeAtTransfer} | {partnerName} Age {partnerAgeAtTransfer}</span>
                         ) : (
@@ -745,69 +745,69 @@ export const PotTransferManager: React.FC<PotTransferManagerProps> = ({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       
                       {/* SOURCE POT BOX */}
-                      <div className="bg-slate-950/80 p-3.5 rounded-xl border border-rose-900/40 space-y-2">
+                      <div className="bg-white dark:bg-slate-950/80 p-3.5 rounded-xl border border-rose-200 dark:border-rose-900/40 space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-[11px] font-bold uppercase tracking-wider text-rose-400 flex items-center gap-1.5">
+                          <span className="text-[11px] font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400 flex items-center gap-1.5">
                             <span>📤 Source Pot</span>
-                            <span className="text-slate-400 font-normal">({srcOwnerName})</span>
+                            <span className="text-slate-500 dark:text-slate-400 font-normal">({srcOwnerName})</span>
                           </span>
-                          <span className="text-xs font-bold text-slate-300">{getPotLabel(transfer.sourcePot)}</span>
+                          <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{getPotLabel(transfer.sourcePot)}</span>
                         </div>
 
                         <div className="space-y-1 text-xs">
-                          <div className="flex justify-between text-slate-400">
+                          <div className="flex justify-between text-slate-600 dark:text-slate-400">
                             <span>Balance on Transfer Date (Before):</span>
-                            <strong className="text-white">£{Math.round(srcBalanceBefore).toLocaleString()}</strong>
+                            <strong className="text-slate-900 dark:text-white">£{Math.round(srcBalanceBefore).toLocaleString()}</strong>
                           </div>
 
-                          <div className="flex justify-between text-rose-400 font-bold">
+                          <div className="flex justify-between text-rose-600 dark:text-rose-400 font-bold">
                             <span>Transfer Amount Deducted:</span>
                             <span>-£{Math.round(actualTransferred).toLocaleString()}</span>
                           </div>
 
-                          <div className="flex justify-between text-slate-200 font-bold pt-1.5 border-t border-slate-800">
+                          <div className="flex justify-between text-slate-800 dark:text-slate-200 font-bold pt-1.5 border-t border-slate-200 dark:border-slate-800">
                             <span>Remaining Source Balance:</span>
-                            <strong className="text-amber-300">£{Math.round(srcBalanceAfter).toLocaleString()}</strong>
+                            <strong className="text-amber-600 dark:text-amber-300">£{Math.round(srcBalanceAfter).toLocaleString()}</strong>
                           </div>
                         </div>
                       </div>
 
                       {/* DESTINATION POT BOX */}
-                      <div className="bg-slate-950/80 p-3.5 rounded-xl border border-emerald-900/40 space-y-2">
+                      <div className="bg-white dark:bg-slate-950/80 p-3.5 rounded-xl border border-emerald-200 dark:border-emerald-900/40 space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                          <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
                             <span>📥 Destination Pot</span>
-                            <span className="text-slate-400 font-normal">({dstOwnerName})</span>
+                            <span className="text-slate-500 dark:text-slate-400 font-normal">({dstOwnerName})</span>
                           </span>
-                          <span className="text-xs font-bold text-slate-300">{getPotLabel(transfer.destinationPot)}</span>
+                          <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{getPotLabel(transfer.destinationPot)}</span>
                         </div>
 
                         <div className="space-y-1 text-xs">
-                          <div className="flex justify-between text-slate-400">
+                          <div className="flex justify-between text-slate-600 dark:text-slate-400">
                             <span>Balance on Transfer Date (Before):</span>
-                            <strong className="text-white">£{Math.round(dstBalanceBefore).toLocaleString()}</strong>
+                            <strong className="text-slate-900 dark:text-white">£{Math.round(dstBalanceBefore).toLocaleString()}</strong>
                           </div>
 
-                          <div className="flex justify-between text-emerald-400 font-bold">
+                          <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-bold">
                             <span>Transferred Amount Added:</span>
                             <span className="text-right">
                               +£{Math.round(amountAddedToDst).toLocaleString()}
                               {transfer.destinationPot === 'sipp' && taxReliefAmount > 0 && (
-                                <span className="block text-[10px] text-emerald-300 font-normal">
+                                <span className="block text-[10px] text-emerald-600 dark:text-emerald-300 font-normal">
                                   (net £{Math.round(actualTransferred).toLocaleString()} + £{Math.round(taxReliefAmount).toLocaleString()} tax relief)
                                 </span>
                               )}
                               {transfer.destinationPot === 'lisa' && taxReliefAmount > 0 && (
-                                <span className="block text-[10px] text-emerald-300 font-normal">
+                                <span className="block text-[10px] text-emerald-600 dark:text-emerald-300 font-normal">
                                   (net £{Math.round(actualTransferred).toLocaleString()} + £{Math.round(taxReliefAmount).toLocaleString()} LISA bonus)
                                 </span>
                               )}
                             </span>
                           </div>
 
-                          <div className="flex justify-between text-slate-200 font-bold pt-1.5 border-t border-slate-800">
+                          <div className="flex justify-between text-slate-800 dark:text-slate-200 font-bold pt-1.5 border-t border-slate-200 dark:border-slate-800">
                             <span>New Balance on Transfer Date:</span>
-                            <strong className="text-emerald-400 text-sm">£{Math.round(dstBalanceAfter).toLocaleString()}</strong>
+                            <strong className="text-emerald-600 dark:text-emerald-400 text-sm">£{Math.round(dstBalanceAfter).toLocaleString()}</strong>
                           </div>
                         </div>
                       </div>
@@ -816,8 +816,8 @@ export const PotTransferManager: React.FC<PotTransferManagerProps> = ({
 
                     {/* Insufficient funds warning if requested amount exceeds projected source balance */}
                     {isInsufficienFunds && (
-                      <div className="flex items-center gap-2 p-2.5 bg-amber-950/60 border border-amber-800/80 text-amber-200 text-xs rounded-xl font-medium">
-                        <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                      <div className="flex items-center gap-2 p-2.5 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800/80 text-amber-900 dark:text-amber-200 text-xs rounded-xl font-medium">
+                        <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
                         <span>
                           Requested transfer (£{requestedAmount.toLocaleString()}) exceeds the projected source pot balance (£{Math.round(srcBalanceBefore).toLocaleString()}). Only available balance £{Math.round(actualTransferred).toLocaleString()} will be transferred.
                         </span>
@@ -825,8 +825,8 @@ export const PotTransferManager: React.FC<PotTransferManagerProps> = ({
                     )}
 
                     {isZeroFunds && (
-                      <div className="flex items-center gap-2 p-2.5 bg-rose-950/60 border border-rose-800/80 text-rose-200 text-xs rounded-xl font-medium">
-                        <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                      <div className="flex items-center gap-2 p-2.5 bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800/80 text-rose-900 dark:text-rose-200 text-xs rounded-xl font-medium">
+                        <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
                         <span>
                           Projected source pot balance is £0 on the selected date. Increase monthly contributions or adjust the date.
                         </span>
@@ -835,14 +835,14 @@ export const PotTransferManager: React.FC<PotTransferManagerProps> = ({
 
                     {/* SIPP Tax Relief Bonus Banner */}
                     {transfer.destinationPot === 'sipp' && actualTransferred > 0 && (
-                      <div className="flex items-center justify-between p-2.5 bg-indigo-950/60 border border-indigo-800/80 text-indigo-200 text-xs rounded-xl">
+                      <div className="flex items-center justify-between p-2.5 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800/80 text-indigo-900 dark:text-indigo-200 text-xs rounded-xl">
                         <div className="flex items-center gap-2 font-semibold">
-                          <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+                          <Sparkles className="w-4 h-4 text-amber-500 dark:text-amber-400 shrink-0" />
                           <span>
                             SIPP Pension Top-Up: Transfer of £{Math.round(actualTransferred).toLocaleString()} qualifies for 20%+ UK Pension Tax Relief!
                           </span>
                         </div>
-                        <span className="font-extrabold text-amber-300 bg-indigo-900/90 px-2.5 py-1 rounded-lg border border-indigo-700/80 shrink-0">
+                        <span className="font-extrabold text-amber-700 dark:text-amber-300 bg-indigo-100 dark:bg-indigo-900/90 px-2.5 py-1 rounded-lg border border-indigo-200 dark:border-indigo-700/80 shrink-0">
                           +£{Math.round(actualTransferred * 0.25).toLocaleString()} Basic Relief Added
                         </span>
                       </div>

@@ -145,22 +145,22 @@ export const PotManager: React.FC<PotManagerProps> = ({
       {isCouple ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Card 1: Combined Household Portfolio */}
-          <div className="p-4 rounded-2xl bg-slate-900 text-white dark:bg-slate-950 border border-slate-800 shadow-md space-y-2 relative overflow-hidden">
+          <div className="p-4 rounded-2xl bg-emerald-50/80 dark:bg-slate-950 text-slate-900 dark:text-white border border-emerald-200 dark:border-slate-800 shadow-md space-y-2 relative overflow-hidden transition-colors">
             <div className="flex items-center justify-between text-xs">
-              <span className="font-bold text-slate-300 flex items-center gap-1.5 uppercase tracking-wider text-[10px]">
-                <Users className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 uppercase tracking-wider text-[10px]">
+                <Users className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                 Combined Household Starting Balance
               </span>
-              <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full">
+              <span className="bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full">
                 Joint Total
               </span>
             </div>
             <div>
-              <div className="text-2xl font-black text-white">
+              <div className="text-2xl font-black text-slate-900 dark:text-white">
                 £{(combinedTotalBal || 0).toLocaleString()}
               </div>
             </div>
-            <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-[10px] text-slate-400">
+            <div className="pt-2 border-t border-emerald-200/60 dark:border-slate-800 flex items-center justify-between text-[10px] text-slate-600 dark:text-slate-400">
               <span>Pensions: £{(primaryPensionBal + partnerPensionBal || 0).toLocaleString()}</span>
               <span>ISAs: £{(primaryIsaBal + partnerIsaBal || 0).toLocaleString()}</span>
               <span>Cash/GIA: £{(primaryCashGiaBal + partnerCashGiaBal || 0).toLocaleString()}</span>

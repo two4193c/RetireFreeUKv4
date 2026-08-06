@@ -201,7 +201,7 @@ export const LifeEventsDecumulationCard: React.FC<LifeEventsDecumulationCardProp
               <Calendar className="w-5 h-5" />
             </div>
             <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-              Life Events in Decumulation
+              Life Events
             </h2>
             <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
               {activeEvents.length} Active {activeEvents.length === 1 ? 'Event' : 'Events'}

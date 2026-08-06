@@ -871,26 +871,26 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
       </div>
 
       {/* AUTOMATED EXECUTIVE SUMMARY & WINNER CALLOUT BANNER */}
-      <div className="bg-gradient-to-br from-indigo-900 via-indigo-950 to-slate-900 text-white rounded-3xl p-5 shadow-lg border border-indigo-700/60 space-y-3">
+      <div className="bg-gradient-to-br from-indigo-50 via-indigo-100 to-slate-50 dark:from-indigo-900 dark:via-indigo-950 dark:to-slate-900 text-slate-900 dark:text-white rounded-3xl p-5 shadow-lg border border-indigo-200 dark:border-indigo-700/60 space-y-3 transition-colors">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-2xl bg-amber-400/20 border border-amber-400/40 flex items-center justify-center shrink-0">
-              <Award className="w-5 h-5 text-amber-300" />
+            <div className="w-9 h-9 rounded-2xl bg-amber-100 dark:bg-amber-400/20 border border-amber-300 dark:border-amber-400/40 flex items-center justify-center shrink-0">
+              <Award className="w-5 h-5 text-amber-600 dark:text-amber-300" />
             </div>
             <div>
-              <span className="text-[10px] font-black uppercase tracking-wider text-indigo-300">
+              <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 dark:text-indigo-300">
                 Executive Benchmark Takeaway
               </span>
-              <h3 className="text-base font-extrabold text-white flex items-center gap-2">
+              <h3 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
                 <span>Leading Strategy:</span>
-                <span className="text-amber-300">{winnerName}</span>
+                <span className="text-amber-700 dark:text-amber-300">{winnerName}</span>
               </h3>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 bg-white/10 px-3.5 py-1.5 rounded-2xl border border-white/10 text-xs whitespace-nowrap">
-            <Sparkles className="w-4 h-4 text-amber-300 shrink-0" />
-            <span className="font-bold">
+          <div className="flex items-center gap-2 bg-white/80 dark:bg-white/10 px-3.5 py-1.5 rounded-2xl border border-indigo-200 dark:border-white/10 text-xs whitespace-nowrap shadow-xs">
+            <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-300 shrink-0" />
+            <span className="font-bold text-slate-900 dark:text-white">
               {diffFromRunnerUp > 0
                 ? `+${formatCurrency(diffFromRunnerUp)} Lead @ Age 85`
                 : 'Identical Wealth Trajectory'}
@@ -898,7 +898,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
           </div>
         </div>
 
-        <p className="text-xs text-indigo-100/90 leading-relaxed">
+        <p className="text-xs text-slate-700 dark:text-indigo-100/90 leading-relaxed">
           {showScenarioC ? (
             <>
               Comparing 3 scenarios at Age 85: <strong>{scenarioA.name}</strong> (£{Math.round((pot85A) || 0).toLocaleString()}), <strong>{scenarioB.name}</strong> (£{Math.round((pot85B) || 0).toLocaleString()}), and <strong>{scenarioC.name}</strong> (£{Math.round((pot85C) || 0).toLocaleString()}). <strong>{winnerName}</strong> leads with the highest portfolio wealth.
@@ -913,11 +913,11 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
             </>
           )}
           {candidatePots.some((c) => c.dep) ? (
-            <span className="block mt-1 font-semibold text-amber-200">
+            <span className="block mt-1 font-semibold text-amber-800 dark:text-amber-200">
               ⚠️ Longevity Alert: {candidatePots.map((c) => `${c.scenario.name}: ${c.dep ? `Depletes at Age ${c.dep.age}` : 'Sustained past 95'}`).join(' | ')}.
             </span>
           ) : (
-            <span className="block mt-1 text-emerald-300 font-semibold">
+            <span className="block mt-1 text-emerald-700 dark:text-emerald-300 font-semibold">
               ✓ All evaluated plans maintain positive portfolio balances past Age 90.
             </span>
           )}
@@ -1134,68 +1134,68 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
       </div>
 
       {/* FEATURE 4: MULTI-DIMENSIONAL SCENARIO RECOMMENDATION & TRADE-OFF SCORECARD */}
-      <div className="p-5 bg-gradient-to-br from-slate-900 to-indigo-950 text-white rounded-3xl border border-indigo-800/60 space-y-4 shadow-xl">
-        <div className="flex items-center justify-between border-b border-indigo-800/60 pb-3">
+      <div className="p-5 bg-gradient-to-br from-slate-50 to-indigo-50 dark:from-slate-900 dark:to-indigo-950 text-slate-900 dark:text-white rounded-3xl border border-indigo-200 dark:border-indigo-800/60 space-y-4 shadow-xl transition-colors">
+        <div className="flex items-center justify-between border-b border-indigo-200 dark:border-indigo-800/60 pb-3">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-            <h3 className="font-extrabold text-sm uppercase tracking-wider text-white">
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            <h3 className="font-extrabold text-sm uppercase tracking-wider text-slate-900 dark:text-white">
               Multi-Dimensional Scenario Recommendation & Trade-Off Scorecard
             </h3>
           </div>
-          <span className="text-[10px] font-extrabold bg-indigo-800/80 px-2.5 py-1 rounded-full text-indigo-200 border border-indigo-700">
+          <span className="text-[10px] font-extrabold bg-indigo-100 dark:bg-indigo-800/80 px-2.5 py-1 rounded-full text-indigo-900 dark:text-indigo-200 border border-indigo-200 dark:border-indigo-700">
             4-Dimensional Assessment
           </span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
           {/* Dimension 1: Longevity */}
-          <div className="p-3.5 bg-white/5 rounded-2xl border border-white/10 space-y-2">
-            <div className="flex items-center justify-between text-xs font-bold text-indigo-200 gap-2">
+          <div className="p-3.5 bg-white dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10 space-y-2 shadow-xs">
+            <div className="flex items-center justify-between text-xs font-bold text-indigo-900 dark:text-indigo-200 gap-2">
               <span className="flex items-center gap-1 whitespace-nowrap">🛡️ Capital Longevity</span>
-              <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2.5 py-1 rounded-full font-extrabold border border-emerald-500/40 whitespace-nowrap">
+              <span className="text-[10px] bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 px-2.5 py-1 rounded-full font-extrabold border border-emerald-300 dark:border-emerald-500/40 whitespace-nowrap">
                 Winner: {longevityWinnerName}
               </span>
             </div>
-            <p className="text-[11px] text-slate-300 leading-relaxed">
+            <p className="text-[11px] text-slate-700 dark:text-slate-300 leading-relaxed">
               <strong>{longevityWinnerName}</strong> maintains the highest net asset cushion at Age 85/90, offering the strongest longevity shield against drawdown depletion.
             </p>
           </div>
 
           {/* Dimension 2: Tax Efficiency */}
-          <div className="p-3.5 bg-white/5 rounded-2xl border border-white/10 space-y-2">
-            <div className="flex items-center justify-between text-xs font-bold text-indigo-200 gap-2">
+          <div className="p-3.5 bg-white dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10 space-y-2 shadow-xs">
+            <div className="flex items-center justify-between text-xs font-bold text-indigo-900 dark:text-indigo-200 gap-2">
               <span className="flex items-center gap-1 whitespace-nowrap">⚡ Tax Efficiency</span>
-              <span className="text-[10px] bg-indigo-500/20 text-indigo-300 px-2.5 py-1 rounded-full font-extrabold border border-indigo-500/40 whitespace-nowrap">
+              <span className="text-[10px] bg-indigo-100 dark:bg-indigo-500/20 text-indigo-800 dark:text-indigo-300 px-2.5 py-1 rounded-full font-extrabold border border-indigo-300 dark:border-indigo-500/40 whitespace-nowrap">
                 Winner: {taxWinnerName}
               </span>
             </div>
-            <p className="text-[11px] text-slate-300 leading-relaxed">
+            <p className="text-[11px] text-slate-700 dark:text-slate-300 leading-relaxed">
               <strong>{taxWinnerName}</strong> minimizes cumulative retirement HMRC income tax friction (total tax {formatCurrency(taxCandidates[0].tax)}), leaving higher net spendable cash.
             </p>
           </div>
 
           {/* Dimension 3: Inheritance & Estate Protection */}
-          <div className="p-3.5 bg-white/5 rounded-2xl border border-white/10 space-y-2">
-            <div className="flex items-center justify-between text-xs font-bold text-indigo-200 gap-2">
+          <div className="p-3.5 bg-white dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10 space-y-2 shadow-xs">
+            <div className="flex items-center justify-between text-xs font-bold text-indigo-900 dark:text-indigo-200 gap-2">
               <span className="flex items-center gap-1 whitespace-nowrap">🏛️ Estate & IHT Shield</span>
-              <span className="text-[10px] bg-purple-500/20 text-purple-300 px-2.5 py-1 rounded-full font-extrabold border border-purple-500/40 whitespace-nowrap">
+              <span className="text-[10px] bg-purple-100 dark:bg-purple-500/20 text-purple-800 dark:text-purple-300 px-2.5 py-1 rounded-full font-extrabold border border-purple-300 dark:border-purple-500/40 whitespace-nowrap">
                 Winner: {estateWinnerName}
               </span>
             </div>
-            <p className="text-[11px] text-slate-300 leading-relaxed">
+            <p className="text-[11px] text-slate-700 dark:text-slate-300 leading-relaxed">
               <strong>{estateWinnerName}</strong> passes the largest net estate to beneficiaries at Age 85 ({formatCurrency(estateCandidates[0].netEstate)}) after accounting for 40% UK IHT thresholds.
             </p>
           </div>
 
           {/* Dimension 4: Guaranteed Floor Protection */}
-          <div className="p-3.5 bg-white/5 rounded-2xl border border-white/10 space-y-2">
-            <div className="flex items-center justify-between text-xs font-bold text-indigo-200 gap-2">
+          <div className="p-3.5 bg-white dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10 space-y-2 shadow-xs">
+            <div className="flex items-center justify-between text-xs font-bold text-indigo-900 dark:text-indigo-200 gap-2">
               <span className="flex items-center gap-1 whitespace-nowrap">🔒 Floor Safety</span>
-              <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2.5 py-1 rounded-full font-extrabold border border-amber-500/40 whitespace-nowrap">
+              <span className="text-[10px] bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 px-2.5 py-1 rounded-full font-extrabold border border-amber-300 dark:border-amber-500/40 whitespace-nowrap">
                 Winner: {floorWinnerName}
               </span>
             </div>
-            <p className="text-[11px] text-slate-300 leading-relaxed">
+            <p className="text-[11px] text-slate-700 dark:text-slate-300 leading-relaxed">
               <strong>{floorWinnerName}</strong> secures the highest guaranteed floor coverage ({floorCandidates[0].cov}% of target expenditure covered by DB/State/Annuity streams).
             </p>
           </div>

@@ -49,6 +49,9 @@ export const DEFAULT_CUSTOM_TAX_BANDS = {
   higherRateThreshold: 125140,
   additionalRatePercent: 45,
 
+  pensionAnnualAllowance: 60000,
+  isaAnnualAllowance: 20000,
+
   scotStarterRatePercent: 19,
   scotStarterThreshold: 2306,
   scotBasicRatePercent: 20,
@@ -304,7 +307,7 @@ export function sanitizeProfile(profile?: Partial<UserProfile> | null): UserProf
   return {
     ...base,
     enableTripleLock: tripleLockVal,
-    partnerEnableTripleLock: tripleLockVal,
+    partnerEnableTripleLock: base.partnerEnableTripleLock ?? tripleLockVal,
     qualifyingYears: qYears,
     fullStatePensionAmount: fullSpPrimary,
     statePensionAmountAnnual: qYears < 10 ? 0 : (base.statePensionAmountAnnual ?? computedSp),

@@ -22,6 +22,8 @@ import {
   SCOT_TOP_RATE,
   EMPLOYER_NI_RATE,
   LSA_STANDARD_LIMIT,
+  PENSION_ANNUAL_ALLOWANCE,
+  ISA_ANNUAL_LIMIT,
 } from '../config/ukTaxRates';
 
 /**
@@ -1022,7 +1024,11 @@ export function calculateUKTax(
   const hasTriggeredMpaa = isPartner ? profile.partnerHasTriggeredMpaa : profile.hasTriggeredMpaa;
   const carryForward = isPartner ? (profile.partnerCarryForwardAllowance || 0) : (profile.carryForwardAllowance || 0);
 
-  let pensionAnnualAllowanceLimit = hasTriggeredMpaa ? 10000 : (60000 + carryForward);
+  const basePensionAnnualAllowance = profile.customTaxBands?.enabled
+    ? (profile.customTaxBands.pensionAnnualAllowance ?? PENSION_ANNUAL_ALLOWANCE)
+    : PENSION_ANNUAL_ALLOWANCE;
+
+  let pensionAnnualAllowanceLimit = hasTriggeredMpaa ? 10000 : (basePensionAnnualAllowance + carryForward);
   let isTaperedAnnualAllowance = false;
   let taperedReduction = 0;
 
@@ -1030,7 +1036,7 @@ export function calculateUKTax(
   if (thresholdIncome > 200000 && adjustedIncome > 260000) {
     isTaperedAnnualAllowance = true;
     taperedReduction = Math.min(50000, Math.floor((adjustedIncome - 260000) / 2));
-    pensionAnnualAllowanceLimit = Math.max(10000, 60000 - taperedReduction);
+    pensionAnnualAllowanceLimit = Math.max(10000, basePensionAnnualAllowance - taperedReduction);
   }
 
   const pensionAnnualAllowanceUsed = totalPensionContributionsAnnual;
@@ -1040,7 +1046,9 @@ export function calculateUKTax(
   const exceedsEligibleIncome = pensionAnnualAllowanceUsed > eligibleEarnings;
   const exceedsAnnualAllowanceOnly = pensionAnnualAllowanceUsed > pensionAnnualAllowanceLimit && pensionAnnualAllowanceUsed <= eligibleEarnings;
 
-  const isaAllowanceLimit = 20000;
+  const isaAllowanceLimit = profile.customTaxBands?.enabled
+    ? (profile.customTaxBands.isaAnnualAllowance ?? ISA_ANNUAL_LIMIT)
+    : ISA_ANNUAL_LIMIT;
   const isaAllowanceUsed = totalIsaAnnual;
   const isaAllowanceRemaining = Math.max(0, isaAllowanceLimit - isaAllowanceUsed);
 

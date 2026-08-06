@@ -481,22 +481,22 @@ export const MonthlySavingsRateCard: React.FC<MonthlySavingsRateCardProps> = ({ 
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: 'easeOut' }}
-      className="bg-slate-900 text-white rounded-3xl p-5 sm:p-6 shadow-xl border border-slate-800 space-y-6"
+      className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white rounded-3xl p-5 sm:p-6 shadow-xl border border-slate-200 dark:border-slate-800 space-y-6 transition-colors"
     >
       {/* Card Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center shrink-0">
-            <PiggyBank className="w-5 h-5 text-emerald-400" />
+          <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center justify-center shrink-0">
+            <PiggyBank className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="font-extrabold text-base text-white tracking-tight">Savings Rate</h3>
-              <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+              <h3 className="font-extrabold text-base text-slate-900 dark:text-white tracking-tight">Savings Rate</h3>
+              <span className="bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
                 Accumulation Phase
               </span>
             </div>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               Overview of monthly savings rates and year-by-year accumulation breakdown until retirement start age
             </p>
           </div>
@@ -518,18 +518,18 @@ export const MonthlySavingsRateCard: React.FC<MonthlySavingsRateCardProps> = ({ 
 
       {/* Couple Planning View Switcher Tabs */}
       {isCouple && (
-        <div className="flex flex-wrap items-center gap-2 bg-slate-800/80 p-1.5 rounded-2xl border border-slate-700">
+        <div className="flex flex-wrap items-center gap-2 bg-slate-100 dark:bg-slate-800/80 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-700">
           <button
             onClick={() => setActiveView('combined')}
             className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
               activeView === 'combined'
                 ? 'bg-emerald-500 text-slate-950 shadow-md font-extrabold'
-                : 'text-slate-400 hover:text-white'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             <Users className="w-3.5 h-3.5" />
             <span>Combined Household</span>
-            <span className="bg-slate-950/40 text-emerald-100 text-[10px] px-1.5 py-0.5 rounded-md">
+            <span className="bg-slate-200 dark:bg-slate-950/40 text-emerald-900 dark:text-emerald-100 text-[10px] px-1.5 py-0.5 rounded-md font-bold">
               £{Math.round(combinedMonthlySavings || 0).toLocaleString()}/mo ({(combinedSalary > 0 ? (combinedMonthlySavings / (combinedSalary / 12)) * 100 : 0).toFixed(1)}%)
             </span>
           </button>
@@ -539,12 +539,12 @@ export const MonthlySavingsRateCard: React.FC<MonthlySavingsRateCardProps> = ({ 
             className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
               activeView === 'primary'
                 ? 'bg-indigo-600 text-white shadow-md font-extrabold'
-                : 'text-slate-400 hover:text-white'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            <User className="w-3.5 h-3.5 text-indigo-300" />
+            <User className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-300" />
             <span>{profile.name || 'Primary'}</span>
-            <span className="bg-slate-950/40 text-indigo-100 text-[10px] px-1.5 py-0.5 rounded-md">
+            <span className="bg-slate-200 dark:bg-slate-950/40 text-indigo-900 dark:text-indigo-100 text-[10px] px-1.5 py-0.5 rounded-md font-bold">
               £{Math.round(totalMonthlySavings || 0).toLocaleString()}/mo ({(primarySalary > 0 ? (totalMonthlySavings / (primarySalary / 12)) * 100 : 0).toFixed(1)}%)
             </span>
           </button>
@@ -554,12 +554,12 @@ export const MonthlySavingsRateCard: React.FC<MonthlySavingsRateCardProps> = ({ 
             className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
               activeView === 'partner'
                 ? 'bg-rose-600 text-white shadow-md font-extrabold'
-                : 'text-slate-400 hover:text-white'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            <Heart className="w-3.5 h-3.5 text-rose-300 fill-rose-300" />
+            <Heart className="w-3.5 h-3.5 text-rose-500 dark:text-rose-300 fill-rose-500 dark:fill-rose-300" />
             <span>{profile.partnerName || 'Partner'}</span>
-            <span className="bg-slate-950/40 text-rose-100 text-[10px] px-1.5 py-0.5 rounded-md">
+            <span className="bg-slate-200 dark:bg-slate-950/40 text-rose-900 dark:text-rose-100 text-[10px] px-1.5 py-0.5 rounded-md font-bold">
               £{Math.round(partnerTotalMonthlySavings || 0).toLocaleString()}/mo ({(partnerSalary > 0 ? (partnerTotalMonthlySavings / (partnerSalary / 12)) * 100 : 0).toFixed(1)}%)
             </span>
           </button>
@@ -574,19 +574,19 @@ export const MonthlySavingsRateCard: React.FC<MonthlySavingsRateCardProps> = ({ 
           initial={{ opacity: 0.7, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.25 }}
-          className="bg-slate-800/80 p-3.5 rounded-2xl border border-slate-700/80 space-y-1"
+          className="bg-slate-50 dark:bg-slate-800/80 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700/80 space-y-1"
         >
-          <span className="text-[11px] font-semibold text-slate-400 flex items-center justify-between">
+          <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 flex items-center justify-between">
             <span>
               {currentViewKey === 'combined' ? 'Combined Monthly Inputs' : 'Total Monthly Savings'}
             </span>
-            <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+            <Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
           </span>
-          <div className="text-xl font-extrabold text-emerald-400">
+          <div className="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">
             £{Math.round(activeDisplay.totalMonthlySavings || 0).toLocaleString()}
-            <span className="text-xs text-slate-400 font-normal"> /mo</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-normal"> /mo</span>
           </div>
-          <div className="text-[10px] text-slate-400 font-medium">
+          <div className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
             £{Math.round(activeDisplay.totalAnnualSavings || 0).toLocaleString()} saved annually
           </div>
         </motion.div>
@@ -597,17 +597,17 @@ export const MonthlySavingsRateCard: React.FC<MonthlySavingsRateCardProps> = ({ 
           initial={{ opacity: 0.7, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.25 }}
-          className="bg-slate-800/80 p-3.5 rounded-2xl border border-slate-700/80 space-y-1"
+          className="bg-slate-50 dark:bg-slate-800/80 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700/80 space-y-1"
         >
-          <span className="text-[11px] font-semibold text-slate-400 flex items-center justify-between">
+          <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 flex items-center justify-between">
             <span>Overall Savings Rate</span>
-            <Percent className="w-3.5 h-3.5 text-emerald-400" />
+            <Percent className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
           </span>
-          <div className="text-xl font-extrabold text-white">
+          <div className="text-xl font-extrabold text-slate-900 dark:text-white">
             {(activeDisplay.savingsRate || 0).toFixed(1)}%
-            <span className="text-xs text-slate-400 font-normal"> of gross income</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-normal"> of gross income</span>
           </div>
-          <div className="text-[10px] text-emerald-400 font-medium">
+          <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
             Personal {(activeDisplay.savingsRate - activeDisplay.employerPensionPct || 0).toFixed(1)}% + Employer {(activeDisplay.employerPensionPct || 0).toFixed(1)}%
           </div>
         </motion.div>
@@ -618,17 +618,17 @@ export const MonthlySavingsRateCard: React.FC<MonthlySavingsRateCardProps> = ({ 
           initial={{ opacity: 0.7, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.25 }}
-          className="bg-slate-800/80 p-3.5 rounded-2xl border border-slate-700/80 space-y-1"
+          className="bg-slate-50 dark:bg-slate-800/80 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700/80 space-y-1"
         >
-          <span className="text-[11px] font-semibold text-slate-400 flex items-center justify-between">
+          <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 flex items-center justify-between">
             <span>Personal Outlay</span>
-            <Wallet className="w-3.5 h-3.5 text-indigo-400" />
+            <Wallet className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
           </span>
-          <div className="text-xl font-extrabold text-indigo-300">
+          <div className="text-xl font-extrabold text-indigo-700 dark:text-indigo-300">
             £{Math.round(activeDisplay.personalMonthlySavings || 0).toLocaleString()}
-            <span className="text-xs text-slate-400 font-normal"> /mo</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-normal"> /mo</span>
           </div>
-          <div className="text-[10px] text-slate-400 font-medium">
+          <div className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
             Out-of-pocket savings from net pay & SIPP/ISA
           </div>
         </motion.div>
@@ -639,37 +639,37 @@ export const MonthlySavingsRateCard: React.FC<MonthlySavingsRateCardProps> = ({ 
           initial={{ opacity: 0.7, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.25 }}
-          className="bg-slate-800/80 p-3.5 rounded-2xl border border-slate-700/80 space-y-1"
+          className="bg-slate-50 dark:bg-slate-800/80 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700/80 space-y-1"
         >
-          <span className="text-[11px] font-semibold text-slate-400 flex items-center justify-between">
+          <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 flex items-center justify-between">
             <span>Employer Top-Up</span>
-            <Building2 className="w-3.5 h-3.5 text-teal-400" />
+            <Building2 className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
           </span>
-          <div className="text-xl font-extrabold text-teal-300">
+          <div className="text-xl font-extrabold text-teal-700 dark:text-teal-300">
             £{Math.round(activeDisplay.employerPensionMonthly || 0).toLocaleString()}
-            <span className="text-xs text-slate-400 font-normal"> /mo</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-normal"> /mo</span>
           </div>
-          <div className="text-[10px] text-slate-400 font-medium">
+          <div className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
             +{(activeDisplay.employerPensionPct || 0).toFixed(1)}% free employer contribution
           </div>
         </motion.div>
       </div>
 
       {/* Visual Stacked Progress Bar */}
-      <div className="space-y-2.5 bg-slate-800/50 p-4 rounded-2xl border border-slate-700/60">
+      <div className="space-y-2.5 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/60">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs gap-1">
           <div className="flex items-center gap-2">
-            <span className="font-bold text-white">Income Allocation Breakdown</span>
-            <span className="text-slate-400 font-medium">({(activeDisplay.savingsRate || 0).toFixed(1)}% total saved)</span>
+            <span className="font-bold text-slate-900 dark:text-white">Income Allocation Breakdown</span>
+            <span className="text-slate-500 dark:text-slate-400 font-medium">({(activeDisplay.savingsRate || 0).toFixed(1)}% total saved)</span>
           </div>
-          <div className="flex items-center gap-1.5 text-[11px] text-slate-300">
-            <Target className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Target Benchmark: <strong className="text-emerald-400 font-bold">{recommendedBenchmark}%</strong> (Half-Age Rule)</span>
+          <div className="flex items-center gap-1.5 text-[11px] text-slate-600 dark:text-slate-300">
+            <Target className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            <span>Target Benchmark: <strong className="text-emerald-600 dark:text-emerald-400 font-bold">{recommendedBenchmark}%</strong> (Half-Age Rule)</span>
           </div>
         </div>
 
         {/* Multi-segment Animated Progress Bar */}
-        <div className="relative w-full h-4 bg-slate-950 rounded-full overflow-hidden flex border border-slate-800">
+        <div className="relative w-full h-4 bg-slate-200 dark:bg-slate-950 rounded-full overflow-hidden flex border border-slate-300 dark:border-slate-800">
           {/* Employee Workplace Pension */}
           {activeDisplay.employeePensionPct > 0 && (
             <motion.div
@@ -730,36 +730,36 @@ export const MonthlySavingsRateCard: React.FC<MonthlySavingsRateCardProps> = ({ 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 pt-1 text-[11px]">
           <div className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
-            <span className="text-slate-300 font-medium">Workplace Employee</span>
+            <span className="text-slate-700 dark:text-slate-300 font-medium">Workplace Employee</span>
           </div>
 
           <div className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-teal-400 shrink-0" />
-            <span className="text-slate-300 font-medium">Employer Match</span>
+            <span className="text-slate-700 dark:text-slate-300 font-medium">Employer Match</span>
           </div>
 
           <div className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-purple-500 shrink-0" />
-            <span className="text-slate-300 font-medium">SIPP Contribution</span>
+            <span className="text-slate-700 dark:text-slate-300 font-medium">SIPP Contribution</span>
           </div>
 
           <div className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-blue-500 shrink-0" />
-            <span className="text-slate-300 font-medium">ISAs & LISA</span>
+            <span className="text-slate-700 dark:text-slate-300 font-medium">ISAs & LISA</span>
           </div>
 
           <div className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0" />
-            <span className="text-slate-300 font-medium">Cash & GIA</span>
+            <span className="text-slate-700 dark:text-slate-300 font-medium">Cash & GIA</span>
           </div>
         </div>
       </div>
 
       {/* Guideline / Advice Banner */}
-      <div className="bg-slate-800/60 p-3.5 rounded-2xl border border-slate-700/80 flex items-start gap-2.5 text-xs text-slate-300 leading-relaxed">
-        <Info className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+      <div className="bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700/80 flex items-start gap-2.5 text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+        <Info className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
         <div>
-          <span className="font-bold text-white">UK Retirement Savings Rule of Thumb: </span>
+          <span className="font-bold text-slate-900 dark:text-white">UK Retirement Savings Rule of Thumb: </span>
           <span>
             {status.desc} According to the classic UK financial rule, aim to save a total percentage equal to <strong>half the age you started saving</strong> ({halfYourAgeTarget}% total rate for starting at age {profile.currentAge}).
             You can modify monthly workplace pension, SIPP, or ISA amounts in the <strong>Investment Pots & Monthly Inputs</strong> section below.
@@ -768,14 +768,14 @@ export const MonthlySavingsRateCard: React.FC<MonthlySavingsRateCardProps> = ({ 
       </div>
 
       {/* Year-by-Year Accumulation Savings Breakdown Table */}
-      <div className="bg-slate-800/50 p-4 sm:p-5 rounded-2xl border border-slate-700/80 space-y-3.5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-700/60">
+      <div className="bg-slate-50 dark:bg-slate-800/50 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-700/80 space-y-3.5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-200 dark:border-slate-700/60">
           <div>
-            <h4 className="font-extrabold text-sm text-white flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-emerald-400" />
+            <h4 className="font-extrabold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               <span>Year-by-Year Savings Rate Breakdown (Until Retirement)</span>
             </h4>
-            <p className="text-[11px] text-slate-400 mt-0.5">
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
               Breakdown for each year during accumulation until retirement start age
               {isCouple && ` (Primary Age ${profile.targetRetirementAge || 60} / Partner Age ${profile.partnerTargetRetirementAge || profile.targetRetirementAge || 60})`}.
             </p>
@@ -784,7 +784,7 @@ export const MonthlySavingsRateCard: React.FC<MonthlySavingsRateCardProps> = ({ 
           {accumulationBreakdown.length > 7 && (
             <button
               onClick={() => setShowAllYears(!showAllYears)}
-              className="text-xs font-bold text-emerald-400 hover:text-emerald-300 bg-emerald-950/60 border border-emerald-800 px-3 py-1.5 rounded-xl transition-all cursor-pointer self-start sm:self-auto"
+              className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 px-3 py-1.5 rounded-xl transition-all cursor-pointer self-start sm:self-auto"
             >
               {showAllYears ? 'Show First 7 Years' : `Show All ${accumulationBreakdown.length} Accumulation Years`}
             </button>
@@ -794,7 +794,7 @@ export const MonthlySavingsRateCard: React.FC<MonthlySavingsRateCardProps> = ({ 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="border-b border-slate-700 text-slate-400 font-bold uppercase text-[10px] tracking-wider">
+              <tr className="border-b border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-bold uppercase text-[10px] tracking-wider">
                 <th className="py-2.5 px-3">Tax Year</th>
                 <th className="py-2.5 px-3">Age(s)</th>
                 <th className="py-2.5 px-3">Gross Salary</th>
@@ -803,7 +803,7 @@ export const MonthlySavingsRateCard: React.FC<MonthlySavingsRateCardProps> = ({ 
                 <th className="py-2.5 px-3 text-right">Savings Rate</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800 text-slate-200">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-800 dark:text-slate-200">
               {displayedRows.map((row) => {
                 const salary =
                   currentViewKey === 'combined'
@@ -841,37 +841,37 @@ export const MonthlySavingsRateCard: React.FC<MonthlySavingsRateCardProps> = ({ 
                     : !row.pAccumulating;
 
                 return (
-                  <tr key={row.yearNum} className="hover:bg-slate-800/60 transition-colors">
-                    <td className="py-2.5 px-3 font-semibold text-white whitespace-nowrap">
+                  <tr key={row.yearNum} className="hover:bg-slate-100/80 dark:hover:bg-slate-800/60 transition-colors">
+                    <td className="py-2.5 px-3 font-semibold text-slate-900 dark:text-white whitespace-nowrap">
                       {row.taxYear}
                     </td>
-                    <td className="py-2.5 px-3 text-slate-300 whitespace-nowrap">
+                    <td className="py-2.5 px-3 text-slate-700 dark:text-slate-300 whitespace-nowrap">
                       {isCouple ? (
                         <span>
-                          P: <strong className="text-white">{row.pAgeAtYear}</strong> | Part: <strong className="text-white">{row.partAgeAtYear}</strong>
+                          P: <strong className="text-slate-900 dark:text-white">{row.pAgeAtYear}</strong> | Part: <strong className="text-slate-900 dark:text-white">{row.partAgeAtYear}</strong>
                         </span>
                       ) : (
                         <span>Age {row.pAgeAtYear}</span>
                       )}
                     </td>
-                    <td className="py-2.5 px-3 text-slate-300 whitespace-nowrap">
-                      {salary > 0 ? `£${Math.round(salary).toLocaleString()}` : <span className="text-slate-500">Retired</span>}
+                    <td className="py-2.5 px-3 text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                      {salary > 0 ? `£${Math.round(salary).toLocaleString()}` : <span className="text-slate-400 dark:text-slate-500">Retired</span>}
                     </td>
-                    <td className="py-2.5 px-3 font-bold text-emerald-400 whitespace-nowrap">
+                    <td className="py-2.5 px-3 font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
                       £{Math.round(annualSaved).toLocaleString()}
                     </td>
-                    <td className="py-2.5 px-3 text-slate-300 whitespace-nowrap">
+                    <td className="py-2.5 px-3 text-slate-700 dark:text-slate-300 whitespace-nowrap">
                       £{Math.round(monthlySaved).toLocaleString()}/mo
                     </td>
                     <td className="py-2.5 px-3 text-right whitespace-nowrap">
                       {isRetiredThisYear ? (
-                        <span className="text-slate-500 font-semibold">Retired</span>
+                        <span className="text-slate-400 dark:text-slate-500 font-semibold">Retired</span>
                       ) : (
                         <div className="inline-flex items-center gap-2">
-                          <span className={`font-bold ${rate >= recommendedBenchmark ? 'text-emerald-400' : 'text-amber-300'}`}>
+                          <span className={`font-bold ${rate >= recommendedBenchmark ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-300'}`}>
                             {rate.toFixed(1)}%
                           </span>
-                          <div className="w-12 h-1.5 bg-slate-950 rounded-full overflow-hidden hidden sm:block">
+                          <div className="w-12 h-1.5 bg-slate-200 dark:bg-slate-950 rounded-full overflow-hidden hidden sm:block">
                             <div
                               className={`h-full rounded-full ${rate >= recommendedBenchmark ? 'bg-emerald-500' : 'bg-amber-400'}`}
                               style={{ width: `${Math.min(100, (rate / 30) * 100)}%` }}
