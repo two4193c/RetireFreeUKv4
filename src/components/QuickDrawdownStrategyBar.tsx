@@ -339,12 +339,8 @@ export const QuickDrawdownStrategyBar: React.FC<QuickDrawdownStrategyBarProps> =
   } | null>(null);
 
   const availableStrategyDefinitions = useMemo(() => {
-    if (appMode === 'advanced') {
-      return STRATEGY_DEFINITIONS;
-    }
-    const basicAllowed = new Set<DrawdownStrategy>(['tax_free_bracket', 'isa_first', 'pension_first']);
-    return STRATEGY_DEFINITIONS.filter((s) => basicAllowed.has(s.id));
-  }, [appMode]);
+    return STRATEGY_DEFINITIONS;
+  }, []);
 
   const activePrimaryStrategy = profile.drawdownStrategy || 'isa_first';
   const activePartnerStrategy = profile.partnerDrawdownStrategy || profile.drawdownStrategy || 'isa_first';

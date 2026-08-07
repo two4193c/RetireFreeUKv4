@@ -145,7 +145,7 @@ export const PlanManagementCard: React.FC<PlanManagementCardProps> = ({
         <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4 flex-wrap gap-3">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 rounded-2xl">
-              <Layers className="w-5 h-5" />
+              <FolderKanban className="w-5 h-5" />
             </div>
             <div>
               <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100">

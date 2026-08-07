@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { UserProfile, InvestmentPots, TaxCalculationResult, YearProjection } from '../types';
 import { calculateMaxPcls, calculatePartnerMaxPcls, getProjectedPensionAtTakeAge, getLumpSumTakeAge, getPartnerLumpSumTakeAge } from '../utils/ukTaxEngine';
+import { STRATEGY_DEFINITIONS } from './QuickDrawdownStrategyBar';
 
 import { User, Heart, TrendingUp, ShieldCheck, Zap, Sparkles } from 'lucide-react';
 
@@ -22,6 +23,12 @@ export const StrategySummaryCard: React.FC<StrategySummaryCardProps> = ({
   onChange,
 }) => {
   const isCouple = Boolean(profile.isCouplePlanning);
+
+  const primaryStratId = profile.drawdownStrategy || 'isa_first';
+  const primaryStratDef = STRATEGY_DEFINITIONS.find((s) => s.id === primaryStratId) || STRATEGY_DEFINITIONS[3];
+
+  const partnerStratId = profile.partnerDrawdownStrategy || primaryStratId;
+  const partnerStratDef = STRATEGY_DEFINITIONS.find((s) => s.id === partnerStratId) || primaryStratDef;
 
   // Helper to get projected pension pot before PCLS extraction from canonical projections
   const getPotFromProjections = (targetAge: number, isPartner: boolean = false): number | undefined => {
@@ -121,6 +128,20 @@ export const StrategySummaryCard: React.FC<StrategySummaryCardProps> = ({
             </span>
           </div>
           <div className="space-y-1.5 text-[11px] text-slate-700 dark:text-slate-300">
+            {/* Active Strategy Detail Box */}
+            <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/60 rounded-lg border border-emerald-200 dark:border-emerald-800/60 space-y-1 my-1">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-extrabold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider">
+                  Active Strategy: {primaryStratDef.title}
+                </span>
+                <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-emerald-200 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-100">
+                  Active
+                </span>
+              </div>
+              <p className="text-[10px] text-emerald-800/90 dark:text-emerald-300/80 leading-snug">
+                {primaryStratDef.description}
+              </p>
+            </div>
             <div className="flex justify-between">
               <span className="text-slate-500 dark:text-slate-400">Product Option:</span>
               <span className="font-bold text-slate-900 dark:text-white capitalize">
@@ -180,6 +201,20 @@ export const StrategySummaryCard: React.FC<StrategySummaryCardProps> = ({
               </span>
             </div>
             <div className="space-y-1.5 text-[11px] text-slate-700 dark:text-slate-300">
+              {/* Active Strategy Detail Box */}
+              <div className="p-2.5 bg-indigo-50 dark:bg-indigo-950/60 rounded-lg border border-indigo-200 dark:border-indigo-800/60 space-y-1 my-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-extrabold text-indigo-800 dark:text-indigo-300 uppercase tracking-wider">
+                    Active Strategy: {partnerStratDef.title}
+                  </span>
+                  <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-indigo-200 dark:bg-indigo-900 text-indigo-900 dark:text-indigo-100">
+                    Active
+                  </span>
+                </div>
+                <p className="text-[10px] text-indigo-800/90 dark:text-indigo-300/80 leading-snug">
+                  {partnerStratDef.description}
+                </p>
+              </div>
               <div className="flex justify-between">
                 <span className="text-slate-500 dark:text-slate-400">Product Option:</span>
                 <span className="font-bold text-indigo-900 dark:text-indigo-200 capitalize">

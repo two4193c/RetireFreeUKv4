@@ -139,176 +139,197 @@ export const AiTaxAdvisorModal: React.FC<AiTaxAdvisorModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-labelledby="ai-tax-advisor-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-hidden animate-fade-in"
     >
-      <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-5 relative my-8 text-slate-800 dark:text-slate-100 transition-colors">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 transition-colors overflow-hidden">
         
-        {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-slate-950 shadow-md">
+        {/* Header - Fixed at Top */}
+        <div className="flex items-center justify-between p-5 sm:p-6 border-b border-slate-100 dark:border-slate-800 shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-slate-950 shadow-md shrink-0">
               <Sparkles className="w-5 h-5 fill-slate-950" />
             </div>
             <div>
-              <h2 id="ai-tax-advisor-title" className="font-extrabold text-slate-900 dark:text-white text-base">Gemini AI UK Tax Advisor</h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Personalized UK retirement & tax relief report</p>
+              <h2 id="ai-tax-advisor-title" className="font-extrabold text-slate-900 dark:text-white text-base sm:text-lg tracking-tight">
+                Gemini AI UK Tax Advisor
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                Personalized UK retirement & tax relief report
+              </p>
             </div>
           </div>
 
           <button
             onClick={onClose}
             aria-label="Close AI advisor"
-            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Generate Trigger if no analysis yet */}
-        {!analysis && !loading && (
-          <div className="text-center py-6 space-y-4">
-            <div className="w-16 h-16 rounded-2xl bg-emerald-50 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto border border-emerald-200/50 dark:border-emerald-800/50">
-              <Sparkles className="w-8 h-8" />
-            </div>
-            <div className="max-w-md mx-auto space-y-1">
-              <h3 className="font-bold text-slate-900 dark:text-white text-base">Ready to review your UK tax efficiency</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Analyzes your salary (£{(profile.grossAnnualSalary || 0).toLocaleString()}), pension tax relief, 60% tax trap status, and drawdown sequence.
-              </p>
-            </div>
-
-            {/* Custom Gemini API Key input toggle */}
-            <div className="pt-2 max-w-md mx-auto">
-              <button
-                type="button"
-                onClick={() => setShowApiKeyInput(!showApiKeyInput)}
-                className="text-xs font-bold text-slate-500 hover:text-emerald-600 dark:text-slate-400 dark:hover:text-emerald-400 flex items-center justify-center gap-1.5 mx-auto cursor-pointer"
-              >
-                <Key className="w-3.5 h-3.5" />
-                <span>{showApiKeyInput ? 'Hide API Key Settings' : 'Optional: Set Custom Gemini API Key'}</span>
-              </button>
-
-              {showApiKeyInput && (
-                <div className="mt-2 p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-left space-y-1.5">
-                  <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">Gemini API Key</label>
-                  <input
-                    type="password"
-                    placeholder="AIzaSy..."
-                    value={customApiKey}
-                    onChange={(e) => saveCustomApiKey(e.target.value)}
-                    className="w-full px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-mono text-slate-900 dark:text-white"
-                  />
-                  <p className="text-[10px] text-slate-400">Saved locally in your browser. If empty, uses server key or deterministic UK Tax Audit engine.</p>
-                </div>
-              )}
-            </div>
-
-            <button
-              onClick={runAiAnalysis}
-              className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-sm px-6 py-3 rounded-xl shadow-lg transition-all flex items-center gap-2 mx-auto cursor-pointer"
-            >
-              <Sparkles className="w-4 h-4" />
-              <span>Generate AI Tax Efficiency Audit</span>
-            </button>
-          </div>
-        )}
-
-        {/* Loading Spinner */}
-        {loading && (
-          <div className="text-center py-12 space-y-3">
-            <RefreshCw className="w-8 h-8 text-emerald-600 animate-spin mx-auto" />
-            <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">
-              Evaluating UK 2024/25 tax bands, allowances & retirement drawdown...
-            </p>
-          </div>
-        )}
-
-        {/* Analysis Results */}
-        {analysis && !loading && (
-          <div className="space-y-5 text-slate-800 dark:text-slate-200 text-xs">
-            
-            {/* Score & Summary */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-slate-900 text-white p-4.5 rounded-2xl border border-slate-800">
-              <div className="space-y-1 shrink-0">
-                <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Tax Efficiency Score</span>
-                <div className="text-3xl font-extrabold text-emerald-400 flex items-center gap-2">
-                  <span>{analysis.taxEfficiencyScore}</span>
-                  <span className="text-sm text-slate-400 font-bold">/ 100</span>
-                </div>
+        {/* Scrollable Body Content */}
+        <div className="p-5 sm:p-6 overflow-y-auto flex-1 space-y-5">
+          {/* Generate Trigger if no analysis yet */}
+          {!analysis && !loading && (
+            <div className="text-center py-6 space-y-4">
+              <div className="w-16 h-16 rounded-2xl bg-emerald-50 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto border border-emerald-200/50 dark:border-emerald-800/50 shadow-xs">
+                <Sparkles className="w-8 h-8" />
               </div>
-              <div className="text-xs text-slate-300 font-medium leading-relaxed sm:text-right">
-                {analysis.summary}
+              <div className="max-w-md mx-auto space-y-1">
+                <h3 className="font-bold text-slate-900 dark:text-white text-base">
+                  Ready to review your UK tax efficiency
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                  Analyzes your salary (£{(profile.grossAnnualSalary || 0).toLocaleString()}), pension tax relief, 60% tax trap status, and drawdown sequence.
+                </p>
               </div>
-            </div>
 
-            {/* Key Opportunities */}
-            {analysis.keyOpportunities && analysis.keyOpportunities.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5 text-xs">
-                  <Lightbulb className="w-4 h-4 text-amber-500" />
-                  <span>Key Tax Opportunities</span>
-                </h4>
-                <ul className="space-y-1.5">
-                  {analysis.keyOpportunities.map((op, i) => (
-                    <li key={i} className="flex items-start gap-2 bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-200/80 dark:border-slate-700/80 text-slate-700 dark:text-slate-300 font-medium">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
-                      <span>{op}</span>
-                    </li>
-                  ))}
-                </ul>
+              {/* Custom Gemini API Key input toggle */}
+              <div className="pt-2 max-w-md mx-auto">
+                <button
+                  type="button"
+                  onClick={() => setShowApiKeyInput(!showApiKeyInput)}
+                  className="text-xs font-bold text-slate-500 hover:text-emerald-600 dark:text-slate-400 dark:hover:text-emerald-400 flex items-center justify-center gap-1.5 mx-auto cursor-pointer"
+                >
+                  <Key className="w-3.5 h-3.5" />
+                  <span>{showApiKeyInput ? 'Hide API Key Settings' : 'Optional: Set Custom Gemini API Key'}</span>
+                </button>
+
+                {showApiKeyInput && (
+                  <div className="mt-2 p-3.5 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700 text-left space-y-1.5">
+                    <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block">Gemini API Key</label>
+                    <input
+                      type="password"
+                      placeholder="AIzaSy..."
+                      value={customApiKey}
+                      onChange={(e) => saveCustomApiKey(e.target.value)}
+                      className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-mono text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                    <p className="text-[10px] text-slate-400">Saved locally in your browser. If empty, uses server key or deterministic UK Tax Audit engine.</p>
+                  </div>
+                )}
               </div>
-            )}
 
-            {/* Tax Trap Advice */}
-            {analysis.taxTrapAdvice && (
-              <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/60 p-3.5 rounded-2xl space-y-1 text-amber-950 dark:text-amber-200">
-                <h5 className="font-bold flex items-center gap-1.5 text-amber-900 dark:text-amber-300">
-                  <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                  <span>60% Tax Trap Advice</span>
-                </h5>
-                <p className="leading-relaxed">{analysis.taxTrapAdvice}</p>
-              </div>
-            )}
-
-            {/* Pension vs ISA Guidance */}
-            {analysis.pensionVsIsaRecommendation && (
-              <div className="bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200/80 dark:border-indigo-800/60 p-3.5 rounded-2xl space-y-1 text-indigo-950 dark:text-indigo-200">
-                <h5 className="font-bold text-indigo-900 dark:text-indigo-300 flex items-center gap-1.5">
-                  <ShieldCheck className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                  <span>Pension vs ISA Allocation Strategy</span>
-                </h5>
-                <p className="leading-relaxed">{analysis.pensionVsIsaRecommendation}</p>
-              </div>
-            )}
-
-            {/* Next Action Steps */}
-            {analysis.nextSteps && analysis.nextSteps.length > 0 && (
-              <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-                <h4 className="font-extrabold text-slate-900 dark:text-white">Recommended Next Steps</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {analysis.nextSteps.map((step, idx) => (
-                    <div key={idx} className="bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-200/60 dark:border-slate-700/60 font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                      <span className="w-5 h-5 rounded-full bg-emerald-600 text-white font-extrabold text-[10px] flex items-center justify-center shrink-0">
-                        {idx + 1}
-                      </span>
-                      <span>{step}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="pt-3 text-center">
               <button
                 onClick={runAiAnalysis}
-                className="text-xs font-extrabold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
+                className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs sm:text-sm px-6 py-3 rounded-2xl shadow-lg shadow-emerald-600/20 transition-all flex items-center gap-2 mx-auto cursor-pointer active:scale-95"
               >
-                Re-run AI Tax Efficiency Audit
+                <Sparkles className="w-4 h-4" />
+                <span>Generate AI Tax Efficiency Audit</span>
               </button>
             </div>
+          )}
 
-          </div>
-        )}
+          {/* Loading Spinner */}
+          {loading && (
+            <div className="text-center py-12 space-y-3">
+              <RefreshCw className="w-8 h-8 text-emerald-600 animate-spin mx-auto" />
+              <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+                Evaluating UK 2024/25 tax bands, allowances & retirement drawdown...
+              </p>
+            </div>
+          )}
+
+          {/* Analysis Results */}
+          {analysis && !loading && (
+            <div className="space-y-5 text-slate-800 dark:text-slate-200 text-xs">
+              
+              {/* Score & Summary */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-slate-900 text-white p-5 rounded-2xl border border-slate-800 shadow-md">
+                <div className="space-y-1 shrink-0">
+                  <span className="text-[10px] text-slate-400 uppercase font-extrabold tracking-wider block">Tax Efficiency Score</span>
+                  <div className="text-3xl font-black text-emerald-400 flex items-center gap-2">
+                    <span>{analysis.taxEfficiencyScore}</span>
+                    <span className="text-sm text-slate-400 font-bold">/ 100</span>
+                  </div>
+                </div>
+                <div className="text-xs text-slate-300 font-medium leading-relaxed sm:text-right">
+                  {analysis.summary}
+                </div>
+              </div>
+
+              {/* Key Opportunities */}
+              {analysis.keyOpportunities && analysis.keyOpportunities.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5 text-xs">
+                    <Lightbulb className="w-4 h-4 text-amber-500" />
+                    <span>Key Tax Opportunities</span>
+                  </h4>
+                  <ul className="space-y-2">
+                    {analysis.keyOpportunities.map((op, i) => (
+                      <li key={i} className="flex items-start gap-2.5 bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 text-slate-700 dark:text-slate-200 font-medium leading-normal">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                        <span>{op}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Tax Trap Advice */}
+              {analysis.taxTrapAdvice && (
+                <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/60 p-4 rounded-2xl space-y-1.5 text-amber-950 dark:text-amber-200">
+                  <h5 className="font-extrabold flex items-center gap-1.5 text-amber-900 dark:text-amber-300 text-xs">
+                    <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                    <span>60% Tax Trap Advice</span>
+                  </h5>
+                  <p className="leading-relaxed font-medium">{analysis.taxTrapAdvice}</p>
+                </div>
+              )}
+
+              {/* Pension vs ISA Guidance */}
+              {analysis.pensionVsIsaRecommendation && (
+                <div className="bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200/80 dark:border-indigo-800/60 p-4 rounded-2xl space-y-1.5 text-indigo-950 dark:text-indigo-200">
+                  <h5 className="font-extrabold text-indigo-900 dark:text-indigo-300 flex items-center gap-1.5 text-xs">
+                    <ShieldCheck className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                    <span>Pension vs ISA Allocation Strategy</span>
+                  </h5>
+                  <p className="leading-relaxed font-medium">{analysis.pensionVsIsaRecommendation}</p>
+                </div>
+              )}
+
+              {/* Drawdown Strategy Tips */}
+              {analysis.drawdownStrategyTips && (
+                <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/60 p-4 rounded-2xl space-y-1.5 text-emerald-950 dark:text-emerald-200">
+                  <h5 className="font-extrabold text-emerald-900 dark:text-emerald-300 flex items-center gap-1.5 text-xs">
+                    <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    <span>Drawdown & Tax-Free Lump Sum Guidance</span>
+                  </h5>
+                  <p className="leading-relaxed font-medium">{analysis.drawdownStrategyTips}</p>
+                </div>
+              )}
+
+              {/* Next Action Steps */}
+              {analysis.nextSteps && analysis.nextSteps.length > 0 && (
+                <div className="space-y-2.5 pt-2 border-t border-slate-100 dark:border-slate-800">
+                  <h4 className="font-extrabold text-slate-900 dark:text-white text-xs">Recommended Next Steps</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {analysis.nextSteps.map((step, idx) => (
+                      <div key={idx} className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-200/70 dark:border-slate-700/70 font-semibold text-slate-800 dark:text-slate-200 flex items-start gap-2.5">
+                        <span className="w-5 h-5 rounded-full bg-emerald-600 text-white font-extrabold text-[10px] flex items-center justify-center shrink-0 mt-0.5">
+                          {idx + 1}
+                        </span>
+                        <span className="leading-snug">{step}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="pt-2 text-center">
+                <button
+                  onClick={runAiAnalysis}
+                  className="text-xs font-extrabold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer inline-flex items-center gap-1.5"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span>Re-run AI Tax Efficiency Audit</span>
+                </button>
+              </div>
+
+            </div>
+          )}
+        </div>
 
       </div>
     </div>

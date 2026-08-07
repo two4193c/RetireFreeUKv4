@@ -1,10 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { PlannerScenario } from '../types';
 import { ChevronDown, Check, Plus, FolderKanban } from 'lucide-react';
+import { DashboardTab } from '../App';
 
 interface HeaderProps {
   scenarios: PlannerScenario[];
   activeScenarioId: string;
+  activeTab?: DashboardTab;
   onOpenGuide?: () => void;
   onOpenAiAdvisor?: () => void;
   // Optional legacy props to keep backwards compatibility

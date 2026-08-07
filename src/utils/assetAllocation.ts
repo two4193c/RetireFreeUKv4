@@ -1,4 +1,41 @@
-import { AssetAllocationConfig, AssetClassReturns, AssetAllocationSplit } from '../types';
+import { AssetAllocationConfig, AssetClassReturns, AssetAllocationSplit, InvestmentFeeConfig, SinglePotFeeConfig } from '../types';
+
+export function getTotalFeePercent(fees?: InvestmentFeeConfig): number {
+  if (!fees || !fees.enabled) return 0;
+  const platform = fees.platformFeePercent ?? 0;
+  const fund = fees.fundFeePercent ?? 0;
+  const advisor = fees.advisorFeePercent ?? 0;
+  return Math.max(0, platform + fund + advisor);
+}
+
+export function getPotFeePercent(
+  fees?: InvestmentFeeConfig,
+  owner: 'primary' | 'partner' = 'primary',
+  potType?: 'workplacePension' | 'sipp' | 'stocksAndSharesIsa' | 'cashIsa' | 'gia' | 'pension'
+): number {
+  if (!fees || !fees.enabled) return 0;
+
+  if (fees.perPotFeesEnabled && potType) {
+    const personPots = owner === 'partner' ? fees.partnerPots : fees.primaryPots;
+    if (personPots) {
+      let potConfig: SinglePotFeeConfig | undefined = undefined;
+      if (potType === 'pension') {
+        potConfig = personPots.workplacePension || personPots.sipp;
+      } else {
+        potConfig = personPots[potType];
+      }
+
+      if (potConfig) {
+        const platform = potConfig.platformFeePercent ?? 0;
+        const fund = potConfig.fundFeePercent ?? 0;
+        const advisor = potConfig.advisorFeePercent ?? 0;
+        return Math.max(0, platform + fund + advisor);
+      }
+    }
+  }
+
+  return getTotalFeePercent(fees);
+}
 
 export function calculateWeightedAssetReturn(
   allocation?: AssetAllocationConfig,
@@ -18,20 +55,26 @@ export function calculateWeightedAssetReturn(
 
 export function getEffectiveAccumulationReturn(
   expectedInvestmentReturn: number,
-  aaSplit?: AssetAllocationSplit
+  aaSplit?: AssetAllocationSplit,
+  fees?: InvestmentFeeConfig
 ): number {
+  let grossReturn = expectedInvestmentReturn;
   if (aaSplit && aaSplit.enabled) {
-    return calculateWeightedAssetReturn(aaSplit.accumulation, aaSplit.assetClassReturns);
+    grossReturn = calculateWeightedAssetReturn(aaSplit.accumulation, aaSplit.assetClassReturns);
   }
-  return expectedInvestmentReturn;
+  const feePercent = getTotalFeePercent(fees);
+  return grossReturn - feePercent;
 }
 
 export function getEffectiveDecumulationReturn(
   postRetirementReturn: number,
-  aaSplit?: AssetAllocationSplit
+  aaSplit?: AssetAllocationSplit,
+  fees?: InvestmentFeeConfig
 ): number {
+  let grossReturn = postRetirementReturn;
   if (aaSplit && aaSplit.enabled) {
-    return calculateWeightedAssetReturn(aaSplit.decumulation, aaSplit.assetClassReturns);
+    grossReturn = calculateWeightedAssetReturn(aaSplit.decumulation, aaSplit.assetClassReturns);
   }
-  return postRetirementReturn;
+  const feePercent = getTotalFeePercent(fees);
+  return grossReturn - feePercent;
 }

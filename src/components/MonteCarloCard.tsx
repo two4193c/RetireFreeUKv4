@@ -12,7 +12,7 @@ import {
   CartesianGrid,
   ReferenceLine,
 } from 'recharts';
-import { UserProfile, InvestmentPots, TaxCalculationResult } from '../types';
+import { UserProfile, InvestmentPots, TaxCalculationResult, AppMode } from '../types';
 import { runMonteCarloSimulation, MonteCarloParams, MarketScenario, calculateCashBufferRequiredDetails } from '../utils/monteCarloEngine';
 import { getPensionAccessAge, getPartnerPensionAccessAge } from '../utils/ukTaxEngine';
 import { Dices, ShieldAlert, Sparkles, Sliders, TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, Zap } from 'lucide-react';
@@ -23,9 +23,10 @@ interface MonteCarloCardProps {
   taxResult: TaxCalculationResult;
   onChange?: (updatedProfile: UserProfile) => void;
   showAllScenarios?: boolean;
+  appMode?: AppMode;
 }
 
-export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, taxResult, onChange, showAllScenarios = false }) => {
+export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, taxResult, onChange, showAllScenarios = false, appMode = 'basic' }) => {
   const [params, setParams] = useState<MonteCarloParams>({
     numSimulations: 500,
     accumulationVolatility: 12.0,
@@ -1252,7 +1253,7 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
       )}
 
       {/* Volatility & Simulation Parameters Controls */}
-      {!showAllScenarios && (
+      {!showAllScenarios && appMode === 'advanced' && (
         <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-xs font-extrabold text-slate-700 dark:text-slate-200 flex items-center gap-1.5">

@@ -1,6 +1,6 @@
 import { UserProfile, InvestmentPots, YearProjection, TaxCalculationResult } from '../types';
 import { DEFAULT_PARTNER_POTS, DEFAULT_POTS, sanitizePots } from './defaultData';
-import { getEffectiveAccumulationReturn, getEffectiveDecumulationReturn } from './assetAllocation';
+import { getEffectiveAccumulationReturn, getEffectiveDecumulationReturn, getTotalFeePercent, getPotFeePercent, calculateWeightedAssetReturn } from './assetAllocation';
 import {
   getPensionAccessAge,
   getLumpSumTakeAge,
@@ -162,8 +162,8 @@ export function generateProjections(
   let cashGiaPot = giaPot + cashSavingsPot;
 
   const inflation = profile.expectedInflationRate / 100;
-  const returnAccumulation = getEffectiveAccumulationReturn(profile.expectedInvestmentReturn, profile.assetAllocationSplit) / 100;
-  const returnDecumulation = getEffectiveDecumulationReturn(profile.postRetirementReturn, profile.assetAllocationSplit) / 100;
+  const returnAccumulation = getEffectiveAccumulationReturn(profile.expectedInvestmentReturn, profile.assetAllocationSplit, profile.investmentFees) / 100;
+  const returnDecumulation = getEffectiveDecumulationReturn(profile.postRetirementReturn, profile.assetAllocationSplit, profile.investmentFees) / 100;
 
   const pensionAccessAge = getPensionAccessAge(profile);
   const lumpSumTakeAge = getLumpSumTakeAge(profile);
@@ -1111,15 +1111,42 @@ export function generateProjections(
       // Apply pot-specific growth rate overrides during accumulation if enabled
       const overrides = profile.potReturnOverrides;
       const useOverrides = Boolean(overrides?.enabled);
-      const accumPensionRate = useOverrides ? (overrides!.workplacePensionReturn || 7.0) / 100 : returnAccumulation;
-      const accumIsaRate = useOverrides ? (overrides!.stocksAndSharesIsaReturn || 7.5) / 100 : returnAccumulation;
-      const accumGiaRate = useOverrides ? (overrides!.giaReturn || 6.5) / 100 : returnAccumulation * 0.90;
-      const accumCashRate = useOverrides ? (overrides!.cashSavingsReturn || 3.5) / 100 : returnAccumulation * 0.85;
+
+      const returnAccumulationGross = (profile.assetAllocationSplit && profile.assetAllocationSplit.enabled)
+        ? calculateWeightedAssetReturn(profile.assetAllocationSplit.accumulation, profile.assetAllocationSplit.assetClassReturns) / 100
+        : (profile.expectedInvestmentReturn || 6.5) / 100;
+
+      const primaryPensionFee = getPotFeePercent(profile.investmentFees, 'primary', 'pension') / 100;
+      const partnerPensionFee = getPotFeePercent(profile.investmentFees, 'partner', 'pension') / 100;
+      const primaryIsaFee = getPotFeePercent(profile.investmentFees, 'primary', 'stocksAndSharesIsa') / 100;
+      const partnerIsaFee = getPotFeePercent(profile.investmentFees, 'partner', 'stocksAndSharesIsa') / 100;
+      const primaryGiaFee = getPotFeePercent(profile.investmentFees, 'primary', 'gia') / 100;
+      const partnerGiaFee = getPotFeePercent(profile.investmentFees, 'partner', 'gia') / 100;
+
+      const primaryAccumPensionRate = useOverrides ? Math.max(-0.05, ((overrides!.workplacePensionReturn || 7.0) / 100) - primaryPensionFee) : Math.max(-0.05, returnAccumulationGross - primaryPensionFee);
+      const partnerAccumPensionRate = useOverrides ? Math.max(-0.05, ((overrides!.workplacePensionReturn || 7.0) / 100) - partnerPensionFee) : Math.max(-0.05, returnAccumulationGross - partnerPensionFee);
+
+      const primaryAccumIsaRate = useOverrides ? Math.max(-0.05, ((overrides!.stocksAndSharesIsaReturn || 7.5) / 100) - primaryIsaFee) : Math.max(-0.05, returnAccumulationGross - primaryIsaFee);
+      const partnerAccumIsaRate = useOverrides ? Math.max(-0.05, ((overrides!.stocksAndSharesIsaReturn || 7.5) / 100) - partnerIsaFee) : Math.max(-0.05, returnAccumulationGross - partnerIsaFee);
+
+      const primaryAccumGiaRate = useOverrides ? Math.max(-0.05, ((overrides!.giaReturn || 6.5) / 100) - primaryGiaFee) : Math.max(-0.05, returnAccumulationGross * 0.90 - primaryGiaFee);
+      const partnerAccumGiaRate = useOverrides ? Math.max(-0.05, ((overrides!.giaReturn || 6.5) / 100) - partnerGiaFee) : Math.max(-0.05, returnAccumulationGross * 0.90 - partnerGiaFee);
+
+      const accumCashRate = useOverrides ? (overrides!.cashSavingsReturn || 3.5) / 100 : returnAccumulationGross * 0.85;
+
+      const accumFeesPaid = Math.round(
+        (primaryPensionPot * primaryPensionFee) +
+        (partnerPensionPot * partnerPensionFee) +
+        (primaryIsaPot * primaryIsaFee) +
+        (partnerIsaPot * partnerIsaFee) +
+        (primaryGiaPot * primaryGiaFee) +
+        (partnerGiaPot * partnerGiaFee)
+      );
 
       // Calculate growth on pot balances
-      const pensionGrowth = (primaryPensionPot + partnerPensionPot) * accumPensionRate;
-      const isaGrowth = (primaryIsaPot + partnerIsaPot) * accumIsaRate;
-      const giaGrowth = (primaryGiaPot + partnerGiaPot) * accumGiaRate;
+      const pensionGrowth = (primaryPensionPot * primaryAccumPensionRate) + (partnerPensionPot * partnerAccumPensionRate);
+      const isaGrowth = (primaryIsaPot * primaryAccumIsaRate) + (partnerIsaPot * partnerAccumIsaRate);
+      const giaGrowth = (primaryGiaPot * primaryAccumGiaRate) + (partnerGiaPot * partnerAccumGiaRate);
       
       // Interest on cash savings
       const primaryCashInterest = primaryCashSavingsPot * accumCashRate;
@@ -1145,28 +1172,28 @@ export function generateProjections(
       const cashGrowthNet = Math.max(0, primaryCashInterest + partnerCashInterest - accumSavingsTax);
       const estimatedPotGrowth = Math.round(pensionGrowth + isaGrowth + giaGrowth + cashGrowthNet);
 
-      primaryUncrystallisedPot = Math.max(0, primaryUncrystallisedPot * (1 + accumPensionRate));
-      primaryCrystallisedPot = Math.max(0, primaryCrystallisedPot * (1 + accumPensionRate));
+      primaryUncrystallisedPot = Math.max(0, primaryUncrystallisedPot * (1 + primaryAccumPensionRate));
+      primaryCrystallisedPot = Math.max(0, primaryCrystallisedPot * (1 + primaryAccumPensionRate));
       primaryPensionPot = primaryUncrystallisedPot + primaryCrystallisedPot;
 
-      primarySsIsaPot = Math.max(0, primarySsIsaPot * (1 + accumIsaRate));
+      primarySsIsaPot = Math.max(0, primarySsIsaPot * (1 + primaryAccumIsaRate));
       primaryCashIsaPot = Math.max(0, primaryCashIsaPot * (1 + accumCashRate));
-      primaryLisaPot = Math.max(0, primaryLisaPot * (1 + accumIsaRate));
+      primaryLisaPot = Math.max(0, primaryLisaPot * (1 + primaryAccumIsaRate));
       primaryIsaPot = primarySsIsaPot + primaryCashIsaPot + primaryLisaPot;
-      primaryGiaPot = Math.max(0, primaryGiaPot * (1 + accumGiaRate));
+      primaryGiaPot = Math.max(0, primaryGiaPot * (1 + primaryAccumGiaRate));
       primaryCashSavingsPot = Math.max(0, primaryCashSavingsPot * (1 + accumCashRate) - primaryPsa.savingsInterestTax);
       primaryCashGiaPot = primaryGiaPot + primaryCashSavingsPot;
 
       if (profile.isCouplePlanning) {
-        partnerUncrystallisedPot = Math.max(0, partnerUncrystallisedPot * (1 + accumPensionRate));
-        partnerCrystallisedPot = Math.max(0, partnerCrystallisedPot * (1 + accumPensionRate));
+        partnerUncrystallisedPot = Math.max(0, partnerUncrystallisedPot * (1 + partnerAccumPensionRate));
+        partnerCrystallisedPot = Math.max(0, partnerCrystallisedPot * (1 + partnerAccumPensionRate));
         partnerPensionPot = partnerUncrystallisedPot + partnerCrystallisedPot;
 
-        partnerSsIsaPot = Math.max(0, partnerSsIsaPot * (1 + accumIsaRate));
+        partnerSsIsaPot = Math.max(0, partnerSsIsaPot * (1 + partnerAccumIsaRate));
         partnerCashIsaPot = Math.max(0, partnerCashIsaPot * (1 + accumCashRate));
-        partnerLisaPot = Math.max(0, partnerLisaPot * (1 + accumIsaRate));
+        partnerLisaPot = Math.max(0, partnerLisaPot * (1 + partnerAccumIsaRate));
         partnerIsaPot = partnerSsIsaPot + partnerCashIsaPot + partnerLisaPot;
-        partnerGiaPot = Math.max(0, partnerGiaPot * (1 + accumGiaRate));
+        partnerGiaPot = Math.max(0, partnerGiaPot * (1 + partnerAccumGiaRate));
         partnerCashSavingsPot = Math.max(0, partnerCashSavingsPot * (1 + accumCashRate) - partnerPsa.savingsInterestTax);
         partnerCashGiaPot = partnerGiaPot + partnerCashSavingsPot;
       }
@@ -1234,6 +1261,7 @@ export function generateProjections(
         partnerTotalPot: Math.round(partnerPensionPot + partnerIsaPot + partnerCashGiaPot),
 
         estimatedPotGrowth,
+        estimatedInvestmentFees: accumFeesPaid,
         annualContributionTotal: Math.round(primaryPensionContribThisYr + primaryIsaContribThisYr + primaryCashGiaPotContribThisYr + partnerPContribThisYr + partnerIContribThisYr + partnerCContribThisYr),
         oneOffContributionsReceived: Math.round(oneOffInflowsThisYear),
         annualTaxReliefTotal: Math.round(primaryTaxThisYr.totalPensionTaxRelief + primaryTaxThisYr.lisaGovernmentBonusAnnual + (partnerTaxThisYr ? partnerTaxThisYr.totalPensionTaxRelief + partnerTaxThisYr.lisaGovernmentBonusAnnual : 0)),
@@ -1270,38 +1298,72 @@ export function generateProjections(
       const overrides = profile.potReturnOverrides;
       const useOverrides = Boolean(overrides?.enabled);
 
-      const effectivePensionRate = useOverrides
-        ? (overrides!.workplacePensionReturn || 7.0) / 100
-        : (isRetired ? returnDecumulation : returnAccumulation);
+      const returnAccumulationGross = (profile.assetAllocationSplit && profile.assetAllocationSplit.enabled)
+        ? calculateWeightedAssetReturn(profile.assetAllocationSplit.accumulation, profile.assetAllocationSplit.assetClassReturns) / 100
+        : (profile.expectedInvestmentReturn || 6.5) / 100;
 
-      const effectiveIsaRate = useOverrides
-        ? (overrides!.stocksAndSharesIsaReturn || 7.5) / 100
-        : (isRetired ? returnDecumulation : returnAccumulation);
-      const effectiveSsIsaRate = effectiveIsaRate;
+      const returnDecumulationGross = (profile.assetAllocationSplit && profile.assetAllocationSplit.enabled)
+        ? calculateWeightedAssetReturn(profile.assetAllocationSplit.decumulation, profile.assetAllocationSplit.assetClassReturns) / 100
+        : (profile.postRetirementReturn || 4.5) / 100;
+      const returnBaseGross = isRetired ? returnDecumulationGross : returnAccumulationGross;
+
+      const primaryPensionFeeDecum = getPotFeePercent(profile.investmentFees, 'primary', 'pension') / 100;
+      const partnerPensionFeeDecum = getPotFeePercent(profile.investmentFees, 'partner', 'pension') / 100;
+      const primaryIsaFeeDecum = getPotFeePercent(profile.investmentFees, 'primary', 'stocksAndSharesIsa') / 100;
+      const partnerIsaFeeDecum = getPotFeePercent(profile.investmentFees, 'partner', 'stocksAndSharesIsa') / 100;
+      const primaryGiaFeeDecum = getPotFeePercent(profile.investmentFees, 'primary', 'gia') / 100;
+      const partnerGiaFeeDecum = getPotFeePercent(profile.investmentFees, 'partner', 'gia') / 100;
+
+      const primaryPensionRateDecum = useOverrides
+        ? Math.max(-0.05, ((overrides!.workplacePensionReturn || 7.0) / 100) - primaryPensionFeeDecum)
+        : Math.max(-0.05, returnBaseGross - primaryPensionFeeDecum);
+
+      const partnerPensionRateDecum = useOverrides
+        ? Math.max(-0.05, ((overrides!.workplacePensionReturn || 7.0) / 100) - partnerPensionFeeDecum)
+        : Math.max(-0.05, returnBaseGross - partnerPensionFeeDecum);
+
+      const primaryIsaRateDecum = useOverrides
+        ? Math.max(-0.05, ((overrides!.stocksAndSharesIsaReturn || 7.5) / 100) - primaryIsaFeeDecum)
+        : Math.max(-0.05, returnBaseGross - primaryIsaFeeDecum);
+
+      const partnerIsaRateDecum = useOverrides
+        ? Math.max(-0.05, ((overrides!.stocksAndSharesIsaReturn || 7.5) / 100) - partnerIsaFeeDecum)
+        : Math.max(-0.05, returnBaseGross - partnerIsaFeeDecum);
+
       const effectiveCashIsaRate = useOverrides
         ? (overrides!.cashIsaReturn || 4.2) / 100
         : (isRetired ? returnDecumulation * 0.85 : returnAccumulation * 0.85);
-      const effectiveLisaRate = useOverrides
-        ? (overrides!.lisaReturn || 6.5) / 100
-        : (isRetired ? returnDecumulation : returnAccumulation);
 
-      const effectiveGiaRate = useOverrides
-        ? (overrides!.giaReturn || 6.5) / 100
-        : (isRetired ? returnDecumulation * 0.95 : returnAccumulation * 0.90);
+      const primaryGiaRateDecum = useOverrides
+        ? Math.max(-0.05, ((overrides!.giaReturn || 6.5) / 100) - primaryGiaFeeDecum)
+        : Math.max(-0.05, (isRetired ? returnDecumulationGross * 0.95 : returnAccumulationGross * 0.90) - primaryGiaFeeDecum);
+
+      const partnerGiaRateDecum = useOverrides
+        ? Math.max(-0.05, ((overrides!.giaReturn || 6.5) / 100) - partnerGiaFeeDecum)
+        : Math.max(-0.05, (isRetired ? returnDecumulationGross * 0.95 : returnAccumulationGross * 0.90) - partnerGiaFeeDecum);
 
       const effectiveCashSavingsRate = useOverrides
         ? (overrides!.cashSavingsReturn || 3.5) / 100
         : (isRetired ? returnDecumulation * 0.85 : returnAccumulation * 0.80);
 
       // Apply annual investment growth for remaining active pots (Primary & Partner)
-      const primaryPensionGrowth = primaryPensionPot * effectivePensionRate;
-      const partnerPensionGrowth = partnerPensionPot * effectivePensionRate;
-      const primaryIsaGrowth = (primarySsIsaPot * effectiveSsIsaRate) + (primaryCashIsaPot * effectiveCashIsaRate) + (primaryLisaPot * effectiveLisaRate);
-      const partnerIsaGrowth = (partnerSsIsaPot * effectiveSsIsaRate) + (partnerCashIsaPot * effectiveCashIsaRate) + (partnerLisaPot * effectiveLisaRate);
-      const primaryGiaGrowth = primaryGiaPot * effectiveGiaRate;
-      const partnerGiaGrowth = partnerGiaPot * effectiveGiaRate;
+      const primaryPensionGrowth = primaryPensionPot * primaryPensionRateDecum;
+      const partnerPensionGrowth = partnerPensionPot * partnerPensionRateDecum;
+      const primaryIsaGrowth = (primarySsIsaPot * primaryIsaRateDecum) + (primaryCashIsaPot * effectiveCashIsaRate) + (primaryLisaPot * primaryIsaRateDecum);
+      const partnerIsaGrowth = (partnerSsIsaPot * partnerIsaRateDecum) + (partnerCashIsaPot * effectiveCashIsaRate) + (partnerLisaPot * partnerIsaRateDecum);
+      const primaryGiaGrowth = primaryGiaPot * primaryGiaRateDecum;
+      const partnerGiaGrowth = partnerGiaPot * partnerGiaRateDecum;
       const primaryCashGrowth = primaryCashSavingsPot * effectiveCashSavingsRate;
       const partnerCashGrowth = partnerCashSavingsPot * effectiveCashSavingsRate;
+
+      const decumFeesPaid = Math.round(
+        (primaryPensionPot * primaryPensionFeeDecum) +
+        (partnerPensionPot * partnerPensionFeeDecum) +
+        (primarySsIsaPot * primaryIsaFeeDecum) +
+        (partnerSsIsaPot * partnerIsaFeeDecum) +
+        (primaryGiaPot * primaryGiaFeeDecum) +
+        (partnerGiaPot * partnerGiaFeeDecum)
+      );
 
       const estimatedPotGrowth = Math.round(
         primaryPensionGrowth + partnerPensionGrowth +
@@ -1310,29 +1372,30 @@ export function generateProjections(
         primaryCashGrowth + partnerCashGrowth
       );
 
-      primaryUncrystallisedPot = Math.max(0, primaryUncrystallisedPot * (1 + effectivePensionRate));
-      primaryCrystallisedPot = Math.max(0, primaryCrystallisedPot * (1 + effectivePensionRate));
+      primaryUncrystallisedPot = Math.max(0, primaryUncrystallisedPot * (1 + primaryPensionRateDecum));
+      primaryCrystallisedPot = Math.max(0, primaryCrystallisedPot * (1 + primaryPensionRateDecum));
       primaryPensionPot = primaryUncrystallisedPot + primaryCrystallisedPot;
 
       if (profile.isCouplePlanning) {
-        partnerUncrystallisedPot = Math.max(0, partnerUncrystallisedPot * (1 + effectivePensionRate));
-        partnerCrystallisedPot = Math.max(0, partnerCrystallisedPot * (1 + effectivePensionRate));
+        partnerUncrystallisedPot = Math.max(0, partnerUncrystallisedPot * (1 + partnerPensionRateDecum));
+        partnerCrystallisedPot = Math.max(0, partnerCrystallisedPot * (1 + partnerPensionRateDecum));
         partnerPensionPot = partnerUncrystallisedPot + partnerCrystallisedPot;
       } else {
-        partnerPensionPot *= (1 + effectivePensionRate);
+        partnerPensionPot *= (1 + partnerPensionRateDecum);
       }
 
-      primarySsIsaPot *= (1 + effectiveSsIsaRate);
+      primarySsIsaPot *= (1 + primaryIsaRateDecum);
       primaryCashIsaPot *= (1 + effectiveCashIsaRate);
-      primaryLisaPot *= (1 + effectiveLisaRate);
+      primaryLisaPot *= (1 + primaryIsaRateDecum);
       primaryIsaPot = primarySsIsaPot + primaryCashIsaPot + primaryLisaPot;
-      
-      partnerSsIsaPot *= (1 + effectiveSsIsaRate);
+
+      partnerSsIsaPot *= (1 + partnerIsaRateDecum);
       partnerCashIsaPot *= (1 + effectiveCashIsaRate);
-      partnerLisaPot *= (1 + effectiveLisaRate);
+      partnerLisaPot *= (1 + partnerIsaRateDecum);
       partnerIsaPot = partnerSsIsaPot + partnerCashIsaPot + partnerLisaPot;
-      primaryGiaPot *= (1 + effectiveGiaRate);
-      partnerGiaPot *= (1 + effectiveGiaRate);
+
+      primaryGiaPot *= (1 + primaryGiaRateDecum);
+      partnerGiaPot *= (1 + partnerGiaRateDecum);
       primaryCashSavingsPot *= (1 + effectiveCashSavingsRate);
       partnerCashSavingsPot *= (1 + effectiveCashSavingsRate);
 
@@ -2284,6 +2347,7 @@ export function generateProjections(
         partnerNetRetirementIncome: Math.round(profile.isCouplePlanning ? Math.max(0, partnerGuaranteedTotal + partDrawGross + partnerIsaDrawdown + partnerCashDrawdown - partTaxRetirement - partSavingsTaxNominal) : 0),
 
         estimatedPotGrowth,
+        estimatedInvestmentFees: decumFeesPaid,
         annualContributionTotal: 0,
         lifeEventsIncome: Math.round(lifeEventsIncomeThisYear),
         lifeEventsExpense: Math.round(lifeEventsExpenseThisYear),

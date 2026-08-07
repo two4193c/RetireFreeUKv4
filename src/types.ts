@@ -365,6 +365,35 @@ export interface UserProfile {
 
   // Asset Allocation Split for Accumulation & Decumulation
   assetAllocationSplit?: AssetAllocationSplit;
+
+  // Investment, Platform & Adviser Fees (Fee Drag Model)
+  investmentFees?: InvestmentFeeConfig;
+}
+
+export interface SinglePotFeeConfig {
+  platformFeePercent: number; // e.g. 0.25 (%)
+  fundFeePercent: number;     // e.g. 0.40 (%) OCF / AMC
+  advisorFeePercent: number;  // e.g. 0.00 (%)
+}
+
+export interface PerPersonPotFees {
+  workplacePension?: SinglePotFeeConfig;
+  sipp?: SinglePotFeeConfig;
+  stocksAndSharesIsa?: SinglePotFeeConfig;
+  cashIsa?: SinglePotFeeConfig;
+  gia?: SinglePotFeeConfig;
+}
+
+export interface InvestmentFeeConfig {
+  enabled: boolean;
+  platformFeePercent: number; // e.g. 0.25 (%) global default
+  fundFeePercent: number;     // e.g. 0.40 (%) global default OCF / AMC
+  advisorFeePercent: number;  // e.g. 0.00 (%) global default
+
+  // Per-pot & per-person granular fee overrides
+  perPotFeesEnabled?: boolean;
+  primaryPots?: PerPersonPotFees;
+  partnerPots?: PerPersonPotFees;
 }
 
 export interface AssetAllocationConfig {
@@ -636,6 +665,7 @@ export interface YearProjection {
   partnerNetRetirementIncome?: number;
 
   estimatedPotGrowth: number;
+  estimatedInvestmentFees?: number;
   annualContributionTotal: number;
   oneOffContributionsReceived?: number;
   lifeEventsIncome?: number;

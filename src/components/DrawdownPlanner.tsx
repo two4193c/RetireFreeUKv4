@@ -493,7 +493,7 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 flex items-center justify-center">
-            <Layers className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+            <Percent className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
           </div>
           <div>
             <h2 className="font-bold text-slate-800 dark:text-slate-100 text-base">Tax Free Lump Sum and Excess Income Destination</h2>
@@ -930,19 +930,24 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1 border-b border-slate-200/60 dark:border-slate-700/60">
             <div className="flex flex-wrap items-center gap-2">
               <span className="font-bold text-xs text-slate-800 dark:text-slate-200">Tax-Free Lump Sum (PCLS & LSA)</span>
-              {isCouple && (
-                <span className="text-[10px] font-extrabold text-amber-800 dark:text-amber-300 bg-amber-100 dark:bg-amber-950 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-800/50">
-                  Couple LSA Combined: £{(primaryLsaLimit + (partnerLsaLimit) || 0).toLocaleString()}
+              {isCouple ? (
+                <>
+                  <span className="text-[10px] font-extrabold text-amber-800 dark:text-amber-300 bg-amber-100 dark:bg-amber-950 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-800/50">
+                    Couple Tax-Free Cash: £{Math.round((primaryActualLumpSum + partnerActualLumpSum) || 0).toLocaleString()}
+                  </span>
+                  <span className="text-[10px] font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-100 dark:bg-indigo-950 px-2 py-0.5 rounded-md border border-indigo-200/50 dark:border-indigo-800/50">
+                    {profile.name || 'Primary'}: £{Math.round(primaryActualLumpSum || 0).toLocaleString()}
+                  </span>
+                  <span className="text-[10px] font-bold text-rose-700 dark:text-rose-300 bg-rose-100 dark:bg-rose-950 px-2 py-0.5 rounded-md border border-rose-200/50 dark:border-rose-800/50">
+                    {profile.partnerName || 'Partner'}: £{Math.round(partnerActualLumpSum || 0).toLocaleString()}
+                  </span>
+                </>
+              ) : (
+                <span className="text-[10px] font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-100 dark:bg-indigo-950 px-2 py-0.5 rounded-md border border-indigo-200/50 dark:border-indigo-800/50">
+                  Max Tax-Free Cash: £{Math.round(primaryActualLumpSum || 0).toLocaleString()}
                 </span>
               )}
             </div>
-            <span className="text-[10px] font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-100 dark:bg-indigo-950 px-2 py-0.5 rounded-md border border-indigo-200/50 dark:border-indigo-800/50 self-start sm:self-auto">
-              {isCouple
-                ? activeLumpSumPerson === 'primary'
-                  ? `${profile.name || 'Primary'} Cap: £${(primaryLsaLimit || 0).toLocaleString()}`
-                  : `${profile.partnerName || 'Partner'} Cap: £${(partnerLsaLimit || 0).toLocaleString()}`
-                : `LSA Cap: £${(primaryLsaLimit || 0).toLocaleString()}`}
-            </span>
           </div>
 
           {/* Person Selector Tabs for Couple Planning */}

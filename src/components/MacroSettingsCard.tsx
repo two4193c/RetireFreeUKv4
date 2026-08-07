@@ -2,6 +2,7 @@ import React from 'react';
 import { UserProfile, PotReturnOverrides, AssetAllocationSplit } from '../types';
 import { DEFAULT_POT_RETURN_OVERRIDES, DEFAULT_ASSET_ALLOCATION_SPLIT } from '../utils/defaultData';
 import { calculateWeightedAssetReturn } from '../utils/assetAllocation';
+import { InvestmentFeesCard } from './InvestmentFeesCard';
 import { TrendingUp, Percent, Flame, Sparkles, Shield, RotateCcw, Sliders, Layers, Coins, Building2, PieChart, BarChart3, Receipt } from 'lucide-react';
 
 interface MacroSettingsCardProps {
@@ -592,6 +593,9 @@ export const MacroSettingsCard: React.FC<MacroSettingsCardProps> = ({ profile, o
         )}
 
       </div>
+
+      {/* Investment, Platform & Adviser Fees Section */}
+      <InvestmentFeesCard profile={profile} onChange={onChange} />
 
     </div>
   );

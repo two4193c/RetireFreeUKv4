@@ -18,8 +18,7 @@ import { YearProjection, UserProfile, InvestmentPots, AppMode } from '../types';
 import { getTargetIncomeForAge, generateProjections } from '../utils/projectionEngine';
 import { calculateUKTax, getPensionAccessAge, getPartnerPensionAccessAge } from '../utils/ukTaxEngine';
 import { DEFAULT_POTS, DEFAULT_PARTNER_POTS } from '../utils/defaultData';
-import { QuickDrawdownStrategyBar } from './QuickDrawdownStrategyBar';
-import { TrendingUp, AlertTriangle, CheckCircle2, ShieldAlert, Info, ArrowUpRight, Users, User, Heart, PieChart, Wallet, Calendar, Clock, Sparkles, ArrowRight, Check } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ShieldAlert, Info, ArrowUpRight, Users, User, Heart, PieChart, Wallet, Calendar, Clock, Sparkles, ArrowRight, Check } from 'lucide-react';
 
 interface ProjectionChartProps {
   projections: YearProjection[];
@@ -645,11 +644,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
       {/* Chart Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
         <div>
-          <h2 className="font-bold text-slate-800 dark:text-slate-100 text-base flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-            <span>Deterministic Retirement Projection Model</span>
-          </h2>
-          <p className="text-xs text-slate-400 dark:text-slate-500">
+          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
             Age {profile.currentAge} to {projections[projections.length - 1]?.age || 100} deterministic trajectory
           </p>
         </div>
@@ -2193,16 +2188,6 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
             <span>Today's £ (Real Terms)</span>
           </label>
         </div>
-      )}
-
-      {onChange && (
-        <QuickDrawdownStrategyBar
-          profile={profile}
-          pots={pots || DEFAULT_POTS}
-          onChangeProfile={onChange}
-          onOpenMaximizedSpendModal={onOpenMaximizedSpendModal}
-          appMode={appMode}
-        />
       )}
     </motion.div>
   );

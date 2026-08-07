@@ -74,6 +74,7 @@ export const NAV_STRUCTURE: TabGroup[] = [
       { id: 'card-inputs-dbpension', label: 'Defined Benefit Pensions' },
       { id: 'card-inputs-fixedincome', label: 'Fixed Income & Annuities' },
       { id: 'card-inputs-lifeevents', label: 'Life Events' },
+      { id: 'card-inputs-fees', label: 'Investment & Adviser Fees' },
     ],
   },
   {
@@ -96,7 +97,6 @@ export const NAV_STRUCTURE: TabGroup[] = [
     cards: [
       { id: 'card-strat-planner', label: 'Drawdown Strategy Planner' },
       { id: 'card-strat-phases', label: 'Retirement Income Requirement' },
-      { id: 'card-strat-lifeevents', label: 'Life Events' },
     ],
   },
   {
@@ -165,41 +165,43 @@ export const NAV_STRUCTURE: TabGroup[] = [
   },
   {
     id: 'advanced_settings',
-    label: 'Advanced Settings',
+    label: 'Advanced',
     icon: SlidersHorizontal,
-    description: 'Custom tax band overrides, inflation indexing, and pot growth overrides',
+    description: 'Custom tax band overrides, inflation indexing, fee drag modeling, pot growth overrides, and AI Tax Advisor',
     cards: [
       { id: 'card-adv-tax-indexing', label: 'Tax Bands Inflation Indexing' },
       { id: 'card-adv-tax-overrides', label: 'Income Tax Bands Overrides' },
       { id: 'card-adv-growth-overrides', label: 'Pot Growth Rate Overrides' },
+      { id: 'card-adv-fees', label: 'Investment & Adviser Fees' },
+      { id: 'card-other-aitaxadvisor', label: 'AI Tax Advisor' },
     ],
   },
   {
-    id: 'other',
-    label: 'Other',
+    id: 'documentation',
+    label: 'Documentation',
     icon: BookOpen,
-    description: 'UK Tax rules guide and AI Tax Advisor assistance',
+    description: 'User Guide and UK Tax rules cheat sheet',
     cards: [
+      { id: 'card-other-userguide', label: 'User Guide' },
       { id: 'card-other-taxrules', label: 'Tax Rules Guide' },
-      { id: 'card-other-aitaxadvisor', label: 'AI Tax Advisor' },
     ],
   },
 ];
 
 export function getFilteredNavStructure(mode: AppMode = 'basic'): TabGroup[] {
   if (mode === 'advanced') {
-    return NAV_STRUCTURE.filter((group) => group.id !== 'advanced_settings');
+    return NAV_STRUCTURE;
   }
 
-  // Hidden tabs in basic mode: accumulation_review, estate, compare, mortgage, other, advanced_settings
-  const hiddenTabs = new Set(['accumulation_review', 'estate', 'compare', 'mortgage', 'other', 'advanced_settings']);
+  // Hidden tabs in basic mode: accumulation_review, estate, compare, mortgage, advanced_settings
+  const hiddenTabs = new Set(['accumulation_review', 'estate', 'compare', 'mortgage', 'advanced_settings']);
 
   // Hidden cards in basic mode:
   const hiddenCards = new Set([
     'card-inputs-transfers',
     'card-inputs-statepension',
     'card-inputs-lifeevents',
-    'card-strat-lifeevents',
+    'card-inputs-fees',
     'card-proj-macro',
     'card-proj-table',
     'card-risk-macro',
@@ -340,9 +342,6 @@ export function SidebarNav({
     if (cardId === 'card-other-taxrules' && onOpenGuide) {
       onOpenGuide();
     }
-    if (cardId === 'card-other-aitaxadvisor' && onOpenAiAdvisor) {
-      onOpenAiAdvisor();
-    }
 
     if (onSelectCard) {
       onSelectCard(tabId, cardId);
@@ -370,7 +369,11 @@ export function SidebarNav({
           <span>RetireFree UK</span>
         </button>
         <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1.5 truncate max-w-[180px]">
-          <Layers className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+          {(() => {
+            const activeGroup = filteredNavStructure.find((t) => t.id === activeTab);
+            const IconComp = activeGroup?.icon || Layers;
+            return <IconComp className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />;
+          })()}
           <span className="truncate">{filteredNavStructure.find((t) => t.id === activeTab)?.label}</span>
         </span>
       </div>

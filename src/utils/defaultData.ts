@@ -1,4 +1,4 @@
-import { UserProfile, InvestmentPots, PlannerScenario, PotReturnOverrides, MortgageDebtConfig } from '../types';
+import { UserProfile, InvestmentPots, PlannerScenario, PotReturnOverrides, MortgageDebtConfig, InvestmentFeeConfig } from '../types';
 
 export const DEFAULT_PARTNER_POTS: InvestmentPots = {
   // Pension
@@ -99,6 +99,34 @@ export const DEFAULT_MORTGAGE: MortgageDebtConfig = {
   deductFromRetirementIncome: true,
 };
 
+export const DEFAULT_SINGLE_POT_FEE = {
+  platformFeePercent: 0.25,
+  fundFeePercent: 0.40,
+  advisorFeePercent: 0.00,
+};
+
+export const DEFAULT_INVESTMENT_FEES: InvestmentFeeConfig = {
+  enabled: false,
+  platformFeePercent: 0.25,
+  fundFeePercent: 0.40,
+  advisorFeePercent: 0.00,
+  perPotFeesEnabled: false,
+  primaryPots: {
+    workplacePension: { platformFeePercent: 0.20, fundFeePercent: 0.20, advisorFeePercent: 0.00 },
+    sipp: { platformFeePercent: 0.25, fundFeePercent: 0.40, advisorFeePercent: 0.00 },
+    stocksAndSharesIsa: { platformFeePercent: 0.25, fundFeePercent: 0.40, advisorFeePercent: 0.00 },
+    cashIsa: { platformFeePercent: 0.00, fundFeePercent: 0.00, advisorFeePercent: 0.00 },
+    gia: { platformFeePercent: 0.25, fundFeePercent: 0.40, advisorFeePercent: 0.00 },
+  },
+  partnerPots: {
+    workplacePension: { platformFeePercent: 0.20, fundFeePercent: 0.20, advisorFeePercent: 0.00 },
+    sipp: { platformFeePercent: 0.25, fundFeePercent: 0.40, advisorFeePercent: 0.00 },
+    stocksAndSharesIsa: { platformFeePercent: 0.25, fundFeePercent: 0.40, advisorFeePercent: 0.00 },
+    cashIsa: { platformFeePercent: 0.00, fundFeePercent: 0.00, advisorFeePercent: 0.00 },
+    gia: { platformFeePercent: 0.25, fundFeePercent: 0.40, advisorFeePercent: 0.00 },
+  },
+};
+
 export const DEFAULT_PROFILE: UserProfile = {
   dateOfBirth: '1989-06-15', // Currently ~35 years old
   currentAge: 35,
@@ -176,6 +204,7 @@ export const DEFAULT_PROFILE: UserProfile = {
   potReturnOverrides: DEFAULT_POT_RETURN_OVERRIDES,
   mortgage: DEFAULT_MORTGAGE,
   assetAllocationSplit: DEFAULT_ASSET_ALLOCATION_SPLIT,
+  investmentFees: DEFAULT_INVESTMENT_FEES,
 };
 
 export const DEFAULT_POTS: InvestmentPots = {

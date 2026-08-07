@@ -61,7 +61,14 @@ async function startServer() {
 
       const { profile, pots, taxResult, projectedAtRetirement, depletionAge } = req.body;
 
-      const ai = new GoogleGenAI({ apiKey });
+      const ai = new GoogleGenAI({
+        apiKey,
+        httpOptions: {
+          headers: {
+            'User-Agent': 'aistudio-build',
+          },
+        },
+      });
 
       // Sanitise all user-provided values before interpolating into the prompt
       const s = sanitiseForPrompt;
@@ -107,7 +114,7 @@ Return ONLY a valid JSON object matching this TypeScript format:
 }`;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3.6-flash',
         contents: prompt,
         config: {
           responseMimeType: 'application/json',

@@ -38,10 +38,12 @@ import { IsaVsPensionEfficiencyCard } from './components/IsaVsPensionEfficiencyC
 import { MaximizedSpendSolverModal } from './components/MaximizedSpendSolverModal';
 import { DuplicateVariantConflictModal, ConflictPlanInfo } from './components/DuplicateVariantConflictModal';
 import { AiTaxAdvisorModal } from './components/AiTaxAdvisorModal';
-import { TaxGuideModal } from './components/TaxGuideModal';
+import { TaxGuideCard } from './components/TaxGuideCard';
+import { UserGuideCard } from './components/UserGuideCard';
 import { AccumulationLedgerCard } from './components/AccumulationLedgerCard';
 import { MortgageDebtCard } from './components/MortgageDebtCard';
 import { LifeEventsDecumulationCard } from './components/LifeEventsDecumulationCard';
+import { InvestmentFeesCard } from './components/InvestmentFeesCard';
 import { PlanManagementCard } from './components/PlanManagementCard';
 import { Sparkles, ArrowUpRight, RotateCcw, Pencil, X, Check, LayoutDashboard, Wallet, Percent, LineChart, Shield, Landmark, Download, ArrowRightLeft, TrendingUp, Home, Trash2, AlertTriangle, BookOpen } from 'lucide-react';
 import { SidebarNav } from './components/SidebarNav';
@@ -50,7 +52,7 @@ import { PlanErrorBoundary } from './components/PlanErrorBoundary';
 const STORAGE_KEY = 'uk_retirement_planner_scenarios_v2';
 const THEME_STORAGE_KEY = 'retireready_theme_v1';
 
-export type DashboardTab = 'plan_management' | 'inputs' | 'accumulation_review' | 'strategy' | 'projections' | 'risk' | 'estate' | 'overview' | 'compare' | 'mortgage' | 'advanced_settings' | 'other';
+export type DashboardTab = 'plan_management' | 'inputs' | 'accumulation_review' | 'strategy' | 'projections' | 'risk' | 'estate' | 'overview' | 'compare' | 'mortgage' | 'advanced_settings' | 'documentation';
 
 interface AppErrorBoundaryProps {
   children: ReactNode;
@@ -207,7 +209,7 @@ function App() {
   // Redirect to inputs tab if switching to basic mode while on an advanced-only tab
   useEffect(() => {
     if (appMode === 'basic') {
-      const advancedTabs: DashboardTab[] = ['accumulation_review', 'estate', 'compare', 'mortgage', 'advanced_settings', 'other'];
+      const advancedTabs: DashboardTab[] = ['accumulation_review', 'estate', 'compare', 'mortgage', 'advanced_settings'];
       if (advancedTabs.includes(activeTab)) {
         setActiveTab('inputs');
       }
@@ -227,9 +229,18 @@ function App() {
     : (scenarios.find((s) => s.id !== effectiveCompareAId)?.id || effectiveCompareAId);
 
   const [isCompareMode, setIsCompareMode] = useState(false);
-  const [showGuideModal, setShowGuideModal] = useState(false);
   const [showAiModal, setShowAiModal] = useState(false);
   const [isNewPlanModalOpen, setIsNewPlanModalOpen] = useState(false);
+
+  const handleOpenGuide = () => {
+    setActiveTab('documentation');
+    setTimeout(() => {
+      const elem = document.getElementById('card-other-taxrules');
+      if (elem) {
+        elem.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 50);
+  };
   const [isMaximizedSpendModalOpen, setIsMaximizedSpendModalOpen] = useState(false);
   const [planToDelete, setPlanToDelete] = useState<{ id: string; name: string } | null>(null);
   const [isManagePlansModalOpen, setIsManagePlansModalOpen] = useState(false);
@@ -654,7 +665,7 @@ function App() {
         onSaveScenario={handleSaveScenario}
         onOpenManagePlans={() => setIsManagePlansModalOpen(true)}
         onImportScenarios={handleImportScenarios}
-        onOpenGuide={() => setShowGuideModal(true)}
+        onOpenGuide={handleOpenGuide}
         onOpenAiAdvisor={() => setShowAiModal(true)}
       />
 
@@ -665,6 +676,7 @@ function App() {
       <Header
         scenarios={scenarios}
         activeScenarioId={activeScenarioId}
+        activeTab={activeTab}
         onSelectScenario={handleSelectScenario}
         onNewScenario={handleOpenNewPlanModal}
         onSaveScenario={handleSaveScenario}
@@ -672,7 +684,7 @@ function App() {
         onRequestDeleteScenario={(id, name) => setPlanToDelete({ id, name })}
         onOpenManagePlans={() => setIsManagePlansModalOpen(true)}
         onImportScenarios={handleImportScenarios}
-        onOpenGuide={() => setShowGuideModal(true)}
+        onOpenGuide={handleOpenGuide}
         onOpenAiAdvisor={() => setShowAiModal(true)}
         onOpenMaximizedSpendModal={() => setIsMaximizedSpendModalOpen(true)}
         theme={theme}
@@ -778,9 +790,14 @@ function App() {
                   <FixedIncomeManager profile={profile} onChange={handleProfileChange} />
                 </div>
                 {appMode === 'advanced' && (
-                  <div id="card-inputs-lifeevents" className="scroll-mt-24 transition-all duration-300">
-                    <LifeEventsDecumulationCard profile={profile} onChange={handleProfileChange} />
-                  </div>
+                  <>
+                    <div id="card-inputs-lifeevents" className="scroll-mt-24 transition-all duration-300">
+                      <LifeEventsDecumulationCard profile={profile} onChange={handleProfileChange} />
+                    </div>
+                    <div id="card-inputs-fees" className="scroll-mt-24 transition-all duration-300">
+                      <InvestmentFeesCard profile={profile} onChange={handleProfileChange} />
+                    </div>
+                  </>
                 )}
               </div>
             )}
@@ -843,11 +860,6 @@ function App() {
                     appMode={appMode}
                   />
                 </div>
-                {appMode === 'advanced' && (
-                  <div id="card-strat-lifeevents" className="scroll-mt-24 transition-all duration-300">
-                    <LifeEventsDecumulationCard profile={profile} onChange={handleProfileChange} />
-                  </div>
-                )}
               </div>
             )}
 
@@ -881,7 +893,7 @@ function App() {
             {activeTab === 'risk' && (
               <div className="space-y-6">
                 <div id="card-risk-monte" className="scroll-mt-24 transition-all duration-300">
-                  <MonteCarloCard profile={profile} pots={pots} taxResult={taxResult} onChange={handleProfileChange} />
+                  <MonteCarloCard profile={profile} pots={pots} taxResult={taxResult} onChange={handleProfileChange} appMode={appMode} />
                 </div>
                 {appMode === 'advanced' && (
                   <>
@@ -933,7 +945,7 @@ function App() {
                   <ProjectionChart projections={projections} profile={profile} pots={pots} onChange={handleProfileChange} showAllCharts={true} />
                 </div>
                 <div id="card-summary-monte" className="scroll-mt-24 transition-all duration-300">
-                  <MonteCarloCard profile={profile} pots={pots} taxResult={taxResult} onChange={handleProfileChange} showAllScenarios={true} />
+                  <MonteCarloCard profile={profile} pots={pots} taxResult={taxResult} onChange={handleProfileChange} showAllScenarios={true} appMode={appMode} />
                 </div>
                 <div id="card-summary-estate" className="scroll-mt-24 transition-all duration-300">
                   <IhtEstatePlanningCard profile={profile} projections={projections} onChange={handleProfileChange} hideInputs={true} />
@@ -983,102 +995,25 @@ function App() {
               </div>
             )}
 
-            {/* Tab: Advanced Settings */}
+            {/* Tab: Advanced */}
             {activeTab === 'advanced_settings' && (
               <div className="space-y-6">
-                <AdvancedSettingsCard profile={profile} onChange={handleProfileChange} />
+                <AdvancedSettingsCard 
+                  profile={profile} 
+                  onChange={handleProfileChange} 
+                  onOpenAiAdvisor={() => setShowAiModal(true)} 
+                />
               </div>
             )}
 
-            {/* Tab 10: Other (Tax Rules & AI Tax Advisor) */}
-            {activeTab === 'other' && (
+            {/* Tab 10: Documentation (User Guide & Tax Rules) */}
+            {activeTab === 'documentation' && (
               <div className="space-y-6">
-                <div className="bg-gradient-to-r from-emerald-900 via-slate-900 to-slate-950 p-6 sm:p-8 rounded-3xl text-white shadow-xl relative overflow-hidden border border-emerald-800/50">
-                  <div className="absolute right-0 top-0 translate-x-12 -translate-y-12 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-                  <div className="relative z-10 space-y-2 max-w-2xl">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold">
-                      <BookOpen className="w-4 h-4" />
-                      <span>Tax Rules & AI Assistance</span>
-                    </div>
-                    <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-                      UK Tax Rules & AI Advisor Hub
-                    </h2>
-                    <p className="text-slate-300 text-xs sm:text-sm leading-relaxed">
-                      Access complete UK tax threshold reference guides, allowance rules, and real-time AI pension tax optimization advisor.
-                    </p>
-                  </div>
-                </div>
+                {/* User Guide Page */}
+                <UserGuideCard />
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Card 1: Tax Rules Guide */}
-                  <div id="card-other-taxrules" className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-5 flex flex-col justify-between">
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
-                        <div className="p-3 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 rounded-2xl">
-                          <BookOpen className="w-6 h-6" />
-                        </div>
-                        <div>
-                          <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100">
-                            UK Tax Rules & Allowances
-                          </h3>
-                          <p className="text-xs text-slate-500 dark:text-slate-400">
-                            Interactive reference guide covering Income Tax, Lump Sum Allowance (LSA), ISA limits, and Pension tax relief.
-                          </p>
-                        </div>
-                      </div>
-
-                      <ul className="text-xs text-slate-600 dark:text-slate-300 space-y-2 list-disc list-inside">
-                        <li>Standard Personal Allowance: £12,570</li>
-                        <li>Higher Rate Tax Threshold: £50,270 (40%)</li>
-                        <li>Additional Rate Threshold: £125,140 (45%)</li>
-                        <li>Lump Sum Allowance (LSA): £268,275 max tax-free cash</li>
-                        <li>Pension Annual Allowance: £60,000</li>
-                      </ul>
-                    </div>
-
-                    <button
-                      onClick={() => setShowGuideModal(true)}
-                      className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-xs font-extrabold transition-all cursor-pointer shadow-xs flex items-center justify-center gap-2"
-                    >
-                      <BookOpen className="w-4 h-4" />
-                      <span>Open Full Tax Rules Guide</span>
-                    </button>
-                  </div>
-
-                  {/* Card 2: AI Tax Advisor */}
-                  <div id="card-other-aitaxadvisor" className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-5 flex flex-col justify-between">
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
-                        <div className="p-3 bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 rounded-2xl">
-                          <Sparkles className="w-6 h-6" />
-                        </div>
-                        <div>
-                          <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100">
-                            AI Tax & Pension Advisor
-                          </h3>
-                          <p className="text-xs text-slate-500 dark:text-slate-400">
-                            Smart AI assistant tailored to your specific active scenario parameters and UK tax queries.
-                          </p>
-                        </div>
-                      </div>
-
-                      <ul className="text-xs text-slate-600 dark:text-slate-300 space-y-2 list-disc list-inside">
-                        <li>Personalized drawdown tax optimization recommendations</li>
-                        <li>60% tax trap mitigation strategies</li>
-                        <li>Inheritance tax (IHT) planning & gifting rules</li>
-                        <li>Instant answers to complex UK pension questions</li>
-                      </ul>
-                    </div>
-
-                    <button
-                      onClick={() => setShowAiModal(true)}
-                      className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-extrabold transition-all cursor-pointer shadow-xs flex items-center justify-center gap-2"
-                    >
-                      <Sparkles className="w-4 h-4" />
-                      <span>Launch AI Tax Advisor</span>
-                    </button>
-                  </div>
-                </div>
+                {/* UK Retirement Tax Rules Cheat Sheet (Full Page View) */}
+                <TaxGuideCard />
               </div>
             )}
             </PlanErrorBoundary>
@@ -1114,10 +1049,6 @@ function App() {
           projections={projections}
           onClose={() => setShowAiModal(false)}
         />
-      )}
-
-      {showGuideModal && (
-        <TaxGuideModal onClose={() => setShowGuideModal(false)} />
       )}
 
       {/* Rename Plan Modal */}
