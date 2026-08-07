@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { UserProfile, InvestmentPots } from '../types';
-import { solveMaximizedSpend, SolveMaximizedSpendResult, createCandidateProfile } from '../utils/maximizedSpendSolver';
+import { UserProfile, InvestmentPots, AnnuityType, AnnuityDurationOption } from '../types';
+import { solveMaximizedSpend, SolveMaximizedSpendResult, createCandidateProfile, AnnuityFloorMode } from '../utils/maximizedSpendSolver';
 import {
   X,
   Sparkles,
@@ -53,6 +53,16 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
     return 'uniform';
   });
 
+  // Annuity Floor Options State
+  const [annuityFloorMode, setAnnuityFloorMode] = useState<AnnuityFloorMode>('none');
+  const [annuityFloorIncomeTarget, setAnnuityFloorIncomeTarget] = useState<number>(15000);
+  const [annuityFloorPercent, setAnnuityFloorPercent] = useState<number>(40);
+  const [annuityFloorAge, setAnnuityFloorAge] = useState<number>(profile.targetRetirementAge || 60);
+  const [annuityRatePercent, setAnnuityRatePercent] = useState<number>(6.0);
+  const [annuityType, setAnnuityType] = useState<AnnuityType>('inflation_linked_single');
+  const [annuityDurationOption, setAnnuityDurationOption] = useState<AnnuityDurationOption>('lifetime');
+  const [annuityDurationUntilAge, setAnnuityDurationUntilAge] = useState<number>(75);
+
   // Compute solver result dynamically on parameter changes
   const solverResult: SolveMaximizedSpendResult = useMemo(() => {
     return solveMaximizedSpend({
@@ -61,8 +71,30 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
       targetEndAge,
       targetLegacyBuffer,
       spendingPattern,
+      annuityFloorMode,
+      annuityFloorIncomeTarget,
+      annuityFloorPercent,
+      annuityFloorAge,
+      annuityRatePercent,
+      annuityType,
+      annuityDurationOption,
+      annuityDurationUntilAge,
     });
-  }, [profile, pots, targetEndAge, targetLegacyBuffer, spendingPattern]);
+  }, [
+    profile,
+    pots,
+    targetEndAge,
+    targetLegacyBuffer,
+    spendingPattern,
+    annuityFloorMode,
+    annuityFloorIncomeTarget,
+    annuityFloorPercent,
+    annuityFloorAge,
+    annuityRatePercent,
+    annuityType,
+    annuityDurationOption,
+    annuityDurationUntilAge,
+  ]);
 
   const {
     maxAnnualIncome,
@@ -75,6 +107,7 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
     bestCandidateProfile,
     projectionsWithMaxSpend,
     phaseIncomes,
+    annuityFloorDetails,
   } = solverResult;
 
   // Format currency helpers
@@ -145,11 +178,19 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
                 {fmt(maxAnnualIncome)}
                 <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">/yr</span>
               </div>
-              <div className="text-[11px] font-bold text-amber-700 dark:text-amber-300">
-                {bridgeAnnualIncome !== undefined
-                  ? `Bridge (Ages ${currentRetirementAge}-${pensionAccessAge - 1}): ${fmt(bridgeAnnualIncome)}/yr`
-                  : `${fmt(Math.round(maxAnnualIncome / 12))}/mo spendable`}
-              </div>
+              {annuityFloorDetails ? (
+                <div className="text-[11px] font-bold text-amber-800 dark:text-amber-200 flex items-center gap-1 flex-wrap">
+                  <span className="text-emerald-700 dark:text-emerald-300">🛡️ {fmt(annuityFloorDetails.guaranteedAnnualIncome)}/yr Floor</span>
+                  <span>+</span>
+                  <span>{fmt(annuityFloorDetails.flexiDrawdownAnnualIncome)}/yr Flexi</span>
+                </div>
+              ) : (
+                <div className="text-[11px] font-bold text-amber-700 dark:text-amber-300">
+                  {bridgeAnnualIncome !== undefined
+                    ? `Bridge (Ages ${currentRetirementAge}-${pensionAccessAge - 1}): ${fmt(bridgeAnnualIncome)}/yr`
+                    : `${fmt(Math.round(maxAnnualIncome / 12))}/mo spendable`}
+                </div>
+              )}
             </div>
 
             {/* KPI 2: ANNUAL BOOST */}
@@ -319,6 +360,287 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
                   {spendingPattern === 'proportional_phases' && 'Scales your existing custom spending phase targets upwards.'}
                 </p>
               </div>
+            </div>
+
+            {/* CONTROL 4: ANNUITY FLOOR & GUARANTEED INCOME */}
+            <div className="pt-2 border-t border-slate-200 dark:border-slate-700/80 space-y-4">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                    <ShieldCheck className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h5 className="font-extrabold text-xs text-slate-900 dark:text-slate-100">
+                      Guaranteed Annuity Floor
+                    </h5>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                      Secure a baseline income floor with an annuity purchase, maximizing drawdown for the rest.
+                    </p>
+                  </div>
+                </div>
+                {annuityFloorDetails && (
+                  <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+                    Floor: {fmt(annuityFloorDetails.guaranteedAnnualIncome)}/yr Guaranteed
+                  </span>
+                )}
+              </div>
+
+              {/* Floor Mode Switcher */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setAnnuityFloorMode('none')}
+                  className={`p-2.5 rounded-xl text-xs font-bold transition-all text-left border cursor-pointer ${
+                    annuityFloorMode === 'none'
+                      ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                      : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100'
+                  }`}
+                >
+                  <div className="font-extrabold">Pure Flexi-Drawdown</div>
+                  <div className="text-[10px] opacity-80 font-normal">0% Annuity • Pure Market Growth</div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setAnnuityFloorMode('target_floor')}
+                  className={`p-2.5 rounded-xl text-xs font-bold transition-all text-left border cursor-pointer ${
+                    annuityFloorMode === 'target_floor'
+                      ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                      : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100'
+                  }`}
+                >
+                  <div className="font-extrabold">Target Income Floor (£/yr)</div>
+                  <div className="text-[10px] opacity-80 font-normal">Secure £15k+ guaranteed income</div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setAnnuityFloorMode('custom_percent')}
+                  className={`p-2.5 rounded-xl text-xs font-bold transition-all text-left border cursor-pointer ${
+                    annuityFloorMode === 'custom_percent'
+                      ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                      : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100'
+                  }`}
+                >
+                  <div className="font-extrabold">Fixed Pension Alloc (%)</div>
+                  <div className="text-[10px] opacity-80 font-normal">Convert % of pension to annuity</div>
+                </button>
+              </div>
+
+              {/* Active Floor Parameters */}
+              {annuityFloorMode === 'target_floor' && (
+                <div className="p-3 bg-white dark:bg-slate-900 rounded-xl space-y-2 border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center justify-between text-xs font-bold">
+                    <span className="text-slate-700 dark:text-slate-300">Guaranteed Annuity Floor Target</span>
+                    <span className="font-black text-indigo-600 dark:text-indigo-400">{fmt(annuityFloorIncomeTarget)}/yr</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={5000}
+                    max={60000}
+                    step={1000}
+                    value={annuityFloorIncomeTarget}
+                    onChange={(e) => setAnnuityFloorIncomeTarget(parseInt(e.target.value) || 15000)}
+                    className="w-full accent-indigo-600 cursor-pointer"
+                  />
+                  <div className="flex justify-between text-[10px] font-bold text-slate-400">
+                    <span>£5,000/yr</span>
+                    <div className="flex gap-1">
+                      {[10000, 15000, 20000, 25000, 30000].map((preset) => (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => setAnnuityFloorIncomeTarget(preset)}
+                          className={`px-1.5 py-0.5 rounded text-[10px] ${
+                            annuityFloorIncomeTarget === preset
+                              ? 'bg-indigo-600 text-white font-black'
+                              : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300'
+                          }`}
+                        >
+                          £{preset / 1000}k
+                        </button>
+                      ))}
+                    </div>
+                    <span>£60,000/yr</span>
+                  </div>
+                </div>
+              )}
+
+              {annuityFloorMode === 'custom_percent' && (
+                <div className="p-3 bg-white dark:bg-slate-900 rounded-xl space-y-2 border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center justify-between text-xs font-bold">
+                    <span className="text-slate-700 dark:text-slate-300">Pension Pot Converted to Annuity</span>
+                    <span className="font-black text-indigo-600 dark:text-indigo-400">{annuityFloorPercent}% of Pension</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={10}
+                    max={100}
+                    step={5}
+                    value={annuityFloorPercent}
+                    onChange={(e) => setAnnuityFloorPercent(parseInt(e.target.value) || 40)}
+                    className="w-full accent-indigo-600 cursor-pointer"
+                  />
+                  <div className="flex justify-between text-[10px] font-bold text-slate-400">
+                    <span>10%</span>
+                    <div className="flex gap-1">
+                      {[25, 33, 50, 75, 100].map((preset) => (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => setAnnuityFloorPercent(preset)}
+                          className={`px-1.5 py-0.5 rounded text-[10px] ${
+                            annuityFloorPercent === preset
+                              ? 'bg-indigo-600 text-white font-black'
+                              : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300'
+                          }`}
+                        >
+                          {preset}%
+                        </button>
+                      ))}
+                    </div>
+                    <span>100%</span>
+                  </div>
+                </div>
+              )}
+
+              {annuityFloorMode !== 'none' && (
+                <div className="space-y-3 pt-1">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300">Annuity Purchase Age</label>
+                      <input
+                        type="number"
+                        min={pensionAccessAge}
+                        max={85}
+                        value={annuityFloorAge}
+                        onChange={(e) => setAnnuityFloorAge(parseInt(e.target.value) || currentRetirementAge)}
+                        className="w-full bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs font-bold p-2 rounded-lg border border-slate-200 dark:border-slate-700"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300">Est. Annuity Rate (%)</label>
+                      <input
+                        type="number"
+                        step={0.1}
+                        min={2.0}
+                        max={12.0}
+                        value={annuityRatePercent}
+                        onChange={(e) => setAnnuityRatePercent(parseFloat(e.target.value) || 6.0)}
+                        className="w-full bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs font-bold p-2 rounded-lg border border-slate-200 dark:border-slate-700"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300">Annuity Type</label>
+                      <select
+                        value={annuityType}
+                        onChange={(e) => setAnnuityType(e.target.value as AnnuityType)}
+                        className="w-full bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs font-bold p-2 rounded-lg border border-slate-200 dark:border-slate-700"
+                      >
+                        <optgroup label="Inflation-Linked (CPI/RPI)">
+                          <option value="inflation_linked_single">Inflation-Linked Single Life</option>
+                          <option value="inflation_linked_joint">Inflation-Linked Joint Life</option>
+                        </optgroup>
+                        <optgroup label="Fixed Escalating (3% / 5% Annual Rise)">
+                          <option value="fixed_increase_single_3">3% Escalating Single Life</option>
+                          <option value="fixed_increase_joint_3">3% Escalating Joint Life</option>
+                          <option value="fixed_increase_single_5">5% Escalating Single Life</option>
+                          <option value="fixed_increase_joint_5">5% Escalating Joint Life</option>
+                        </optgroup>
+                        <optgroup label="Level / Fixed Income">
+                          <option value="level_single">Level Single Life</option>
+                          <option value="level_joint">Level Joint Life</option>
+                        </optgroup>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Annuity Term / Duration Section */}
+                  <div className="p-3 bg-white dark:bg-slate-900 rounded-xl space-y-2.5 border border-slate-200 dark:border-slate-700">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Annuity Duration / Term Guarantee</span>
+                      <div className="flex gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
+                        <button
+                          type="button"
+                          onClick={() => setAnnuityDurationOption('lifetime')}
+                          className={`px-2.5 py-1 rounded-md text-[11px] font-extrabold cursor-pointer transition-all ${
+                            annuityDurationOption === 'lifetime'
+                              ? 'bg-indigo-600 text-white shadow-xs'
+                              : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
+                          }`}
+                        >
+                          Lifetime Guaranteed
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setAnnuityDurationOption('until_age')}
+                          className={`px-2.5 py-1 rounded-md text-[11px] font-extrabold cursor-pointer transition-all ${
+                            annuityDurationOption === 'until_age'
+                              ? 'bg-indigo-600 text-white shadow-xs'
+                              : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
+                          }`}
+                        >
+                          Fixed-Term / Temporary
+                        </button>
+                      </div>
+                    </div>
+
+                    {annuityDurationOption === 'until_age' && (
+                      <div className="space-y-2 pt-1 border-t border-slate-100 dark:border-slate-800">
+                        <div className="flex items-center justify-between text-xs font-bold">
+                          <span className="text-slate-600 dark:text-slate-400">Fixed-Term Duration Target</span>
+                          <span className="text-indigo-600 dark:text-indigo-400 font-black">Until Age {annuityDurationUntilAge}</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={Math.max(pensionAccessAge + 1, annuityFloorAge + 1)}
+                          max={90}
+                          step={1}
+                          value={annuityDurationUntilAge}
+                          onChange={(e) => setAnnuityDurationUntilAge(parseInt(e.target.value) || 75)}
+                          className="w-full accent-indigo-600 cursor-pointer"
+                        />
+                        <div className="flex justify-between items-center text-[10px] text-slate-400">
+                          <span>Age {annuityFloorAge + 1}</span>
+                          <div className="flex gap-1">
+                            {[67, 75, 80, 85].filter((a) => a > annuityFloorAge).map((presetAge) => (
+                              <button
+                                key={presetAge}
+                                type="button"
+                                onClick={() => setAnnuityDurationUntilAge(presetAge)}
+                                className={`px-2 py-0.5 rounded text-[10px] cursor-pointer ${
+                                  annuityDurationUntilAge === presetAge
+                                    ? 'bg-indigo-600 text-white font-black'
+                                    : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300'
+                                }`}
+                              >
+                                {presetAge === 67 ? 'SPA 67' : `Age ${presetAge}`}
+                              </button>
+                            ))}
+                          </div>
+                          <span>Age 90</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {annuityFloorDetails && (
+                <div className="p-3 bg-emerald-500/10 dark:bg-emerald-950/40 rounded-xl border border-emerald-300 dark:border-emerald-800 flex items-start gap-2.5 text-xs text-emerald-900 dark:text-emerald-200">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                  <div className="space-y-0.5">
+                    <div className="font-extrabold text-[11px] uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
+                      Annuity Safety Floor Active
+                    </div>
+                    <p className="text-[11px] leading-relaxed">
+                      At age <strong>{annuityFloorDetails.annuityPurchaseAge}</strong>, ~<strong>{annuityFloorDetails.allocationPercent}%</strong> of pension pot ({fmt(annuityFloorDetails.pensionPotAllocated)}) is converted into a guaranteed annuity floor yielding <strong className="font-extrabold">{fmt(annuityFloorDetails.guaranteedAnnualIncome)}/yr</strong> {annuityDurationOption === 'until_age' ? `until age ${annuityDurationUntilAge}` : 'for life'} ({annuityType.replace(/_/g, ' ')}). The remaining flexi-drawdown funds generate <strong className="font-extrabold">{fmt(annuityFloorDetails.flexiDrawdownAnnualIncome)}/yr</strong> for a total spend target of <strong>{fmt(maxAnnualIncome)}/yr</strong>.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

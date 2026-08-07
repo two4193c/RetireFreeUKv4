@@ -323,6 +323,18 @@ export function runMonteCarloSimulation(
 
   const partnerTaxResult = profile.isCouplePlanning ? calculatePartnerUKTax(profile, partnerPots) : null;
 
+function parseAnnuityTypeConfig(type?: string) {
+  const str = type || '';
+  const isInflationLinked = str.includes('inflation_linked');
+  let fixedEscalationRate: number | undefined = undefined;
+  if (str.includes('_3')) {
+    fixedEscalationRate = 0.03;
+  } else if (str.includes('_5')) {
+    fixedEscalationRate = 0.05;
+  }
+  return { isInflationLinked, fixedEscalationRate };
+}
+
   // Annual contribution totals (regular ongoing recurring contributions; one-offs and transfers added separately)
   const annualPensionContribution = taxResult.regularPensionContributionsAnnual ?? taxResult.totalPensionContributionsAnnual;
   const annualIsaContribution = (taxResult.regularIsaContributionsAnnual ?? taxResult.totalIsaContributionsAnnual) + taxResult.lisaGovernmentBonusAnnual;
@@ -379,10 +391,12 @@ export function runMonteCarloSimulation(
     const mcAnnuityStreams: Array<{
       baseNominal: number;
       isInflationLinked: boolean;
+      fixedEscalationRate?: number;
       durationOption: string;
       durationUntilAge: number;
       owner: 'primary' | 'partner';
       purchaseInflationFactor: number;
+      purchaseYearOffset: number;
     }> = [];
 
     for (let yr = 0; yr < numYears; yr++) {
@@ -723,13 +737,16 @@ export function runMonteCarloSimulation(
           const baseNominal = potForAnnuity * rate;
           annuityPurchased = true;
 
+          const cfgPrimary = parseAnnuityTypeConfig(profile.annuityType);
           mcAnnuityStreams.push({
             baseNominal,
-            isInflationLinked: (profile.annuityType || '').includes('inflation_linked'),
+            isInflationLinked: cfgPrimary.isInflationLinked,
+            fixedEscalationRate: cfgPrimary.fixedEscalationRate,
             durationOption: profile.annuityDurationOption || 'lifetime',
             durationUntilAge: profile.annuityDurationUntilAge || 75,
             owner: 'primary',
-                purchaseInflationFactor: inflationFactor,
+            purchaseInflationFactor: inflationFactor,
+            purchaseYearOffset: yr,
           });
         }
 
@@ -757,13 +774,16 @@ export function runMonteCarloSimulation(
           const baseNominal = potForAnnuity * rate;
           partnerAnnuityPurchased = true;
 
+          const cfgPartner = parseAnnuityTypeConfig(profile.partnerAnnuityType || profile.annuityType);
           mcAnnuityStreams.push({
             baseNominal,
-            isInflationLinked: (profile.partnerAnnuityType || '').includes('inflation_linked'),
+            isInflationLinked: cfgPartner.isInflationLinked,
+            fixedEscalationRate: cfgPartner.fixedEscalationRate,
             durationOption: profile.partnerAnnuityDurationOption || 'lifetime',
             durationUntilAge: profile.partnerAnnuityDurationUntilAge || 75,
             owner: 'partner',
-                purchaseInflationFactor: inflationFactor,
+            purchaseInflationFactor: inflationFactor,
+            purchaseYearOffset: yr,
           });
         }
 
@@ -778,13 +798,16 @@ export function runMonteCarloSimulation(
               const rate = (t.annuityRatePercent || 4.2) / 100;
               const baseNominal = potForAnnuity * rate;
 
+              const cfgTranchePrimary = parseAnnuityTypeConfig(t.annuityType || profile.annuityType);
               mcAnnuityStreams.push({
                 baseNominal,
-                isInflationLinked: (t.annuityType || '').includes('inflation_linked'),
+                isInflationLinked: cfgTranchePrimary.isInflationLinked,
+                fixedEscalationRate: cfgTranchePrimary.fixedEscalationRate,
                 durationOption: t.durationOption || 'lifetime',
                 durationUntilAge: t.durationUntilAge || 75,
                 owner: 'primary',
                 purchaseInflationFactor: inflationFactor,
+                purchaseYearOffset: yr,
               });
             }
           });
@@ -803,13 +826,16 @@ export function runMonteCarloSimulation(
               const rate = (t.annuityRatePercent || 4.2) / 100;
               const baseNominal = potForAnnuity * rate;
 
+              const cfgTranchePartner = parseAnnuityTypeConfig(t.annuityType || profile.partnerAnnuityType || profile.annuityType);
               mcAnnuityStreams.push({
                 baseNominal,
-                isInflationLinked: (t.annuityType || '').includes('inflation_linked'),
+                isInflationLinked: cfgTranchePartner.isInflationLinked,
+                fixedEscalationRate: cfgTranchePartner.fixedEscalationRate,
                 durationOption: t.durationOption || 'lifetime',
                 durationUntilAge: t.durationUntilAge || 75,
                 owner: 'partner',
                 purchaseInflationFactor: inflationFactor,
+                purchaseYearOffset: yr,
               });
             }
           });
@@ -825,6 +851,9 @@ export function runMonteCarloSimulation(
           }
           if (stream.isInflationLinked) {
             annuityIncomeThisYear += stream.baseNominal * (inflationFactor / (stream.purchaseInflationFactor || 1));
+          } else if (stream.fixedEscalationRate) {
+            const yearsSincePurchase = Math.max(0, yr - (stream.purchaseYearOffset || 0));
+            annuityIncomeThisYear += stream.baseNominal * Math.pow(1 + stream.fixedEscalationRate, yearsSincePurchase);
           } else {
             annuityIncomeThisYear += stream.baseNominal;
           }

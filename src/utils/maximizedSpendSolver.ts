@@ -1,13 +1,35 @@
-import { UserProfile, InvestmentPots, YearProjection, SpendingPhasesConfig } from '../types';
+import { UserProfile, InvestmentPots, YearProjection, SpendingPhasesConfig, AnnuityType, AnnuityDurationOption } from '../types';
 import { generateProjections } from './projectionEngine';
 import { calculateUKTax } from './ukTaxEngine';
 
-export interface SolveMaximizedSpendOptions {
+export type AnnuityFloorMode = 'none' | 'target_floor' | 'custom_percent';
+
+export interface AnnuityFloorOptions {
+  annuityFloorMode?: AnnuityFloorMode;
+  annuityFloorIncomeTarget?: number; // e.g. £15,000/yr guaranteed floor
+  annuityFloorPercent?: number; // e.g. 40% of pension pot
+  annuityFloorAge?: number; // Age when annuity is bought (e.g. 60, 65, 67)
+  annuityRatePercent?: number; // e.g. 6.0%
+  annuityType?: AnnuityType; // e.g. 'inflation_linked_single' | 'level_single' | 'fixed_increase_single_3'
+  annuityDurationOption?: AnnuityDurationOption; // 'lifetime' | 'until_age'
+  annuityDurationUntilAge?: number; // e.g. 75, 80
+}
+
+export interface SolveMaximizedSpendOptions extends AnnuityFloorOptions {
   profile: UserProfile;
   pots: InvestmentPots;
   targetEndAge?: number; // e.g. 95 (default)
   targetLegacyBuffer?: number; // e.g. 0 (Die with Zero)
   spendingPattern?: 'uniform' | 'proportional_phases' | 'front_loaded';
+  reinvestExcessDrawdown?: boolean; // Option to max drawdown while keeping actual spending target lower
+  actualSpendingTargetAnnual?: number; // Actual lifestyle spending requirement (£/yr)
+  reinvestDestinationPot?: 'isa' | 'gia' | 'cash'; // Destination pot for reinvesting surplus
+}
+
+export interface ReinvestExcessOptions {
+  reinvestExcessDrawdown?: boolean;
+  actualSpendingTargetAnnual?: number;
+  reinvestDestinationPot?: 'isa' | 'gia' | 'cash';
 }
 
 export interface SolveMaximizedSpendResult {
@@ -27,6 +49,25 @@ export interface SolveMaximizedSpendResult {
     goGoIncome?: number;
     slowGoIncome?: number;
     noGoIncome?: number;
+  };
+  annuityFloorDetails?: {
+    mode: AnnuityFloorMode;
+    guaranteedAnnualIncome: number;
+    pensionPotAllocated: number;
+    allocationPercent: number;
+    annuityPurchaseAge: number;
+    annuityRatePercent: number;
+    annuityType: AnnuityType;
+    annuityDurationOption: AnnuityDurationOption;
+    annuityDurationUntilAge?: number;
+    flexiDrawdownAnnualIncome: number;
+  };
+  reinvestExcessDetails?: {
+    enabled: boolean;
+    actualSpendingTargetAnnual: number;
+    maxAnnualDrawdown: number;
+    annualSurplusReinvested: number;
+    reinvestDestinationPot: 'isa' | 'gia' | 'cash';
   };
 }
 
@@ -78,10 +119,60 @@ export function createCandidateProfile(
   profile: UserProfile,
   baselineIncome: number,
   pattern: 'uniform' | 'proportional_phases' | 'front_loaded',
-  pots?: InvestmentPots
+  pots?: InvestmentPots,
+  annuityFloorOpts?: AnnuityFloorOptions,
+  reinvestOpts?: ReinvestExcessOptions
 ): UserProfile {
   const candidate = JSON.parse(JSON.stringify(profile)) as UserProfile;
   const roundedBaseline = Math.round(baselineIncome);
+
+  const isReinvestExcess = Boolean(
+    reinvestOpts?.reinvestExcessDrawdown || profile.reinvestExcessDrawdown || profile.maximizedSpendConfig?.reinvestExcessDrawdown
+  );
+  const actualSpendingTarget =
+    reinvestOpts?.actualSpendingTargetAnnual ??
+    profile.actualSpendingTargetAnnual ??
+    profile.maximizedSpendConfig?.actualSpendingTargetAnnual ??
+    profile.targetRetirementIncomeAnnual ??
+    30000;
+  const reinvestDestination =
+    reinvestOpts?.reinvestDestinationPot ||
+    profile.maximizedSpendConfig?.reinvestDestinationPot ||
+    profile.annuityExcessReinvestOption ||
+    'isa';
+
+  // Apply Annuity Floor configuration if enabled
+  if (annuityFloorOpts && annuityFloorOpts.annuityFloorMode && annuityFloorOpts.annuityFloorMode !== 'none') {
+    const mode = annuityFloorOpts.annuityFloorMode;
+    const retAge = candidate.targetRetirementAge || 60;
+    const pensionAccessAge = candidate.protectedPensionAccessAge || 57;
+    const purchaseAge = Math.max(pensionAccessAge, annuityFloorOpts.annuityFloorAge || retAge);
+    const ratePercent = annuityFloorOpts.annuityRatePercent || 6.0;
+    const aType = annuityFloorOpts.annuityType || 'inflation_linked_single';
+
+    let allocPercent = 0;
+    const totalPensionPot = (pots?.workplacePensionBalance || 0) + (pots?.sippBalance || 0);
+
+    if (mode === 'custom_percent') {
+      allocPercent = Math.min(100, Math.max(1, annuityFloorOpts.annuityFloorPercent || 30));
+    } else if (mode === 'target_floor') {
+      const targetFloorIncome = annuityFloorOpts.annuityFloorIncomeTarget || 15000;
+      const capitalNeeded = targetFloorIncome / (ratePercent / 100);
+      if (totalPensionPot > 0) {
+        allocPercent = Math.min(100, Math.max(1, Math.round((capitalNeeded / totalPensionPot) * 100)));
+      } else {
+        allocPercent = 50;
+      }
+    }
+
+    candidate.incomeProductOption = 'hybrid';
+    candidate.annuityAllocationPercent = allocPercent;
+    candidate.annuityPurchaseAge = purchaseAge;
+    candidate.annuityRatePercent = ratePercent;
+    candidate.annuityType = aType;
+    candidate.annuityDurationOption = annuityFloorOpts.annuityDurationOption || 'lifetime';
+    candidate.annuityDurationUntilAge = annuityFloorOpts.annuityDurationUntilAge || 75;
+  }
 
   let maxPhases: SpendingPhasesConfig | undefined = undefined;
 
@@ -143,6 +234,10 @@ export function createCandidateProfile(
     profile.maximizedSpendConfig?.baselineSpendingPhases ??
     (profile.spendingPhases ? JSON.parse(JSON.stringify(profile.spendingPhases)) : undefined);
 
+  candidate.reinvestExcessDrawdown = isReinvestExcess;
+  candidate.actualSpendingTargetAnnual = actualSpendingTarget;
+  candidate.annuityExcessReinvestOption = reinvestDestination;
+
   candidate.maximizedSpendConfig = {
     enabled: true,
     targetAnnualIncome: roundedBaseline,
@@ -150,14 +245,17 @@ export function createCandidateProfile(
     spendingPhases: maxPhases,
     baselineTargetAnnualIncome,
     baselineSpendingPhases,
+    reinvestExcessDrawdown: isReinvestExcess,
+    actualSpendingTargetAnnual: actualSpendingTarget,
+    reinvestDestinationPot: reinvestDestination,
   };
 
-  // Explicitly overwrite the baseline profile values to ensure ALL components and PDF sections natively see the maximized spend data
-  candidate.targetRetirementIncomeAnnual = roundedBaseline;
+  // Explicitly set the target income: if reinvestExcessDrawdown is enabled, keep targetRetirementIncomeAnnual as actualSpendingTarget
+  candidate.targetRetirementIncomeAnnual = isReinvestExcess ? actualSpendingTarget : roundedBaseline;
   candidate.spendingPhases = maxPhases;
 
-  // Clamping bridge ranges is only done if pots are provided AND pattern is not uniform!
-  if (pots && pattern !== 'uniform') {
+  // Clamping bridge ranges is done whenever pots are provided and retAge < pensionAccessAge
+  if (pots) {
     return clampBridgeRangesIfNeeded(candidate, pots);
   }
 
@@ -261,6 +359,7 @@ function clampBridgeRangesIfNeeded(candidateProfile: UserProfile, pots: Investme
     };
   }
 
+  cloned.spendingPhases = maxConfig.spendingPhases;
   return cloned;
 }
 
@@ -320,7 +419,32 @@ export function solveMaximizedSpend(options: SolveMaximizedSpendOptions): SolveM
     targetEndAge = profile.lifeExpectancyAge || 95,
     targetLegacyBuffer = 0,
     spendingPattern = 'uniform',
+    annuityFloorMode = 'none',
+    annuityFloorIncomeTarget = 15000,
+    annuityFloorPercent = 40,
+    annuityFloorAge,
+    annuityRatePercent = 6.0,
+    annuityType = 'inflation_linked_single',
+    annuityDurationOption = 'lifetime',
+    annuityDurationUntilAge = 75,
   } = options;
+
+  const annuityFloorOpts: AnnuityFloorOptions = {
+    annuityFloorMode,
+    annuityFloorIncomeTarget,
+    annuityFloorPercent,
+    annuityFloorAge,
+    annuityRatePercent,
+    annuityType,
+    annuityDurationOption,
+    annuityDurationUntilAge,
+  };
+
+  const reinvestOpts: ReinvestExcessOptions = {
+    reinvestExcessDrawdown: options.reinvestExcessDrawdown,
+    actualSpendingTargetAnnual: options.actualSpendingTargetAnnual,
+    reinvestDestinationPot: options.reinvestDestinationPot,
+  };
 
   const originalAnnualIncome = Math.round(getOriginalBaseIncome(profile));
   const retAge = profile.targetRetirementAge || 60;
@@ -339,14 +463,14 @@ export function solveMaximizedSpend(options: SolveMaximizedSpendOptions): SolveM
 
   let high = Math.max(2_000_000, totalPots * 2);
   let bestFeasibleIncome = low;
-  let bestCandidateProfile: UserProfile = createCandidateProfile(profile, low, spendingPattern, pots);
+  let bestCandidateProfile: UserProfile = createCandidateProfile(profile, low, spendingPattern, pots, annuityFloorOpts, reinvestOpts);
   let bestProjections: YearProjection[] = [];
   let bestFinalPot = 0;
 
   // Binary search over 28 iterations
   for (let i = 0; i < 28; i++) {
     const mid = Math.floor((low + high) / 2);
-    const candidateProfile = createCandidateProfile(profile, mid, spendingPattern, pots);
+    const candidateProfile = createCandidateProfile(profile, mid, spendingPattern, pots, annuityFloorOpts, reinvestOpts);
     const result = testFeasibility(candidateProfile, pots, clampedEndAge, targetLegacyBuffer);
 
     if (result.feasible) {
@@ -401,6 +525,30 @@ export function solveMaximizedSpend(options: SolveMaximizedSpendOptions): SolveM
     }
   }
 
+  let annuityFloorDetails: SolveMaximizedSpendResult['annuityFloorDetails'] = undefined;
+  if (annuityFloorMode !== 'none') {
+    const purchaseAge = bestCandidateProfile.annuityPurchaseAge || retAge;
+    const purchaseRow = bestProjections.find((p) => p.age >= purchaseAge);
+    const guaranteedAnnualIncome = Math.round(
+      purchaseRow?.primaryAnnuityIncomeReceived || purchaseRow?.annuityIncomeReceived || 0
+    );
+    const pensionPotAllocated = Math.round(purchaseRow?.annuityCapitalAllocated || 0);
+    const flexiDrawdownAnnualIncome = Math.max(0, Math.round(bestFeasibleIncome - guaranteedAnnualIncome));
+
+    annuityFloorDetails = {
+      mode: annuityFloorMode,
+      guaranteedAnnualIncome,
+      pensionPotAllocated,
+      allocationPercent: bestCandidateProfile.annuityAllocationPercent || 0,
+      annuityPurchaseAge: purchaseAge,
+      annuityRatePercent: bestCandidateProfile.annuityRatePercent || 6.0,
+      annuityType: bestCandidateProfile.annuityType || 'inflation_linked_single',
+      annuityDurationOption: bestCandidateProfile.annuityDurationOption || 'lifetime',
+      annuityDurationUntilAge: bestCandidateProfile.annuityDurationUntilAge || 75,
+      flexiDrawdownAnnualIncome,
+    };
+  }
+
   return {
     maxAnnualIncome: bestFeasibleIncome,
     bridgeAnnualIncome,
@@ -415,5 +563,6 @@ export function solveMaximizedSpend(options: SolveMaximizedSpendOptions): SolveM
     projectionsWithMaxSpend: bestProjections,
     spendingPattern,
     phaseIncomes,
+    annuityFloorDetails,
   };
 }

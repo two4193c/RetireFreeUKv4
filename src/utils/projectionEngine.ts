@@ -102,6 +102,48 @@ export function getTargetIncomeForAge(profile: UserProfile, age: number): number
   return profile.targetRetirementIncomeAnnual;
 }
 
+export function getActualSpendingTargetForAge(profile: UserProfile, age: number): number {
+  const isReinvest = Boolean(
+    profile.reinvestExcessDrawdown ||
+    profile.maximizedSpendConfig?.reinvestExcessDrawdown
+  );
+
+  if (!isReinvest) {
+    return getTargetIncomeForAge(profile, age);
+  }
+
+  const maxConfig = profile.maximizedSpendConfig;
+  const baselinePhases = maxConfig?.baselineSpendingPhases || profile.spendingPhases;
+
+  if (baselinePhases?.enabled) {
+    if (baselinePhases.customRanges && baselinePhases.customRanges.length > 0) {
+      const sorted = [...baselinePhases.customRanges].sort((a, b) => a.startAge - b.startAge);
+      const match = sorted.find(
+        (r) => age >= r.startAge && (r.endAge === undefined || r.endAge === null || r.endAge <= 0 || age <= r.endAge)
+      );
+      if (match) return match.annualTargetIncome;
+      const lastRange = sorted[sorted.length - 1];
+      if (lastRange && lastRange.endAge && age > lastRange.endAge) return lastRange.annualTargetIncome;
+      if (sorted[0] && age < sorted[0].startAge) return sorted[0].annualTargetIncome;
+    }
+    if (baselinePhases.goGoEndAge !== undefined && baselinePhases.goGoIncomeAnnual !== undefined) {
+      if (age <= baselinePhases.goGoEndAge) return baselinePhases.goGoIncomeAnnual;
+      if (baselinePhases.slowGoEndAge !== undefined && age <= baselinePhases.slowGoEndAge && baselinePhases.slowGoIncomeAnnual !== undefined) {
+        return baselinePhases.slowGoIncomeAnnual;
+      }
+      if (baselinePhases.noGoIncomeAnnual !== undefined) return baselinePhases.noGoIncomeAnnual;
+    }
+  }
+
+  return (
+    maxConfig?.actualSpendingTargetAnnual ??
+    profile.actualSpendingTargetAnnual ??
+    maxConfig?.baselineTargetAnnualIncome ??
+    profile.targetRetirementIncomeAnnual ??
+    30000
+  );
+}
+
 export function generateProjections(
   profile: UserProfile,
   pots: InvestmentPots,
@@ -227,14 +269,28 @@ export function generateProjections(
     }
   };
 
+function parseAnnuityTypeConfig(type?: string) {
+  const str = type || '';
+  const isInflationLinked = str.includes('inflation_linked');
+  let fixedEscalationRate: number | undefined = undefined;
+  if (str.includes('_3')) {
+    fixedEscalationRate = 0.03;
+  } else if (str.includes('_5')) {
+    fixedEscalationRate = 0.05;
+  }
+  return { isInflationLinked, fixedEscalationRate };
+}
+
   interface ActiveAnnuityStream {
     id: string;
     baseNominal: number;
     isInflationLinked: boolean;
+    fixedEscalationRate?: number;
     durationOption: string;
     durationUntilAge?: number;
     owner: 'primary' | 'partner';
     purchaseInflationFactor: number;
+    purchaseYearOffset: number;
   }
 
   const activeAnnuityStreams: ActiveAnnuityStream[] = [];
@@ -845,14 +901,17 @@ export function generateProjections(
           const baseNominal = actualAnnuityPurchaseAmount * rate;
           annuityPurchasedPrimary = true;
 
+          const cfgPrimary = parseAnnuityTypeConfig(profile.annuityType);
           activeAnnuityStreams.push({
             id: `primary-single-${age}`,
             baseNominal,
-            isInflationLinked: (profile.annuityType || '').includes('inflation_linked'),
+            isInflationLinked: cfgPrimary.isInflationLinked,
+            fixedEscalationRate: cfgPrimary.fixedEscalationRate,
             durationOption: profile.annuityDurationOption || 'lifetime',
             durationUntilAge: profile.annuityDurationUntilAge || 75,
             owner: 'primary',
-                purchaseInflationFactor: inflationFactor,
+            purchaseInflationFactor: inflationFactor,
+            purchaseYearOffset: yearOffset,
           });
         }
 
@@ -896,14 +955,17 @@ export function generateProjections(
               const rate = (t.annuityRatePercent || 4.2) / 100;
               const baseNominal = actualAnnuityPurchaseAmount * rate;
 
+              const cfgTranchePrimary = parseAnnuityTypeConfig(t.annuityType || profile.annuityType);
               activeAnnuityStreams.push({
                 id: t.id || `primary-tranche-${t.purchaseAge}-${t.allocationPercent}-${t.annuityRatePercent}`,
                 baseNominal,
-                isInflationLinked: (t.annuityType || '').includes('inflation_linked'),
+                isInflationLinked: cfgTranchePrimary.isInflationLinked,
+                fixedEscalationRate: cfgTranchePrimary.fixedEscalationRate,
                 durationOption: t.durationOption || 'lifetime',
                 durationUntilAge: t.durationUntilAge || 75,
                 owner: 'primary',
                 purchaseInflationFactor: inflationFactor,
+                purchaseYearOffset: yearOffset,
               });
             }
           });
@@ -937,7 +999,6 @@ export function generateProjections(
               partnerCrystallisedPot -= drawCryst;
               remAnnuityCapPart -= drawCryst;
               actualAnnuityPurchaseAmount += drawCryst;
-              actualAnnuityPurchaseAmount += drawCryst;
             }
             if (remAnnuityCapPart > 0 && partnerUncrystallisedPot > 0) {
               const drawUncryst = Math.min(partnerUncrystallisedPot, remAnnuityCapPart);
@@ -963,14 +1024,17 @@ export function generateProjections(
             const baseNominal = actualAnnuityPurchaseAmount * rate;
             annuityPurchasedPartner = true;
 
+            const cfgPartner = parseAnnuityTypeConfig(profile.partnerAnnuityType || profile.annuityType);
             activeAnnuityStreams.push({
               id: `partner-single-${partnerAge}`,
               baseNominal,
-              isInflationLinked: (profile.partnerAnnuityType || profile.annuityType || '').includes('inflation_linked'),
+              isInflationLinked: cfgPartner.isInflationLinked,
+              fixedEscalationRate: cfgPartner.fixedEscalationRate,
               durationOption: profile.partnerAnnuityDurationOption || 'lifetime',
               durationUntilAge: profile.partnerAnnuityDurationUntilAge || 75,
               owner: 'partner',
-                purchaseInflationFactor: inflationFactor,
+              purchaseInflationFactor: inflationFactor,
+              purchaseYearOffset: yearOffset,
             });
           }
 
@@ -1014,14 +1078,17 @@ export function generateProjections(
                 const rate = (t.annuityRatePercent || 4.2) / 100;
                 const baseNominal = actualAnnuityPurchaseAmount * rate;
 
+                const cfgTranchePartner = parseAnnuityTypeConfig(t.annuityType || profile.partnerAnnuityType || profile.annuityType);
                 activeAnnuityStreams.push({
                   id: t.id || `partner-tranche-${t.purchaseAge}-${t.allocationPercent}-${t.annuityRatePercent}`,
                   baseNominal,
-                  isInflationLinked: (t.annuityType || '').includes('inflation_linked'),
+                  isInflationLinked: cfgTranchePartner.isInflationLinked,
+                  fixedEscalationRate: cfgTranchePartner.fixedEscalationRate,
                   durationOption: t.durationOption || 'lifetime',
                   durationUntilAge: t.durationUntilAge || 75,
                   owner: 'partner',
-                purchaseInflationFactor: inflationFactor,
+                  purchaseInflationFactor: inflationFactor,
+                  purchaseYearOffset: yearOffset,
                 });
               }
             });
@@ -1044,7 +1111,13 @@ export function generateProjections(
           return; // Annuity expired at target age
         }
 
-        const amt = stream.isInflationLinked ? stream.baseNominal * (inflationFactor / (stream.purchaseInflationFactor || 1)) : stream.baseNominal;
+        let amt = stream.baseNominal;
+        if (stream.isInflationLinked) {
+          amt = stream.baseNominal * (inflationFactor / (stream.purchaseInflationFactor || 1));
+        } else if (stream.fixedEscalationRate) {
+          const yearsSincePurchase = Math.max(0, yearOffset - (stream.purchaseYearOffset || 0));
+          amt = stream.baseNominal * Math.pow(1 + stream.fixedEscalationRate, yearsSincePurchase);
+        }
         if (stream.owner === 'partner') {
           partnerAnnuityIncomeThisYear += amt;
         } else {
@@ -1534,8 +1607,16 @@ export function generateProjections(
       }
 
       // Desired gross retirement income adjusted for inflation
-      const baseIncomeTarget = getTargetIncomeForAge(profile, age);
-      const requiredNetIncomeTarget = baseIncomeTarget * inflationFactor;
+      const maxDrawdownIncomeTarget = getTargetIncomeForAge(profile, age);
+      const actualSpendingBase = getActualSpendingTargetForAge(profile, age);
+
+      const isReinvestExcess = Boolean(
+        profile.reinvestExcessDrawdown ||
+        profile.maximizedSpendConfig?.reinvestExcessDrawdown
+      );
+
+      const requiredNetIncomeTarget = actualSpendingBase * inflationFactor;
+      const drawdownNetTarget = isReinvestExcess ? (maxDrawdownIncomeTarget * inflationFactor) : requiredNetIncomeTarget;
 
       // Individual Personal Allowance — indexed with CPI inflation or frozen at base level based on user preference
       const paBase = profile.customTaxBands?.enabled ? (profile.customTaxBands.personalAllowance ?? PERSONAL_ALLOWANCE) : PERSONAL_ALLOWANCE;
@@ -1564,8 +1645,8 @@ export function generateProjections(
       // True Net Guaranteed Income secured
       const netGuaranteedIncomeSecured = Math.max(0, guaranteedIncomeTotal - guaranteedTaxLiability);
 
-      // Remaining net income needed from investment pots to reach requiredNetIncomeTarget
-      let remainingIncomeNeeded = Math.max(0, requiredNetIncomeTarget - netGuaranteedIncomeSecured);
+      // Remaining net income needed from investment pots to reach drawdownNetTarget
+      let remainingIncomeNeeded = Math.max(0, drawdownNetTarget - netGuaranteedIncomeSecured);
 
       let pensionDrawdown = 0;
       let isaDrawdown = 0;
@@ -2249,7 +2330,7 @@ export function generateProjections(
 
       // Reinvest excess income into designated non-pension pot if option is set
       if (annualIncomeExcess > 0) {
-        const primaryOption = profile.annuityExcessReinvestOption || 'cash';
+        const primaryOption = profile.maximizedSpendConfig?.reinvestDestinationPot || profile.annuityExcessReinvestOption || 'isa';
         const partnerOption = profile.isCouplePlanning ? (profile.partnerAnnuityExcessReinvestOption || primaryOption) : primaryOption;
 
         const isIsaTarget = (opt: string) => opt === 'isa' || opt === 'stocks_and_shares_isa' || opt === 'cash_isa';

@@ -101,6 +101,67 @@ describe('maximizedSpendSolver', () => {
     expect(revertedProfile.spendingPhases?.enabled).toBe(false);
   });
 
+  it('solves maximized spend with guaranteed annuity floor target option', () => {
+    const profile = {
+      ...DEFAULT_PROFILE,
+      targetRetirementIncomeAnnual: 25000,
+      targetRetirementAge: 65,
+      lifeExpectancyAge: 95,
+      protectedPensionAccessAge: 57,
+    };
+
+    const result = solveMaximizedSpend({
+      profile,
+      pots: DEFAULT_POTS,
+      targetEndAge: 95,
+      targetLegacyBuffer: 0,
+      spendingPattern: 'uniform',
+      annuityFloorMode: 'target_floor',
+      annuityFloorIncomeTarget: 15000,
+      annuityFloorAge: 65,
+      annuityRatePercent: 6.0,
+      annuityType: 'inflation_linked_single',
+    });
+
+    expect(result.maxAnnualIncome).toBeGreaterThan(15000);
+    expect(result.annuityFloorDetails).toBeDefined();
+    expect(result.annuityFloorDetails?.mode).toBe('target_floor');
+    expect(result.annuityFloorDetails?.guaranteedAnnualIncome).toBeGreaterThan(0);
+    expect(result.annuityFloorDetails?.pensionPotAllocated).toBeGreaterThan(0);
+    expect(result.bestCandidateProfile.incomeProductOption).toBe('hybrid');
+  });
+
+  it('solves maximized spend with fixed-term escalating annuity floor', () => {
+    const profile = {
+      ...DEFAULT_PROFILE,
+      targetRetirementIncomeAnnual: 25000,
+      targetRetirementAge: 60,
+      lifeExpectancyAge: 95,
+      protectedPensionAccessAge: 57,
+    };
+
+    const result = solveMaximizedSpend({
+      profile,
+      pots: DEFAULT_POTS,
+      targetEndAge: 95,
+      targetLegacyBuffer: 0,
+      spendingPattern: 'uniform',
+      annuityFloorMode: 'custom_percent',
+      annuityFloorPercent: 30,
+      annuityFloorAge: 60,
+      annuityRatePercent: 5.5,
+      annuityType: 'fixed_increase_single_3',
+      annuityDurationOption: 'until_age',
+      annuityDurationUntilAge: 75,
+    });
+
+    expect(result.maxAnnualIncome).toBeGreaterThan(0);
+    expect(result.annuityFloorDetails).toBeDefined();
+    expect(result.annuityFloorDetails?.annuityType).toBe('fixed_increase_single_3');
+    expect(result.annuityFloorDetails?.annuityDurationOption).toBe('until_age');
+    expect(result.annuityFloorDetails?.annuityDurationUntilAge).toBe(75);
+  });
+
   it('runs on Plan 55 scenario and returns reasonable results', () => {
     const plan55Profile: any = {
       dateOfBirth: "1975-11-04",

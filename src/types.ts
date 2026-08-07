@@ -18,7 +18,11 @@ export type AnnuityType =
   | 'level_single'
   | 'inflation_linked_single'
   | 'level_joint'
-  | 'inflation_linked_joint';
+  | 'inflation_linked_joint'
+  | 'fixed_increase_single_3'
+  | 'fixed_increase_single_5'
+  | 'fixed_increase_joint_3'
+  | 'fixed_increase_joint_5';
 
 export type AnnuityDurationOption = 'lifetime' | 'until_age';
 
@@ -197,6 +201,9 @@ export interface MaximizedSpendConfig {
   };
   baselineTargetAnnualIncome?: number;
   baselineSpendingPhases?: SpendingPhasesConfig;
+  reinvestExcessDrawdown?: boolean;
+  actualSpendingTargetAnnual?: number;
+  reinvestDestinationPot?: 'isa' | 'gia' | 'cash';
 }
 
 export type DrawdownStrategy =
@@ -282,6 +289,8 @@ export interface UserProfile {
   customTaxBands?: CustomTaxBandOverrides;
   pensionContributionMethod: ContributionMethod;
   targetRetirementIncomeAnnual: number; // in today's money
+  actualSpendingTargetAnnual?: number; // Actual spending requirement when max drawdown is enabled
+  reinvestExcessDrawdown?: boolean; // Option to max drawdown while keeping actual spending requirement lower
   spendingPhases?: SpendingPhasesConfig; // Go-Go, Slow-Go, No-Go age-based spending requirements
   maximizedSpendConfig?: MaximizedSpendConfig; // Separate income requirement configuration calculated by Max Spend Solver
   expectedInflationRate: number; // percentage e.g. 2.5
