@@ -49,12 +49,21 @@ import { IhtGuideCard } from './components/IhtGuideCard';
 import { FloorGuideCard } from './components/FloorGuideCard';
 import { CoupleGuideCard } from './components/CoupleGuideCard';
 import { BenchmarkGuideCard } from './components/BenchmarkGuideCard';
+import { SippConsolidationGuideCard } from './components/SippConsolidationGuideCard';
+import { WrapperGuideCard } from './components/WrapperGuideCard';
+import { SelfEmployedGuideCard } from './components/SelfEmployedGuideCard';
+import { DbPensionGuideCard } from './components/DbPensionGuideCard';
+import { DynamicWithdrawalGuideCard } from './components/DynamicWithdrawalGuideCard';
+import { CareCostsGuideCard } from './components/CareCostsGuideCard';
+import { FireBridgeGuideCard } from './components/FireBridgeGuideCard';
+import { CgtHarvestingGuideCard } from './components/CgtHarvestingGuideCard';
+import { PensionRecyclingGuideCard } from './components/PensionRecyclingGuideCard';
 import { AccumulationLedgerCard } from './components/AccumulationLedgerCard';
 import { MortgageDebtCard } from './components/MortgageDebtCard';
 import { LifeEventsDecumulationCard } from './components/LifeEventsDecumulationCard';
 import { InvestmentFeesCard } from './components/InvestmentFeesCard';
 import { PlanManagementCard } from './components/PlanManagementCard';
-import { Sparkles, ArrowUpRight, RotateCcw, Pencil, X, Check, LayoutDashboard, Wallet, Percent, LineChart, Shield, Landmark, Download, ArrowRightLeft, TrendingUp, Home, Trash2, AlertTriangle, BookOpen, Award, Scale, Heart, Users } from 'lucide-react';
+import { Sparkles, ArrowUpRight, RotateCcw, Pencil, X, Check, LayoutDashboard, Wallet, Percent, LineChart, Shield, Landmark, Download, ArrowRightLeft, TrendingUp, Home, Trash2, AlertTriangle, BookOpen, Award, Scale, Heart, Users, Briefcase, Flame, ShieldAlert } from 'lucide-react';
 import { SidebarNav } from './components/SidebarNav';
 import { PlanErrorBoundary } from './components/PlanErrorBoundary';
 
@@ -201,7 +210,7 @@ function App() {
   });
 
   const [activeTab, setActiveTab] = useState<DashboardTab>('inputs');
-  const [docSubTab, setDocSubTab] = useState<'user_guide' | 'living_standards' | 'healthy_life' | 'tax_rules' | 'mortgage_guide' | 'risk_guide' | 'iht_guide' | 'floor_guide' | 'couple_guide' | 'benchmark_guide'>('user_guide');
+  const [docSubTab, setDocSubTab] = useState<'user_guide' | 'living_standards' | 'healthy_life' | 'tax_rules' | 'mortgage_guide' | 'risk_guide' | 'iht_guide' | 'floor_guide' | 'couple_guide' | 'benchmark_guide' | 'sipp_guide' | 'wrapper_guide' | 'self_employed_guide' | 'db_guide' | 'dynamic_guide' | 'care_guide' | 'fire_bridge_guide' | 'cgt_harvesting_guide' | 'recycling_guide'>('user_guide');
   const [appMode, setAppMode] = useState<AppMode>(() => {
     try {
       const saved = localStorage.getItem('retireready_mode_v1');
@@ -223,8 +232,11 @@ function App() {
       if (advancedTabs.includes(activeTab)) {
         setActiveTab('inputs');
       }
+      if (docSubTab !== 'user_guide') {
+        setDocSubTab('user_guide');
+      }
     }
-  }, [appMode, activeTab]);
+  }, [appMode, activeTab, docSubTab]);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [activeCardId, setActiveCardId] = useState<string>('');
   const [compareScenarioAId, setCompareScenarioAId] = useState<string>('');
@@ -714,6 +726,24 @@ function App() {
             setDocSubTab('couple_guide');
           } else if (cardId === 'card-doc-benchmarkguide') {
             setDocSubTab('benchmark_guide');
+          } else if (cardId === 'card-doc-sippguide') {
+            setDocSubTab('sipp_guide');
+          } else if (cardId === 'card-doc-wrapperguide') {
+            setDocSubTab('wrapper_guide');
+          } else if (cardId === 'card-doc-selfemployedguide') {
+            setDocSubTab('self_employed_guide');
+          } else if (cardId === 'card-doc-dbguide') {
+            setDocSubTab('db_guide');
+          } else if (cardId === 'card-doc-dynamicguide') {
+            setDocSubTab('dynamic_guide');
+          } else if (cardId === 'card-doc-careguide') {
+            setDocSubTab('care_guide');
+          } else if (cardId === 'card-doc-firebridgeguide') {
+            setDocSubTab('fire_bridge_guide');
+          } else if (cardId === 'card-doc-cgtharvestingguide') {
+            setDocSubTab('cgt_harvesting_guide');
+          } else if (cardId === 'card-doc-recyclingguide') {
+            setDocSubTab('recycling_guide');
           }
           setTimeout(() => {
             const elem = document.getElementById(cardId);
@@ -1076,133 +1106,9 @@ function App() {
               </div>
             )}
 
-            {/* Tab 10: Documentation (Separate Pages: User Guide, Living Standards, Healthy Life Expectancy, Tax Rules) */}
+            {/* Tab 10: Documentation */}
             {activeTab === 'documentation' && (
               <div className="space-y-6">
-                {/* Documentation Sub-Navigation Bar */}
-                <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-3 overflow-x-auto no-scrollbar">
-                  <button
-                    type="button"
-                    onClick={() => setDocSubTab('user_guide')}
-                    className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                      docSubTab === 'user_guide'
-                        ? 'bg-indigo-600 text-white shadow-xs'
-                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    <BookOpen className="w-4 h-4" />
-                    <span>Quick Start Guide</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDocSubTab('healthy_life')}
-                    className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                      docSubTab === 'healthy_life'
-                        ? 'bg-indigo-600 text-white shadow-xs'
-                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    <Heart className="w-4 h-4 text-rose-400" />
-                    <span>Healthy Life Expectancy</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDocSubTab('living_standards')}
-                    className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                      docSubTab === 'living_standards'
-                        ? 'bg-indigo-600 text-white shadow-xs'
-                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    <Award className="w-4 h-4" />
-                    <span>Retirement Living Standards</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDocSubTab('tax_rules')}
-                    className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                      docSubTab === 'tax_rules'
-                        ? 'bg-indigo-600 text-white shadow-xs'
-                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    <Scale className="w-4 h-4" />
-                    <span>UK Tax Guide</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDocSubTab('mortgage_guide')}
-                    className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                      docSubTab === 'mortgage_guide'
-                        ? 'bg-indigo-600 text-white shadow-xs'
-                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    <Home className="w-4 h-4" />
-                    <span>Mortgage Debt Guide</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDocSubTab('risk_guide')}
-                    className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                      docSubTab === 'risk_guide'
-                        ? 'bg-indigo-600 text-white shadow-xs'
-                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    <Shield className="w-4 h-4" />
-                    <span>Sequence Risk Guide</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDocSubTab('iht_guide')}
-                    className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                      docSubTab === 'iht_guide'
-                        ? 'bg-indigo-600 text-white shadow-xs'
-                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    <Landmark className="w-4 h-4" />
-                    <span>April 2027 IHT Guide</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDocSubTab('floor_guide')}
-                    className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                      docSubTab === 'floor_guide'
-                        ? 'bg-indigo-600 text-white shadow-xs'
-                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    <Percent className="w-4 h-4" />
-                    <span>Income Floor & Annuity</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDocSubTab('couple_guide')}
-                    className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                      docSubTab === 'couple_guide'
-                        ? 'bg-indigo-600 text-white shadow-xs'
-                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    <Users className="w-4 h-4" />
-                    <span>Couple Joint Planning</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDocSubTab('benchmark_guide')}
-                    className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                      docSubTab === 'benchmark_guide'
-                        ? 'bg-indigo-600 text-white shadow-xs'
-                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    <ArrowRightLeft className="w-4 h-4" />
-                    <span>Scenario Scorecard Guide</span>
-                  </button>
-                </div>
-
                 {/* Page 1: User Guide Page */}
                 {docSubTab === 'user_guide' && (
                   <UserGuideCard />
@@ -1259,6 +1165,51 @@ function App() {
                 {/* Page 10: Scenario Benchmark & Scorecard Guide */}
                 {docSubTab === 'benchmark_guide' && (
                   <BenchmarkGuideCard />
+                )}
+
+                {/* Page 11: SIPP Consolidation Guide */}
+                {docSubTab === 'sipp_guide' && (
+                  <SippConsolidationGuideCard />
+                )}
+
+                {/* Page 12: Workplace Pension / SIPP / ISA Guide */}
+                {docSubTab === 'wrapper_guide' && (
+                  <WrapperGuideCard />
+                )}
+
+                {/* Page 13: Self-Employed Tax & Pension Guide */}
+                {docSubTab === 'self_employed_guide' && (
+                  <SelfEmployedGuideCard />
+                )}
+
+                {/* Page 14: Defined Benefit (DB) Pension Guide */}
+                {docSubTab === 'db_guide' && (
+                  <DbPensionGuideCard />
+                )}
+
+                {/* Page 15: Dynamic Withdrawal Guardrails Guide */}
+                {docSubTab === 'dynamic_guide' && (
+                  <DynamicWithdrawalGuideCard />
+                )}
+
+                {/* Page 16: Care Costs & Equity Release Guide */}
+                {docSubTab === 'care_guide' && (
+                  <CareCostsGuideCard />
+                )}
+
+                {/* Page 17: FIRE Pre-57 ISA Bridge Guide */}
+                {docSubTab === 'fire_bridge_guide' && (
+                  <FireBridgeGuideCard />
+                )}
+
+                {/* Page 18: CGT & GIA Harvesting Guide */}
+                {docSubTab === 'cgt_harvesting_guide' && (
+                  <CgtHarvestingGuideCard />
+                )}
+
+                {/* Page 19: Pension Recycling & Taper Guide */}
+                {docSubTab === 'recycling_guide' && (
+                  <PensionRecyclingGuideCard />
                 )}
               </div>
             )}
