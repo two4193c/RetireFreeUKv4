@@ -499,7 +499,19 @@ export const QuickDrawdownStrategyBar: React.FC<QuickDrawdownStrategyBarProps> =
               {profile.maximizedSpendConfig?.enabled && (
                 <div className="flex items-center gap-1.5 bg-amber-500/15 border border-amber-500/40 text-amber-900 dark:text-amber-200 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold animate-fade-in">
                   <Zap className="w-3 h-3 fill-amber-500 text-amber-500 shrink-0" />
-                  <span>Max Spend Mode: £{(profile.maximizedSpendConfig.targetAnnualIncome || 0).toLocaleString()}/yr</span>
+                  <span>
+                    Max Drawdown Mode: £{(profile.maximizedSpendConfig.targetAnnualIncome || 0).toLocaleString()}/yr
+                    {profile.isCouplePlanning && profile.maximizedSpendConfig.coupleScope && (
+                      <span className="ml-1 text-indigo-800 dark:text-indigo-200 font-extrabold">
+                        ({profile.maximizedSpendConfig.coupleScope === 'couple' ? 'Couple' : profile.maximizedSpendConfig.coupleScope === 'partner' ? (profile.partnerName || 'Partner') : (profile.name || 'Primary')})
+                      </span>
+                    )}
+                    {profile.maximizedSpendConfig.reinvestExcessDrawdown && (
+                      <span className="ml-1 text-emerald-700 dark:text-emerald-300 font-bold">
+                        (Reinvest surplus over £{(profile.maximizedSpendConfig.actualSpendingTargetAnnual || profile.actualSpendingTargetAnnual || 0).toLocaleString()}/yr into {(profile.maximizedSpendConfig.reinvestDestinationPot || 'isa').toUpperCase()})
+                      </span>
+                    )}
+                  </span>
                   <button
                     type="button"
                     onClick={() => {
@@ -809,7 +821,9 @@ export const QuickDrawdownStrategyBar: React.FC<QuickDrawdownStrategyBarProps> =
 
               {/* 8th Strategy Card: Max Spend Solver */}
               {onOpenMaximizedSpendModal && (() => {
-                const isMaxSpendActive = Boolean(profile.maximizedSpendConfig?.enabled);
+                const maxScope = profile.maximizedSpendConfig?.coupleScope || 'couple';
+                const isMaxSpendActive = Boolean(profile.maximizedSpendConfig?.enabled) &&
+                  (maxScope === 'couple' || maxScope === 'primary');
                 const maxIncome = profile.maximizedSpendConfig?.targetAnnualIncome || profile.targetRetirementIncomeAnnual || 0;
                 return (
                   <div
@@ -965,7 +979,9 @@ export const QuickDrawdownStrategyBar: React.FC<QuickDrawdownStrategyBarProps> =
 
               {/* 8th Strategy Card: Max Spend Solver */}
               {onOpenMaximizedSpendModal && (() => {
-                const isMaxSpendActive = Boolean(profile.maximizedSpendConfig?.enabled);
+                const maxScope = profile.maximizedSpendConfig?.coupleScope || 'couple';
+                const isMaxSpendActive = Boolean(profile.maximizedSpendConfig?.enabled) &&
+                  (maxScope === 'couple' || maxScope === 'partner');
                 const maxIncome = profile.maximizedSpendConfig?.targetAnnualIncome || profile.targetRetirementIncomeAnnual || 0;
                 return (
                   <div
@@ -1035,7 +1051,11 @@ export const QuickDrawdownStrategyBar: React.FC<QuickDrawdownStrategyBarProps> =
         const details = DETAILED_STRATEGY_INFO[def.id] || DETAILED_STRATEGY_INFO.tax_free_bracket;
         const personName = person === 'partner' ? (profile.partnerName || 'Partner') : (profile.name || 'Primary');
         const isSelected = def.id === 'max_spend_solver'
-          ? Boolean(profile.maximizedSpendConfig?.enabled)
+          ? Boolean(profile.maximizedSpendConfig?.enabled) &&
+            (!profile.isCouplePlanning ||
+              (person === 'partner'
+                ? ((profile.maximizedSpendConfig?.coupleScope || 'couple') === 'couple' || profile.maximizedSpendConfig?.coupleScope === 'partner')
+                : ((profile.maximizedSpendConfig?.coupleScope || 'couple') === 'couple' || profile.maximizedSpendConfig?.coupleScope === 'primary')))
           : (person === 'partner' ? activePartnerStrategy === def.id : activePrimaryStrategy === def.id);
 
         return (

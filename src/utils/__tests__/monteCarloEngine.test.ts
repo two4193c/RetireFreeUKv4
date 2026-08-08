@@ -12,7 +12,12 @@ describe('monteCarloEngine with Maximized Spend', () => {
       currentAge: 50,
       targetRetirementAge: 55,
       targetRetirementIncomeAnnual: 40000,
-      drawdownStrategy: 'basic_rate_bracket' as DrawdownStrategy,
+      pensionGrowthRate: 4.5,
+      isaGrowthRate: 4.5,
+      cashGrowthRate: 4.5,
+      postRetirementReturn: 4.5,
+      includeStatePension: false,
+      drawdownStrategy: 'pension_first' as DrawdownStrategy,
       adjustForInflation: true,
     };
 

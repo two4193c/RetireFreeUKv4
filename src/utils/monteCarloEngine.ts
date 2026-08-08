@@ -1,7 +1,7 @@
 import { UserProfile, InvestmentPots, TaxCalculationResult } from '../types';
 import { DEFAULT_PARTNER_POTS, DEFAULT_POTS, sanitizePots } from './defaultData';
 import { getPensionAccessAge, getPartnerPensionAccessAge, getLsaLimit, getPartnerLsaLimit, getLumpSumTakeAge, calculateUKTax, calculatePartnerUKTax, allocateLumpSumToPots } from './ukTaxEngine';
-import { getTargetIncomeForAge } from './projectionEngine';
+import { getTargetIncomeForAge, getActualSpendingTargetForAge } from './projectionEngine';
 import { SCOT_INTERMEDIATE_THRESHOLD, RUK_BASIC_THRESHOLD, SCOT_HIGHER_THRESHOLD, RUK_ADDITIONAL_THRESHOLD } from '../config/ukTaxRates';
 import { getEffectiveAccumulationReturn, getEffectiveDecumulationReturn } from './assetAllocation';
 
@@ -903,8 +903,15 @@ function parseAnnuityTypeConfig(type?: string) {
         
 
         // Required inflation-adjusted gross target
-        const baseIncomeTarget = getTargetIncomeForAge(profile, age);
-        const requiredNetIncomeTarget = baseIncomeTarget * inflationFactor;
+        const maxDrawdownIncomeTarget = getTargetIncomeForAge(profile, age);
+        const actualSpendingBase = getActualSpendingTargetForAge(profile, age);
+        const isReinvestExcess = Boolean(
+          profile.reinvestExcessDrawdown ||
+          profile.maximizedSpendConfig?.reinvestExcessDrawdown
+        );
+
+        const requiredNetIncomeTarget = actualSpendingBase * inflationFactor;
+        const drawdownNetTarget = isReinvestExcess ? (maxDrawdownIncomeTarget * inflationFactor) : (maxDrawdownIncomeTarget * inflationFactor);
 
         // State Pension (Primary + Partner if couple mode)
         let primaryStatePension = 0;
@@ -962,7 +969,7 @@ function parseAnnuityTypeConfig(type?: string) {
         const guaranteedIncomeTotal = primaryStatePension + partnerStatePension + annuityIncomeThisYear + dbIncomeThisYear + taxableFixedIncomeThisYr + taxFreeFixedIncomeThisYr;
         const netGuaranteedIncomeSecured = Math.max(0, guaranteedIncomeTotal - guaranteedTaxLiability);
 
-        let remainingNeeded = Math.max(0, requiredNetIncomeTarget - netGuaranteedIncomeSecured);
+        let remainingNeeded = Math.max(0, drawdownNetTarget - netGuaranteedIncomeSecured);
 
         const getNetFromSpecificDraws = (priG: number, partG: number) => {
           const priTaxFree = (!pclsTaken && primaryCumulativeTaxFreeDrawn < maxLsa)
@@ -1096,7 +1103,36 @@ function parseAnnuityTypeConfig(type?: string) {
           }
         }
 
-        if (effectiveStrategy === 'isa_first' || effectiveStrategy === 'cash_first') {
+        if (isReinvestExcess) {
+          const hasPensionAccess = canAccessPension || partnerCanAccessPension;
+          if (hasPensionAccess && pensionPot > 0) {
+            const pensionNetNeeded = Math.max(0, drawdownNetTarget - netGuaranteedIncomeSecured);
+            if (pensionNetNeeded > 0) {
+              const grossDraw = getGrossPensionNeededForNet(pensionNetNeeded, pensionPot);
+              const draw = Math.min(pensionPot, grossDraw);
+              deductProRata("pension", draw);
+              const totalAvail = (canAccessPension ? primaryPensionPot : 0) + (partnerCanAccessPension ? partnerPensionPot : 0);
+              const priR = (canAccessPension && totalAvail > 0) ? primaryPensionPot / totalAvail : (canAccessPension ? 1 : 0);
+              const netPensionDraw = getNetFromSpecificDraws(canAccessPension ? draw * priR : 0, partnerCanAccessPension ? draw * (1 - priR) : 0);
+              remainingNeeded = Math.max(0, requiredNetIncomeTarget - (netGuaranteedIncomeSecured + netPensionDraw));
+            } else {
+              remainingNeeded = Math.max(0, requiredNetIncomeTarget - netGuaranteedIncomeSecured);
+            }
+          } else {
+            remainingNeeded = Math.max(0, requiredNetIncomeTarget - netGuaranteedIncomeSecured);
+          }
+
+          if (isaPot > 0 && remainingNeeded > 0) {
+            const draw = Math.min(isaPot, remainingNeeded);
+            deductProRata("isa", draw);
+            remainingNeeded -= draw;
+          }
+          if (cashGiaPot > 0 && remainingNeeded > 0) {
+            const draw = Math.min(cashGiaPot, remainingNeeded);
+            deductProRata("cashGia", draw);
+            remainingNeeded -= draw;
+          }
+        } else if (effectiveStrategy === 'isa_first' || effectiveStrategy === 'cash_first') {
           const firstPot = effectiveStrategy === 'isa_first' ? 'isa' : 'cashGia';
           const secondPot = effectiveStrategy === 'isa_first' ? 'cashGia' : 'isa';
           const firstPotAmt = firstPot === 'isa' ? isaPot : cashGiaPot;
@@ -1163,21 +1199,20 @@ function parseAnnuityTypeConfig(type?: string) {
           const totalTargetGross = priTargetGross + partTargetGross;
           totalTargetNet = getNetFromSpecificDraws(priTargetGross, partTargetGross);
 
-          // For bracket filling strategies, do not scale down - fill the target bracket as requested.
-
-          const totalPensionDraw = priTargetGross + partTargetGross;
-          if (totalPensionDraw > 0) {
-            deductProRata("pension", totalPensionDraw);
-            if (totalTargetNet > remainingNeeded) {
-              const surplus = totalTargetNet - remainingNeeded;
-              const reinvestOpt = profile.annuityExcessReinvestOption || 'cash';
-              if (reinvestOpt === 'isa' || reinvestOpt === 'stocks_and_shares_isa' || reinvestOpt === 'cash_isa') {
-                addProRata("isa", surplus, false);
-              } else if (reinvestOpt !== 'none') {
-                addProRata("cashGia", surplus, false);
-              }
-              remainingNeeded = 0;
-            } else {
+          if (totalTargetNet > remainingNeeded && totalTargetNet > 0) {
+            const surplus = totalTargetNet - remainingNeeded;
+            const reinvestOpt = profile.maximizedSpendConfig?.reinvestDestinationPot || profile.annuityExcessReinvestOption || 'isa';
+            if (reinvestOpt === 'isa' || reinvestOpt === 'stocks_and_shares_isa' || reinvestOpt === 'cash_isa') {
+              addProRata("isa", surplus, false);
+            } else if (reinvestOpt !== 'none') {
+              addProRata("cashGia", surplus, false);
+            }
+            deductProRata("pension", totalTargetGross);
+            remainingNeeded = 0;
+          } else {
+            const totalPensionDraw = priTargetGross + partTargetGross;
+            if (totalPensionDraw > 0) {
+              deductProRata("pension", totalPensionDraw);
               remainingNeeded = Math.max(0, remainingNeeded - totalTargetNet);
             }
           }

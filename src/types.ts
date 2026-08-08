@@ -186,8 +186,11 @@ export interface SpendingPhasesConfig {
   customRanges?: SpendingAgeRange[];
 }
 
+export type CoupleMaxSpendScope = 'couple' | 'primary' | 'partner';
+
 export interface MaximizedSpendConfig {
   enabled: boolean;
+  coupleScope?: CoupleMaxSpendScope;
   targetAnnualIncome: number;
   bridgeAnnualIncome?: number;
   spendingPattern?: 'uniform' | 'proportional_phases' | 'front_loaded';
@@ -204,6 +207,16 @@ export interface MaximizedSpendConfig {
   reinvestExcessDrawdown?: boolean;
   actualSpendingTargetAnnual?: number;
   reinvestDestinationPot?: 'isa' | 'gia' | 'cash';
+
+  // Persisted Annuity Floor settings
+  annuityFloorMode?: 'none' | 'target_floor' | 'custom_percent';
+  annuityFloorIncomeTarget?: number;
+  annuityFloorPercent?: number;
+  annuityFloorAge?: number;
+  annuityRatePercent?: number;
+  annuityType?: AnnuityType;
+  annuityDurationOption?: AnnuityDurationOption;
+  annuityDurationUntilAge?: number;
 }
 
 export type DrawdownStrategy =

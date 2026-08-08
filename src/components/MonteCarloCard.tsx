@@ -27,11 +27,13 @@ interface MonteCarloCardProps {
 }
 
 export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, taxResult, onChange, showAllScenarios = false, appMode = 'basic' }) => {
+  const minHorizonAge = Math.max(profile.currentAge + 1, profile.targetRetirementAge || 55);
+
   const [params, setParams] = useState<MonteCarloParams>({
     numSimulations: 500,
     accumulationVolatility: 12.0,
     decumulationVolatility: 8.0,
-    maxAge: 90,
+    maxAge: Math.min(100, Math.max(minHorizonAge, profile.lifeExpectancyAge || 95)),
     stressedReturnDropPercent: 2.0,
     crashStartAge: profile.targetRetirementAge,
     crashDurationYears: 2,
@@ -39,6 +41,13 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
   });
 
   const [localParams, setLocalParams] = useState<MonteCarloParams>(params);
+
+  React.useEffect(() => {
+    if (profile.lifeExpectancyAge) {
+      const targetAge = Math.min(100, Math.max(minHorizonAge, profile.lifeExpectancyAge));
+      setLocalParams((prev) => (prev.maxAge === targetAge ? prev : { ...prev, maxAge: targetAge }));
+    }
+  }, [profile.lifeExpectancyAge, minHorizonAge]);
 
   React.useEffect(() => {
     const timer = setTimeout(() => {
@@ -232,7 +241,7 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
                 {profile.maximizedSpendConfig?.enabled && (
                   <span className="text-[10px] font-extrabold bg-amber-500/15 border border-amber-500/40 text-amber-900 dark:text-amber-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
                     <Zap className="w-3 h-3 fill-amber-500 text-amber-500 shrink-0" />
-                    Max Spend Solver Active (£{(profile.maximizedSpendConfig.targetAnnualIncome || profile.targetRetirementIncomeAnnual || 0).toLocaleString()}/yr)
+                    Max Drawdown Active (£{(profile.maximizedSpendConfig.targetAnnualIncome || profile.targetRetirementIncomeAnnual || 0).toLocaleString()}/yr)
                   </span>
                 )}
               </div>
@@ -249,6 +258,10 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
         const solvedTarget = profile.maximizedSpendConfig.targetAnnualIncome || profile.targetRetirementIncomeAnnual || 0;
         const baselineTarget = profile.maximizedSpendConfig.baselineTargetAnnualIncome || 0;
         const delta = solvedTarget - baselineTarget;
+        const isReinvest = Boolean(profile.maximizedSpendConfig.reinvestExcessDrawdown);
+        const actualTarget = profile.maximizedSpendConfig.actualSpendingTargetAnnual || profile.actualSpendingTargetAnnual || 0;
+        const destPot = (profile.maximizedSpendConfig.reinvestDestinationPot || 'isa').toUpperCase();
+
         return (
           <div className="bg-amber-500/10 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800/60 p-3.5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
             <div className="flex items-center gap-3">
@@ -261,18 +274,26 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
                     Max Spend Solver Data (Risk Modeled Target)
                   </span>
                   <span className="text-[10px] font-bold bg-amber-200/80 dark:bg-amber-900 text-amber-900 dark:text-amber-200 px-2 py-0.5 rounded-full">
-                    Die With Zero
+                    {isReinvest ? 'Max Drawdown & Reinvest' : 'Die With Zero'}
                   </span>
                 </div>
                 <p className="text-xs text-amber-900/80 dark:text-amber-200/80 font-medium">
-                  Monte Carlo volatility is modeled using your solved target of{' '}
-                  <strong className="font-extrabold text-amber-950 dark:text-amber-100">
-                    £{solvedTarget.toLocaleString()}/yr
-                  </strong>
-                  {baselineTarget > 0 && delta > 0 && (
-                    <> (unlocked <strong className="text-emerald-700 dark:text-emerald-300">+£{delta.toLocaleString()}/yr</strong> vs baseline)</>
+                  {isReinvest ? (
+                    <>
+                      Drawing down max <strong className="font-extrabold text-amber-950 dark:text-amber-100">£{solvedTarget.toLocaleString()}/yr</strong>. Meeting lifestyle spend of <strong className="font-extrabold text-emerald-800 dark:text-emerald-300">£{actualTarget.toLocaleString()}/yr</strong> and automatically reinvesting surplus into your <strong>{destPot} pot</strong>.
+                    </>
+                  ) : (
+                    <>
+                      Monte Carlo volatility is modeled using your solved target of{' '}
+                      <strong className="font-extrabold text-amber-950 dark:text-amber-100">
+                        £{solvedTarget.toLocaleString()}/yr
+                      </strong>
+                      {baselineTarget > 0 && delta > 0 && (
+                        <> (unlocked <strong className="text-emerald-700 dark:text-emerald-300">+£{delta.toLocaleString()}/yr</strong> vs baseline)</>
+                      )}
+                      .
+                    </>
                   )}
-                  .
                 </p>
               </div>
             </div>
@@ -1311,15 +1332,27 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
               </div>
               <select
                 value={localParams.maxAge}
-                onChange={(e) => setLocalParams((prev) => ({ ...prev, maxAge: Number(e.target.value) }))}
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  setLocalParams((prev) => ({ ...prev, maxAge: val }));
+                  if (onChange && profile.lifeExpectancyAge !== val) {
+                    onChange({ ...profile, lifeExpectancyAge: val });
+                  }
+                }}
                 className="w-full px-2.5 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100"
               >
-                <option value={85}>To Age 85</option>
-                <option value={90}>To Age 90</option>
-                <option value={95}>To Age 95</option>
-                <option value={100}>To Age 100</option>
+                {Array.from(
+                  { length: Math.max(1, 100 - minHorizonAge + 1) },
+                  (_, i) => minHorizonAge + i
+                ).map((age) => (
+                  <option key={age} value={age}>
+                    To Age {age} {age === profile.targetRetirementAge ? '(Retirement Start)' : age === 90 ? '(Standard)' : age === 95 ? '(Default Planning Horizon)' : age === 100 ? '(Max 100)' : ''}
+                  </option>
+                ))}
               </select>
-              <p className="text-[10px] text-slate-400 dark:text-slate-500 font-normal mt-1">Target age model length</p>
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 font-normal mt-1">
+                Target model horizon age (Retirement Start Age {profile.targetRetirementAge} to 100). Also synced with Historic Market Modeling.
+              </p>
             </div>
           </div>
         </div>

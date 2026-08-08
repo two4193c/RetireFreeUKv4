@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { UserProfile, InvestmentPots, AnnuityType, AnnuityDurationOption } from '../types';
+import { UserProfile, InvestmentPots, AnnuityType, AnnuityDurationOption, CoupleMaxSpendScope } from '../types';
 import { solveMaximizedSpend, SolveMaximizedSpendResult, createCandidateProfile, AnnuityFloorMode } from '../utils/maximizedSpendSolver';
 import {
   X,
@@ -17,6 +17,9 @@ import {
   Layers,
   Calendar,
   AlertCircle,
+  RefreshCw,
+  Users,
+  User,
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
@@ -41,9 +44,22 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
   const initialEndAge = profile.lifeExpectancyAge || 95;
   const pensionAccessAge = profile.protectedPensionAccessAge || 57;
 
-  const [targetEndAge, setTargetEndAge] = useState<number>(Math.max(currentRetirementAge + 5, initialEndAge));
-  const [targetLegacyBuffer, setTargetLegacyBuffer] = useState<number>(0);
+  const cfg = profile.maximizedSpendConfig;
+
+  const [coupleScope, setCoupleScope] = useState<CoupleMaxSpendScope>(
+    cfg?.coupleScope ?? 'couple'
+  );
+
+  const [targetEndAge, setTargetEndAge] = useState<number>(
+    cfg?.targetEndAge ?? Math.max(currentRetirementAge + 5, initialEndAge)
+  );
+  const [targetLegacyBuffer, setTargetLegacyBuffer] = useState<number>(
+    cfg?.targetLegacyBuffer ?? 0
+  );
   const [spendingPattern, setSpendingPattern] = useState<'uniform' | 'proportional_phases' | 'front_loaded'>(() => {
+    if (cfg?.spendingPattern) {
+      return cfg.spendingPattern;
+    }
     if (profile.spendingPhases?.customRanges && profile.spendingPhases.customRanges.length > 0) {
       return 'proportional_phases';
     }
@@ -54,20 +70,52 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
   });
 
   // Annuity Floor Options State
-  const [annuityFloorMode, setAnnuityFloorMode] = useState<AnnuityFloorMode>('none');
-  const [annuityFloorIncomeTarget, setAnnuityFloorIncomeTarget] = useState<number>(15000);
-  const [annuityFloorPercent, setAnnuityFloorPercent] = useState<number>(40);
-  const [annuityFloorAge, setAnnuityFloorAge] = useState<number>(profile.targetRetirementAge || 60);
-  const [annuityRatePercent, setAnnuityRatePercent] = useState<number>(6.0);
-  const [annuityType, setAnnuityType] = useState<AnnuityType>('inflation_linked_single');
-  const [annuityDurationOption, setAnnuityDurationOption] = useState<AnnuityDurationOption>('lifetime');
-  const [annuityDurationUntilAge, setAnnuityDurationUntilAge] = useState<number>(75);
+  const [annuityFloorMode, setAnnuityFloorMode] = useState<AnnuityFloorMode>(
+    cfg?.annuityFloorMode ?? 'none'
+  );
+  const [annuityFloorIncomeTarget, setAnnuityFloorIncomeTarget] = useState<number>(
+    cfg?.annuityFloorIncomeTarget ?? 15000
+  );
+  const [annuityFloorPercent, setAnnuityFloorPercent] = useState<number>(
+    cfg?.annuityFloorPercent ?? 40
+  );
+  const [annuityFloorAge, setAnnuityFloorAge] = useState<number>(
+    cfg?.annuityFloorAge ?? profile.annuityPurchaseAge ?? profile.targetRetirementAge ?? 60
+  );
+  const [annuityRatePercent, setAnnuityRatePercent] = useState<number>(
+    cfg?.annuityRatePercent ?? profile.annuityRatePercent ?? 6.0
+  );
+  const [annuityType, setAnnuityType] = useState<AnnuityType>(
+    cfg?.annuityType ?? profile.annuityType ?? 'inflation_linked_single'
+  );
+  const [annuityDurationOption, setAnnuityDurationOption] = useState<AnnuityDurationOption>(
+    cfg?.annuityDurationOption ?? profile.annuityDurationOption ?? 'lifetime'
+  );
+  const [annuityDurationUntilAge, setAnnuityDurationUntilAge] = useState<number>(
+    cfg?.annuityDurationUntilAge ?? profile.annuityDurationUntilAge ?? 75
+  );
+
+  // Excess Drawdown Reinvestment State
+  const [reinvestExcessDrawdown, setReinvestExcessDrawdown] = useState<boolean>(
+    Boolean(profile.reinvestExcessDrawdown || profile.maximizedSpendConfig?.reinvestExcessDrawdown)
+  );
+  const [actualSpendingTargetAnnual, setActualSpendingTargetAnnual] = useState<number>(
+    profile.actualSpendingTargetAnnual ??
+    profile.maximizedSpendConfig?.actualSpendingTargetAnnual ??
+    profile.targetRetirementIncomeAnnual ??
+    25000
+  );
+  const [reinvestDestinationPot, setReinvestDestinationPot] = useState<'isa' | 'gia' | 'cash'>(
+    profile.maximizedSpendConfig?.reinvestDestinationPot ||
+    (profile.annuityExcessReinvestOption === 'gia' ? 'gia' : profile.annuityExcessReinvestOption === 'cash' ? 'cash' : 'isa')
+  );
 
   // Compute solver result dynamically on parameter changes
   const solverResult: SolveMaximizedSpendResult = useMemo(() => {
     return solveMaximizedSpend({
       profile,
       pots,
+      coupleScope,
       targetEndAge,
       targetLegacyBuffer,
       spendingPattern,
@@ -79,10 +127,14 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
       annuityType,
       annuityDurationOption,
       annuityDurationUntilAge,
+      reinvestExcessDrawdown,
+      actualSpendingTargetAnnual,
+      reinvestDestinationPot,
     });
   }, [
     profile,
     pots,
+    coupleScope,
     targetEndAge,
     targetLegacyBuffer,
     spendingPattern,
@@ -94,6 +146,9 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
     annuityType,
     annuityDurationOption,
     annuityDurationUntilAge,
+    reinvestExcessDrawdown,
+    actualSpendingTargetAnnual,
+    reinvestDestinationPot,
   ]);
 
   const {
@@ -108,6 +163,7 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
     projectionsWithMaxSpend,
     phaseIncomes,
     annuityFloorDetails,
+    reinvestExcessDetails,
   } = solverResult;
 
   // Format currency helpers
@@ -171,7 +227,13 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
             {/* KPI 1: MAXIMIZED ANNUAL SPEND */}
             <div className="p-4 bg-gradient-to-br from-amber-500/10 to-orange-500/10 dark:from-amber-950/40 dark:to-orange-950/30 rounded-2xl border-2 border-amber-300 dark:border-amber-700/80 space-y-1 relative overflow-hidden shadow-xs">
               <div className="text-[10px] font-extrabold uppercase tracking-wider text-amber-800 dark:text-amber-300 flex items-center justify-between">
-                <span>{bridgeAnnualIncome !== undefined ? 'Post-Access Target Income' : 'Maximized Target Income'}</span>
+                <span>
+                  {bridgeAnnualIncome !== undefined
+                    ? 'Post-Access Target Income'
+                    : profile.isCouplePlanning
+                    ? `Max Target (${coupleScope === 'couple' ? 'Couple' : coupleScope === 'partner' ? (profile.partnerName || 'Partner') : (profile.name || 'Primary')})`
+                    : 'Maximized Target Income'}
+                </span>
                 <Sparkles className="w-3.5 h-3.5 text-amber-500" />
               </div>
               <div className="text-2xl font-black text-slate-900 dark:text-slate-100">
@@ -267,6 +329,88 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
                 Live Dynamic Calculation
               </span>
             </div>
+
+            {/* COUPLE MODE OPTIMIZATION SCOPE */}
+            {profile.isCouplePlanning && (
+              <div className="p-4 bg-indigo-50/70 dark:bg-indigo-950/40 rounded-2xl border border-indigo-200 dark:border-indigo-800/80 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-extrabold uppercase tracking-wider text-indigo-950 dark:text-indigo-200 flex items-center gap-1.5">
+                    <Users className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                    <span>Apply Max Spend Solver To</span>
+                  </label>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-200 dark:bg-indigo-900/80 text-indigo-900 dark:text-indigo-200">
+                    Couple Planning Active
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-600 dark:text-slate-300">
+                  Select whether to calculate the max spend budget for joint household wealth, or isolate individual partner assets:
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setCoupleScope('couple')}
+                    className={`p-3 rounded-xl border text-left transition-all flex flex-col justify-between cursor-pointer ${
+                      coupleScope === 'couple'
+                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-600/20'
+                        : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-indigo-400 dark:hover:border-indigo-500'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-extrabold text-xs flex items-center gap-1.5">
+                        <Users className="w-3.5 h-3.5" />
+                        As a Couple
+                      </span>
+                      {coupleScope === 'couple' && <Check className="w-3.5 h-3.5" />}
+                    </div>
+                    <span className={`text-[10px] mt-1.5 ${coupleScope === 'couple' ? 'text-indigo-100' : 'text-slate-500 dark:text-slate-400'}`}>
+                      Combined Joint Household
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setCoupleScope('primary')}
+                    className={`p-3 rounded-xl border text-left transition-all flex flex-col justify-between cursor-pointer ${
+                      coupleScope === 'primary'
+                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-600/20'
+                        : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-indigo-400 dark:hover:border-indigo-500'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-extrabold text-xs flex items-center gap-1.5 truncate">
+                        <User className="w-3.5 h-3.5 shrink-0" />
+                        <span className="truncate">{profile.name || 'Primary Partner'}</span>
+                      </span>
+                      {coupleScope === 'primary' && <Check className="w-3.5 h-3.5 shrink-0" />}
+                    </div>
+                    <span className={`text-[10px] mt-1.5 ${coupleScope === 'primary' ? 'text-indigo-100' : 'text-slate-500 dark:text-slate-400'}`}>
+                      Primary Wealth & Pensions Only
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setCoupleScope('partner')}
+                    className={`p-3 rounded-xl border text-left transition-all flex flex-col justify-between cursor-pointer ${
+                      coupleScope === 'partner'
+                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-600/20'
+                        : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-indigo-400 dark:hover:border-indigo-500'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-extrabold text-xs flex items-center gap-1.5 truncate">
+                        <User className="w-3.5 h-3.5 shrink-0" />
+                        <span className="truncate">{profile.partnerName || 'Partner'}</span>
+                      </span>
+                      {coupleScope === 'partner' && <Check className="w-3.5 h-3.5 shrink-0" />}
+                    </div>
+                    <span className={`text-[10px] mt-1.5 ${coupleScope === 'partner' ? 'text-indigo-100' : 'text-slate-500 dark:text-slate-400'}`}>
+                      Partner Wealth & Pensions Only
+                    </span>
+                  </button>
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               {/* CONTROL 1: TARGET PLAN END AGE */}
@@ -639,6 +783,96 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
                       At age <strong>{annuityFloorDetails.annuityPurchaseAge}</strong>, ~<strong>{annuityFloorDetails.allocationPercent}%</strong> of pension pot ({fmt(annuityFloorDetails.pensionPotAllocated)}) is converted into a guaranteed annuity floor yielding <strong className="font-extrabold">{fmt(annuityFloorDetails.guaranteedAnnualIncome)}/yr</strong> {annuityDurationOption === 'until_age' ? `until age ${annuityDurationUntilAge}` : 'for life'} ({annuityType.replace(/_/g, ' ')}). The remaining flexi-drawdown funds generate <strong className="font-extrabold">{fmt(annuityFloorDetails.flexiDrawdownAnnualIncome)}/yr</strong> for a total spend target of <strong>{fmt(maxAnnualIncome)}/yr</strong>.
                     </p>
                   </div>
+                </div>
+              )}
+            </div>
+
+            {/* CONTROL 5: MAX DRAWDOWN WITH EXCESS REINVESTMENT */}
+            <div className="pt-3 border-t border-slate-200 dark:border-slate-700/80 space-y-4">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                    <RefreshCw className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h5 className="font-extrabold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                      <span>Max Drawdown & Reinvest Surplus</span>
+                      <span className="text-[9px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-800">
+                        Tax & Pot Optimizer
+                      </span>
+                    </h5>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                      Maximize tax-free & low-tax pension drawdowns up to {fmt(maxAnnualIncome)}/yr, keeping lifestyle spending at {fmt(actualSpendingTargetAnnual)}/yr and automatically reinvesting the surplus into another pot.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setReinvestExcessDrawdown(!reinvestExcessDrawdown)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-black cursor-pointer transition-all border flex items-center gap-1.5 ${
+                    reinvestExcessDrawdown
+                      ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                      : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100'
+                  }`}
+                >
+                  <span>{reinvestExcessDrawdown ? '✓ Active' : 'Enable Option'}</span>
+                </button>
+              </div>
+
+              {reinvestExcessDrawdown && (
+                <div className="p-3 bg-white dark:bg-slate-900 rounded-xl space-y-3 border border-slate-200 dark:border-slate-700">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                        <span>Actual Annual Spending Target</span>
+                        <span className="font-black text-emerald-600 dark:text-emerald-400">{fmt(actualSpendingTargetAnnual)}/yr</span>
+                      </label>
+                      <input
+                        type="number"
+                        step={1000}
+                        min={5000}
+                        max={maxAnnualIncome}
+                        value={actualSpendingTargetAnnual}
+                        onChange={(e) => setActualSpendingTargetAnnual(Math.max(0, parseInt(e.target.value) || 0))}
+                        className="w-full bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs font-bold p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-emerald-500"
+                      />
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                        Amount needed for lifestyle expenses. Surplus drawdown of <strong className="text-emerald-600 dark:text-emerald-400">{fmt(Math.max(0, maxAnnualIncome - actualSpendingTargetAnnual))}/yr</strong> will be reinvested.
+                      </p>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                        Reinvestment Destination Pot
+                      </label>
+                      <select
+                        value={reinvestDestinationPot}
+                        onChange={(e) => setReinvestDestinationPot(e.target.value as 'isa' | 'gia' | 'cash')}
+                        className="w-full bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs font-bold p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-emerald-500"
+                      >
+                        <option value="isa">ISA / Stocks & Shares ISA (Tax-Free Growth)</option>
+                        <option value="cash">Cash Savings Pot (Liquid Reserve)</option>
+                        <option value="gia">General Investment Account (GIA)</option>
+                      </select>
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                        Surplus income above spending requirement will accumulate in this pot annually.
+                      </p>
+                    </div>
+                  </div>
+
+                  {reinvestExcessDetails && (
+                    <div className="p-3 bg-emerald-500/10 dark:bg-emerald-950/40 rounded-xl border border-emerald-300 dark:border-emerald-800 flex items-start gap-2.5 text-xs text-emerald-900 dark:text-emerald-200">
+                      <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                      <div className="space-y-0.5">
+                        <div className="font-extrabold text-[11px] uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
+                          Reinvestment Strategy Active
+                        </div>
+                        <p className="text-[11px] leading-relaxed">
+                          Drawing down maximum <strong>{fmt(maxAnnualIncome)}/yr</strong> from pensions & pots. Spending <strong>{fmt(actualSpendingTargetAnnual)}/yr</strong> on lifestyle requirements. Reinvesting <strong>{fmt(reinvestExcessDetails.annualSurplusReinvested)}/yr</strong> surplus into your <strong>{reinvestDestinationPot.toUpperCase()} pot</strong>.
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

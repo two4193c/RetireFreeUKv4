@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { solveMaximizedSpend, createCandidateProfile, testFeasibility, disableMaximizedSpend } from '../maximizedSpendSolver';
 import { calculateUKTax } from '../ukTaxEngine';
 import { generateProjections } from '../projectionEngine';
-import { DEFAULT_PROFILE, DEFAULT_POTS } from '../defaultData';
+import { DEFAULT_PROFILE, DEFAULT_POTS, DEFAULT_PARTNER_POTS } from '../defaultData';
+import { InvestmentPots } from '../../types';
 
 describe('maximizedSpendSolver', () => {
   it('solves for a higher sustainable annual spend when wealth is ample', () => {
@@ -101,6 +102,74 @@ describe('maximizedSpendSolver', () => {
     expect(revertedProfile.spendingPhases?.enabled).toBe(false);
   });
 
+  it('produces identical result when re-running solver on an already max-enabled profile', () => {
+    const profile = {
+      ...DEFAULT_PROFILE,
+      targetRetirementIncomeAnnual: 25000,
+      targetRetirementAge: 60,
+      lifeExpectancyAge: 95,
+    };
+
+    const firstRun = solveMaximizedSpend({
+      profile,
+      pots: DEFAULT_POTS,
+      targetEndAge: 95,
+      targetLegacyBuffer: 0,
+      spendingPattern: 'proportional_phases',
+    });
+
+    const secondRun = solveMaximizedSpend({
+      profile: firstRun.bestCandidateProfile,
+      pots: DEFAULT_POTS,
+      targetEndAge: 95,
+      targetLegacyBuffer: 0,
+    });
+
+    expect(secondRun.maxAnnualIncome).toEqual(firstRun.maxAnnualIncome);
+    expect(secondRun.originalAnnualIncome).toEqual(firstRun.originalAnnualIncome);
+  });
+
+  it('solves maximized spend accurately when reinvest excess drawdown option is enabled', () => {
+    const profile = {
+      ...DEFAULT_PROFILE,
+      targetRetirementIncomeAnnual: 25000,
+      targetRetirementAge: 60,
+      lifeExpectancyAge: 95,
+    };
+
+    const amplePots: InvestmentPots = {
+      ...DEFAULT_POTS,
+      workplacePensionBalance: 600000,
+      sippBalance: 200000,
+      stocksAndSharesIsaBalance: 100000,
+    };
+
+    const resOff = solveMaximizedSpend({
+      profile,
+      pots: amplePots,
+      targetEndAge: 95,
+      targetLegacyBuffer: 0,
+      spendingPattern: 'uniform',
+      reinvestExcessDrawdown: false,
+    });
+
+    const resOn = solveMaximizedSpend({
+      profile,
+      pots: amplePots,
+      targetEndAge: 95,
+      targetLegacyBuffer: 0,
+      spendingPattern: 'uniform',
+      reinvestExcessDrawdown: true,
+      actualSpendingTargetAnnual: 25000,
+      reinvestDestinationPot: 'isa',
+    });
+
+    expect(resOn.maxAnnualIncome).toEqual(resOff.maxAnnualIncome);
+    expect(resOn.reinvestExcessDetails).toBeDefined();
+    expect(resOn.reinvestExcessDetails?.enabled).toBe(true);
+    expect(resOn.reinvestExcessDetails?.annualSurplusReinvested).toBe(resOff.maxAnnualIncome - 25000);
+  });
+
   it('solves maximized spend with guaranteed annuity floor target option', () => {
     const profile = {
       ...DEFAULT_PROFILE,
@@ -129,6 +198,120 @@ describe('maximizedSpendSolver', () => {
     expect(result.annuityFloorDetails?.guaranteedAnnualIncome).toBeGreaterThan(0);
     expect(result.annuityFloorDetails?.pensionPotAllocated).toBeGreaterThan(0);
     expect(result.bestCandidateProfile.incomeProductOption).toBe('hybrid');
+  });
+
+  it('persists solver settings (targetEndAge, targetLegacyBuffer, spendingPattern, annuityFloor) into maximizedSpendConfig', () => {
+    const profile = {
+      ...DEFAULT_PROFILE,
+      targetRetirementIncomeAnnual: 25000,
+      targetRetirementAge: 60,
+      lifeExpectancyAge: 95,
+    };
+
+    const result = solveMaximizedSpend({
+      profile,
+      pots: DEFAULT_POTS,
+      targetEndAge: 90,
+      targetLegacyBuffer: 50000,
+      spendingPattern: 'front_loaded',
+      annuityFloorMode: 'target_floor',
+      annuityFloorIncomeTarget: 12000,
+      annuityFloorAge: 65,
+      annuityRatePercent: 5.5,
+      annuityType: 'level_single',
+      annuityDurationOption: 'lifetime',
+    });
+
+    const candidateConfig = result.bestCandidateProfile.maximizedSpendConfig;
+    expect(candidateConfig).toBeDefined();
+    expect(candidateConfig?.targetEndAge).toBe(90);
+    expect(candidateConfig?.targetLegacyBuffer).toBe(50000);
+    expect(candidateConfig?.spendingPattern).toBe('front_loaded');
+    expect(candidateConfig?.annuityFloorMode).toBe('target_floor');
+    expect(candidateConfig?.annuityFloorIncomeTarget).toBe(12000);
+    expect(candidateConfig?.annuityFloorAge).toBe(65);
+    expect(candidateConfig?.annuityRatePercent).toBe(5.5);
+    expect(candidateConfig?.annuityType).toBe('level_single');
+
+    // Re-running solveMaximizedSpend with only the updated profile should pick up the persisted settings automatically
+    const reRun = solveMaximizedSpend({
+      profile: result.bestCandidateProfile,
+      pots: DEFAULT_POTS,
+    });
+
+    expect(reRun.targetEndAge).toBe(90);
+    expect(reRun.targetLegacyBuffer).toBe(50000);
+    expect(reRun.spendingPattern).toBe('front_loaded');
+    expect(reRun.annuityFloorDetails?.mode).toBe('target_floor');
+  });
+
+  it('supports couple mode solver scopes (as a couple, primary only, partner only)', () => {
+    const coupleProfile = {
+      ...DEFAULT_PROFILE,
+      isCouplePlanning: true,
+      name: 'Alex',
+      partnerName: 'Sam',
+      targetRetirementIncomeAnnual: 40000,
+      targetRetirementAge: 60,
+      partnerTargetRetirementAge: 60,
+      lifeExpectancyAge: 95,
+      partnerLifeExpectancyAge: 95,
+      partnerPots: {
+        ...DEFAULT_PARTNER_POTS,
+        workplacePensionBalance: 150000,
+        sippBalance: 50000,
+        stocksAndSharesIsaBalance: 40000,
+        cashIsaBalance: 10000,
+        lisaBalance: 0,
+        giaBalance: 0,
+        cashSavingsBalance: 5000,
+      },
+    };
+
+    const couplePots: InvestmentPots = {
+      ...DEFAULT_POTS,
+      workplacePensionBalance: 300000,
+      sippBalance: 100000,
+      stocksAndSharesIsaBalance: 60000,
+      cashIsaBalance: 20000,
+      lisaBalance: 0,
+      giaBalance: 0,
+      cashSavingsBalance: 10000,
+    };
+
+    // 1. Solve as a Couple
+    const coupleResult = solveMaximizedSpend({
+      profile: coupleProfile,
+      pots: couplePots,
+      coupleScope: 'couple',
+    });
+
+    expect(coupleResult.coupleScope).toBe('couple');
+    expect(coupleResult.bestCandidateProfile.maximizedSpendConfig?.coupleScope).toBe('couple');
+
+    // 2. Solve Primary Only
+    const primaryResult = solveMaximizedSpend({
+      profile: coupleProfile,
+      pots: couplePots,
+      coupleScope: 'primary',
+    });
+
+    expect(primaryResult.coupleScope).toBe('primary');
+    expect(primaryResult.bestCandidateProfile.maximizedSpendConfig?.coupleScope).toBe('primary');
+
+    // 3. Solve Partner Only
+    const partnerResult = solveMaximizedSpend({
+      profile: coupleProfile,
+      pots: couplePots,
+      coupleScope: 'partner',
+    });
+
+    expect(partnerResult.coupleScope).toBe('partner');
+    expect(partnerResult.bestCandidateProfile.maximizedSpendConfig?.coupleScope).toBe('partner');
+
+    // Combined couple max spend should be higher than primary priority or partner priority alone
+    expect(coupleResult.maxAnnualIncome).toBeGreaterThan(primaryResult.maxAnnualIncome);
+    expect(coupleResult.maxAnnualIncome).toBeGreaterThan(partnerResult.maxAnnualIncome);
   });
 
   it('solves maximized spend with fixed-term escalating annuity floor', () => {

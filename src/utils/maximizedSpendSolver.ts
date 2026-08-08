@@ -1,6 +1,7 @@
-import { UserProfile, InvestmentPots, YearProjection, SpendingPhasesConfig, AnnuityType, AnnuityDurationOption } from '../types';
+import { UserProfile, InvestmentPots, YearProjection, SpendingPhasesConfig, AnnuityType, AnnuityDurationOption, CoupleMaxSpendScope } from '../types';
 import { generateProjections } from './projectionEngine';
 import { calculateUKTax } from './ukTaxEngine';
+import { DEFAULT_PARTNER_POTS } from './defaultData';
 
 export type AnnuityFloorMode = 'none' | 'target_floor' | 'custom_percent';
 
@@ -18,6 +19,7 @@ export interface AnnuityFloorOptions {
 export interface SolveMaximizedSpendOptions extends AnnuityFloorOptions {
   profile: UserProfile;
   pots: InvestmentPots;
+  coupleScope?: CoupleMaxSpendScope;
   targetEndAge?: number; // e.g. 95 (default)
   targetLegacyBuffer?: number; // e.g. 0 (Die with Zero)
   spendingPattern?: 'uniform' | 'proportional_phases' | 'front_loaded';
@@ -45,6 +47,7 @@ export interface SolveMaximizedSpendResult {
   bestCandidateProfile: UserProfile;
   projectionsWithMaxSpend: YearProjection[];
   spendingPattern: 'uniform' | 'proportional_phases' | 'front_loaded';
+  coupleScope: CoupleMaxSpendScope;
   phaseIncomes?: {
     goGoIncome?: number;
     slowGoIncome?: number;
@@ -99,6 +102,9 @@ export function disableMaximizedSpend(profile: UserProfile): UserProfile {
  * Gets the original baseline target income of a profile, looking at custom ranges or goGo income if spending phases are enabled.
  */
 export function getOriginalBaseIncome(profile: UserProfile): number {
+  if (profile.maximizedSpendConfig?.enabled && profile.maximizedSpendConfig.baselineTargetAnnualIncome !== undefined) {
+    return profile.maximizedSpendConfig.baselineTargetAnnualIncome;
+  }
   if (profile.spendingPhases?.enabled) {
     if (profile.spendingPhases.customRanges && profile.spendingPhases.customRanges.length > 0) {
       const retAge = profile.targetRetirementAge || 60;
@@ -113,16 +119,36 @@ export function getOriginalBaseIncome(profile: UserProfile): number {
 }
 
 /**
+ * Prepares isolated profile and pots for solver evaluation based on Couple Scope
+ */
+export function getScopeEvaluationInputs(
+  profileInput: UserProfile,
+  potsInput: InvestmentPots,
+  scope: CoupleMaxSpendScope = 'couple'
+): { evalProfile: UserProfile; evalPots: InvestmentPots } {
+  // Always retain full couple profile and pots so that the excluded person's selected drawdown strategy,
+  // assets, pensions, and guaranteed income streams remain fully active in the solver simulation.
+  return { evalProfile: profileInput, evalPots: potsInput };
+}
+
+/**
  * Calculates candidate profile with a given target baseline income and pattern
  */
 export function createCandidateProfile(
-  profile: UserProfile,
+  profileInput: UserProfile,
   baselineIncome: number,
   pattern: 'uniform' | 'proportional_phases' | 'front_loaded',
   pots?: InvestmentPots,
   annuityFloorOpts?: AnnuityFloorOptions,
-  reinvestOpts?: ReinvestExcessOptions
+  reinvestOpts?: ReinvestExcessOptions,
+  targetEndAge?: number,
+  targetLegacyBuffer?: number,
+  coupleScope?: CoupleMaxSpendScope
 ): UserProfile {
+  const profile = profileInput.maximizedSpendConfig?.enabled
+    ? disableMaximizedSpend(profileInput)
+    : profileInput;
+
   const candidate = JSON.parse(JSON.stringify(profile)) as UserProfile;
   const roundedBaseline = Math.round(baselineIncome);
 
@@ -135,11 +161,12 @@ export function createCandidateProfile(
     profile.maximizedSpendConfig?.actualSpendingTargetAnnual ??
     profile.targetRetirementIncomeAnnual ??
     30000;
-  const reinvestDestination =
+  const rawDest =
     reinvestOpts?.reinvestDestinationPot ||
     profile.maximizedSpendConfig?.reinvestDestinationPot ||
-    profile.annuityExcessReinvestOption ||
-    'isa';
+    profile.annuityExcessReinvestOption;
+  const reinvestDestination: 'isa' | 'gia' | 'cash' =
+    (rawDest === 'gia' || rawDest === 'cash') ? rawDest : 'isa';
 
   // Apply Annuity Floor configuration if enabled
   if (annuityFloorOpts && annuityFloorOpts.annuityFloorMode && annuityFloorOpts.annuityFloorMode !== 'none') {
@@ -240,6 +267,7 @@ export function createCandidateProfile(
 
   candidate.maximizedSpendConfig = {
     enabled: true,
+    coupleScope: coupleScope || profile.maximizedSpendConfig?.coupleScope || 'couple',
     targetAnnualIncome: roundedBaseline,
     spendingPattern: pattern,
     spendingPhases: maxPhases,
@@ -248,11 +276,26 @@ export function createCandidateProfile(
     reinvestExcessDrawdown: isReinvestExcess,
     actualSpendingTargetAnnual: actualSpendingTarget,
     reinvestDestinationPot: reinvestDestination,
+    targetEndAge,
+    targetLegacyBuffer,
+    annuityFloorMode: annuityFloorOpts?.annuityFloorMode || 'none',
+    annuityFloorIncomeTarget: annuityFloorOpts?.annuityFloorIncomeTarget,
+    annuityFloorPercent: annuityFloorOpts?.annuityFloorPercent,
+    annuityFloorAge: annuityFloorOpts?.annuityFloorAge,
+    annuityRatePercent: annuityFloorOpts?.annuityRatePercent,
+    annuityType: annuityFloorOpts?.annuityType,
+    annuityDurationOption: annuityFloorOpts?.annuityDurationOption,
+    annuityDurationUntilAge: annuityFloorOpts?.annuityDurationUntilAge,
   };
 
-  // Explicitly set the target income: if reinvestExcessDrawdown is enabled, keep targetRetirementIncomeAnnual as actualSpendingTarget
-  candidate.targetRetirementIncomeAnnual = isReinvestExcess ? actualSpendingTarget : roundedBaseline;
-  candidate.spendingPhases = maxPhases;
+  // Set target income: if reinvest surplus is enabled, living spending target remains baseline, while maximized drawdown target is stored in maximizedSpendConfig.
+  if (isReinvestExcess) {
+    candidate.targetRetirementIncomeAnnual = baselineTargetAnnualIncome;
+    candidate.spendingPhases = baselineSpendingPhases;
+  } else {
+    candidate.targetRetirementIncomeAnnual = roundedBaseline;
+    candidate.spendingPhases = maxPhases;
+  }
 
   // Clamping bridge ranges is done whenever pots are provided and retAge < pensionAccessAge
   if (pots) {
@@ -413,20 +456,23 @@ export function testFeasibility(
  * Solves for the Maximized Sustainable Annual Spend (Die With Zero Solver)
  */
 export function solveMaximizedSpend(options: SolveMaximizedSpendOptions): SolveMaximizedSpendResult {
+  const cfg = options.profile.maximizedSpendConfig;
+
   const {
     profile,
     pots,
-    targetEndAge = profile.lifeExpectancyAge || 95,
-    targetLegacyBuffer = 0,
-    spendingPattern = 'uniform',
-    annuityFloorMode = 'none',
-    annuityFloorIncomeTarget = 15000,
-    annuityFloorPercent = 40,
-    annuityFloorAge,
-    annuityRatePercent = 6.0,
-    annuityType = 'inflation_linked_single',
-    annuityDurationOption = 'lifetime',
-    annuityDurationUntilAge = 75,
+    coupleScope = options.coupleScope ?? cfg?.coupleScope ?? 'couple',
+    targetEndAge = options.targetEndAge ?? cfg?.targetEndAge ?? profile.lifeExpectancyAge ?? 95,
+    targetLegacyBuffer = options.targetLegacyBuffer ?? cfg?.targetLegacyBuffer ?? 0,
+    spendingPattern = options.spendingPattern ?? cfg?.spendingPattern ?? 'uniform',
+    annuityFloorMode = options.annuityFloorMode ?? cfg?.annuityFloorMode ?? 'none',
+    annuityFloorIncomeTarget = options.annuityFloorIncomeTarget ?? cfg?.annuityFloorIncomeTarget ?? 15000,
+    annuityFloorPercent = options.annuityFloorPercent ?? cfg?.annuityFloorPercent ?? 40,
+    annuityFloorAge = options.annuityFloorAge ?? cfg?.annuityFloorAge ?? profile.annuityPurchaseAge ?? profile.targetRetirementAge ?? 60,
+    annuityRatePercent = options.annuityRatePercent ?? cfg?.annuityRatePercent ?? profile.annuityRatePercent ?? 6.0,
+    annuityType = options.annuityType ?? cfg?.annuityType ?? profile.annuityType ?? 'inflation_linked_single',
+    annuityDurationOption = options.annuityDurationOption ?? cfg?.annuityDurationOption ?? profile.annuityDurationOption ?? 'lifetime',
+    annuityDurationUntilAge = options.annuityDurationUntilAge ?? cfg?.annuityDurationUntilAge ?? profile.annuityDurationUntilAge ?? 75,
   } = options;
 
   const annuityFloorOpts: AnnuityFloorOptions = {
@@ -446,6 +492,8 @@ export function solveMaximizedSpend(options: SolveMaximizedSpendOptions): SolveM
     reinvestDestinationPot: options.reinvestDestinationPot,
   };
 
+  const { evalProfile, evalPots } = getScopeEvaluationInputs(profile, pots, coupleScope);
+
   const originalAnnualIncome = Math.round(getOriginalBaseIncome(profile));
   const retAge = profile.targetRetirementAge || 60;
   const pensionAccessAge = profile.protectedPensionAccessAge || 57;
@@ -453,35 +501,71 @@ export function solveMaximizedSpend(options: SolveMaximizedSpendOptions): SolveM
 
   let low = 0;
   // Calculate dynamic high ceiling based on total pots
-  const totalPots = (pots.workplacePensionBalance || 0) +
-    (pots.sippBalance || 0) +
-    (pots.stocksAndSharesIsaBalance || 0) +
-    (pots.cashIsaBalance || 0) +
-    (pots.lisaBalance || 0) +
-    (pots.giaBalance || 0) +
-    (pots.cashSavingsBalance || 0);
+  const totalPots = (evalPots.workplacePensionBalance || 0) +
+    (evalPots.sippBalance || 0) +
+    (evalPots.stocksAndSharesIsaBalance || 0) +
+    (evalPots.cashIsaBalance || 0) +
+    (evalPots.lisaBalance || 0) +
+    (evalPots.giaBalance || 0) +
+    (evalPots.cashSavingsBalance || 0) +
+    (evalProfile.partnerPots ? (
+      (evalProfile.partnerPots.workplacePensionBalance || 0) +
+      (evalProfile.partnerPots.sippBalance || 0) +
+      (evalProfile.partnerPots.stocksAndSharesIsaBalance || 0) +
+      (evalProfile.partnerPots.cashIsaBalance || 0) +
+      (evalProfile.partnerPots.lisaBalance || 0) +
+      (evalProfile.partnerPots.giaBalance || 0) +
+      (evalProfile.partnerPots.cashSavingsBalance || 0)
+    ) : 0);
 
   let high = Math.max(2_000_000, totalPots * 2);
   let bestFeasibleIncome = low;
-  let bestCandidateProfile: UserProfile = createCandidateProfile(profile, low, spendingPattern, pots, annuityFloorOpts, reinvestOpts);
   let bestProjections: YearProjection[] = [];
   let bestFinalPot = 0;
 
-  // Binary search over 28 iterations
+  // Binary search over 28 iterations to find maximum sustainable target income based on portfolio capacity and scope
   for (let i = 0; i < 28; i++) {
     const mid = Math.floor((low + high) / 2);
-    const candidateProfile = createCandidateProfile(profile, mid, spendingPattern, pots, annuityFloorOpts, reinvestOpts);
-    const result = testFeasibility(candidateProfile, pots, clampedEndAge, targetLegacyBuffer);
+    const candidateProfile = createCandidateProfile(
+      evalProfile,
+      mid,
+      spendingPattern,
+      evalPots,
+      annuityFloorOpts,
+      undefined, // reinvestment option is applied to final profile, not used to alter binary search target income
+      clampedEndAge,
+      targetLegacyBuffer,
+      coupleScope
+    );
+    const result = testFeasibility(candidateProfile, evalPots, clampedEndAge, targetLegacyBuffer);
 
     if (result.feasible) {
       bestFeasibleIncome = mid;
-      bestCandidateProfile = candidateProfile;
       bestProjections = result.projections;
       bestFinalPot = result.finalPot;
       low = mid + 1;
     } else {
       high = mid - 1;
     }
+  }
+
+  const bestCandidateProfile = createCandidateProfile(
+    profile,
+    bestFeasibleIncome,
+    spendingPattern,
+    pots,
+    annuityFloorOpts,
+    reinvestOpts,
+    clampedEndAge,
+    targetLegacyBuffer,
+    coupleScope
+  );
+
+  // If reinvest surplus is active, re-evaluate projections with reinvestment enabled
+  if (reinvestOpts?.reinvestExcessDrawdown) {
+    const finalResult = testFeasibility(bestCandidateProfile, pots, clampedEndAge, targetLegacyBuffer);
+    bestProjections = finalResult.projections;
+    bestFinalPot = finalResult.finalPot;
   }
 
   // Calculate extra lifetime spend across retirement years
@@ -562,7 +646,35 @@ export function solveMaximizedSpend(options: SolveMaximizedSpendOptions): SolveM
     bestCandidateProfile,
     projectionsWithMaxSpend: bestProjections,
     spendingPattern,
+    coupleScope,
     phaseIncomes,
     annuityFloorDetails,
+    reinvestExcessDetails: (() => {
+      const isReinvest = Boolean(
+        options.reinvestExcessDrawdown ||
+        bestCandidateProfile.reinvestExcessDrawdown ||
+        bestCandidateProfile.maximizedSpendConfig?.reinvestExcessDrawdown
+      );
+      if (!isReinvest) return undefined;
+      const actualSpendingTargetAnnual =
+        options.actualSpendingTargetAnnual ??
+        bestCandidateProfile.actualSpendingTargetAnnual ??
+        bestCandidateProfile.maximizedSpendConfig?.actualSpendingTargetAnnual ??
+        originalAnnualIncome;
+      const maxAnnualDrawdown = bestFeasibleIncome;
+      const annualSurplusReinvested = Math.max(0, maxAnnualDrawdown - actualSpendingTargetAnnual);
+      const reinvestDestinationPot =
+        options.reinvestDestinationPot ||
+        bestCandidateProfile.maximizedSpendConfig?.reinvestDestinationPot ||
+        'isa';
+
+      return {
+        enabled: true,
+        actualSpendingTargetAnnual,
+        maxAnnualDrawdown,
+        annualSurplusReinvested,
+        reinvestDestinationPot,
+      };
+    })(),
   };
 }

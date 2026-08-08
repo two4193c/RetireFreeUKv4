@@ -55,7 +55,10 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
   profile,
   pots,
   taxResult,
+  onChange,
 }) => {
+  const minHorizonAge = Math.max(profile.currentAge + 1, profile.targetRetirementAge || 55);
+
   // Asset Allocation State (default 75% equity, 15% bond, 10% cash)
   const [allocation, setAllocation] = useState<AssetAllocation>({
     equityPercent: 75,
@@ -63,7 +66,16 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
     cashPercent: 10,
   });
 
-  const [maxAge, setMaxAge] = useState<number>(95);
+  const [maxAge, setMaxAge] = useState<number>(() =>
+    Math.min(100, Math.max(minHorizonAge, profile.lifeExpectancyAge || 95))
+  );
+
+  React.useEffect(() => {
+    if (profile.lifeExpectancyAge) {
+      const targetAge = Math.min(100, Math.max(minHorizonAge, profile.lifeExpectancyAge));
+      setMaxAge((prev) => (prev === targetAge ? prev : targetAge));
+    }
+  }, [profile.lifeExpectancyAge, minHorizonAge]);
   const [adjustReal, setAdjustReal] = useState<boolean>(true); // Inflation adjusted
   const [activeTab, setActiveTab] = useState<'trajectories' | 'sequences_chart' | 'heatmap' | 'table' | 'market_data'>('sequences_chart');
   const [sequenceSubView, setSequenceSubView] = useState<'spaghetti' | 'bar'>('spaghetti');
@@ -72,6 +84,8 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
   
   // Selected start year for deep dive inspection (default to worst start year or 1975)
   const [selectedStartYear, setSelectedStartYear] = useState<number | null>(null);
+  const [hoveredStartYear, setHoveredStartYear] = useState<number | null>(null);
+  const [isolateSelected, setIsolateSelected] = useState<boolean>(true);
 
   // Search filter for table view
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -109,6 +123,13 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
     if (!selectedStartYear) return simSummary.worstStartYear;
     return simSummary.runResults.find((r) => r.startYear === selectedStartYear) || simSummary.worstStartYear;
   }, [simSummary, selectedStartYear]);
+
+  const activeYear = hoveredStartYear ?? selectedStartYear;
+
+  const activeRun = useMemo(() => {
+    if (!activeYear) return selectedRun;
+    return simSummary.runResults.find((r) => r.startYear === activeYear) || selectedRun;
+  }, [simSummary, activeYear, selectedRun]);
 
   // Handle asset allocation slider changes
   const handleEquityChange = (eq: number) => {
@@ -257,7 +278,7 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
               {profile.maximizedSpendConfig?.enabled && (
                 <span className="text-[10px] font-extrabold bg-amber-500/15 border border-amber-500/40 text-amber-900 dark:text-amber-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
                   <Zap className="w-3 h-3 fill-amber-500 text-amber-500 shrink-0" />
-                  Max Spend Solver Active (£{(profile.maximizedSpendConfig.targetAnnualIncome || profile.targetRetirementIncomeAnnual || 0).toLocaleString()}/yr)
+                  Max Drawdown Active (£{(profile.maximizedSpendConfig.targetAnnualIncome || profile.targetRetirementIncomeAnnual || 0).toLocaleString()}/yr)
                 </span>
               )}
             </div>
@@ -296,13 +317,23 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
             <span>Target Max Age:</span>
             <select
               value={maxAge}
-              onChange={(e) => setMaxAge(Number(e.target.value))}
-              className="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 rounded-xl px-2.5 py-1 text-xs font-bold outline-none"
+              onChange={(e) => {
+                const val = Number(e.target.value);
+                setMaxAge(val);
+                if (onChange && profile.lifeExpectancyAge !== val) {
+                  onChange({ ...profile, lifeExpectancyAge: val });
+                }
+              }}
+              className="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 rounded-xl px-2.5 py-1 text-xs font-bold outline-none cursor-pointer"
             >
-              <option value={85}>85</option>
-              <option value={90}>90</option>
-              <option value={95}>95</option>
-              <option value={100}>100</option>
+              {Array.from(
+                { length: Math.max(1, 100 - minHorizonAge + 1) },
+                (_, i) => minHorizonAge + i
+              ).map((age) => (
+                <option key={age} value={age}>
+                  Age {age} {age === profile.targetRetirementAge ? '(Retirement Start)' : age === 90 ? '(Standard)' : age === 95 ? '(Default)' : age === 100 ? '(Max 100)' : ''}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -324,6 +355,10 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
         const solvedTarget = profile.maximizedSpendConfig.targetAnnualIncome || profile.targetRetirementIncomeAnnual || 0;
         const baselineTarget = profile.maximizedSpendConfig.baselineTargetAnnualIncome || 0;
         const delta = solvedTarget - baselineTarget;
+        const isReinvest = Boolean(profile.maximizedSpendConfig.reinvestExcessDrawdown);
+        const actualTarget = profile.maximizedSpendConfig.actualSpendingTargetAnnual || profile.actualSpendingTargetAnnual || 0;
+        const destPot = (profile.maximizedSpendConfig.reinvestDestinationPot || 'isa').toUpperCase();
+
         return (
           <div className="bg-amber-500/10 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800/60 p-3.5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
             <div className="flex items-center gap-3">
@@ -336,18 +371,26 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
                     Max Spend Solver Data (75-Year Historic Backtest)
                   </span>
                   <span className="text-[10px] font-bold bg-amber-200/80 dark:bg-amber-900 text-amber-900 dark:text-amber-200 px-2 py-0.5 rounded-full">
-                    Die With Zero
+                    {isReinvest ? 'Max Drawdown & Reinvest' : 'Die With Zero'}
                   </span>
                 </div>
                 <p className="text-xs text-amber-900/80 dark:text-amber-200/80 font-medium">
-                  Historic backtesting is simulated using your solved target of{' '}
-                  <strong className="font-extrabold text-amber-950 dark:text-amber-100">
-                    £{solvedTarget.toLocaleString()}/yr
-                  </strong>
-                  {baselineTarget > 0 && delta > 0 && (
-                    <> (unlocked <strong className="text-emerald-700 dark:text-emerald-300">+£{delta.toLocaleString()}/yr</strong> vs baseline)</>
+                  {isReinvest ? (
+                    <>
+                      Drawing down max <strong className="font-extrabold text-amber-950 dark:text-amber-100">£{solvedTarget.toLocaleString()}/yr</strong>. Meeting lifestyle spend of <strong className="font-extrabold text-emerald-800 dark:text-emerald-300">£{actualTarget.toLocaleString()}/yr</strong> and automatically reinvesting surplus into your <strong>{destPot} pot</strong>.
+                    </>
+                  ) : (
+                    <>
+                      Historic backtesting is simulated using your solved target of{' '}
+                      <strong className="font-extrabold text-amber-950 dark:text-amber-100">
+                        £{solvedTarget.toLocaleString()}/yr
+                      </strong>
+                      {baselineTarget > 0 && delta > 0 && (
+                        <> (unlocked <strong className="text-emerald-700 dark:text-emerald-300">+£{delta.toLocaleString()}/yr</strong> vs baseline)</>
+                      )}
+                      .
+                    </>
                   )}
-                  .
                 </p>
               </div>
             </div>
@@ -566,18 +609,30 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
       {activeTab === 'sequences_chart' && (
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-            <div className="text-slate-500 dark:text-slate-400">
+            <div className="text-slate-500 dark:text-slate-400 flex items-center gap-2 flex-wrap">
               <span>
-                Comparing outcome across all 75 historical sequence start years (1950–2024). Click any bar to inspect.
+                Comparing outcome across all 75 historical sequence start years (1950–2024).
               </span>
-              {selectedRun && (
-                <span className="font-bold text-pink-600 dark:text-pink-400 ml-2 inline-block">
-                  Selected: {selectedRun.startYear} ({selectedRun.startEvent})
+              {activeRun && (
+                <span className="font-bold text-pink-600 dark:text-pink-400 bg-pink-50 dark:bg-pink-950/50 px-2.5 py-0.5 rounded-md border border-pink-200 dark:border-pink-800/50 inline-block">
+                  {hoveredStartYear ? 'Hovered' : 'Selected'}: {activeRun.startYear} ({activeRun.startEvent})
                 </span>
               )}
             </div>
 
-            <div className="flex items-center gap-2 self-start sm:self-auto">
+            <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+              <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800/80 px-2.5 py-1 rounded-xl text-xs font-semibold">
+                <label className="flex items-center gap-1.5 cursor-pointer text-slate-700 dark:text-slate-300">
+                  <input
+                    type="checkbox"
+                    checked={isolateSelected}
+                    onChange={(e) => setIsolateSelected(e.target.checked)}
+                    className="rounded accent-pink-500 cursor-pointer"
+                  />
+                  <span>Isolate Active Year</span>
+                </label>
+              </div>
+
               <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs font-semibold">
                 <button
                   onClick={() => setSequenceSubView('spaghetti')}
@@ -603,6 +658,55 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
             </div>
           </div>
 
+          {/* Quick Start Year Hover/Select Ribbon */}
+          <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-950 p-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 text-xs overflow-x-auto">
+            <span className="font-bold text-slate-600 dark:text-slate-400 shrink-0 text-[11px] uppercase tracking-wider">
+              Quick Focus Year:
+            </span>
+            <select
+              value={activeYear || 1975}
+              onChange={(e) => {
+                const yr = Number(e.target.value);
+                setSelectedStartYear(yr);
+              }}
+              onMouseEnter={(e) => {
+                const yr = Number((e.target as HTMLSelectElement).value);
+                setHoveredStartYear(yr);
+              }}
+              onMouseLeave={() => setHoveredStartYear(null)}
+              className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs font-bold text-slate-800 dark:text-slate-100 outline-none shrink-0"
+            >
+              {simSummary.runResults.map((r) => (
+                <option key={r.startYear} value={r.startYear}>
+                  {r.startYear} - {r.startEvent} ({r.isSuccess ? 'Succeeded' : `Failed Age ${r.depletedAtAge}`})
+                </option>
+              ))}
+            </select>
+            <div className="flex items-center gap-1 shrink-0 ml-auto text-[11px]">
+              <span className="text-slate-400">Key Crisis Years:</span>
+              {[
+                { yr: 1973, label: "'73 Oil Shock" },
+                { yr: 1987, label: "'87 Black Mon" },
+                { yr: 2000, label: "'00 Dot-Com" },
+                { yr: 2008, label: "'08 Financial Crisis" },
+              ].map((k) => (
+                <button
+                  key={k.yr}
+                  onClick={() => setSelectedStartYear(k.yr)}
+                  onMouseEnter={() => setHoveredStartYear(k.yr)}
+                  onMouseLeave={() => setHoveredStartYear(null)}
+                  className={`px-2 py-0.5 rounded-md font-semibold text-[10px] transition-all cursor-pointer ${
+                    activeYear === k.yr
+                      ? 'bg-pink-500 text-white font-bold'
+                      : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-pink-100 dark:hover:bg-pink-950/60'
+                  }`}
+                >
+                  {k.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Subview 1: Bar Chart plotting each of the 75 Start Years */}
           {sequenceSubView === 'bar' && (
             <div className="space-y-2">
@@ -611,6 +715,15 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
                   <BarChart
                     data={all50BarData}
                     margin={{ top: 15, right: 10, left: 10, bottom: 25 }}
+                    onMouseMove={(state: any) => {
+                      if (state && state.activePayload && state.activePayload.length > 0) {
+                        const hoveredYr = state.activePayload[0].payload.startYear;
+                        if (hoveredYr && hoveredYr !== hoveredStartYear) {
+                          setHoveredStartYear(hoveredYr);
+                        }
+                      }
+                    }}
+                    onMouseLeave={() => setHoveredStartYear(null)}
                     onClick={(state: any) => {
                       if (state && state.activePayload && state.activePayload.length > 0) {
                         const clickedYear = state.activePayload[0].payload.startYear;
@@ -663,7 +776,7 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
                                 <strong className="text-amber-300">{formatCurrency(data.minWealth)}</strong>
                               </div>
                               <div className="text-[10px] text-pink-400 font-semibold pt-1">
-                                Click bar to select & inspect full details
+                                Click bar to lock selection & inspect full details
                               </div>
                             </div>
                           );
@@ -683,14 +796,21 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
                       }}
                     />
                     <Bar dataKey="finalWealth" name="Ending Wealth (£)" radius={[3, 3, 0, 0]} className="cursor-pointer">
-                      {all50BarData.map((entry) => (
-                        <Cell
-                          key={`cell-${entry.startYear}`}
-                          fill={entry.startYear === selectedStartYear ? '#ec4899' : entry.fillColor}
-                          stroke={entry.startYear === selectedStartYear ? '#f472b6' : undefined}
-                          strokeWidth={entry.startYear === selectedStartYear ? 2.5 : 0}
-                        />
-                      ))}
+                      {all50BarData.map((entry) => {
+                        const isHovered = entry.startYear === hoveredStartYear;
+                        const isSelected = entry.startYear === selectedStartYear;
+                        const isActive = isHovered || isSelected;
+
+                        return (
+                          <Cell
+                            key={`cell-${entry.startYear}`}
+                            fill={isHovered ? '#38bdf8' : isSelected ? '#ec4899' : entry.fillColor}
+                            stroke={isActive ? (isHovered ? '#0ea5e9' : '#f472b6') : undefined}
+                            strokeWidth={isActive ? 2.5 : 0}
+                            opacity={hoveredStartYear !== null && !isHovered ? 0.35 : 1}
+                          />
+                        );
+                      })}
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
@@ -709,7 +829,10 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
                     <span className="w-3 h-3 rounded-md bg-rose-500 inline-block"></span> Depleted Early
                   </span>
                   <span className="flex items-center gap-1.5 font-semibold text-slate-600 dark:text-slate-400">
-                    <span className="w-3 h-3 rounded-md bg-pink-500 inline-block"></span> Selected Year
+                    <span className="w-3 h-3 rounded-md bg-pink-500 inline-block"></span> Selected
+                  </span>
+                  <span className="flex items-center gap-1.5 font-semibold text-slate-600 dark:text-slate-400">
+                    <span className="w-3 h-3 rounded-md bg-sky-400 inline-block"></span> Hovered
                   </span>
                 </div>
                 <div className="text-slate-500 dark:text-slate-400">
@@ -724,7 +847,10 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
             <div className="space-y-2">
               <div className="h-80 w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={all50OverlaidTrajectories} margin={{ top: 54, right: 10, left: 10, bottom: 0 }}>
+                  <LineChart
+                    data={all50OverlaidTrajectories}
+                    margin={{ top: 54, right: 10, left: 10, bottom: 0 }}
+                  >
                     <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
                     <XAxis dataKey="age" stroke="#888888" fontSize={11} tickLine={false} />
                     <YAxis
@@ -733,20 +859,63 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
                       tickLine={false}
                       tickFormatter={(v) => `£${(v / 1000).toFixed(0)}k`}
                     />
+                    
+                    {/* CUSTOM TOOLTIP: Show ONLY data for the active/hovered/selected start year */}
                     <Tooltip
-                      formatter={(value: any, name: string) => [
-                        formatCurrency(Number(value) || 0),
-                        name.replace('run_', 'Start Year '),
-                      ]}
-                      labelFormatter={(label) => `Age ${label}`}
-                      contentStyle={{
-                        backgroundColor: '#0f172a',
-                        borderColor: '#334155',
-                        borderRadius: '0.75rem',
-                        color: '#f8fafc',
-                        fontSize: '12px',
+                      content={({ active, payload, label }) => {
+                        if (!active || !payload || !payload.length) return null;
+                        const age = label;
+                        const snap = activeRun?.trajectory?.find((t) => t.age === age);
+                        if (!snap) return null;
+
+                        const potVal = adjustReal ? snap.totalPotReal : snap.totalPot;
+
+                        return (
+                          <div className="bg-slate-900 border border-slate-700 text-slate-100 p-3.5 rounded-xl shadow-xl text-xs space-y-2 z-50 max-w-xs">
+                            <div className="flex items-center justify-between gap-3 border-b border-slate-800 pb-2">
+                              <div className="font-extrabold text-amber-400">
+                                Start Year {activeRun?.startYear} ({activeRun?.startEvent})
+                              </div>
+                              <span
+                                className={`text-[10px] px-2 py-0.5 rounded-md font-bold shrink-0 ${
+                                  !activeRun?.isSuccess
+                                    ? 'bg-rose-500/30 text-rose-300'
+                                    : 'bg-emerald-500/30 text-emerald-300'
+                                }`}
+                              >
+                                {activeRun?.isSuccess ? 'Succeeded' : `Depleted Age ${activeRun?.depletedAtAge}`}
+                              </span>
+                            </div>
+
+                            <div className="space-y-1">
+                              <div className="flex justify-between items-center text-slate-300 text-xs font-bold">
+                                <span>Age {snap.age} ({snap.calendarYear}):</span>
+                                <span className="text-pink-400 text-sm font-black">{formatCurrency(potVal)}</span>
+                              </div>
+                              <div className="grid grid-cols-3 gap-1 text-[10px] text-slate-400 pt-1">
+                                <div>Pension: <strong className="text-slate-200">{formatCurrency(snap.pensionPot)}</strong></div>
+                                <div>ISA: <strong className="text-slate-200">{formatCurrency(snap.isaPot)}</strong></div>
+                                <div>Cash: <strong className="text-slate-200">{formatCurrency(snap.cashGiaPot)}</strong></div>
+                              </div>
+                            </div>
+
+                            <div className="pt-2 border-t border-slate-800/80 text-[10px] space-y-0.5 text-slate-400">
+                              <div className="flex justify-between">
+                                <span>Hist Market Year {snap.histYear}:</span>
+                                <span className={snap.histEquityReturn >= 0 ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'}>
+                                  Eq {snap.histEquityReturn >= 0 ? '+' : ''}{snap.histEquityReturn}% | Inf {snap.histInflation}%
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Drawdown Required:</span>
+                                <span className="text-amber-300 font-semibold">{formatCurrency(snap.drawdownAmount)}/yr</span>
+                              </div>
+                            </div>
+                          </div>
+                        );
                       }}
                     />
+
                     {isSameRetireYear || !isCouple ? (
                       <ReferenceLine
                         x={primaryRetireAge}
@@ -825,17 +994,22 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
                       </>
                     )}
 
+                    {/* RENDER LINES: Highlight active hovered/selected year line */}
                     {simSummary.runResults.map((run) => {
-                      const isSelected = selectedStartYear === run.startYear;
+                      const isTarget = activeYear === run.startYear;
+                      if (isolateSelected && !isTarget) {
+                        return null; // Isolate active year only
+                      }
+
                       return (
                         <Line
                           key={run.startYear}
                           type="monotone"
                           dataKey={`run_${run.startYear}`}
                           name={`Start Year ${run.startYear}`}
-                          stroke={isSelected ? '#ec4899' : run.isSuccess ? '#94a3b8' : '#f87171'}
-                          strokeWidth={isSelected ? 3.5 : 0.8}
-                          strokeOpacity={isSelected ? 1 : run.isSuccess ? 0.25 : 0.6}
+                          stroke={isTarget ? '#ec4899' : run.isSuccess ? '#94a3b8' : '#f87171'}
+                          strokeWidth={isTarget ? 3.5 : 0.8}
+                          strokeOpacity={isTarget ? 1 : hoveredStartYear !== null ? 0.05 : run.isSuccess ? 0.2 : 0.45}
                           dot={false}
                         />
                       );
@@ -844,10 +1018,17 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
                 </ResponsiveContainer>
               </div>
 
-              <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 pt-1">
+              <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 pt-1 flex-wrap gap-2">
                 <span>
-                  Every line represents one of the 75 historic sequence paths. Pink line highlights your currently selected start year ({selectedStartYear}).
+                  Showing data for Start Year <strong>{activeRun?.startYear}</strong> ({activeRun?.startEvent}).
+                  {isolateSelected && ' (Isolate mode enabled)'}
                 </span>
+                <button
+                  onClick={() => setIsolateSelected(!isolateSelected)}
+                  className="text-pink-600 dark:text-pink-400 font-bold hover:underline cursor-pointer"
+                >
+                  {isolateSelected ? 'Show All 75 Paths Overlaid' : 'Isolate Active Year Only'}
+                </button>
               </div>
             </div>
           )}
@@ -1020,6 +1201,7 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
           <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
             {simSummary.runResults.map((run) => {
               const isSelected = selectedStartYear === run.startYear;
+              const isHovered = hoveredStartYear === run.startYear;
               let bgClass = 'bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-200 dark:border-emerald-800';
               
               if (!run.isSuccess) {
@@ -1033,10 +1215,12 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
                   key={run.startYear}
                   onClick={() => {
                     setSelectedStartYear(run.startYear);
-                    setActiveTab('trajectories');
+                    setActiveTab('sequences_chart');
                   }}
+                  onMouseEnter={() => setHoveredStartYear(run.startYear)}
+                  onMouseLeave={() => setHoveredStartYear(null)}
                   className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer hover:scale-105 ${bgClass} ${
-                    isSelected ? 'ring-2 ring-pink-500 ring-offset-2 dark:ring-offset-slate-900 font-black' : 'font-semibold'
+                    isSelected ? 'ring-2 ring-pink-500 ring-offset-2 dark:ring-offset-slate-900 font-black scale-105' : isHovered ? 'ring-2 ring-sky-400 font-bold' : 'font-semibold'
                   }`}
                 >
                   <div className="text-xs font-bold">{run.startYear}</div>
@@ -1086,8 +1270,10 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
                 {filteredRuns.map((run) => (
                   <tr
                     key={run.startYear}
+                    onMouseEnter={() => setHoveredStartYear(run.startYear)}
+                    onMouseLeave={() => setHoveredStartYear(null)}
                     className={`hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors ${
-                      selectedStartYear === run.startYear ? 'bg-amber-50/50 dark:bg-amber-950/30' : ''
+                      selectedStartYear === run.startYear ? 'bg-pink-50/60 dark:bg-pink-950/30' : hoveredStartYear === run.startYear ? 'bg-sky-50/60 dark:bg-sky-950/30' : ''
                     }`}
                   >
                     <td className="p-3 font-bold text-slate-800 dark:text-slate-100">{run.startYear}</td>

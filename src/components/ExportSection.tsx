@@ -1442,14 +1442,21 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
 
       if (isMaxSpend) {
         const solvedIncome = maxConfig?.targetAnnualIncome || profile.targetRetirementIncomeAnnual || 0;
+        const isReinvest = maxConfig?.reinvestExcessDrawdown;
+        const actualTarget = maxConfig?.actualSpendingTargetAnnual || profile.actualSpendingTargetAnnual || 0;
+        const destPot = (maxConfig?.reinvestDestinationPot || 'isa').toUpperCase();
+        
         doc.setFillColor(245, 243, 255);
         doc.roundedRect(14, p3Y, 182, 10, 3, 3, 'F');
         doc.setDrawColor(196, 181, 253);
         doc.roundedRect(14, p3Y, 182, 10, 3, 3, 'D');
         doc.setTextColor(109, 40, 217);
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(8.5);
-        doc.text(`* MAXIMIZED SPEND SOLVER MODE ACTIVE: Solved Sustainable Income Target: £${(solvedIncome || 0).toLocaleString()}/yr (£${Math.round((solvedIncome || 0) / 12).toLocaleString()}/mo)`, 18, p3Y + 6.5);
+        doc.setFontSize(8);
+        const textStr = isReinvest
+          ? `* MAX DRAWDOWN MODE ACTIVE: Max Drawdown: £${(solvedIncome || 0).toLocaleString()}/yr | Actual Spending Target: £${(actualTarget || 0).toLocaleString()}/yr (Surplus reinvested into ${destPot})`
+          : `* MAXIMIZED SPEND SOLVER MODE ACTIVE: Solved Sustainable Income Target: £${(solvedIncome || 0).toLocaleString()}/yr (£${Math.round((solvedIncome || 0) / 12).toLocaleString()}/mo)`;
+        doc.text(textStr, 18, p3Y + 6.5);
         p3Y += 13;
       }
 
