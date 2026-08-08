@@ -300,7 +300,7 @@ export function getPartnerPensionAccessAge(profile: UserProfile): number {
   }
   const partnerAge = profile.partnerCurrentAge || profile.currentAge || 35;
   const partnerBirthYear = new Date().getFullYear() - partnerAge;
-  return partnerBirthYear < 1971 ? 55 : 57;
+  return partnerBirthYear <= 1971 ? 55 : 57;
 }
 
 export function getPartnerLumpSumTakeAge(profile: UserProfile): number {
@@ -508,10 +508,10 @@ export function isCurrentTaxYearContribution(
 export function calculateStandardIncomeTax(grossSalary: number, taxRegion?: string): number {
   if (grossSalary <= 0) return 0;
 
-  let pa = 12570;
-  if (grossSalary > 100000) {
-    const reduction = Math.min(12570, (grossSalary - 100000) / 2);
-    pa = 12570 - reduction;
+  let pa = PERSONAL_ALLOWANCE;
+  if (grossSalary > PA_TAPER_THRESHOLD) {
+    const reduction = Math.min(PERSONAL_ALLOWANCE, (grossSalary - PA_TAPER_THRESHOLD) / 2);
+    pa = PERSONAL_ALLOWANCE - reduction;
   }
 
   const taxable = Math.max(0, grossSalary - pa);
@@ -535,7 +535,7 @@ export function calculateStandardIncomeTax(grossSalary: number, taxRegion?: stri
       rem -= b3;
     }
     if (rem > 0) {
-      const b4 = Math.min(rem, 75000 - 43662);
+      const b4 = Math.min(rem, 62430 - 43662);
       tax += b4 * 0.42;
       rem -= b4;
     }
@@ -914,13 +914,13 @@ export function calculateUKTax(
         rem -= b3;
       }
       if (rem > 0) {
-        const b4 = Math.min(rem, 75000 - 43662); // 42%
+        const b4 = Math.min(rem, 62430 - 43662); // 42%
         totalIncomeTax += b4 * 0.42;
         rem -= b4;
       }
       if (rem > 0) {
-        // Advanced Rate band taxable width = (125140 - 75000) + (12570 PA lost in taper) = 62710
-        const b5 = Math.min(rem, 62710); // 45%
+        // Advanced Rate band taxable width = 125140 - 62430 = 62710
+        const b5 = Math.min(rem, 125140 - 62430); // 45%
         totalIncomeTax += b5 * 0.45;
         rem -= b5;
       }
@@ -1032,8 +1032,8 @@ export function calculateUKTax(
   let isTaperedAnnualAllowance = false;
   let taperedReduction = 0;
 
-  // Annual Allowance Tapering: Applies ONLY IF Threshold Income > £200,000 AND Adjusted Income > £260,000
-  if (thresholdIncome > 200000 && adjustedIncome > 260000) {
+  // Annual Allowance Tapering: Applies ONLY IF Threshold Income > £200,000 AND Adjusted Income > £260,000 AND user has NOT triggered MPAA
+  if (!hasTriggeredMpaa && thresholdIncome > 200000 && adjustedIncome > 260000) {
     isTaperedAnnualAllowance = true;
     taperedReduction = Math.min(50000, Math.floor((adjustedIncome - 260000) / 2));
     pensionAnnualAllowanceLimit = Math.max(10000, basePensionAnnualAllowance - taperedReduction);

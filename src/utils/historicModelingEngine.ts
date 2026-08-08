@@ -406,7 +406,7 @@ export function runHistoricModelingSimulation(
       // State Pensions (Primary + Partner if couple mode)
       let statePensionThisYr = 0;
       if ((profile.includeStatePension ?? true) && age >= (profile.statePensionAge || 67)) {
-        const primaryYears = profile.qualifyingYears ?? 35;
+        const primaryYears = Math.min(35, profile.qualifyingYears ?? 35);
         if (primaryYears >= 10) {
           const primaryFull = profile.fullStatePensionAmount ?? 12547.60;
           const primaryAnnualCalculated = Math.round((primaryYears / 35) * primaryFull * 100) / 100;
@@ -416,7 +416,7 @@ export function runHistoricModelingSimulation(
         }
       }
       if (profile.isCouplePlanning && !partnerDead && (profile.partnerIncludeStatePension ?? true) && partnerAge >= (profile.partnerStatePensionAge || 67)) {
-        const partnerYears = profile.partnerQualifyingYears ?? 35;
+        const partnerYears = Math.min(35, profile.partnerQualifyingYears ?? 35);
         if (partnerYears >= 10) {
           const partnerTripleLock = profile.partnerEnableTripleLock ?? true;
           const partnerFull = profile.partnerFullStatePensionAmount ?? 12547.60;
@@ -445,7 +445,6 @@ export function runHistoricModelingSimulation(
         const potForAnnuity = primaryPensionPot * (allocPercent / 100);
         primaryPensionPot -= potForAnnuity;
         pensionPot = primaryPensionPot + partnerPensionPot;
-        pensionPot = primaryPensionPot + partnerPensionPot;
 
         const rate = (profile.annuityRatePercent || 4.2) / 100;
         const baseNominal = potForAnnuity * rate;
@@ -457,7 +456,7 @@ export function runHistoricModelingSimulation(
           durationOption: profile.annuityDurationOption || 'lifetime',
           durationUntilAge: profile.annuityDurationUntilAge || 75,
           owner: 'primary',
-                purchaseInflationFactor: cumulativeInflationFactor,
+          purchaseInflationFactor: cumulativeInflationFactor,
         });
       }
 
@@ -465,8 +464,8 @@ export function runHistoricModelingSimulation(
       let annuityIncomeThisYear = 0;
       historicAnnuityStreams.forEach((stream) => {
         if (stream.owner === 'partner' && partnerDead) return;
-          const streamOwnerAge = stream.owner === 'partner' ? partnerAge : age;
-        if (stream.durationOption === 'until_age' && streamOwnerAge > stream.durationUntilAge) {
+        const streamOwnerAge = stream.owner === 'partner' ? partnerAge : age;
+        if (stream.durationOption === 'until_age' && streamOwnerAge >= stream.durationUntilAge) {
           return;
         }
         const streamNominal = stream.isInflationLinked
@@ -687,8 +686,8 @@ export function runHistoricModelingSimulation(
           const primaryCashGrowth = primaryCashGiaPot - (primaryCashGiaPot / (1 + cashGiaReturn));
           const partnerCashGrowth = partnerCashGiaPot - (partnerCashGiaPot / (1 + cashGiaReturn));
 
-          const priIncomeAlready = statePensionThisYr / (profile.isCouplePlanning ? 2 : 1) + (annuityIncomeThisYear + dbIncomeThisYr + (typeof fixedIncomeThisYr !== 'undefined' ? fixedIncomeThisYr : fixedIncomeThisYr)) / (profile.isCouplePlanning ? 2 : 1) + primaryCashGrowth;
-          const partIncomeAlready = profile.isCouplePlanning ? (statePensionThisYr / 2 + (annuityIncomeThisYear + dbIncomeThisYr + (typeof fixedIncomeThisYr !== 'undefined' ? fixedIncomeThisYr : fixedIncomeThisYr)) / 2 + partnerCashGrowth) : 0;
+          const priIncomeAlready = statePensionThisYr / (profile.isCouplePlanning ? 2 : 1) + (annuityIncomeThisYear + dbIncomeThisYr + (fixedIncomeThisYr || 0)) / (profile.isCouplePlanning ? 2 : 1) + primaryCashGrowth;
+          const partIncomeAlready = profile.isCouplePlanning ? (statePensionThisYr / 2 + (annuityIncomeThisYear + dbIncomeThisYr + (fixedIncomeThisYr || 0)) / 2 + partnerCashGrowth) : 0;
 
           const priRoom = Math.max(0, priThresholdGross - priIncomeAlready);
           const partRoom = profile.isCouplePlanning ? Math.max(0, partThresholdGross - partIncomeAlready) : 0;

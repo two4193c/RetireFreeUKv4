@@ -174,11 +174,8 @@ export const MortgageDebtCard: React.FC<MortgageDebtCardProps> = ({ profile, onC
       }
 
       const totalOverpayment = extraMonthly + lumpSumExtra;
-      let capital = Math.max(0, (stdPmt - interest) + totalOverpayment);
-
-      if (capital > ovBal) {
-        capital = ovBal;
-      }
+      const regularCapital = Math.max(0, stdPmt - interest);
+      let capital = Math.min(ovBal, regularCapital + totalOverpayment);
 
       const endBal = Math.max(0, ovBal - capital);
       ovSchedule.push({

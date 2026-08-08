@@ -13,7 +13,16 @@ import {
   Legend,
   CartesianGrid,
   ReferenceLine,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Radar,
 } from 'recharts';
+import { jsPDF } from 'jspdf';
+import html2canvas from 'html2canvas';
+import { runMonteCarloSimulation } from '../utils/monteCarloEngine';
+import { runHistoricSimulation } from '../utils/historicModelingEngine';
 import {
   ArrowRightLeft,
   CheckCircle2,
@@ -43,6 +52,9 @@ import {
   Heart,
   Coins,
   Filter,
+  Dices,
+  History,
+  FileText,
 } from 'lucide-react';
 
 interface ScenarioComparerProps {
@@ -605,15 +617,279 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
         ...(showScenarioC ? [Math.round(m.potC), Math.round(m.incC)] : [Math.round(m.diff)]),
       ].join(',')
     );
-
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows].join('\n');
-    const encodedUri = encodeURI(csvContent);
+    const csvStr = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob(['\uFEFF' + csvStr], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
+    link.setAttribute('href', url);
     link.setAttribute('download', `scenario_comparison_${scenarioA.name}_vs_${scenarioB.name}${showScenarioC ? '_vs_' + scenarioC.name : ''}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [exportSuccessMsg, setExportSuccessMsg] = useState<string | null>(null);
+
+  // Pure jsPDF Vector Comparison PDF Export Handler (100% Reliable, Zero Canvas Errors)
+  const handleExportComparisonPDF = async () => {
+    try {
+      setIsExportingPdf(true);
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+      const margin = 14;
+      const pageWidth = 210;
+      const pageHeight = 297;
+      const contentWidth = pageWidth - margin * 2;
+
+      // Color Palette
+      const darkSlate = [15, 23, 42];
+      const emeraldAccent = [16, 185, 129];
+      const mutedSlate = [100, 116, 139];
+      const lightBg = [248, 250, 252];
+      const borderSlate = [226, 232, 240];
+
+      let y = 14;
+
+      // Helper Header Bar
+      const addHeader = (title: string, subtitle?: string) => {
+        pdf.setFillColor(...darkSlate);
+        pdf.rect(0, 0, pageWidth, 12, 'F');
+        pdf.setFillColor(...emeraldAccent);
+        pdf.rect(0, 10, pageWidth, 2, 'F');
+        pdf.setTextColor(255, 255, 255);
+        pdf.setFontSize(8.5);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(`RetireFree UK • ${title}`, margin, 7.5);
+        if (subtitle) {
+          pdf.setFont('helvetica', 'normal');
+          pdf.setFontSize(7.5);
+          pdf.text(subtitle, pageWidth - margin - pdf.getTextWidth(subtitle), 7.5);
+        }
+      };
+
+      addHeader('Multi-Dimensional Scenario Comparison Report', 'Executive Trade-Off Summary');
+      y = 18;
+
+      // Title Banner
+      pdf.setTextColor(...darkSlate);
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Scenario Trade-Off & Longevity Comparison', margin, y);
+      pdf.setFontSize(8);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(...mutedSlate);
+      pdf.text(`Generated: ${new Date().toLocaleDateString('en-GB')} • Comparing ${scenariosToCompare.length} Plan Variants`, margin, y + 4.5);
+
+      y += 10;
+
+      // Executive Winner Banner Box
+      pdf.setFillColor(236, 253, 245);
+      pdf.setDrawColor(167, 243, 208);
+      pdf.roundedRect(margin, y, contentWidth, 18, 2, 2, 'FD');
+
+      pdf.setTextColor(6, 78, 59);
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('EXECUTIVE TAKEAWAY & RECOMMENDED STRATEGY:', margin + 4, y + 6);
+      pdf.setFontSize(10);
+      pdf.text(`Leading Plan: ${leadingWinnerName}`, margin + 4, y + 12);
+      pdf.setFontSize(8);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`${leadingWinnerName} achieves the highest overall trade-off score (${leadingWinnerScore}/100) across Longevity, Tax, Estate, and Safety Floor.`, margin + 4, y + 16.5);
+
+      y += 24;
+
+      // Section 1: 4-Dimensional Trade-Off Scorecard
+      pdf.setTextColor(...darkSlate);
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('1. Multi-Dimensional Trade-Off Scorecard & Category Winners', margin, y);
+      y += 5;
+
+      const cardWidth = (contentWidth - 6) / 2;
+      const cardHeight = 22;
+
+      // Dimension 1: Longevity
+      pdf.setFillColor(236, 253, 245);
+      pdf.setDrawColor(167, 243, 208);
+      pdf.roundedRect(margin, y, cardWidth, cardHeight, 2, 2, 'FD');
+      pdf.setTextColor(6, 78, 59);
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Capital Longevity Winner', margin + 3, y + 6);
+      pdf.setFontSize(10);
+      pdf.text(`${longevityWinnerName} (${scoreLongA} pts vs ${scoreLongB} pts)`, margin + 3, y + 13);
+      pdf.setFontSize(7.5);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text('Highest remaining wealth cushion at Age 95.', margin + 3, y + 18);
+
+      // Dimension 2: Tax Efficiency
+      pdf.setFillColor(238, 242, 255);
+      pdf.setDrawColor(199, 210, 254);
+      pdf.roundedRect(margin + cardWidth + 6, y, cardWidth, cardHeight, 2, 2, 'FD');
+      pdf.setTextColor(49, 46, 129);
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Tax Efficiency Winner', margin + cardWidth + 9, y + 6);
+      pdf.setFontSize(10);
+      pdf.text(`${taxWinnerName} (${scoreTaxA} pts vs ${scoreTaxB} pts)`, margin + cardWidth + 9, y + 13);
+      pdf.setFontSize(7.5);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text('Lowest effective tax rate & HMRC drag.', margin + cardWidth + 9, y + 18);
+
+      y += cardHeight + 4;
+
+      // Dimension 3: Estate & IHT Shield
+      pdf.setFillColor(250, 245, 255);
+      pdf.setDrawColor(233, 213, 255);
+      pdf.roundedRect(margin, y, cardWidth, cardHeight, 2, 2, 'FD');
+      pdf.setTextColor(88, 28, 135);
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Estate & IHT Shield Winner', margin + 3, y + 6);
+      pdf.setFontSize(10);
+      pdf.text(`${estateWinnerName} (${scoreEstateA} pts vs ${scoreEstateB} pts)`, margin + 3, y + 13);
+      pdf.setFontSize(7.5);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text('Largest net estate passed to heirs at Age 85.', margin + 3, y + 18);
+
+      // Dimension 4: Floor Safety
+      pdf.setFillColor(254, 243, 199);
+      pdf.setDrawColor(253, 230, 138);
+      pdf.roundedRect(margin + cardWidth + 6, y, cardWidth, cardHeight, 2, 2, 'FD');
+      pdf.setTextColor(120, 53, 15);
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Guaranteed Floor Safety Winner', margin + cardWidth + 9, y + 6);
+      pdf.setFontSize(10);
+      pdf.text(`${floorWinnerName} (${scoreFloorA}% vs ${scoreFloorB}%)`, margin + cardWidth + 9, y + 13);
+      pdf.setFontSize(7.5);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text('Highest DB/State/Annuity target coverage.', margin + cardWidth + 9, y + 18);
+
+      y += cardHeight + 8;
+
+      // Page overflow guard before Table 1
+      if (y > 220) {
+        pdf.addPage();
+        addHeader(`${scenarioA.name} vs ${scenarioB.name}`, 'Milestone Projections');
+        y = 20;
+      }
+
+      // Table 1: Milestone Wealth Projections
+      pdf.setTextColor(...darkSlate);
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('2. Portfolio Wealth & Net Income Milestones to Age 100', margin, y);
+      y += 5;
+
+      // Table Header
+      pdf.setFillColor(...darkSlate);
+      pdf.rect(margin, y, contentWidth, 7, 'F');
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(8);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Age (Year)', margin + 3, y + 5);
+      pdf.text(`${scenarioA.name} Wealth`, margin + 35, y + 5);
+      pdf.text(`${scenarioB.name} Wealth`, margin + 85, y + 5);
+      if (showScenarioC) {
+        pdf.text(`${scenarioC.name} Wealth`, margin + 135, y + 5);
+      } else {
+        pdf.text('Wealth Delta (B - A)', margin + 135, y + 5);
+      }
+      y += 7;
+
+      milestoneComparison.forEach((m, idx) => {
+        pdf.setFillColor(idx % 2 === 0 ? 255 : 248, idx % 2 === 0 ? 255 : 250, idx % 2 === 0 ? 255 : 252);
+        pdf.rect(margin, y, contentWidth, 6, 'F');
+        pdf.setDrawColor(...borderSlate);
+        pdf.line(margin, y + 6, margin + contentWidth, y + 6);
+
+        pdf.setTextColor(...darkSlate);
+        pdf.setFontSize(8);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(`Age ${m.age} (${m.year})`, margin + 3, y + 4.5);
+        pdf.text(`£${Math.round(m.potA).toLocaleString()} (£${Math.round(m.incA).toLocaleString()}/yr)`, margin + 35, y + 4.5);
+        pdf.text(`£${Math.round(m.potB).toLocaleString()} (£${Math.round(m.incB).toLocaleString()}/yr)`, margin + 85, y + 4.5);
+
+        if (showScenarioC) {
+          pdf.text(`£${Math.round(m.potC).toLocaleString()} (£${Math.round(m.incC).toLocaleString()}/yr)`, margin + 135, y + 4.5);
+        } else {
+          pdf.setFont('helvetica', 'bold');
+          pdf.setTextColor(m.diff >= 0 ? 16 : 225, m.diff >= 0 ? 185 : 29, m.diff >= 0 ? 129 : 72);
+          pdf.text(`${m.diff >= 0 ? '+' : ''}£${Math.round(m.diff).toLocaleString()}`, margin + 135, y + 4.5);
+        }
+        y += 6;
+      });
+
+      y += 8;
+
+      // Section 3: Risk-Adjusted Longevity & Stress Benchmark
+      pdf.setTextColor(...darkSlate);
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('3. Risk-Adjusted Stress Benchmark (Monte Carlo & 75-Year Historic Backtest)', margin, y);
+      y += 5;
+
+      // Table Header
+      pdf.setFillColor(88, 28, 135);
+      pdf.rect(margin, y, contentWidth, 7, 'F');
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(8);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Stress Test Metric', margin + 3, y + 5);
+      pdf.text(scenarioA.name, margin + 70, y + 5);
+      pdf.text(scenarioB.name, margin + 115, y + 5);
+      if (showScenarioC) pdf.text(scenarioC.name, margin + 155, y + 5);
+      y += 7;
+
+      // Row 1: Monte Carlo
+      pdf.setFillColor(255, 255, 255);
+      pdf.rect(margin, y, contentWidth, 8, 'F');
+      pdf.setTextColor(...darkSlate);
+      pdf.setFontSize(8);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Monte Carlo Success Rate (300 Runs)', margin + 3, y + 5.5);
+      pdf.text(`${mcSimA ? mcSimA.successRate + '%' : 'N/A'} (Med: £${Math.round(mcSimA?.medianEndPot || 0).toLocaleString()})`, margin + 70, y + 5.5);
+      pdf.text(`${mcSimB ? mcSimB.successRate + '%' : 'N/A'} (Med: £${Math.round(mcSimB?.medianEndPot || 0).toLocaleString()})`, margin + 115, y + 5.5);
+      if (showScenarioC) {
+        pdf.text(`${mcSimC ? mcSimC.successRate + '%' : 'N/A'} (Med: £${Math.round(mcSimC?.medianEndPot || 0).toLocaleString()})`, margin + 155, y + 5.5);
+      }
+      y += 8;
+
+      // Row 2: Historic 75-Year
+      pdf.setFillColor(248, 250, 252);
+      pdf.rect(margin, y, contentWidth, 8, 'F');
+      pdf.setTextColor(...darkSlate);
+      pdf.setFontSize(8);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('75-Year Historic Backtest (1950-2024)', margin + 3, y + 5.5);
+      pdf.text(`${historicA ? historicA.successRate + '%' : 'N/A'} (Worst Yr: ${historicA?.worstStartYear?.startYear ?? 'N/A'})`, margin + 70, y + 5.5);
+      pdf.text(`${historicB ? historicB.successRate + '%' : 'N/A'} (Worst Yr: ${historicB?.worstStartYear?.startYear ?? 'N/A'})`, margin + 115, y + 5.5);
+      if (showScenarioC) {
+        pdf.text(`${historicC ? historicC.successRate + '%' : 'N/A'} (Worst Yr: ${historicC?.worstStartYear?.startYear ?? 'N/A'})`, margin + 155, y + 5.5);
+      }
+      y += 8;
+
+      // Footer
+      pdf.setFontSize(8);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(...mutedSlate);
+      pdf.text('RetireFree UK v2 — Professional Strategic Retirement Comparison Document', margin, pageHeight - 10);
+
+      const safeNameA = scenarioA.name.replace(/[^a-zA-Z0-9_-]/g, '_');
+      const safeNameB = scenarioB.name.replace(/[^a-zA-Z0-9_-]/g, '_');
+      pdf.save(`RetireFree_UK_Comparison_${safeNameA}_vs_${safeNameB}${showScenarioC ? '_vs_' + scenarioC.name.replace(/[^a-zA-Z0-9_-]/g, '_') : ''}.pdf`);
+      setExportSuccessMsg('Comparison PDF report exported successfully!');
+      setTimeout(() => setExportSuccessMsg(null), 4000);
+    } catch (err) {
+      console.error('PDF Comparison Export Error:', err);
+      alert('Error generating PDF comparison report.');
+    } finally {
+      setIsExportingPdf(false);
+    }
   };
 
   // Lifetime tax calculations for KPI Delta Cards & Tax Efficiency Scorecard
@@ -717,7 +993,135 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
   ].sort((a, b) => b.netEstate - a.netEstate);
   const estateWinnerName = estateCandidates[0].name;
 
-  // 4. Guaranteed Income Safety Floor Winner
+  // Monte Carlo & Historic Market Data simulations for comparison
+  const mcSimA = useMemo(() => {
+    if (!taxA) return null;
+    return runMonteCarloSimulation(scenarioA.profile, scenarioA.pots, taxA, {
+      numSimulations: 300,
+      accumulationVolatility: 12.0,
+      decumulationVolatility: 8.0,
+      maxAge: Math.min(100, scenarioA.profile.lifeExpectancyAge || 95),
+      stressedReturnDropPercent: 2.0,
+      crashStartAge: scenarioA.profile.targetRetirementAge,
+      crashDurationYears: 2,
+      crashYearDropsPercent: [30, 15],
+    });
+  }, [scenarioA, taxA]);
+
+  const mcSimB = useMemo(() => {
+    if (!taxB) return null;
+    return runMonteCarloSimulation(scenarioB.profile, scenarioB.pots, taxB, {
+      numSimulations: 300,
+      accumulationVolatility: 12.0,
+      decumulationVolatility: 8.0,
+      maxAge: Math.min(100, scenarioB.profile.lifeExpectancyAge || 95),
+      stressedReturnDropPercent: 2.0,
+      crashStartAge: scenarioB.profile.targetRetirementAge,
+      crashDurationYears: 2,
+      crashYearDropsPercent: [30, 15],
+    });
+  }, [scenarioB, taxB]);
+
+  const mcSimC = useMemo(() => {
+    if (!showScenarioC || !taxC) return null;
+    return runMonteCarloSimulation(scenarioC.profile, scenarioC.pots, taxC, {
+      numSimulations: 300,
+      accumulationVolatility: 12.0,
+      decumulationVolatility: 8.0,
+      maxAge: Math.min(100, scenarioC.profile.lifeExpectancyAge || 95),
+      stressedReturnDropPercent: 2.0,
+      crashStartAge: scenarioC.profile.targetRetirementAge,
+      crashDurationYears: 2,
+      crashYearDropsPercent: [30, 15],
+    });
+  }, [showScenarioC, scenarioC, taxC]);
+
+  // Historic 75-Year Sequence Simulations
+  const historicA = useMemo(() => {
+    if (!taxA) return null;
+    return runHistoricSimulation(scenarioA.profile, scenarioA.pots, taxA, 95, {
+      equityPercent: 70,
+      bondPercent: 20,
+      cashPercent: 10,
+    });
+  }, [scenarioA, taxA]);
+
+  const historicB = useMemo(() => {
+    if (!taxB) return null;
+    return runHistoricSimulation(scenarioB.profile, scenarioB.pots, taxB, 95, {
+      equityPercent: 70,
+      bondPercent: 20,
+      cashPercent: 10,
+    });
+  }, [scenarioB, taxB]);
+
+  const historicC = useMemo(() => {
+    if (!showScenarioC || !taxC) return null;
+    return runHistoricSimulation(scenarioC.profile, scenarioC.pots, taxC, 95, {
+      equityPercent: 70,
+      bondPercent: 20,
+      cashPercent: 10,
+    });
+  }, [showScenarioC, scenarioC, taxC]);
+
+  // 4-Dimensional Radar Scores (0 to 100)
+  const scoreLongevityA = Math.round(mcSimA?.successRate ?? (depA ? Math.max(10, Math.round((depA.age / 95) * 100)) : 95));
+  const scoreLongevityB = Math.round(mcSimB?.successRate ?? (depB ? Math.max(10, Math.round((depB.age / 95) * 100)) : 95));
+  const scoreLongevityC = showScenarioC ? Math.round(mcSimC?.successRate ?? (depC ? Math.max(10, Math.round((depC.age / 95) * 100)) : 95)) : 0;
+
+  const grossA = projA.reduce((sum, p) => sum + (p.grossIncome || 0), 0);
+  const grossB = projB.reduce((sum, p) => sum + (p.grossIncome || 0), 0);
+  const grossC = showScenarioC ? projC.reduce((sum, p) => sum + (p.grossIncome || 0), 0) : 0;
+
+  const taxRateA = grossA > 0 ? (lifetimeTaxA / grossA) * 100 : 0;
+  const taxRateB = grossB > 0 ? (lifetimeTaxB / grossB) * 100 : 0;
+  const taxRateC = grossC > 0 ? (lifetimeTaxC / grossC) * 100 : 0;
+
+  const scoreTaxA = Math.min(100, Math.max(10, Math.round(100 - taxRateA * 2)));
+  const scoreTaxB = Math.min(100, Math.max(10, Math.round(100 - taxRateB * 2)));
+  const scoreTaxC = Math.min(100, Math.max(10, Math.round(100 - taxRateC * 2)));
+
+  const maxEstate = Math.max(ihtA85.netPassedToHeirs, ihtB85.netPassedToHeirs, ihtC85?.netPassedToHeirs || 0, 1);
+  const scoreEstateA = Math.min(100, Math.max(10, Math.round((ihtA85.netPassedToHeirs / maxEstate) * 100)));
+  const scoreEstateB = Math.min(100, Math.max(10, Math.round((ihtB85.netPassedToHeirs / maxEstate) * 100)));
+  const scoreEstateC = showScenarioC && ihtC85 ? Math.min(100, Math.max(10, Math.round((ihtC85.netPassedToHeirs / maxEstate) * 100))) : 0;
+
+  const scoreFloorA = Math.min(100, Math.round(floorStateA.coveragePct));
+  const scoreFloorB = Math.min(100, Math.round(floorStateB.coveragePct));
+  const scoreFloorC = Math.min(100, Math.round(floorStateC?.coveragePct || 0));
+
+  const radarData = [
+    {
+      dimension: 'Capital Longevity',
+      [scenarioA.name]: scoreLongevityA,
+      [scenarioB.name]: scoreLongevityB,
+      ...(showScenarioC ? { [scenarioC.name]: scoreLongevityC } : {}),
+      fullMark: 100,
+    },
+    {
+      dimension: 'Tax Efficiency',
+      [scenarioA.name]: scoreTaxA,
+      [scenarioB.name]: scoreTaxB,
+      ...(showScenarioC ? { [scenarioC.name]: scoreTaxC } : {}),
+      fullMark: 100,
+    },
+    {
+      dimension: 'Estate & IHT Shield',
+      [scenarioA.name]: scoreEstateA,
+      [scenarioB.name]: scoreEstateB,
+      ...(showScenarioC ? { [scenarioC.name]: scoreEstateC } : {}),
+      fullMark: 100,
+    },
+    {
+      dimension: 'Floor Safety',
+      [scenarioA.name]: scoreFloorA,
+      [scenarioB.name]: scoreFloorB,
+      ...(showScenarioC ? { [scenarioC.name]: scoreFloorC } : {}),
+      fullMark: 100,
+    },
+  ];
+
+  // Guaranteed Income Safety Floor Winner
   const floorCandidates = [
     { name: scenarioA.name, cov: floorStateA.coveragePct },
     { name: scenarioB.name, cov: floorStateB.coveragePct },
@@ -791,6 +1195,18 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
             <span>Export CSV</span>
           </button>
           <button
+            onClick={handleExportComparisonPDF}
+            disabled={isExportingPdf}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white transition-colors cursor-pointer whitespace-nowrap shadow-sm disabled:opacity-50"
+          >
+            {isExportingPdf ? (
+              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <FileText className="w-3.5 h-3.5" />
+            )}
+            <span>{isExportingPdf ? 'Generating PDF...' : 'Export PDF'}</span>
+          </button>
+          <button
             onClick={onClose}
             className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
           >
@@ -798,6 +1214,13 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
           </button>
         </div>
       </div>
+
+      {exportSuccessMsg && (
+        <div className="p-3 bg-emerald-100 dark:bg-emerald-950/80 border border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-200 text-xs font-bold rounded-xl flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+          <span>{exportSuccessMsg}</span>
+        </div>
+      )}
 
       {/* Scenario Selectors (2 by default, 3 when showScenarioC is enabled) */}
       <div className={`grid grid-cols-1 ${showScenarioC ? 'lg:grid-cols-3' : 'sm:grid-cols-2'} gap-4`}>
@@ -877,13 +1300,15 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
             <div className="w-9 h-9 rounded-2xl bg-amber-100 dark:bg-amber-400/20 border border-amber-300 dark:border-amber-400/40 flex items-center justify-center shrink-0">
               <Award className="w-5 h-5 text-amber-600 dark:text-amber-300" />
             </div>
-            <div>
-              <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 dark:text-indigo-300">
+            <div className="min-w-0">
+              <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 dark:text-indigo-300 block">
                 Executive Benchmark Takeaway
               </span>
-              <h3 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+              <h3 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2 flex-wrap">
                 <span>Leading Strategy:</span>
-                <span className="text-amber-700 dark:text-amber-300">{winnerName}</span>
+                <span className="text-amber-700 dark:text-amber-300 font-black px-2.5 py-1 rounded-xl bg-amber-100/90 dark:bg-amber-950/90 border border-amber-300 dark:border-amber-700 whitespace-normal break-words inline-block">
+                  {winnerName}
+                </span>
               </h3>
             </div>
           </div>
@@ -1149,55 +1574,112 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
           {/* Dimension 1: Longevity */}
-          <div className="p-3.5 bg-white dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10 space-y-2 shadow-xs">
-            <div className="flex items-center justify-between text-xs font-bold text-indigo-900 dark:text-indigo-200 gap-2">
-              <span className="flex items-center gap-1 whitespace-nowrap">🛡️ Capital Longevity</span>
-              <span className="text-[10px] bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 px-2.5 py-1 rounded-full font-extrabold border border-emerald-300 dark:border-emerald-500/40 whitespace-nowrap">
-                Winner: {longevityWinnerName}
-              </span>
+          <div className="p-4 bg-white dark:bg-slate-900/90 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3 shadow-xs flex flex-col justify-between">
+            <div className="space-y-2">
+              <div className="text-xs font-black text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <span>Capital Longevity</span>
+              </div>
+              <div className="flex items-start gap-1.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 px-2.5 py-1.5 rounded-xl text-xs border border-emerald-200 dark:border-emerald-800/80">
+                <Award className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                <div className="min-w-0 font-extrabold text-emerald-900 dark:text-emerald-200 whitespace-normal break-words">
+                  <span className="text-[10px] font-black uppercase text-emerald-700 dark:text-emerald-400 mr-1.5">Winner:</span>
+                  {longevityWinnerName}
+                </div>
+              </div>
             </div>
-            <p className="text-[11px] text-slate-700 dark:text-slate-300 leading-relaxed">
-              <strong>{longevityWinnerName}</strong> maintains the highest net asset cushion at Age 85/90, offering the strongest longevity shield against drawdown depletion.
+            <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
+              <strong className="text-slate-800 dark:text-slate-200">{longevityWinnerName}</strong> maintains the highest net asset cushion at Age 85/90, offering the strongest longevity shield against drawdown depletion.
             </p>
           </div>
 
           {/* Dimension 2: Tax Efficiency */}
-          <div className="p-3.5 bg-white dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10 space-y-2 shadow-xs">
-            <div className="flex items-center justify-between text-xs font-bold text-indigo-900 dark:text-indigo-200 gap-2">
-              <span className="flex items-center gap-1 whitespace-nowrap">⚡ Tax Efficiency</span>
-              <span className="text-[10px] bg-indigo-100 dark:bg-indigo-500/20 text-indigo-800 dark:text-indigo-300 px-2.5 py-1 rounded-full font-extrabold border border-indigo-300 dark:border-indigo-500/40 whitespace-nowrap">
-                Winner: {taxWinnerName}
-              </span>
+          <div className="p-4 bg-white dark:bg-slate-900/90 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3 shadow-xs flex flex-col justify-between">
+            <div className="space-y-2">
+              <div className="text-xs font-black text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                <Zap className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                <span>Tax Efficiency</span>
+              </div>
+              <div className="flex items-start gap-1.5 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-800 dark:text-indigo-300 px-2.5 py-1.5 rounded-xl text-xs border border-indigo-200 dark:border-indigo-800/80">
+                <Award className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" />
+                <div className="min-w-0 font-extrabold text-indigo-950 dark:text-indigo-200 whitespace-normal break-words">
+                  <span className="text-[10px] font-black uppercase text-indigo-700 dark:text-indigo-400 mr-1.5">Winner:</span>
+                  {taxWinnerName}
+                </div>
+              </div>
             </div>
-            <p className="text-[11px] text-slate-700 dark:text-slate-300 leading-relaxed">
-              <strong>{taxWinnerName}</strong> minimizes cumulative retirement HMRC income tax friction (total tax {formatCurrency(taxCandidates[0].tax)}), leaving higher net spendable cash.
+            <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
+              <strong className="text-slate-800 dark:text-slate-200">{taxWinnerName}</strong> minimizes cumulative retirement HMRC income tax friction (total tax {formatCurrency(taxCandidates[0].tax)}), leaving higher net spendable cash.
             </p>
           </div>
 
           {/* Dimension 3: Inheritance & Estate Protection */}
-          <div className="p-3.5 bg-white dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10 space-y-2 shadow-xs">
-            <div className="flex items-center justify-between text-xs font-bold text-indigo-900 dark:text-indigo-200 gap-2">
-              <span className="flex items-center gap-1 whitespace-nowrap">🏛️ Estate & IHT Shield</span>
-              <span className="text-[10px] bg-purple-100 dark:bg-purple-500/20 text-purple-800 dark:text-purple-300 px-2.5 py-1 rounded-full font-extrabold border border-purple-300 dark:border-purple-500/40 whitespace-nowrap">
-                Winner: {estateWinnerName}
-              </span>
+          <div className="p-4 bg-white dark:bg-slate-900/90 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3 shadow-xs flex flex-col justify-between">
+            <div className="space-y-2">
+              <div className="text-xs font-black text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                <Landmark className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" />
+                <span>Estate & IHT Shield</span>
+              </div>
+              <div className="flex items-start gap-1.5 bg-purple-50 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300 px-2.5 py-1.5 rounded-xl text-xs border border-purple-200 dark:border-purple-800/80">
+                <Award className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 shrink-0 mt-0.5" />
+                <div className="min-w-0 font-extrabold text-purple-950 dark:text-purple-200 whitespace-normal break-words">
+                  <span className="text-[10px] font-black uppercase text-purple-700 dark:text-purple-400 mr-1.5">Winner:</span>
+                  {estateWinnerName}
+                </div>
+              </div>
             </div>
-            <p className="text-[11px] text-slate-700 dark:text-slate-300 leading-relaxed">
-              <strong>{estateWinnerName}</strong> passes the largest net estate to beneficiaries at Age 85 ({formatCurrency(estateCandidates[0].netEstate)}) after accounting for 40% UK IHT thresholds.
+            <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
+              <strong className="text-slate-800 dark:text-slate-200">{estateWinnerName}</strong> passes the largest net estate to beneficiaries at Age 85 ({formatCurrency(estateCandidates[0].netEstate)}) after accounting for 40% UK IHT thresholds.
             </p>
           </div>
 
           {/* Dimension 4: Guaranteed Floor Protection */}
-          <div className="p-3.5 bg-white dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10 space-y-2 shadow-xs">
-            <div className="flex items-center justify-between text-xs font-bold text-indigo-900 dark:text-indigo-200 gap-2">
-              <span className="flex items-center gap-1 whitespace-nowrap">🔒 Floor Safety</span>
-              <span className="text-[10px] bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 px-2.5 py-1 rounded-full font-extrabold border border-amber-300 dark:border-amber-500/40 whitespace-nowrap">
-                Winner: {floorWinnerName}
-              </span>
+          <div className="p-4 bg-white dark:bg-slate-900/90 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3 shadow-xs flex flex-col justify-between">
+            <div className="space-y-2">
+              <div className="text-xs font-black text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                <Lock className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                <span>Floor Safety</span>
+              </div>
+              <div className="flex items-start gap-1.5 bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 px-2.5 py-1.5 rounded-xl text-xs border border-amber-200 dark:border-amber-800/80">
+                <Award className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                <div className="min-w-0 font-extrabold text-amber-950 dark:text-amber-200 whitespace-normal break-words">
+                  <span className="text-[10px] font-black uppercase text-amber-700 dark:text-amber-400 mr-1.5">Winner:</span>
+                  {floorWinnerName}
+                </div>
+              </div>
             </div>
-            <p className="text-[11px] text-slate-700 dark:text-slate-300 leading-relaxed">
-              <strong>{floorWinnerName}</strong> secures the highest guaranteed floor coverage ({floorCandidates[0].cov}% of target expenditure covered by DB/State/Annuity streams).
+            <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
+              <strong className="text-slate-800 dark:text-slate-200">{floorWinnerName}</strong> secures the highest guaranteed floor coverage ({floorCandidates[0].cov}% of target expenditure covered by DB/State/Annuity streams).
             </p>
+          </div>
+        </div>
+
+        {/* VISUAL TRADE-OFF SPIDER / RADAR CHART */}
+        <div className="p-4 bg-white dark:bg-slate-900/90 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-2 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-black text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+              <Sparkles className="w-4 h-4 text-indigo-500" />
+              <span>Visual Trade-Off Spider / Radar Profile (0–100 Scale)</span>
+            </span>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">
+              Outer perimeter = 100 Max Score
+            </span>
+          </div>
+
+          <div className="h-64 w-full pt-1">
+            <ResponsiveContainer width="100%" height="100%">
+              <RadarChart cx="50%" cy="50%" outerRadius="75%" data={radarData}>
+                <PolarGrid stroke="#cbd5e1" opacity={0.6} />
+                <PolarAngleAxis dataKey="dimension" tick={{ fill: '#64748b', fontSize: 11, fontWeight: 'bold' }} />
+                <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fontSize: 9 }} />
+                <Radar name={scenarioA.name} dataKey={scenarioA.name} stroke="#64748b" fill="#64748b" fillOpacity={0.25} />
+                <Radar name={scenarioB.name} dataKey={scenarioB.name} stroke="#6366f1" fill="#6366f1" fillOpacity={0.35} />
+                {showScenarioC && (
+                  <Radar name={scenarioC.name} dataKey={scenarioC.name} stroke="#10b981" fill="#10b981" fillOpacity={0.3} />
+                )}
+                <Legend wrapperStyle={{ fontSize: 11, fontWeight: 'bold' }} />
+              </RadarChart>
+            </ResponsiveContainer>
           </div>
         </div>
       </div>
@@ -2177,7 +2659,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
                   <div>Estate Valuation & IHT @ Age 80</div>
                   <div className="text-[10px] text-slate-400 font-normal">Property + Savings + Pensions (if 2027 rule)</div>
                 </td>
-                <td className="py-3.5 px-4">
+                <td className={`py-3.5 px-4 ${estateWinnerName === scenarioA.name ? 'bg-emerald-100/90 dark:bg-emerald-950/80 text-emerald-900 dark:text-emerald-200 font-black border border-emerald-300 dark:border-emerald-700' : ''}`}>
                   <div className="font-extrabold text-slate-900 dark:text-slate-100">Gross: {formatCurrency(iht80A.grossEstate)}</div>
                   <div className="text-[10px] text-rose-600 dark:text-rose-400 font-bold mt-0.5">
                     Est. 40% IHT: {formatCurrency(iht80A.ihtLiability)} ({iht80A.effectiveIhtRate}%)
@@ -2186,7 +2668,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
                     Net to Heirs: {formatCurrency(iht80A.netPassedToHeirs)}
                   </div>
                 </td>
-                <td className="py-3.5 px-4">
+                <td className={`py-3.5 px-4 ${estateWinnerName === scenarioB.name ? 'bg-emerald-100/90 dark:bg-emerald-950/80 text-emerald-900 dark:text-emerald-200 font-black border border-emerald-300 dark:border-emerald-700' : ''}`}>
                   <div className="font-extrabold text-indigo-950 dark:text-indigo-100">Gross: {formatCurrency(iht80B.grossEstate)}</div>
                   <div className="text-[10px] text-rose-600 dark:text-rose-400 font-bold mt-0.5">
                     Est. 40% IHT: {formatCurrency(iht80B.ihtLiability)} ({iht80B.effectiveIhtRate}%)
@@ -2196,7 +2678,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
                   </div>
                 </td>
                 {showScenarioC && iht80C && (
-                  <td className="py-3.5 px-4">
+                  <td className={`py-3.5 px-4 ${estateWinnerName === scenarioC.name ? 'bg-emerald-100/90 dark:bg-emerald-950/80 text-emerald-900 dark:text-emerald-200 font-black border border-emerald-300 dark:border-emerald-700' : ''}`}>
                     <div className="font-extrabold text-emerald-950 dark:text-emerald-100">Gross: {formatCurrency(iht80C.grossEstate)}</div>
                     <div className="text-[10px] text-rose-600 dark:text-rose-400 font-bold mt-0.5">
                       Est. 40% IHT: {formatCurrency(iht80C.ihtLiability)} ({iht80C.effectiveIhtRate}%)
@@ -2362,7 +2844,126 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
         </div>
       </div>
 
-      {/* SECTION 6: FUND LONGEVITY & TAX RELIEF SUMMARY */}
+      {/* SECTION 6: RISK-ADJUSTED LONGEVITY & STRESS BENCHMARK (MONTE CARLO & 75-YEAR BACKTEST) */}
+      <div className="space-y-3 pt-2">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-2">
+            <Dices className="w-4 h-4 text-purple-500" />
+            <span>6. Risk-Adjusted Longevity & Stress Benchmark (Monte Carlo & 75-Year Backtest)</span>
+          </h3>
+          <span className="text-[10px] font-bold uppercase tracking-wider bg-purple-100 dark:bg-purple-950 text-purple-800 dark:text-purple-300 px-2.5 py-0.5 rounded-full border border-purple-200 dark:border-purple-800">
+            Sequence of Returns & Volatility Stress
+          </span>
+        </div>
+
+        <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr className="bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700 font-bold">
+                <th className="py-3 px-4">Risk & Stress Parameter / Metric</th>
+                <th className="py-3 px-4 text-slate-900 dark:text-slate-100">{scenarioA.name}</th>
+                <th className="py-3 px-4 text-indigo-700 dark:text-indigo-300">{scenarioB.name}</th>
+                {showScenarioC && (
+                  <th className="py-3 px-4 text-emerald-700 dark:text-emerald-300">{scenarioC.name}</th>
+                )}
+                <th className="py-3 px-4 text-slate-600 dark:text-slate-400">Risk Winner / Takeaway</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200">
+              
+              {/* Monte Carlo Success Rate */}
+              <tr className="bg-purple-50/40 dark:bg-purple-950/20">
+                <td className="py-3 px-4 font-bold text-slate-800 dark:text-slate-200">
+                  <div className="flex items-center gap-1.5">
+                    <Dices className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                    <span>Monte Carlo Success Rate (300 Runs)</span>
+                  </div>
+                  <div className="text-[10px] text-slate-400 font-normal">% of random market trials avoiding pot depletion</div>
+                </td>
+                <td className={`py-3 px-4 ${mcSimA && mcSimB && (mcSimA.successRate >= mcSimB.successRate) && (!mcSimC || mcSimA.successRate >= mcSimC.successRate) ? 'bg-emerald-100/90 dark:bg-emerald-950/80 text-emerald-900 dark:text-emerald-200 font-black border border-emerald-300 dark:border-emerald-700 shadow-2xs' : ''}`}>
+                  <div className="text-sm font-black">{mcSimA ? `${mcSimA.successRate}%` : 'N/A'}</div>
+                  <div className="text-[10px] text-slate-500 dark:text-slate-400">Median Pot: {formatCurrency(mcSimA?.medianEndPot || 0)}</div>
+                </td>
+                <td className={`py-3 px-4 ${mcSimA && mcSimB && (mcSimB.successRate >= mcSimA.successRate) && (!mcSimC || mcSimB.successRate >= mcSimC.successRate) ? 'bg-emerald-100/90 dark:bg-emerald-950/80 text-emerald-900 dark:text-emerald-200 font-black border border-emerald-300 dark:border-emerald-700 shadow-2xs' : ''}`}>
+                  <div className="text-sm font-black">{mcSimB ? `${mcSimB.successRate}%` : 'N/A'}</div>
+                  <div className="text-[10px] text-indigo-600 dark:text-indigo-400">Median Pot: {formatCurrency(mcSimB?.medianEndPot || 0)}</div>
+                </td>
+                {showScenarioC && (
+                  <td className={`py-3 px-4 ${mcSimA && mcSimB && mcSimC && (mcSimC.successRate >= mcSimA.successRate) && (mcSimC.successRate >= mcSimB.successRate) ? 'bg-emerald-100/90 dark:bg-emerald-950/80 text-emerald-900 dark:text-emerald-200 font-black border border-emerald-300 dark:border-emerald-700 shadow-2xs' : ''}`}>
+                    <div className="text-sm font-black">{mcSimC ? `${mcSimC.successRate}%` : 'N/A'}</div>
+                    <div className="text-[10px] text-emerald-600 dark:text-emerald-400">Median Pot: {formatCurrency(mcSimC?.medianEndPot || 0)}</div>
+                  </td>
+                )}
+                <td className="py-3 px-4 font-bold text-emerald-700 dark:text-emerald-300 text-xs">
+                  Winner: {longevityWinnerName} ({Math.max(mcSimA?.successRate || 0, mcSimB?.successRate || 0, mcSimC?.successRate || 0)}% Success)
+                </td>
+              </tr>
+
+              {/* 75-Year Historic Backtest Success Rate */}
+              <tr className="bg-slate-50/50 dark:bg-slate-800/30">
+                <td className="py-3 px-4 font-bold text-slate-800 dark:text-slate-200">
+                  <div className="flex items-center gap-1.5">
+                    <History className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                    <span>75-Year Historic Market Backtest (1950–2024)</span>
+                  </div>
+                  <div className="text-[10px] text-slate-400 font-normal">% of real 75-year historic market sequences surviving</div>
+                </td>
+                <td className="py-3 px-4">
+                  <div className="font-extrabold text-sm text-slate-900 dark:text-slate-100">{historicA ? `${historicA.successRate}%` : 'N/A'} Success</div>
+                  <div className="text-[10px] text-slate-500 dark:text-slate-400">Worst Start Year: {historicA?.worstStartYear?.startYear ?? 'N/A'}</div>
+                </td>
+                <td className="py-3 px-4">
+                  <div className="font-extrabold text-sm text-indigo-950 dark:text-indigo-100">{historicB ? `${historicB.successRate}%` : 'N/A'} Success</div>
+                  <div className="text-[10px] text-indigo-600 dark:text-indigo-400">Worst Start Year: {historicB?.worstStartYear?.startYear ?? 'N/A'}</div>
+                </td>
+                {showScenarioC && (
+                  <td className="py-3 px-4">
+                    <div className="font-extrabold text-sm text-emerald-950 dark:text-emerald-100">{historicC ? `${historicC.successRate}%` : 'N/A'} Success</div>
+                    <div className="text-[10px] text-emerald-600 dark:text-emerald-400">Worst Start Year: {historicC?.worstStartYear?.startYear ?? 'N/A'}</div>
+                  </td>
+                )}
+                <td className="py-3 px-4 font-medium text-slate-500 dark:text-slate-400">
+                  75 historical sequence runs
+                </td>
+              </tr>
+
+              {/* Worst Historic Sequence Run Outcome */}
+              <tr>
+                <td className="py-3 px-4 font-bold text-slate-800 dark:text-slate-200">
+                  <div className="flex items-center gap-1.5">
+                    <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+                    <span>Worst Historic Run Outcome (e.g. 1973 Crash)</span>
+                  </div>
+                  <div className="text-[10px] text-slate-400 font-normal">Depletion age or final wealth under worst historical crash</div>
+                </td>
+                <td className="py-3 px-4">
+                  <div className="font-bold text-xs">
+                    {historicA?.worstStartYear?.depletedAtAge ? `Depletes at Age ${historicA.worstStartYear.depletedAtAge}` : `Final: ${formatCurrency(historicA?.worstStartYear?.finalRealBalance || 0)}`}
+                  </div>
+                </td>
+                <td className="py-3 px-4">
+                  <div className="font-bold text-xs text-indigo-700 dark:text-indigo-300">
+                    {historicB?.worstStartYear?.depletedAtAge ? `Depletes at Age ${historicB.worstStartYear.depletedAtAge}` : `Final: ${formatCurrency(historicB?.worstStartYear?.finalRealBalance || 0)}`}
+                  </div>
+                </td>
+                {showScenarioC && (
+                  <td className="py-3 px-4">
+                    <div className="font-bold text-xs text-emerald-700 dark:text-emerald-300">
+                      {historicC?.worstStartYear?.depletedAtAge ? `Depletes at Age ${historicC.worstStartYear.depletedAtAge}` : `Final: ${formatCurrency(historicC?.worstStartYear?.finalRealBalance || 0)}`}
+                    </div>
+                  </td>
+                )}
+                <td className="py-3 px-4 font-medium text-slate-500 dark:text-slate-400">
+                  Worst-case historic stress test
+                </td>
+              </tr>
+
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* SECTION 7: FUND LONGEVITY & TAX RELIEF SUMMARY */}
       <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700/80 grid grid-cols-1 sm:grid-cols-3 gap-4">
         
         {/* Tax Relief Gained */}

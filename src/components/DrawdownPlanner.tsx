@@ -169,7 +169,7 @@ const LumpSumSplitEditor: React.FC<LumpSumSplitEditorProps> = ({
                 <div className="font-black text-slate-800 dark:text-slate-200 text-xs">
                   £{s.calculatedAmount.toLocaleString()}
                   <span className="text-[10px] text-slate-400 font-normal block">
-                    ({Math.round((s.calculatedAmount / (lumpSumAmount || 1)) * 100)}%)
+                    ({lumpSumAmount > 0 ? Math.round((s.calculatedAmount / lumpSumAmount) * 100) : 0}%)
                   </span>
                 </div>
 

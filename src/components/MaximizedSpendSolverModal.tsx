@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { UserProfile, InvestmentPots, AnnuityType, AnnuityDurationOption, CoupleMaxSpendScope } from '../types';
-import { solveMaximizedSpend, SolveMaximizedSpendResult, createCandidateProfile, AnnuityFloorMode } from '../utils/maximizedSpendSolver';
+import { solveMaximizedSpend, SolveMaximizedSpendResult, createCandidateProfile, AnnuityFloorMode, getScopeEvaluationInputs } from '../utils/maximizedSpendSolver';
+import { generateProjections } from '../utils/projectionEngine';
 import {
   X,
   Sparkles,
@@ -18,10 +19,11 @@ import {
   Calendar,
   AlertCircle,
   RefreshCw,
+  Loader2,
   Users,
   User,
 } from 'lucide-react';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { AreaChart, Area, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 interface MaximizedSpendSolverModalProps {
   isOpen: boolean;
@@ -110,26 +112,51 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
     (profile.annuityExcessReinvestOption === 'gia' ? 'gia' : profile.annuityExcessReinvestOption === 'cash' ? 'cash' : 'isa')
   );
 
-  // Compute solver result dynamically on parameter changes
-  const solverResult: SolveMaximizedSpendResult = useMemo(() => {
-    return solveMaximizedSpend({
-      profile,
-      pots,
-      coupleScope,
-      targetEndAge,
-      targetLegacyBuffer,
-      spendingPattern,
-      annuityFloorMode,
-      annuityFloorIncomeTarget,
-      annuityFloorPercent,
-      annuityFloorAge,
-      annuityRatePercent,
-      annuityType,
-      annuityDurationOption,
-      annuityDurationUntilAge,
-      reinvestExcessDrawdown,
-      actualSpendingTargetAnnual,
-      reinvestDestinationPot,
+  // State for user custom adjusted target income spend (£/yr)
+  const [customAdjustedTargetIncome, setCustomAdjustedTargetIncome] = useState<number | null>(null);
+
+  const [solverResult, setSolverResult] = useState<SolveMaximizedSpendResult | null>(null);
+  const [isCalculating, setIsCalculating] = useState(false);
+  const workerRef = useRef<Worker | null>(null);
+
+  useEffect(() => {
+    workerRef.current = new Worker(new URL('../workers/solverWorker.ts', import.meta.url), { type: 'module' });
+    workerRef.current.onmessage = (e) => {
+      if (e.data.type === 'SOLVE_MAX_SPEND_SUCCESS') {
+        setSolverResult(e.data.payload);
+        setIsCalculating(false);
+      }
+    };
+    return () => {
+      workerRef.current?.terminate();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!workerRef.current) return;
+    setIsCalculating(true);
+    workerRef.current.postMessage({
+      id: Date.now(),
+      type: 'SOLVE_MAX_SPEND',
+      payload: {
+        profile,
+        pots,
+        coupleScope,
+        targetEndAge,
+        targetLegacyBuffer,
+        spendingPattern,
+        annuityFloorMode,
+        annuityFloorIncomeTarget,
+        annuityFloorPercent,
+        annuityFloorAge,
+        annuityRatePercent,
+        annuityType,
+        annuityDurationOption,
+        annuityDurationUntilAge,
+        reinvestExcessDrawdown,
+        actualSpendingTargetAnnual,
+        reinvestDestinationPot,
+      }
     });
   }, [
     profile,
@@ -152,39 +179,132 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
   ]);
 
   const {
-    maxAnnualIncome,
+    maxAnnualIncome = 0,
     bridgeAnnualIncome,
-    originalAnnualIncome,
-    extraAnnualSpend,
-    extraLifetimeSpend,
-    boostPercentage,
-    finalPotAtTargetAge,
-    bestCandidateProfile,
-    projectionsWithMaxSpend,
-    phaseIncomes,
+    originalAnnualIncome = 0,
+    extraAnnualSpend = 0,
+    extraLifetimeSpend = 0,
+    boostPercentage = 0,
+    finalPotAtTargetAge = 0,
+    bestCandidateProfile = profile,
+    projectionsWithMaxSpend = [],
+    phaseIncomes = [],
     annuityFloorDetails,
     reinvestExcessDetails,
-  } = solverResult;
+  } = solverResult || {};
 
   // Format currency helpers
   const fmt = (v: number) => `£${Math.round(v).toLocaleString()}`;
 
-  // Prepare chart comparison data
+  // Effective adjusted target income (defaults to maxAnnualIncome if not explicitly overridden)
+  const effectiveAdjustedIncome = customAdjustedTargetIncome !== null ? customAdjustedTargetIncome : maxAnnualIncome;
+
+  // Candidate profile for adjusted max target income
+  const adjustedCandidateProfile = useMemo(() => {
+    if (!solverResult) return profile;
+    return createCandidateProfile(
+      profile,
+      effectiveAdjustedIncome,
+      spendingPattern,
+      pots,
+      {
+        annuityFloorMode,
+        annuityFloorIncomeTarget,
+        annuityFloorPercent,
+        annuityFloorAge,
+        annuityRatePercent,
+        annuityType,
+        annuityDurationOption,
+        annuityDurationUntilAge,
+      },
+      {
+        reinvestExcessDrawdown,
+        actualSpendingTargetAnnual,
+        reinvestDestinationPot,
+      },
+      targetEndAge,
+      targetLegacyBuffer,
+      coupleScope
+    );
+  }, [
+    solverResult,
+    effectiveAdjustedIncome,
+    profile,
+    spendingPattern,
+    pots,
+    annuityFloorMode,
+    annuityFloorIncomeTarget,
+    annuityFloorPercent,
+    annuityFloorAge,
+    annuityRatePercent,
+    annuityType,
+    annuityDurationOption,
+    annuityDurationUntilAge,
+    reinvestExcessDrawdown,
+    actualSpendingTargetAnnual,
+    reinvestDestinationPot,
+    targetEndAge,
+    targetLegacyBuffer,
+    coupleScope,
+  ]);
+
+  // Generate projections for adjusted target income
+  const adjustedProjections = useMemo(() => {
+    if (!adjustedCandidateProfile) return [];
+    const isCouple = adjustedCandidateProfile.isCouplePlanning;
+    const { evalProfile, evalPots } = getScopeEvaluationInputs(adjustedCandidateProfile, pots, coupleScope);
+    return generateProjections(
+      evalProfile,
+      evalPots,
+      isCouple && coupleScope === 'couple' ? evalProfile.partnerPots : undefined,
+      isCouple && coupleScope === 'couple'
+    );
+  }, [adjustedCandidateProfile, pots, coupleScope]);
+
+  // Prepare chart comparison data (Solved Max vs Adjusted Target)
   const chartData = useMemo(() => {
-    if (!projectionsWithMaxSpend || projectionsWithMaxSpend.length === 0) return [];
-    
-    return projectionsWithMaxSpend
-      .filter((p) => p.age >= currentRetirementAge && p.age <= targetEndAge)
-      .map((p) => ({
-        age: p.age,
-        year: p.year,
-        maximizedPot: Math.round(p.totalPot || 0),
-        maximizedIncome: Math.round(p.netRetirementIncome || 0),
-      }));
-  }, [projectionsWithMaxSpend, currentRetirementAge, targetEndAge]);
+    const maxMap = new Map((projectionsWithMaxSpend || []).map((p) => [p.age, p]));
+    const adjustedMap = new Map((adjustedProjections || []).map((p) => [p.age, p]));
+
+    // Collect all unique ages >= currentRetirementAge and <= 100
+    const agesSet = new Set<number>();
+    (projectionsWithMaxSpend || []).forEach((p) => {
+      if (p.age >= currentRetirementAge && p.age <= 100) agesSet.add(p.age);
+    });
+    (adjustedProjections || []).forEach((p) => {
+      if (p.age >= currentRetirementAge && p.age <= 100) agesSet.add(p.age);
+    });
+
+    if (agesSet.size === 0) {
+      for (let a = currentRetirementAge; a <= Math.min(100, targetEndAge); a++) {
+        agesSet.add(a);
+      }
+    }
+
+    const sortedAges = Array.from(agesSet).sort((a, b) => a - b);
+
+    return sortedAges.map((age) => {
+      const maxP = maxMap.get(age);
+      const adjP = adjustedMap.get(age);
+      const year = maxP?.year || adjP?.year || (2024 + (age - currentRetirementAge));
+
+      return {
+        age,
+        year,
+        maximizedPot: maxP ? Math.round(maxP.totalPot || 0) : 0,
+        maxNetIncome: maxP ? Math.round(maxP.netRetirementIncome || 0) : 0,
+        maxTargetIncome: maxP ? Math.round(maxP.targetRetirementIncome || maxP.netRetirementIncome || 0) : 0,
+        adjustedPot: adjP ? Math.round(adjP.totalPot || 0) : maxP ? Math.round(maxP.totalPot || 0) : 0,
+        adjustedNetIncome: adjP ? Math.round(adjP.netRetirementIncome || 0) : maxP ? Math.round(maxP.netRetirementIncome || 0) : 0,
+        adjustedTargetIncome: adjP ? Math.round(adjP.targetRetirementIncome || adjP.netRetirementIncome || 0) : maxP ? Math.round(maxP.targetRetirementIncome || maxP.netRetirementIncome || 0) : 0,
+      };
+    });
+  }, [projectionsWithMaxSpend, adjustedProjections, currentRetirementAge, targetEndAge]);
+
+  const maxPlottedAge = chartData.length > 0 ? chartData[chartData.length - 1].age : targetEndAge;
 
   const handleApply = () => {
-    onApplyMaximizedSpend(bestCandidateProfile);
+    onApplyMaximizedSpend(adjustedCandidateProfile);
     onClose();
   };
 
@@ -210,6 +330,12 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
                 Calculates the highest sustainable drawdown budget that depletes your wealth exactly by target age without running out early.
               </p>
             </div>
+            {isCalculating && (
+              <div className="ml-4 flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-full text-xs font-bold text-slate-500 dark:text-slate-400">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Optimizing...</span>
+              </div>
+            )}
           </div>
 
           <button
@@ -221,7 +347,7 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
         </div>
 
         {/* MODAL BODY */}
-        <div className="p-5 sm:p-6 overflow-y-auto space-y-6 flex-1">
+        <div className={`p-5 sm:p-6 overflow-y-auto space-y-6 flex-1 transition-opacity duration-300 ${isCalculating ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
           {/* TOP KPI HIGHLIGHT GRID */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
             {/* KPI 1: MAXIMIZED ANNUAL SPEND */}
@@ -883,11 +1009,66 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
             <div className="flex items-center justify-between">
               <h4 className="font-extrabold text-xs uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
                 <Layers className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                <span>Maximized Portfolio Trajectory (Retirement Age {currentRetirementAge} to {targetEndAge})</span>
+                <span>Maximized Portfolio Trajectory (Retirement Age {currentRetirementAge} to {maxPlottedAge})</span>
               </h4>
               <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">
-                Pots glide down to exactly {fmt(targetLegacyBuffer)} @ Age {targetEndAge}
+                {maxPlottedAge >= 100 ? 'Plotting capped at Age 100' : `Pots glide down to ${fmt(targetLegacyBuffer)} @ Age ${targetEndAge}`}
               </span>
+            </div>
+
+            {/* ADJUST TARGET INCOME BUDGET CONTROL */}
+            <div className="bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-2.5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="space-y-0.5">
+                  <div className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                    <Sliders className="w-3.5 h-3.5 text-amber-500" />
+                    <span>Adjust Target Income Spending Budget</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Calculated Solved Max: <strong className="text-amber-600 dark:text-amber-400">{fmt(maxAnnualIncome)}/yr</strong>. Adjusting this will display the adjusted trajectory below and apply it to your plan.
+                  </p>
+                </div>
+                {customAdjustedTargetIncome !== null && customAdjustedTargetIncome !== maxAnnualIncome && (
+                  <button
+                    type="button"
+                    onClick={() => setCustomAdjustedTargetIncome(null)}
+                    className="px-2.5 py-1 rounded-lg bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 text-[11px] font-extrabold border border-amber-300 dark:border-amber-800 hover:bg-amber-200 transition-colors cursor-pointer self-start sm:self-auto shrink-0"
+                  >
+                    ↺ Reset to Max ({fmt(maxAnnualIncome)}/yr)
+                  </button>
+                )}
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-center gap-3">
+                <div className="w-full flex-1 space-y-1">
+                  <div className="flex justify-between items-center text-xs font-bold">
+                    <span className="text-slate-600 dark:text-slate-400">Adjusted Spending Target:</span>
+                    <span className="text-emerald-600 dark:text-emerald-400 font-extrabold text-sm">{fmt(effectiveAdjustedIncome)}/yr</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={Math.max(5000, Math.round((maxAnnualIncome || 30000) * 0.3))}
+                    max={Math.max(50000, Math.round((maxAnnualIncome || 30000) * 1.4))}
+                    step={500}
+                    value={effectiveAdjustedIncome}
+                    onChange={(e) => setCustomAdjustedTargetIncome(parseInt(e.target.value) || maxAnnualIncome)}
+                    className="w-full accent-emerald-600 cursor-pointer"
+                  />
+                </div>
+
+                <div className="w-full sm:w-44 shrink-0">
+                  <div className="relative">
+                    <span className="absolute left-3 top-2 text-xs text-slate-400 font-bold">£</span>
+                    <input
+                      type="number"
+                      step={500}
+                      value={effectiveAdjustedIncome}
+                      onChange={(e) => setCustomAdjustedTargetIncome(Math.max(0, parseInt(e.target.value) || 0))}
+                      className="w-full pl-7 pr-3 py-1.5 text-xs font-bold bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div className="h-64 bg-slate-50 dark:bg-slate-800/40 p-3 rounded-2xl border border-slate-200 dark:border-slate-800">
@@ -895,7 +1076,7 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
                 <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorMaxPot" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.4} />
+                      <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
                       <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.0} />
                     </linearGradient>
                   </defs>
@@ -906,18 +1087,62 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
                     tickFormatter={(v) => `£${Math.round(v / 1000)}k`}
                   />
                   <Tooltip
-                    formatter={(val: any) => [`£${Math.round(val || 0).toLocaleString()}`, 'Portfolio Wealth']}
-                    labelFormatter={(label) => `Age ${label}`}
-                    contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '0.75rem', color: '#fff', fontSize: '12px' }}
+                    content={({ active, payload, label }) => {
+                      if (!active || !payload || !payload.length) return null;
+                      const data = payload[0].payload;
+                      const isAdjustedDifferent = data.adjustedTargetIncome !== data.maxTargetIncome;
+                      return (
+                        <div className="bg-slate-900 border border-slate-700 rounded-xl p-3 shadow-xl text-xs space-y-1.5 min-w-48 text-slate-100">
+                          <div className="font-extrabold border-b border-slate-800 pb-1 flex items-center justify-between text-amber-400">
+                            <span>Age {label} ({data.year})</span>
+                          </div>
+                          
+                          <div className="space-y-0.5 pb-1 border-b border-slate-800">
+                            <div className="text-[10px] font-black uppercase text-amber-400">Solved Max Spend ({fmt(maxAnnualIncome)}/yr)</div>
+                            <div className="flex items-center justify-between gap-4">
+                              <span className="text-slate-400">Wealth Pot:</span>
+                              <span className="font-bold text-amber-300">£{Math.round(data.maximizedPot || 0).toLocaleString()}</span>
+                            </div>
+                          </div>
+
+                          <div className="space-y-0.5 pt-0.5">
+                            <div className="text-[10px] font-black uppercase text-emerald-400">
+                              {isAdjustedDifferent ? `Adjusted Target Spend (${fmt(effectiveAdjustedIncome)}/yr)` : 'Applied Target Income'}
+                            </div>
+                            <div className="flex items-center justify-between gap-4">
+                              <span className="text-slate-400">Wealth Pot:</span>
+                              <span className="font-bold text-emerald-300">£{Math.round(data.adjustedPot || 0).toLocaleString()}</span>
+                            </div>
+                            <div className="flex items-center justify-between gap-4">
+                              <span className="text-slate-400">Target Income Req:</span>
+                              <span className="font-bold text-indigo-300">£{Math.round(data.adjustedTargetIncome || 0).toLocaleString()}/yr</span>
+                            </div>
+                            <div className="flex items-center justify-between gap-4">
+                              <span className="text-slate-400">Net Income Received:</span>
+                              <span className="font-bold text-teal-300">£{Math.round(data.adjustedNetIncome || 0).toLocaleString()}/yr</span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }}
                   />
+                  <Legend wrapperStyle={{ paddingTop: '5px', fontSize: '11px' }} />
                   <Area
                     type="monotone"
                     dataKey="maximizedPot"
-                    name="Maximized Wealth Pot"
+                    name={`Solved Max Wealth (${fmt(maxAnnualIncome)}/yr)`}
                     stroke="#f59e0b"
-                    strokeWidth={3}
+                    strokeWidth={2.5}
                     fillOpacity={1}
                     fill="url(#colorMaxPot)"
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="adjustedPot"
+                    name={`Adjusted Target Wealth (${fmt(effectiveAdjustedIncome)}/yr)`}
+                    stroke="#10b981"
+                    strokeWidth={3}
+                    dot={false}
                   />
                 </AreaChart>
               </ResponsiveContainer>
@@ -928,7 +1153,7 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
         {/* MODAL FOOTER */}
         <div className="p-5 bg-slate-50 dark:bg-slate-900/90 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
           <div className="text-xs text-slate-600 dark:text-slate-400 font-medium">
-            Applying this solver will set your plan target annual retirement spend to <strong className="font-bold text-amber-600 dark:text-amber-400">{fmt(maxAnnualIncome)}/yr</strong>.
+            Applying this solver will set your plan target annual retirement spend to <strong className="font-bold text-emerald-600 dark:text-emerald-400">{fmt(effectiveAdjustedIncome)}/yr</strong>.
           </div>
 
           <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -942,10 +1167,10 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
             <button
               type="button"
               onClick={handleApply}
-              className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs font-black text-white bg-gradient-to-r from-amber-500 via-amber-600 to-orange-600 hover:from-amber-600 hover:to-orange-700 transition-all shadow-lg shadow-amber-500/20 cursor-pointer flex items-center justify-center gap-2"
+              className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs font-black text-white bg-gradient-to-r from-emerald-600 via-teal-600 to-amber-600 hover:from-emerald-700 hover:to-amber-700 transition-all shadow-lg shadow-emerald-500/20 cursor-pointer flex items-center justify-center gap-2"
             >
               <Check className="w-4 h-4" />
-              <span>Apply Maximized Spend ({fmt(maxAnnualIncome)}/yr)</span>
+              <span>Apply Maximized Spend ({fmt(effectiveAdjustedIncome)}/yr)</span>
             </button>
           </div>
         </div>

@@ -87,6 +87,11 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
   const [hoveredStartYear, setHoveredStartYear] = useState<number | null>(null);
   const [isolateSelected, setIsolateSelected] = useState<boolean>(true);
 
+  // Custom Success and Failure Criteria States
+  const [minSuccessWealth, setMinSuccessWealth] = useState<number>(0);
+  const [cautionWealthThreshold, setCautionWealthThreshold] = useState<number>(200000);
+  const [failIfDepleted, setFailIfDepleted] = useState<boolean>(true);
+
   // Search filter for table view
   const [searchQuery, setSearchQuery] = useState<string>('');
 
@@ -189,8 +194,9 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
   // Prepare chart data for trajectories
   const chartData = useMemo(() => {
     return simSummary.aggregateTrajectory.map((point, i) => {
-      const selectedVal = selectedRun && selectedRun.trajectory[i]
-        ? (adjustReal ? selectedRun.trajectory[i].totalPotReal : selectedRun.trajectory[i].totalPot)
+      const snap = selectedRun?.trajectory?.[i];
+      const selectedVal = snap
+        ? (adjustReal ? snap.totalPotReal : snap.totalPot)
         : null;
 
       return {
@@ -204,26 +210,64 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
     });
   }, [simSummary, adjustReal, selectedRun]);
 
-  // Prepare data for 75 Sequences Bar Chart (Start Year vs Final Wealth)
-  const all50BarData = useMemo(() => {
+  // Evaluated runs based on custom success & failure threshold criteria
+  const evaluatedRuns = useMemo(() => {
     return simSummary.runResults.map((run) => {
       const finalVal = adjustReal ? run.finalRealBalance : run.finalNominalBalance;
+      const isDepleted = run.depletedAtAge !== null;
+
+      let isSuccess = true;
+      if (failIfDepleted && isDepleted) {
+        isSuccess = false;
+      } else if (finalVal < minSuccessWealth) {
+        isSuccess = false;
+      }
+
+      let statusTag: 'success_strong' | 'success_low' | 'failed' = 'success_strong';
+      if (!isSuccess || isDepleted) {
+        statusTag = 'failed';
+      } else if (finalVal < cautionWealthThreshold) {
+        statusTag = 'success_low';
+      }
+
       return {
-        startYear: run.startYear,
-        event: run.startEvent,
-        finalWealth: Math.max(0, finalVal),
-        minWealth: run.minPotBalance,
-        retirementPot: run.retirementPotBalance,
-        isSuccess: run.isSuccess,
-        depletedAtAge: run.depletedAtAge,
-        fillColor: !run.isSuccess
+        ...run,
+        isSuccess,
+        statusTag,
+        finalVal,
+        fillColor: statusTag === 'failed'
           ? '#ef4444'
-          : finalVal < 200000
+          : statusTag === 'success_low'
           ? '#f59e0b'
           : '#10b981',
       };
     });
-  }, [simSummary.runResults, adjustReal]);
+  }, [simSummary.runResults, adjustReal, minSuccessWealth, cautionWealthThreshold, failIfDepleted]);
+
+  const successfulRunsCount = useMemo(() => {
+    return evaluatedRuns.filter((r) => r.isSuccess).length;
+  }, [evaluatedRuns]);
+
+  const evaluatedSuccessRate = useMemo(() => {
+    if (evaluatedRuns.length === 0) return 0;
+    return Math.round((successfulRunsCount / evaluatedRuns.length) * 100);
+  }, [successfulRunsCount, evaluatedRuns.length]);
+
+  // Prepare data for 75 Sequences Bar Chart (Start Year vs Final Wealth)
+  const all50BarData = useMemo(() => {
+    return evaluatedRuns.map((run) => {
+      return {
+        startYear: run.startYear,
+        event: run.startEvent,
+        finalWealth: Math.max(0, run.finalVal),
+        minWealth: run.minPotBalance,
+        retirementPot: run.retirementPotBalance,
+        isSuccess: run.isSuccess,
+        depletedAtAge: run.depletedAtAge,
+        fillColor: run.fillColor,
+      };
+    });
+  }, [evaluatedRuns]);
 
   // Prepare data for All 75 Overlaid Sequence Trajectories (Age vs Wealth across all 75 sequences)
   const all50OverlaidTrajectories = useMemo(() => {
@@ -248,15 +292,15 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
 
   // Filtered start years for table
   const filteredRuns = useMemo(() => {
-    if (!searchQuery.trim()) return simSummary.runResults;
+    if (!searchQuery.trim()) return evaluatedRuns;
     const q = searchQuery.toLowerCase();
-    return simSummary.runResults.filter(
+    return evaluatedRuns.filter(
       (r) =>
         r.startYear.toString().includes(q) ||
         r.startEvent.toLowerCase().includes(q) ||
         (r.isSuccess ? 'success' : 'failed').includes(q)
     );
-  }, [simSummary, searchQuery]);
+  }, [evaluatedRuns, searchQuery]);
 
   return (
     <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-xs border border-slate-200 dark:border-slate-800 space-y-6 transition-colors">
@@ -411,10 +455,10 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
             <CheckCircle2 className="w-4 h-4 text-emerald-500" />
           </div>
           <div className="text-2xl font-black text-slate-800 dark:text-slate-100">
-            {simSummary.successRate}%
+            {evaluatedSuccessRate}%
           </div>
           <p className="text-[11px] text-slate-500 dark:text-slate-400">
-            {simSummary.successfulRuns} of {simSummary.totalRuns} start years lasted to age {maxAge}
+            {successfulRunsCount} of {simSummary.totalRuns} start years met success criteria (Min {formatCurrency(minSuccessWealth)})
           </p>
         </div>
 
@@ -475,6 +519,124 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
           </p>
         </div>
 
+      </div>
+
+      {/* CUSTOM SUCCEEDED & FAILED CRITERIA CONTROLS BAR */}
+      <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Sliders className="w-4 h-4 text-amber-500" />
+            <span className="text-xs font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wider">
+              Success & Failure Threshold Rules
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5 flex-wrap text-[11px]">
+            <span className="font-semibold text-slate-500">Presets:</span>
+            <button
+              onClick={() => { setMinSuccessWealth(0); setFailIfDepleted(true); }}
+              className={`px-2.5 py-0.5 rounded-lg border font-bold transition-all ${
+                minSuccessWealth === 0 && failIfDepleted
+                  ? 'bg-amber-500 text-white border-amber-500'
+                  : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:bg-slate-100'
+              }`}
+            >
+              Die With Zero (&gt;£0)
+            </button>
+            <button
+              onClick={() => setMinSuccessWealth(50000)}
+              className={`px-2.5 py-0.5 rounded-lg border font-bold transition-all ${
+                minSuccessWealth === 50000
+                  ? 'bg-amber-500 text-white border-amber-500'
+                  : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:bg-slate-100'
+              }`}
+            >
+              Preserve £50k
+            </button>
+            <button
+              onClick={() => setMinSuccessWealth(100000)}
+              className={`px-2.5 py-0.5 rounded-lg border font-bold transition-all ${
+                minSuccessWealth === 100000
+                  ? 'bg-amber-500 text-white border-amber-500'
+                  : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:bg-slate-100'
+              }`}
+            >
+              Preserve £100k
+            </button>
+            <button
+              onClick={() => setMinSuccessWealth(200000)}
+              className={`px-2.5 py-0.5 rounded-lg border font-bold transition-all ${
+                minSuccessWealth === 200000
+                  ? 'bg-amber-500 text-white border-amber-500'
+                  : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:bg-slate-100'
+              }`}
+            >
+              Preserve £200k
+            </button>
+            {profile.maximizedSpendConfig?.targetLegacyBuffer !== undefined && (
+              <button
+                onClick={() => setMinSuccessWealth(profile.maximizedSpendConfig?.targetLegacyBuffer || 0)}
+                className={`px-2.5 py-0.5 rounded-lg border font-bold transition-all ${
+                  minSuccessWealth === (profile.maximizedSpendConfig?.targetLegacyBuffer || 0)
+                    ? 'bg-amber-500 text-white border-amber-500'
+                    : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:bg-slate-100'
+                }`}
+              >
+                Target Legacy Buffer (£{(profile.maximizedSpendConfig.targetLegacyBuffer).toLocaleString()})
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs pt-1 border-t border-slate-200/60 dark:border-slate-800">
+          <div className="space-y-1.5">
+            <label className="font-semibold text-slate-700 dark:text-slate-300 flex justify-between">
+              <span>Min Wealth for Success:</span>
+              <strong className="text-emerald-600 dark:text-emerald-400">{formatCurrency(minSuccessWealth)}</strong>
+            </label>
+            <div className="relative">
+              <span className="absolute left-3 top-2 text-slate-400 font-bold">£</span>
+              <input
+                type="number"
+                step="5000"
+                min="0"
+                value={minSuccessWealth}
+                onChange={(e) => setMinSuccessWealth(Math.max(0, parseInt(e.target.value) || 0))}
+                className="w-full pl-7 pr-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold focus:ring-2 focus:ring-amber-500 outline-none"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="font-semibold text-slate-700 dark:text-slate-300 flex justify-between">
+              <span>Caution / Low Wealth Threshold:</span>
+              <strong className="text-amber-600 dark:text-amber-400">{formatCurrency(cautionWealthThreshold)}</strong>
+            </label>
+            <div className="relative">
+              <span className="absolute left-3 top-2 text-slate-400 font-bold">£</span>
+              <input
+                type="number"
+                step="10000"
+                min="0"
+                value={cautionWealthThreshold}
+                onChange={(e) => setCautionWealthThreshold(Math.max(0, parseInt(e.target.value) || 0))}
+                className="w-full pl-7 pr-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold focus:ring-2 focus:ring-amber-500 outline-none"
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 pt-5">
+            <input
+              type="checkbox"
+              id="failIfDepleted"
+              checked={failIfDepleted}
+              onChange={(e) => setFailIfDepleted(e.target.checked)}
+              className="w-4 h-4 text-rose-600 rounded border-slate-300 focus:ring-rose-500 cursor-pointer"
+            />
+            <label htmlFor="failIfDepleted" className="text-xs font-semibold text-slate-700 dark:text-slate-300 cursor-pointer">
+              Fail if pot depletes to £0 before age {maxAge}
+            </label>
+          </div>
+        </div>
       </div>
 
       {/* Asset Allocation Quick Sliders */}
@@ -1199,14 +1361,14 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
           </div>
 
           <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
-            {simSummary.runResults.map((run) => {
+            {evaluatedRuns.map((run) => {
               const isSelected = selectedStartYear === run.startYear;
               const isHovered = hoveredStartYear === run.startYear;
               let bgClass = 'bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-200 dark:border-emerald-800';
               
               if (!run.isSuccess) {
                 bgClass = 'bg-rose-100 text-rose-900 border-rose-300 dark:bg-rose-950 dark:text-rose-200 dark:border-rose-800';
-              } else if (run.finalRealBalance < 200000) {
+              } else if (run.statusTag === 'success_low') {
                 bgClass = 'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950 dark:text-amber-200 dark:border-amber-800';
               }
 
@@ -1225,7 +1387,7 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
                 >
                   <div className="text-xs font-bold">{run.startYear}</div>
                   <div className="text-[10px] opacity-80 mt-0.5">
-                    {run.isSuccess ? formatCurrency(adjustReal ? run.finalRealBalance : run.finalNominalBalance) : `Age ${run.depletedAtAge}`}
+                    {run.isSuccess ? formatCurrency(adjustReal ? run.finalRealBalance : run.finalNominalBalance) : run.depletedAtAge ? `Age ${run.depletedAtAge}` : formatCurrency(run.finalVal)}
                   </div>
                 </button>
               );

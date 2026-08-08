@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { X, Layers, Plus, Trash2, Check, Pencil, Calendar, ArrowRight, ArrowUpDown } from 'lucide-react';
+import { X, Layers, Plus, Trash2, Check, Pencil, Calendar, ArrowRight, ArrowUpDown, Download, Upload } from 'lucide-react';
 import { PlannerScenario } from '../types';
 
 export type PlanSortOption = 'updated_desc' | 'updated_asc' | 'name_asc' | 'name_desc' | 'custom';
@@ -13,6 +13,7 @@ interface ManagePlansModalProps {
   onRequestDeleteScenario: (id: string, name: string) => void;
   onNewScenario: () => void;
   onRenameScenario: (id: string, newName: string) => void;
+  onImportScenarios?: (scenarios: PlannerScenario[]) => void;
 }
 
 export const ManagePlansModal: React.FC<ManagePlansModalProps> = ({
@@ -24,10 +25,12 @@ export const ManagePlansModal: React.FC<ManagePlansModalProps> = ({
   onRequestDeleteScenario,
   onNewScenario,
   onRenameScenario,
+  onImportScenarios,
 }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState<string>('');
   const [sortBy, setSortBy] = useState<PlanSortOption>('updated_desc');
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const sortedScenarios = useMemo(() => {
     const list = [...scenarios];
@@ -67,6 +70,37 @@ export const ManagePlansModal: React.FC<ManagePlansModalProps> = ({
       onRenameScenario(id, trimmed);
     }
     setEditingId(null);
+  };
+
+  const handleExportScenario = (scenario: PlannerScenario) => {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify([scenario], null, 2));
+    const downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute("download", `retirefree_plan_${scenario.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.json`);
+    document.body.appendChild(downloadAnchorNode); // required for firefox
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const text = event.target?.result as string;
+        const parsed = JSON.parse(text);
+        if (onImportScenarios) {
+          onImportScenarios(Array.isArray(parsed) ? parsed : [parsed]);
+          onClose();
+        }
+      } catch (err) {
+        console.error("Failed to parse JSON");
+        alert("Failed to parse JSON file.");
+      }
+    };
+    reader.readAsText(file);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const formatDate = (isoString?: string) => {
@@ -232,6 +266,14 @@ export const ManagePlansModal: React.FC<ManagePlansModalProps> = ({
                   )}
 
                   <button
+                    onClick={() => handleExportScenario(s)}
+                    className="p-2 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded-lg transition-colors cursor-pointer"
+                    title={`Export plan "${s.name}"`}
+                  >
+                    <Download className="w-4 h-4" />
+                  </button>
+
+                  <button
                     onClick={() => onRequestDeleteScenario(s.id, s.name)}
                     className="p-2 text-rose-500 hover:text-rose-700 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors cursor-pointer"
                     title={`Remove plan "${s.name}"`}
@@ -246,16 +288,32 @@ export const ManagePlansModal: React.FC<ManagePlansModalProps> = ({
 
         {/* Footer Actions */}
         <div className="border-t border-slate-100 dark:border-slate-800 pt-4 flex items-center justify-between shrink-0">
-          <button
-            onClick={() => {
-              onClose();
-              onNewScenario();
-            }}
-            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shadow-xs active:scale-95"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Create New Plan</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                onClose();
+                onNewScenario();
+              }}
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shadow-xs active:scale-95"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Create New Plan</span>
+            </button>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold flex items-center gap-2 transition-colors cursor-pointer"
+            >
+              <Upload className="w-4 h-4" />
+              <span>Import Plan</span>
+            </button>
+            <input
+              type="file"
+              accept=".json"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              className="hidden"
+            />
+          </div>
 
           <button
             onClick={onClose}

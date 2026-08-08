@@ -131,12 +131,13 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
 
     const totalShortfall = shortfallYears.reduce((sum, p) => sum + (p.incomeShortfall || 0), 0);
 
-    const offset = profile.targetRetirementAge - profile.currentAge;
+    const offset = Math.max(0, profile.targetRetirementAge - profile.currentAge);
     const inflFactor = Math.pow(1 + profile.expectedInflationRate / 100, offset);
-    const scale = adjustInflation ? 1 / inflFactor : 1;
+    const rawScale = adjustInflation ? (inflFactor > 0 ? 1 / inflFactor : 1) : 1;
+    const scale = isFinite(rawScale) && !isNaN(rawScale) ? rawScale : 1;
 
     const rawPot = retirementYear?.totalPot || 0;
-    const dispPot = Math.round(adjustInflation ? rawPot / inflFactor : rawPot);
+    const dispPot = Math.round(adjustInflation && inflFactor > 0 ? rawPot / inflFactor : rawPot);
 
     const combTotal = Math.round((retirementYear?.totalPot || 0) * scale);
     const combPension = Math.round((retirementYear?.pensionPot || 0) * scale);
@@ -1735,6 +1736,18 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                                     <span>+£{(data.cumulativeExcessIncome || 0).toLocaleString()}</span>
                                   </div>
                                 )}
+                                {data.isRetired && (
+                                  <>
+                                    <div className="flex justify-between text-indigo-600 dark:text-indigo-400 font-semibold pt-1 border-t border-slate-100 dark:border-slate-800">
+                                      <span>Income Target Req:</span>
+                                      <span className="font-bold">£{(data.targetIncome || 0).toLocaleString()}/yr</span>
+                                    </div>
+                                    <div className="flex justify-between text-emerald-600 dark:text-emerald-500 font-semibold">
+                                      <span>Net Income Received:</span>
+                                      <span className="font-bold">£{(data.totalIncome || 0).toLocaleString()}/yr</span>
+                                    </div>
+                                  </>
+                                )}
                               </div>
 
                               {data.isRetired && data.incomeShortfall > 0 && (
@@ -1912,6 +1925,18 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                                     <span>Cumulative Income Surplus:</span>
                                     <span>+£{(data.cumulativeExcessIncome || 0).toLocaleString()}</span>
                                   </div>
+                                )}
+                                {data.isRetired && (
+                                  <>
+                                    <div className="flex justify-between text-indigo-600 dark:text-indigo-400 font-semibold pt-1 border-t border-slate-100 dark:border-slate-800">
+                                      <span>Income Target Req:</span>
+                                      <span className="font-bold">£{(data.targetIncome || 0).toLocaleString()}/yr</span>
+                                    </div>
+                                    <div className="flex justify-between text-emerald-600 dark:text-emerald-500 font-semibold">
+                                      <span>Net Income Received:</span>
+                                      <span className="font-bold">£{(data.totalIncome || 0).toLocaleString()}/yr</span>
+                                    </div>
+                                  </>
                                 )}
                               </div>
 

@@ -19,7 +19,7 @@ export const TaxGuideCard: React.FC = () => {
               <span className="text-xs text-slate-400 dark:text-slate-500 font-semibold">• 2024/25 & 2025/26</span>
             </div>
             <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-              UK Retirement Tax Rules Cheat Sheet
+              UK Tax Guide
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
               Essential UK tax bands, allowances, savings shelters, and tax relief mechanisms
@@ -249,6 +249,101 @@ export const TaxGuideCard: React.FC = () => {
             <p className="leading-relaxed">
               Once you take your first taxable income payment flexibly from a defined contribution pension, you trigger the <strong>Money Purchase Annual Allowance (MPAA)</strong>. This reduces your future pension contribution cap from £60,000 down to <strong>£10,000/year</strong>.
             </p>
+          </div>
+        </div>
+      </div>
+      {/* Section 6: State Pension Framework & Age Rules */}
+      <div className="space-y-3">
+        <h3 className="font-extrabold text-slate-900 dark:text-white text-base flex items-center gap-2">
+          <Calendar className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+          <span>State Pension Framework & Age Rules</span>
+        </h3>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="p-4 bg-blue-50/60 dark:bg-blue-950/30 rounded-2xl border border-blue-200/80 dark:border-blue-800/60 space-y-2 text-xs">
+            <div className="flex items-center gap-2 font-extrabold text-blue-900 dark:text-blue-300 text-sm">
+              <CheckCircle2 className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+              <span>New State Pension (Post-April 2016)</span>
+            </div>
+            <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
+              The full New State Pension is <strong>£221.20/week</strong> (£11,502.40/year) for 2024/25, rising to <strong>£230.25/week</strong> (£11,973/year) for 2025/26 under the Triple Lock guarantee.
+            </p>
+            <ul className="list-disc list-inside space-y-1 text-slate-600 dark:text-slate-400">
+              <li>Requires <strong>35 qualifying NI years</strong> for the full amount</li>
+              <li>Minimum <strong>10 qualifying years</strong> to receive any State Pension</li>
+              <li>Check your forecast at <strong>gov.uk/check-state-pension</strong></li>
+              <li>Can be deferred for a <strong>~5.8% increase per year</strong> of deferral</li>
+            </ul>
+          </div>
+
+          <div className="p-4 bg-indigo-50/60 dark:bg-indigo-950/30 rounded-2xl border border-indigo-200/80 dark:border-indigo-800/60 space-y-2 text-xs">
+            <div className="flex items-center gap-2 font-extrabold text-indigo-900 dark:text-indigo-300 text-sm">
+              <CheckCircle2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
+              <span>State Pension Age (SPA) Timeline</span>
+            </div>
+            <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
+              The UK State Pension Age is progressively rising under legislation:
+            </p>
+            <ul className="list-disc list-inside space-y-1 text-slate-600 dark:text-slate-400">
+              <li><strong>Currently Age 66</strong> (since October 2020)</li>
+              <li><strong>Age 67</strong> between 2026 and 2028</li>
+              <li><strong>Age 68</strong> between 2044 and 2046 (under review — may be brought forward to 2037–2039)</li>
+            </ul>
+
+            <div className="p-2.5 bg-amber-100/60 dark:bg-amber-900/40 rounded-xl border border-amber-200 dark:border-amber-800/80 flex items-start gap-2 text-xs text-amber-950 dark:text-amber-100 mt-2">
+              <AlertTriangle className="w-4 h-4 text-amber-700 dark:text-amber-300 shrink-0 mt-0.5" />
+              <div>
+                <strong>Tax Impact:</strong> State Pension is taxable income. Combined with other pension drawdown, it can push you into Higher Rate (40%) tax bands. Plan drawdown strategy to account for State Pension starting.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Section 7: Personal Savings Allowance */}
+      <div className="space-y-3">
+        <h3 className="font-extrabold text-slate-900 dark:text-white text-base flex items-center gap-2">
+          <Coins className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+          <span>Personal Savings Allowance (PSA)</span>
+        </h3>
+
+        <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800">
+          <table className="w-full text-left text-xs">
+            <thead>
+              <tr className="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold border-b border-slate-200 dark:border-slate-700">
+                <th className="p-3">Tax Band</th>
+                <th className="p-3">PSA Allowance</th>
+                <th className="p-3">Covers</th>
+                <th className="p-3">Notes</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+              <tr className="bg-white dark:bg-slate-900">
+                <td className="p-3 font-extrabold text-slate-900 dark:text-white">Basic Rate (20%)</td>
+                <td className="p-3 font-bold text-emerald-600 dark:text-emerald-400">£1,000</td>
+                <td className="p-3">Savings interest (bank, building society, NS&I)</td>
+                <td className="p-3 text-slate-500 dark:text-slate-400">First £1,000 of interest earned tax-free</td>
+              </tr>
+              <tr className="bg-slate-50/50 dark:bg-slate-800/30">
+                <td className="p-3 font-extrabold text-slate-900 dark:text-white">Higher Rate (40%)</td>
+                <td className="p-3 font-bold text-amber-600 dark:text-amber-400">£500</td>
+                <td className="p-3">Savings interest (bank, building society, NS&I)</td>
+                <td className="p-3 text-slate-500 dark:text-slate-400">Reduced to £500 for higher rate taxpayers</td>
+              </tr>
+              <tr className="bg-white dark:bg-slate-900">
+                <td className="p-3 font-extrabold text-slate-900 dark:text-white">Additional Rate (45%)</td>
+                <td className="p-3 font-bold text-rose-600 dark:text-rose-400">£0</td>
+                <td className="p-3">N/A</td>
+                <td className="p-3 text-slate-500 dark:text-slate-400">No PSA — all savings interest is taxable</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div className="p-3.5 bg-teal-50/60 dark:bg-teal-950/30 rounded-xl border border-teal-200 dark:border-teal-800/60 flex items-start gap-2 text-xs text-teal-900 dark:text-teal-200">
+          <Lightbulb className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0 mt-0.5" />
+          <div>
+            <strong>ISA Advantage:</strong> Interest earned within ISA wrappers (Cash ISA, Stocks & Shares ISA) does <strong>not</strong> count against your PSA. This is why holding cash savings inside a Cash ISA is always preferable to a standard bank savings account for higher-rate taxpayers.
           </div>
         </div>
       </div>

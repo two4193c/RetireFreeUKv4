@@ -72,7 +72,8 @@ export const IhtEstatePlanningCard: React.FC<IhtEstatePlanningCardProps> = ({
   const handleUpdatePetGift = (id: string, field: keyof PetGift, value: any) => {
     const updatedGifts = (iht.petGifts || []).map((g) => {
       if (g.id === id) {
-        return { ...g, [field]: value };
+        const val = (field === 'amount' || field === 'yearsAgo') ? (Number(value) || 0) : value;
+        return { ...g, [field]: val };
       }
       return g;
     });
@@ -172,7 +173,7 @@ export const IhtEstatePlanningCard: React.FC<IhtEstatePlanningCardProps> = ({
     const netIhtLiability = Math.max(0, grossIhtLiability - insurancePayout);
 
     // Net Estate passed to beneficiaries / heirs
-    const netPassedToHeirs = grossEstateValuation - netIhtLiability - charityDeduction;
+    const netPassedToHeirs = Math.max(0, grossEstateValuation - netIhtLiability - (grossIhtLiability > 0 ? charityDeduction : 0));
 
     // Effective Tax Rate
     const effectiveIhtRate = grossEstateValuation > 0 ? ((netIhtLiability / grossEstateValuation) * 100).toFixed(1) : '0.0';

@@ -129,28 +129,31 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
     return runMonteCarloSimulation(profile, pots, taxResult, params);
   }, [profile, pots, taxResult, params]);
 
-  // Compute 3 scenario results for Overview tab comparison view
+  // Compute 3 scenario results for Overview tab comparison view (gated to active view)
   const baseResult = useMemo(() => {
+    if (!showAllScenarios) return mcResult;
     return runMonteCarloSimulation(profile, pots, taxResult, { ...params, marketScenario: 'standard' });
-  }, [profile, pots, taxResult, params]);
+  }, [profile, pots, taxResult, params, showAllScenarios, mcResult]);
 
   const stressedResult = useMemo(() => {
+    if (!showAllScenarios) return mcResult;
     return runMonteCarloSimulation(profile, pots, taxResult, { ...params, marketScenario: 'stressed' });
-  }, [profile, pots, taxResult, params]);
+  }, [profile, pots, taxResult, params, showAllScenarios, mcResult]);
 
   const crashResult = useMemo(() => {
+    if (!showAllScenarios && params.marketScenario !== 'early_crash') return mcResult;
     return runMonteCarloSimulation(profile, pots, taxResult, {
       ...params,
       marketScenario: 'early_crash',
       useCashBuffer: params.useCashBuffer ?? false,
       cashBufferYears: params.cashBufferYears ?? params.crashDurationYears ?? 2,
     });
-  }, [profile, pots, taxResult, params]);
+  }, [profile, pots, taxResult, params, showAllScenarios, mcResult]);
 
   const projectedCashAtCrashStart = useMemo(() => {
-    if (!crashResult || !crashResult.agePercentiles) return undefined;
+    if (!crashResult || !crashResult.agePercentiles) return 0;
     const targetAgeData = crashResult.agePercentiles.find((p) => p.age === currentCrashStartAge);
-    return targetAgeData?.p50CashGiaPot;
+    return targetAgeData?.p50CashGiaPot ?? 0;
   }, [crashResult, currentCrashStartAge]);
 
   const cashBufferSummary = useMemo(() => {

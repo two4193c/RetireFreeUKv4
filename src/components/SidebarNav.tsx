@@ -50,16 +50,6 @@ export interface TabGroup {
 
 export const NAV_STRUCTURE: TabGroup[] = [
   {
-    id: 'plan_management',
-    label: 'Plan Management',
-    icon: FolderKanban,
-    description: 'Manage saved plans, create new, export & import JSON',
-    cards: [
-      { id: 'card-plan-mgmt-overview', label: 'Plan Management' },
-      { id: 'card-plan-mgmt-json', label: 'JSON Backup & Import' },
-    ],
-  },
-  {
     id: 'inputs',
     label: 'Inputs & Assets',
     icon: Wallet,
@@ -79,7 +69,7 @@ export const NAV_STRUCTURE: TabGroup[] = [
   },
   {
     id: 'accumulation_review',
-    label: 'Accumulation Review',
+    label: 'Accumulation Analysis',
     icon: TrendingUp,
     description: 'Savings rate, tax traps, and wealth accumulation',
     cards: [
@@ -112,7 +102,7 @@ export const NAV_STRUCTURE: TabGroup[] = [
   },
   {
     id: 'risk',
-    label: 'Risk',
+    label: 'Risk Analysis',
     icon: Shield,
     description: 'Monte Carlo stress tests and historic sequence of returns',
     cards: [
@@ -177,13 +167,31 @@ export const NAV_STRUCTURE: TabGroup[] = [
     ],
   },
   {
+    id: 'plan_management',
+    label: 'Plan Management',
+    icon: FolderKanban,
+    description: 'Manage saved plans, create new, export & import JSON',
+    cards: [
+      { id: 'card-plan-mgmt-overview', label: 'Plan Management' },
+      { id: 'card-plan-mgmt-json', label: 'JSON Backup & Import' },
+    ],
+  },
+  {
     id: 'documentation',
     label: 'Documentation',
     icon: BookOpen,
-    description: 'User Guide and UK Tax rules cheat sheet',
+    description: 'Quick Start Guide, Living Standards, Tax Rules, Healthy Life, Mortgage Debt, Risk & Stress, IHT Estate, Income Floor, Couple Planning, and Scenario Benchmark',
     cards: [
-      { id: 'card-other-userguide', label: 'User Guide' },
-      { id: 'card-other-taxrules', label: 'Tax Rules Guide' },
+      { id: 'card-doc-userguide', label: 'Quick Start Guide' },
+      { id: 'card-doc-livingstandards', label: 'Retirement Living Standards' },
+      { id: 'card-doc-healthylife', label: 'Healthy Life Expectancy' },
+      { id: 'card-doc-taxrules', label: 'UK Tax Guide' },
+      { id: 'card-doc-mortgageguide', label: 'Mortgage & Debt Strategy Guide' },
+      { id: 'card-doc-riskguide', label: 'Sequence Risk & Stress Test Guide' },
+      { id: 'card-doc-ihtguide', label: 'April 2027 IHT & Estate Guide' },
+      { id: 'card-doc-floorguide', label: 'Guaranteed Floor & Annuity Guide' },
+      { id: 'card-doc-coupleguide', label: 'Couple & Joint Planning Guide' },
+      { id: 'card-doc-benchmarkguide', label: 'Scenario Benchmark & Scorecard Guide' },
     ],
   },
 ];

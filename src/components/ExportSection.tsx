@@ -87,17 +87,17 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
         p.cumulativeExcessIncome || 0,
       ]);
 
-      const csvContent =
-        'data:text/csv;charset=utf-8,\uFEFF' +
-        [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
+      const csvStr = [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
+      const blob = new Blob(['\uFEFF' + csvStr], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
 
-      const encodedUri = encodeURI(csvContent);
       const link = document.createElement('a');
-      link.setAttribute('href', encodedUri);
+      link.setAttribute('href', url);
       link.setAttribute('download', `RetireFree_UK_Projections_${fileNameSlug}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      URL.revokeObjectURL(url);
 
       setExportSuccessMsg('Projections exported to CSV successfully!');
       setTimeout(() => setExportSuccessMsg(null), 4000);
@@ -534,6 +534,9 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
 
       const shortfallYears = (projections || []).filter((p) => p.isRetired && (p.incomeShortfall || 0) > 0);
       const isPlanFeasible = shortfallYears.length === 0;
+
+      // Yield main UI thread to update button state & render spinner
+      await new Promise((r) => setTimeout(r, 0));
 
       // Run preliminary Monte Carlo simulation for Executive Summary stochastic metrics
       const mcNormalPrelim = runMonteCarloSimulation(profile, pots, exportTaxResult as any, {
@@ -1421,7 +1424,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       // =========================================================================
       // PAGE 5: SPENDING PHASES, RETIREMENT INCOME PRODUCTS & MILESTONES
       // =========================================================================
-      curPageNum = 5;
+      curPageNum++;
       doc.addPage();
       renderPageHeader('Retirement Strategy & Milestone Schedule', curPageNum);
 
@@ -2151,15 +2154,15 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       doc.setFillColor(16, 185, 129);
       doc.rect(18, dLgY, 4, 4, 'F');
       doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
-      doc.text(`Pension Pot: £${(retirementYear.pensionPot || (0) || 0).toLocaleString()} (${pPct}%)`, 24, dLgY + 3.5);
+      doc.text(`Pension Pot: £${(retirementYear.pensionPot || 0).toLocaleString()} (${pPct}%)`, 24, dLgY + 3.5);
 
       doc.setFillColor(99, 102, 241);
       doc.rect(80, dLgY, 4, 4, 'F');
-      doc.text(`ISA Pot: £${(retirementYear.isaPot || (0) || 0).toLocaleString()} (${iPct}%)`, 86, dLgY + 3.5);
+      doc.text(`ISA Pot: £${(retirementYear.isaPot || 0).toLocaleString()} (${iPct}%)`, 86, dLgY + 3.5);
 
       doc.setFillColor(245, 158, 11);
       doc.rect(140, dLgY, 4, 4, 'F');
-      doc.text(`Cash/GIA Pot: £${(retirementYear.cashGiaPot || (0) || 0).toLocaleString()} (${cPct}%)`, 146, dLgY + 3.5);
+      doc.text(`Cash/GIA Pot: £${(retirementYear.cashGiaPot || 0).toLocaleString()} (${cPct}%)`, 146, dLgY + 3.5);
 
       // DIAGRAM ILLUSTRATION 2: Projected Portfolio Wealth Trajectory Curve (SHOWING INDIVIDUAL POT SIZES)
       p4Y += 54;
@@ -3719,7 +3722,8 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
 
       // Draw Bars
       const maxRealVal = Math.max(...historicSim.runResults.map((r) => r.finalRealBalance), 1000000);
-      const barW = (182 - 20) / 50; // ~3.24mm per bar
+      const numHistoricRuns = historicSim.runResults.length || 75;
+      const barW = (182 - 20) / numHistoricRuns; // ~2.16mm per bar for 75 years (fits within 162mm printable area)
       const barXStart = 24;
       const barYBase = hY + barBoxH - 12;
       const maxBarH = barBoxH - 22;
@@ -3729,7 +3733,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       doc.setLineWidth(0.3);
       [0, 0.25, 0.5, 0.75, 1.0].forEach((ratio) => {
         const gridY = barYBase - ratio * maxBarH;
-        doc.line(24, gridY, 190, gridY);
+        doc.line(24, gridY, 186, gridY);
         doc.setFontSize(5.5);
         doc.setTextColor(148, 163, 184);
         doc.text(`£${Math.round((ratio * maxRealVal) / 1000)}k`, 15, gridY + 1.5);
@@ -3745,13 +3749,13 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
         } else {
           doc.setFillColor(225, 29, 72); // rose for depleted
         }
-        doc.rect(x + 0.2, bY, barW - 0.4, bH, 'F');
+        doc.rect(x + 0.1, bY, Math.max(0.4, barW - 0.2), bH, 'F');
 
-        // Year labels on x-axis every 10 years
-        if (i % 10 === 0 || i === historicSim.runResults.length - 1) {
+        // Year labels on x-axis every 10 years (1950, 1960, 1970, 1980, 1990, 2000, 2010, 2020, 2024)
+        if (i % 10 === 0 || i === numHistoricRuns - 1) {
           doc.setFontSize(5.5);
           doc.setTextColor(100, 116, 139);
-          doc.text(`${res.startYear}`, x, barYBase + 5);
+          doc.text(`${res.startYear}`, Math.max(22, Math.min(180, x - 2)), barYBase + 5);
         }
       });
 
@@ -3838,11 +3842,6 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
         });
       }
 
-      // Part 2a: Historic Performance Matrix (1950 - 1988)
-      doc.addPage();
-      curPageNum++;
-      renderPageHeader('Appendix 3 — Historic Performance Matrix (Part 2a: 1950–1988)', curPageNum);
-
       const renderMatrixTable = (resultsChunk: typeof historicSim.runResults) => {
         let h2Y = 22;
 
@@ -3894,12 +3893,21 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       const chunk1 = historicSim.runResults.slice(0, 38);
       const chunk2 = historicSim.runResults.slice(38);
 
-      renderMatrixTable(chunk1);
+      const chunk1StartYear = chunk1[0]?.startYear || 1950;
+      const chunk1EndYear = chunk1[chunk1.length - 1]?.startYear || 1987;
+      const chunk2StartYear = chunk2[0]?.startYear || 1988;
+      const chunk2EndYear = chunk2[chunk2.length - 1]?.startYear || 2024;
 
-      // Part 2b: Historic Performance Matrix (1988 - 2024)
+      // Part 2a: Historic Performance Matrix (Chunk 1)
       doc.addPage();
       curPageNum++;
-      renderPageHeader('Appendix 3 — Historic Performance Matrix (Part 2b: 1988–2024)', curPageNum);
+      renderPageHeader(`Appendix 3 — Historic Performance Matrix (Part 2a: ${chunk1StartYear}–${chunk1EndYear})`, curPageNum);
+      renderMatrixTable(chunk1);
+
+      // Part 2b: Historic Performance Matrix (Chunk 2)
+      doc.addPage();
+      curPageNum++;
+      renderPageHeader(`Appendix 3 — Historic Performance Matrix (Part 2b: ${chunk2StartYear}–${chunk2EndYear})`, curPageNum);
       renderMatrixTable(chunk2);
 
       // =========================================================================
@@ -3949,11 +3957,15 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       let mOvInterest = 0;
       let mStdInterest = 0;
       let mStdBal = mCurBal;
-      let mAgeCleared = isMortgageActive ? (currentAge + Math.ceil(mTotalMos / 12)) : currentAge;
+      let mOvAgeCleared = isMortgageActive ? (currentAge + Math.ceil(mTotalMos / 12)) : currentAge;
+      let mStdAgeCleared = isMortgageActive ? (currentAge + Math.ceil(mTotalMos / 12)) : currentAge;
 
-      let mBalAtAccess = 0;
-      let mBalAtRet = 0;
-      let mBalAtSpa = 0;
+      let mBalAtAccessOv = 0;
+      let mBalAtAccessStd = 0;
+      let mBalAtRetOv = 0;
+      let mBalAtRetStd = 0;
+      let mBalAtSpaOv = 0;
+      let mBalAtSpaStd = 0;
 
       const amortizationCurve: { age: number; stdBal: number; ovBal: number }[] = [];
 
@@ -3962,7 +3974,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
           const age = currentAge + Math.floor((m - 1) / 12);
           const monthInYear = ((m - 1) % 12) + 1;
 
-          // Standard Amortization
+          // Standard Amortization (Without Overpayments)
           if (mStdBal > 0) {
             const interestStd = mStdBal * mRateMo;
             mStdInterest += interestStd;
@@ -3971,9 +3983,13 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
             let cap = Math.max(0, pmt - interestStd);
             if (cap > mStdBal) cap = mStdBal;
             mStdBal = Math.max(0, mStdBal - cap);
+
+            if (mStdBal <= 0.01 && mStdAgeCleared === currentAge + Math.ceil(mTotalMos / 12)) {
+              mStdAgeCleared = age;
+            }
           }
 
-          // Overpaid Amortization
+          // Overpaid Amortization (With Overpayments)
           if (mOvBal > 0) {
             const interestOv = mOvBal * mRateMo;
             mOvInterest += interestOv;
@@ -3997,8 +4013,8 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
             if (cap > mOvBal) cap = mOvBal;
             mOvBal = Math.max(0, mOvBal - cap);
 
-            if (mOvBal <= 0.01 && mAgeCleared === currentAge + Math.ceil(mTotalMos / 12)) {
-              mAgeCleared = age;
+            if (mOvBal <= 0.01 && mOvAgeCleared === currentAge + Math.ceil(mTotalMos / 12)) {
+              mOvAgeCleared = age;
             }
           }
 
@@ -4006,9 +4022,18 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
             amortizationCurve.push({ age, stdBal: mStdBal, ovBal: mOvBal });
           }
 
-          if (age === primaryAccessAge && monthInYear === 1) mBalAtAccess = mOvBal;
-          if (age === targetAge && monthInYear === 1) mBalAtRet = mOvBal;
-          if (age === primarySpaAge && monthInYear === 1) mBalAtSpa = mOvBal;
+          if (age === primaryAccessAge && monthInYear === 1) {
+            mBalAtAccessOv = mOvBal;
+            mBalAtAccessStd = mStdBal;
+          }
+          if (age === targetAge && monthInYear === 1) {
+            mBalAtRetOv = mOvBal;
+            mBalAtRetStd = mStdBal;
+          }
+          if (age === primarySpaAge && monthInYear === 1) {
+            mBalAtSpaOv = mOvBal;
+            mBalAtSpaStd = mStdBal;
+          }
         }
       }
 
@@ -4031,49 +4056,94 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       doc.text(`• Property Valuation: £${mPropVal.toLocaleString()} | LTV: ${mLtv.toFixed(1)}% | Current Equity: £${mEquity.toLocaleString()}`, 18, mY + 14);
       doc.text(`• Current Debt Balance: ${isMortgageActive ? `£${mCurBal.toLocaleString()} @ ${mRatePct}% APR (${mRepType.toUpperCase()})` : '£0 (Mortgage Switched Off)'}`, 18, mY + 20);
       doc.text(`• Monthly Outflow: ${isMortgageActive ? `£${Math.round(mEffPmt).toLocaleString()}/mo standard + £${mRegOverpay.toLocaleString()}/mo overpayment = £${Math.round(mTotalOutflow).toLocaleString()}/mo` : '£0/mo'}`, 18, mY + 26);
-      doc.text(`• Strategy Status: ${isMortgageActive ? `£${Math.round(mInterestSaved).toLocaleString()} saved | Debt Cleared Age: Age ${mAgeCleared}` : 'No active mortgage debt. 100% Cleared.'}`, 18, mY + 32);
+      doc.text(`• Strategy Status: ${isMortgageActive ? `£${Math.round(mInterestSaved).toLocaleString()} interest saved | Debt Cleared Age: Age ${mOvAgeCleared} (${Math.max(0, mStdAgeCleared - mOvAgeCleared)} yrs early)` : 'No active mortgage debt. 100% Cleared.'}`, 18, mY + 32);
 
       mY += 44;
 
-      // Table: Key Milestone Debt Balances
+      // Table: Key Milestone Debt Balances (Details With & Without Overpayments)
       doc.setFillColor(30, 41, 59);
-      doc.rect(14, mY, 182, 6, 'F');
+      doc.rect(14, mY, 182, 6.5, 'F');
       doc.setTextColor(255, 255, 255);
-      doc.setFontSize(8);
+      doc.setFontSize(7.5);
       doc.setFont('helvetica', 'bold');
-      doc.text('Key Milestone Mortgage Debt Balances', 18, mY + 4.2);
+      doc.text('Key Milestone', 18, mY + 4.2);
+      doc.text('Without Overpayments', 82, mY + 4.2);
+      doc.text('With Overpayments', 132, mY + 4.2);
+      doc.text('Debt Savings', 170, mY + 4.2);
 
-      mY += 6;
+      mY += 6.5;
       doc.setFontSize(7.5);
       doc.setFont('helvetica', 'normal');
 
       const mMilestones = [
-        { milestone: `Private Pension Access Age (Age ${primaryAccessAge})`, bal: isMortgageActive ? mBalAtAccess : 0 },
-        { milestone: `Target Retirement Age (Age ${targetAge})`, bal: isMortgageActive ? mBalAtRet : 0 },
-        { milestone: `State Pension Access Age (Age ${primarySpaAge})`, bal: isMortgageActive ? mBalAtSpa : 0 },
-        { milestone: `Final Mortgage Payoff (Age ${mAgeCleared})`, bal: 0 },
+        {
+          milestone: `Private Pension Access (Age ${primaryAccessAge})`,
+          stdBal: isMortgageActive ? mBalAtAccessStd : 0,
+          ovBal: isMortgageActive ? mBalAtAccessOv : 0,
+        },
+        {
+          milestone: `Target Retirement (Age ${targetAge})`,
+          stdBal: isMortgageActive ? mBalAtRetStd : 0,
+          ovBal: isMortgageActive ? mBalAtRetOv : 0,
+        },
+        {
+          milestone: `State Pension Access (Age ${primarySpaAge})`,
+          stdBal: isMortgageActive ? mBalAtSpaStd : 0,
+          ovBal: isMortgageActive ? mBalAtSpaOv : 0,
+        },
+        {
+          milestone: `Payoff Age (Std: Age ${mStdAgeCleared} vs Overpaid: Age ${mOvAgeCleared})`,
+          stdBal: 0,
+          ovBal: 0,
+          isPayoffRow: true,
+        },
       ];
 
       mMilestones.forEach((row, idx) => {
         if (idx % 2 === 1) {
           doc.setFillColor(slateLight[0], slateLight[1], slateLight[2]);
-          doc.rect(14, mY, 182, 5, 'F');
+          doc.rect(14, mY, 182, 5.5, 'F');
         }
         doc.setTextColor(51, 65, 85);
-        doc.text(row.milestone, 18, mY + 3.8);
+        doc.setFont('helvetica', 'normal');
+        doc.text(row.milestone, 18, mY + 4);
 
-        if (row.bal <= 0) {
+        if (row.isPayoffRow) {
+          doc.setTextColor(100, 116, 139);
+          doc.text(`Age ${mStdAgeCleared}`, 82, mY + 4);
           doc.setTextColor(22, 101, 52);
           doc.setFont('helvetica', 'bold');
-          doc.text('£0 (100% Cleared)', 150, mY + 3.8);
-          doc.setFont('helvetica', 'normal');
+          doc.text(`Age ${mOvAgeCleared} (${Math.max(0, mStdAgeCleared - mOvAgeCleared)} yrs early)`, 132, mY + 4);
+          doc.text(`£${Math.round(mInterestSaved).toLocaleString()} saved`, 170, mY + 4);
         } else {
-          doc.setTextColor(225, 29, 72);
+          // Std Bal
+          if (row.stdBal <= 0) {
+            doc.setTextColor(22, 101, 52);
+            doc.text('£0 (Cleared)', 82, mY + 4);
+          } else {
+            doc.setTextColor(51, 65, 85);
+            doc.text(`£${Math.round(row.stdBal).toLocaleString()}`, 82, mY + 4);
+          }
+
+          // Overpaid Bal
+          if (row.ovBal <= 0) {
+            doc.setTextColor(22, 101, 52);
+            doc.setFont('helvetica', 'bold');
+            doc.text('£0 (Cleared Early)', 132, mY + 4);
+          } else {
+            doc.setTextColor(225, 29, 72);
+            doc.setFont('helvetica', 'bold');
+            doc.text(`£${Math.round(row.ovBal).toLocaleString()}`, 132, mY + 4);
+          }
+
+          // Savings
+          const diff = Math.max(0, row.stdBal - row.ovBal);
           doc.setFont('helvetica', 'bold');
-          doc.text(`£${Math.round(row.bal).toLocaleString()}`, 150, mY + 3.8);
-          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(16, 185, 129);
+          doc.text(diff > 0 ? `-£${Math.round(diff).toLocaleString()}` : '£0', 170, mY + 4);
         }
-        mY += 5;
+        doc.setFont('helvetica', 'normal');
+        mY += 5.5;
       });
 
       mY += 8;
@@ -4179,7 +4249,19 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
         doc.text('Mortgage Debt Switched Off', 18, mY + 6.5);
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(7.5);
-        doc.text('Mortgage debt module is disabled or fully paid off (£0 balance). No debt amortization chart required.', 18, mY + 12);
+      }
+
+      // Dynamic Two-Pass Page Numbering & Footer Pass across all actual pages
+      const finalTotalPages = doc.getNumberOfPages();
+      for (let p = 1; p <= finalTotalPages; p++) {
+        doc.setPage(p);
+        doc.setFillColor(255, 255, 255);
+        doc.rect(14, 283, 182, 8, 'F');
+        doc.setFontSize(7.5);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(slateMuted[0], slateMuted[1], slateMuted[2]);
+        doc.text(`Page ${p} of ${finalTotalPages} • RetireFree UK Confidential Guidance Model`, 14, 287);
+        doc.text(`Generated: ${new Date().toLocaleDateString('en-GB')}`, 165, 287);
       }
 
       // Save PDF safely using fileNameSlug
@@ -4315,18 +4397,21 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
               {/* Export JSON */}
               <button
                 onClick={() => {
-                  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({
+                  const jsonStr = JSON.stringify({
                     version: 'v2',
                     exportedAt: new Date().toISOString(),
                     scenarios: scenarios
-                  }, null, 2));
+                  }, null, 2);
+                  const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8;' });
+                  const url = URL.createObjectURL(blob);
                   const downloadAnchor = document.createElement('a');
                   const dateStr = new Date().toISOString().split('T')[0];
-                  downloadAnchor.setAttribute("href", dataStr);
+                  downloadAnchor.setAttribute("href", url);
                   downloadAnchor.setAttribute("download", `RetireFree_UK_Settings_Backup_${dateStr}.json`);
                   document.body.appendChild(downloadAnchor);
                   downloadAnchor.click();
                   downloadAnchor.remove();
+                  URL.revokeObjectURL(url);
                   setExportSuccessMsg('Settings exported to JSON backup file!');
                   setTimeout(() => setExportSuccessMsg(null), 4000);
                 }}

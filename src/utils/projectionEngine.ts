@@ -251,20 +251,17 @@ export function generateProjections(
   const isPartnerScottishTax = (profile.partnerTaxRegion || profile.taxRegion) === 'scotland';
   const indexTaxBands = profile.indexTaxBands ?? true;
 
-  const computeIncomeTax = (taxableAboveAllowance: number, inflationMult: number, isScottish: boolean = isScottishTax): number => {
-    if (taxableAboveAllowance <= 0) return 0;
-    const paValue = profile.customTaxBands?.enabled ? (profile.customTaxBands.personalAllowance ?? PERSONAL_ALLOWANCE) : PERSONAL_ALLOWANCE;
+  const computeIncomeTax = (grossTaxableIncome: number, inflationMult: number, isScottish: boolean = isScottishTax): number => {
+    if (grossTaxableIncome <= 0) return 0;
 
     if (!indexTaxBands) {
-      // Frozen tax bands: taxableAboveAllowance is in nominal £ above the unindexed PA.
-      const nominalGrossEquivalent = taxableAboveAllowance + paValue;
-      const { tax: nominalTax } = computeIncomeTaxOnAmount(nominalGrossEquivalent, isScottish, profile.customTaxBands);
+      // Frozen tax bands: grossTaxableIncome is in nominal £.
+      const { tax: nominalTax } = computeIncomeTaxOnAmount(grossTaxableIncome, isScottish, profile.customTaxBands);
       return nominalTax;
     } else {
       // Indexed tax bands: scale back to base-year money, compute tax against base bands, scale forward.
-      const nominalTaxable = taxableAboveAllowance / inflationMult;
-      const nominalGrossEquivalent = nominalTaxable + paValue;
-      const { tax: nominalTax } = computeIncomeTaxOnAmount(nominalGrossEquivalent, isScottish, profile.customTaxBands);
+      const baseYearGross = grossTaxableIncome / inflationMult;
+      const { tax: nominalTax } = computeIncomeTaxOnAmount(baseYearGross, isScottish, profile.customTaxBands);
       return nominalTax * inflationMult;
     }
   };
@@ -1558,10 +1555,10 @@ function parseAnnuityTypeConfig(type?: string) {
                   const drawSs = drawn * (primarySsIsaPot / (primaryIsaPot || 1));
                   const drawCash = drawn * (primaryCashIsaPot / (primaryIsaPot || 1));
                   const drawLisa = drawn * (primaryLisaPot / (primaryIsaPot || 1));
-                  primarySsIsaPot -= drawSs;
-                  primaryCashIsaPot -= drawCash;
-                  primaryLisaPot -= drawLisa;
-                  primaryIsaPot -= drawn;
+                  primarySsIsaPot = Math.max(0, primarySsIsaPot - drawSs);
+                  primaryCashIsaPot = Math.max(0, primaryCashIsaPot - drawCash);
+                  primaryLisaPot = Math.max(0, primaryLisaPot - drawLisa);
+                  primaryIsaPot = Math.max(0, primaryIsaPot - drawn);
                 }
                 return amt - drawn;
               };
@@ -1571,10 +1568,10 @@ function parseAnnuityTypeConfig(type?: string) {
                   const drawSs = drawn * (partnerSsIsaPot / (partnerIsaPot || 1));
                   const drawCash = drawn * (partnerCashIsaPot / (partnerIsaPot || 1));
                   const drawLisa = drawn * (partnerLisaPot / (partnerIsaPot || 1));
-                  partnerSsIsaPot -= drawSs;
-                  partnerCashIsaPot -= drawCash;
-                  partnerLisaPot -= drawLisa;
-                  partnerIsaPot -= drawn;
+                  partnerSsIsaPot = Math.max(0, partnerSsIsaPot - drawSs);
+                  partnerCashIsaPot = Math.max(0, partnerCashIsaPot - drawCash);
+                  partnerLisaPot = Math.max(0, partnerLisaPot - drawLisa);
+                  partnerIsaPot = Math.max(0, partnerIsaPot - drawn);
                 }
                 return amt - drawn;
               };
@@ -1636,9 +1633,9 @@ function parseAnnuityTypeConfig(type?: string) {
       const guaranteedIncomeTotal = primaryGuaranteedTotal + partnerGuaranteedTotal;
 
       // Compute guaranteed income tax liability using strict individual assessment
-      const primaryGuaranteedTax = computeIncomeTax(Math.max(0, primaryTaxableGuaranteed - singlePersonalAllowance), inflationFactor, isScottishTax);
+      const primaryGuaranteedTax = computeIncomeTax(primaryTaxableGuaranteed, inflationFactor, isScottishTax);
       const partnerGuaranteedTax = profile.isCouplePlanning
-        ? computeIncomeTax(Math.max(0, partnerTaxableGuaranteed - singlePersonalAllowance), inflationFactor, isPartnerScottishTax)
+        ? computeIncomeTax(partnerTaxableGuaranteed, inflationFactor, isPartnerScottishTax)
         : 0;
       const guaranteedTaxLiability = primaryGuaranteedTax + partnerGuaranteedTax;
 
@@ -1727,9 +1724,9 @@ function parseAnnuityTypeConfig(type?: string) {
           const priTotalTaxable = primaryTaxableGuaranteed + priTaxableDrawdown;
           const partTotalTaxable = partnerTaxableGuaranteed + partTaxableDrawdown;
 
-          const priTax = computeIncomeTax(Math.max(0, priTotalTaxable - singlePersonalAllowance), inflationFactor, isScottishTax);
+          const priTax = computeIncomeTax(priTotalTaxable, inflationFactor, isScottishTax);
           const partTax = profile.isCouplePlanning
-            ? computeIncomeTax(Math.max(0, partTotalTaxable - singlePersonalAllowance), inflationFactor, isPartnerScottishTax)
+            ? computeIncomeTax(partTotalTaxable, inflationFactor, isPartnerScottishTax)
             : 0;
 
           // Calculate base tax on existing gross draws alone
@@ -1743,9 +1740,9 @@ function parseAnnuityTypeConfig(type?: string) {
           const partTaxFreeBase = Math.min(partUncrystBase * 0.25, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn));
           const partTaxableBase = existingPartGross - partTaxFreeBase;
 
-          const priTaxBase = computeIncomeTax(Math.max(0, primaryTaxableGuaranteed + priTaxableBase - singlePersonalAllowance), inflationFactor, isScottishTax);
+          const priTaxBase = computeIncomeTax(primaryTaxableGuaranteed + priTaxableBase, inflationFactor, isScottishTax);
           const partTaxBase = profile.isCouplePlanning
-            ? computeIncomeTax(Math.max(0, partnerTaxableGuaranteed + partTaxableBase - singlePersonalAllowance), inflationFactor, isPartnerScottishTax)
+            ? computeIncomeTax(partnerTaxableGuaranteed + partTaxableBase, inflationFactor, isPartnerScottishTax)
             : 0;
 
           const baseTax = priTaxBase + partTaxBase;
@@ -1818,9 +1815,9 @@ function parseAnnuityTypeConfig(type?: string) {
         const priTotalTaxable = primaryTaxableGuaranteed + priTaxableDrawdown;
         const partTotalTaxable = partnerTaxableGuaranteed + partTaxableDrawdown;
 
-        const priTax = computeIncomeTax(Math.max(0, priTotalTaxable - singlePersonalAllowance), inflationFactor, isScottishTax);
+        const priTax = computeIncomeTax(priTotalTaxable, inflationFactor, isScottishTax);
         const partTax = profile.isCouplePlanning
-          ? computeIncomeTax(Math.max(0, partTotalTaxable - singlePersonalAllowance), inflationFactor, isPartnerScottishTax)
+          ? computeIncomeTax(partTotalTaxable, inflationFactor, isPartnerScottishTax)
           : 0;
 
         // Calculate base tax on existing gross draws alone
@@ -1834,9 +1831,9 @@ function parseAnnuityTypeConfig(type?: string) {
         const partTaxFreeBase = Math.min(partUncrystBase * 0.25, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn));
         const partTaxableBase = existingPartGross - partTaxFreeBase;
 
-        const priTaxBase = computeIncomeTax(Math.max(0, primaryTaxableGuaranteed + priTaxableBase - singlePersonalAllowance), inflationFactor, isScottishTax);
+        const priTaxBase = computeIncomeTax(primaryTaxableGuaranteed + priTaxableBase, inflationFactor, isScottishTax);
         const partTaxBase = profile.isCouplePlanning
-          ? computeIncomeTax(Math.max(0, partnerTaxableGuaranteed + partTaxableBase - singlePersonalAllowance), inflationFactor, isPartnerScottishTax)
+          ? computeIncomeTax(partnerTaxableGuaranteed + partTaxableBase, inflationFactor, isPartnerScottishTax)
           : 0;
 
         const baseTax = priTaxBase + partTaxBase;
@@ -1994,9 +1991,9 @@ function parseAnnuityTypeConfig(type?: string) {
             const priTotalTaxable = primaryTaxableGuaranteed + priTaxableDrawdown;
             const partTotalTaxable = partnerTaxableGuaranteed + partTaxableDrawdown;
 
-            const priTax = computeIncomeTax(Math.max(0, priTotalTaxable - singlePersonalAllowance), inflationFactor, isScottishTax);
+            const priTax = computeIncomeTax(priTotalTaxable, inflationFactor, isScottishTax);
             const partTax = profile.isCouplePlanning
-              ? computeIncomeTax(Math.max(0, partTotalTaxable - singlePersonalAllowance), inflationFactor, isPartnerScottishTax)
+              ? computeIncomeTax(partTotalTaxable, inflationFactor, isPartnerScottishTax)
               : 0;
 
             const totalTax = priTax + partTax;
@@ -2257,7 +2254,8 @@ function parseAnnuityTypeConfig(type?: string) {
       const partnerCashGiaPotBeforeDraw = partnerCashGiaPot;
 
       if (isaDrawdown > 0 && isaPot + isaDrawdown > 0) {
-        const drawRatio = isaDrawdown / (isaPot + isaDrawdown);
+        const totalIsaDenom = isaPot + isaDrawdown;
+        const drawRatio = totalIsaDenom > 0 ? isaDrawdown / totalIsaDenom : 0;
         primarySsIsaPot = Math.max(0, primarySsIsaPot * (1 - drawRatio));
         primaryCashIsaPot = Math.max(0, primaryCashIsaPot * (1 - drawRatio));
         primaryLisaPot = Math.max(0, primaryLisaPot * (1 - drawRatio));
@@ -2270,7 +2268,8 @@ function parseAnnuityTypeConfig(type?: string) {
         isaPot = primaryIsaPot + partnerIsaPot;
       }
       if (cashDrawdown > 0 && cashGiaPot + cashDrawdown > 0) {
-        const drawRatio = cashDrawdown / (cashGiaPot + cashDrawdown);
+        const totalCashDenom = cashGiaPot + cashDrawdown;
+        const drawRatio = totalCashDenom > 0 ? cashDrawdown / totalCashDenom : 0;
         primaryCashGiaPot = Math.max(0, primaryCashGiaPot * (1 - drawRatio));
         partnerCashGiaPot = Math.max(0, partnerCashGiaPot * (1 - drawRatio));
         cashGiaPot = primaryCashGiaPot + partnerCashGiaPot;

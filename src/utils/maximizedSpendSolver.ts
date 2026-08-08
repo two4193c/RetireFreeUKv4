@@ -126,9 +126,79 @@ export function getScopeEvaluationInputs(
   potsInput: InvestmentPots,
   scope: CoupleMaxSpendScope = 'couple'
 ): { evalProfile: UserProfile; evalPots: InvestmentPots } {
-  // Always retain full couple profile and pots so that the excluded person's selected drawdown strategy,
-  // assets, pensions, and guaranteed income streams remain fully active in the solver simulation.
-  return { evalProfile: profileInput, evalPots: potsInput };
+  if (!profileInput.isCouplePlanning || scope === 'couple') {
+    return { evalProfile: profileInput, evalPots: potsInput };
+  }
+
+  const evalProfile = JSON.parse(JSON.stringify(profileInput)) as UserProfile;
+  const evalPots = JSON.parse(JSON.stringify(potsInput)) as InvestmentPots;
+
+  if (scope === 'primary') {
+    // Only evaluate primary wealth
+    evalProfile.partnerPots = {
+      workplacePensionBalance: 0,
+      sippBalance: 0,
+      stocksAndSharesIsaBalance: 0,
+      cashIsaBalance: 0,
+      lisaBalance: 0,
+      giaBalance: 0,
+      cashSavingsBalance: 0,
+      workplacePensionMonthlyContribution: 0,
+      sippMonthlyContribution: 0,
+      stocksAndSharesIsaMonthlyContribution: 0,
+      cashIsaMonthlyContribution: 0,
+      lisaMonthlyContribution: 0,
+      giaMonthlyContribution: 0,
+      cashSavingsMonthlyContribution: 0,
+    };
+    evalProfile.partnerWorkplacePensionBalance = 0;
+    evalProfile.partnerSippBalance = 0;
+    evalProfile.partnerIsaBalance = 0;
+  } else if (scope === 'partner') {
+    // Evaluate partner wealth by replacing primary pots with partner's pots, and clearing partner pots
+    const pPots = profileInput.partnerPots || DEFAULT_PARTNER_POTS;
+    evalPots.workplacePensionBalance = pPots.workplacePensionBalance || profileInput.partnerWorkplacePensionBalance || 0;
+    evalPots.sippBalance = pPots.sippBalance || profileInput.partnerSippBalance || 0;
+    evalPots.stocksAndSharesIsaBalance = pPots.stocksAndSharesIsaBalance || profileInput.partnerIsaBalance || 0;
+    evalPots.cashIsaBalance = pPots.cashIsaBalance || 0;
+    evalPots.lisaBalance = pPots.lisaBalance || 0;
+    evalPots.giaBalance = pPots.giaBalance || 0;
+    evalPots.cashSavingsBalance = pPots.cashSavingsBalance || 0;
+    evalPots.workplacePensionMonthlyContribution = pPots.workplacePensionMonthlyContribution || 0;
+    evalPots.sippMonthlyContribution = pPots.sippMonthlyContribution || 0;
+    evalPots.stocksAndSharesIsaMonthlyContribution = pPots.stocksAndSharesIsaMonthlyContribution || 0;
+    evalPots.cashIsaMonthlyContribution = pPots.cashIsaMonthlyContribution || 0;
+    evalPots.lisaMonthlyContribution = pPots.lisaMonthlyContribution || 0;
+    evalPots.giaMonthlyContribution = pPots.giaMonthlyContribution || 0;
+    evalPots.cashSavingsMonthlyContribution = pPots.cashSavingsMonthlyContribution || 0;
+
+    evalProfile.partnerPots = {
+      workplacePensionBalance: 0,
+      sippBalance: 0,
+      stocksAndSharesIsaBalance: 0,
+      cashIsaBalance: 0,
+      lisaBalance: 0,
+      giaBalance: 0,
+      cashSavingsBalance: 0,
+      workplacePensionMonthlyContribution: 0,
+      sippMonthlyContribution: 0,
+      stocksAndSharesIsaMonthlyContribution: 0,
+      cashIsaMonthlyContribution: 0,
+      lisaMonthlyContribution: 0,
+      giaMonthlyContribution: 0,
+      cashSavingsMonthlyContribution: 0,
+    };
+    evalProfile.partnerWorkplacePensionBalance = 0;
+    evalProfile.partnerSippBalance = 0;
+    evalProfile.partnerIsaBalance = 0;
+    
+    // Align target retirement age to partner's retirement age if defined
+    if (profileInput.partnerTargetRetirementAge) {
+      evalProfile.targetRetirementAge = profileInput.partnerTargetRetirementAge;
+    }
+  }
+
+  return { evalProfile, evalPots };
 }
 
 /**
@@ -545,10 +615,10 @@ export function solveMaximizedSpend(options: SolveMaximizedSpendOptions): SolveM
   }
 
   const bestCandidateProfile = createCandidateProfile(
-    profile,
+    evalProfile,
     bestFeasibleIncome,
     spendingPattern,
-    pots,
+    evalPots,
     annuityFloorOpts,
     reinvestOpts,
     clampedEndAge,
