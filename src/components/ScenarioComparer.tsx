@@ -632,6 +632,262 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [exportSuccessMsg, setExportSuccessMsg] = useState<string | null>(null);
 
+  // Lifetime tax calculations for KPI Delta Cards & Tax Efficiency Scorecard
+  const lifetimeTaxA = useMemo(() => projA.reduce((sum, p) => sum + (p.totalTaxPaid || 0), 0), [projA]);
+  const lifetimeTaxB = useMemo(() => projB.reduce((sum, p) => sum + (p.totalTaxPaid || 0), 0), [projB]);
+  const lifetimeTaxC = useMemo(() => showScenarioC ? projC.reduce((sum, p) => sum + (p.totalTaxPaid || 0), 0) : 0, [showScenarioC, projC]);
+
+  // Dynamic Chart Data for Overlaid Comparison Chart based on selected metric
+  const chartData = useMemo(() => {
+    const ages = Array.from(
+      new Set([
+        ...projA.map((p) => p.age),
+        ...projB.map((p) => p.age),
+        ...(showScenarioC ? projC.map((p) => p.age) : []),
+      ])
+    ).sort((a, b) => a - b);
+
+    return ages.map((age) => {
+      const pA = projA.find((p) => p.age === age);
+      const pB = projB.find((p) => p.age === age);
+      const pC = showScenarioC ? projC.find((p) => p.age === age) : null;
+
+      const getValue = (p: YearProjection | null | undefined, infRate: number = 2.5) => {
+        if (!p) return 0;
+        let rawVal = 0;
+        if (chartMetric === 'wealth') rawVal = p.totalPot || 0;
+        else if (chartMetric === 'income') rawVal = p.netRetirementIncome || 0;
+        else if (chartMetric === 'tax') rawVal = p.totalTaxPaid || 0;
+        else if (chartMetric === 'guaranteed') {
+          rawVal =
+            (p.statePensionReceived || 0) +
+            (p.dbPensionIncomeReceived || 0) +
+            (p.annuityIncomeReceived || 0) +
+            (p.taxableFixedIncomeReceived || 0) +
+            (p.taxFreeFixedIncomeReceived || 0);
+        } else rawVal = p.totalPot || 0;
+
+        if (isRealTodayPounds && p.age > currentAge) {
+          const years = p.age - currentAge;
+          const factor = Math.pow(1 + infRate / 100, years);
+          return Math.round(rawVal / factor);
+        }
+        return Math.round(rawVal);
+      };
+
+      const item: Record<string, any> = {
+        age,
+        year: new Date().getFullYear() + (age - currentAge),
+        [scenarioA.name]: getValue(pA, scenarioA.profile.expectedInflationRate || 2.5),
+        [scenarioB.name]: getValue(pB, scenarioB.profile.expectedInflationRate || 2.5),
+      };
+
+      if (showScenarioC) {
+        item[scenarioC.name] = getValue(pC, scenarioC.profile.expectedInflationRate || 2.5);
+      }
+
+      return item;
+    });
+  }, [projA, projB, projC, showScenarioC, currentAge, scenarioA.name, scenarioB.name, scenarioC.name, chartMetric, isRealTodayPounds]);
+
+  // Executive Summary & Milestone Wealth Calculations
+  const pot75A = projA.find((p) => p.age === 75)?.totalPot || 0;
+  const pot75B = projB.find((p) => p.age === 75)?.totalPot || 0;
+  const pot75C = showScenarioC ? projC.find((p) => p.age === 75)?.totalPot || 0 : 0;
+
+  const pot85A = projA.find((p) => p.age === 85)?.totalPot || 0;
+  const pot85B = projB.find((p) => p.age === 85)?.totalPot || 0;
+  const pot85C = showScenarioC ? projC.find((p) => p.age === 85)?.totalPot || 0 : -Infinity;
+
+  const candidatePots = [
+    { scenario: scenarioA, pot: pot85A, dep: depA },
+    { scenario: scenarioB, pot: pot85B, dep: depB },
+    ...(showScenarioC ? [{ scenario: scenarioC, pot: pot85C, dep: depC }] : []),
+  ];
+
+  const sortedCandidates = [...candidatePots].sort((a, b) => b.pot - a.pot);
+  const winnerCandidate = sortedCandidates[0];
+  const runnerUpCandidate = sortedCandidates[1];
+  const winnerName = winnerCandidate.scenario.name;
+  const diffFromRunnerUp = Math.max(0, winnerCandidate.pot - runnerUpCandidate.pot);
+
+  // Dimension Winners for Recommendations Scorecard
+  // 1. Longevity & Wealth Preservation Winner
+  const longevityWinnerName = sortedCandidates[0].scenario.name;
+  // 2. Tax Efficiency Winner (Lowest lifetime tax paid)
+  const taxCandidates = [
+    { name: scenarioA.name, tax: lifetimeTaxA },
+    { name: scenarioB.name, tax: lifetimeTaxB },
+    ...(showScenarioC ? [{ name: scenarioC.name, tax: lifetimeTaxC }] : []),
+  ].sort((a, b) => a.tax - b.tax);
+  const taxWinnerName = taxCandidates[0].name;
+
+  // 3. Inheritance & Estate Protection Winner (Highest Net Estate at Age 85)
+  const ihtA85 = calcScenarioIht(scenarioA, projA, 85);
+  const ihtB85 = calcScenarioIht(scenarioB, projB, 85);
+  const ihtC85 = showScenarioC ? calcScenarioIht(scenarioC, projC, 85) : null;
+  const estateCandidates = [
+    { name: scenarioA.name, netEstate: ihtA85.netPassedToHeirs },
+    { name: scenarioB.name, netEstate: ihtB85.netPassedToHeirs },
+    ...(showScenarioC && ihtC85 ? [{ name: scenarioC.name, netEstate: ihtC85.netPassedToHeirs }] : []),
+  ].sort((a, b) => b.netEstate - a.netEstate);
+  const estateWinnerName = estateCandidates[0].name;
+
+  // Monte Carlo & Historic Market Data simulations for comparison
+  const mcSimA = useMemo(() => {
+    if (!taxA) return null;
+    return runMonteCarloSimulation(scenarioA.profile, scenarioA.pots, taxA, {
+      numSimulations: 300,
+      accumulationVolatility: 12.0,
+      decumulationVolatility: 8.0,
+      maxAge: Math.min(100, scenarioA.profile.lifeExpectancyAge || 95),
+      stressedReturnDropPercent: 2.0,
+      crashStartAge: scenarioA.profile.targetRetirementAge,
+      crashDurationYears: 2,
+      crashYearDropsPercent: [30, 15],
+    });
+  }, [scenarioA, taxA]);
+
+  const mcSimB = useMemo(() => {
+    if (!taxB) return null;
+    return runMonteCarloSimulation(scenarioB.profile, scenarioB.pots, taxB, {
+      numSimulations: 300,
+      accumulationVolatility: 12.0,
+      decumulationVolatility: 8.0,
+      maxAge: Math.min(100, scenarioB.profile.lifeExpectancyAge || 95),
+      stressedReturnDropPercent: 2.0,
+      crashStartAge: scenarioB.profile.targetRetirementAge,
+      crashDurationYears: 2,
+      crashYearDropsPercent: [30, 15],
+    });
+  }, [scenarioB, taxB]);
+
+  const mcSimC = useMemo(() => {
+    if (!showScenarioC || !taxC) return null;
+    return runMonteCarloSimulation(scenarioC.profile, scenarioC.pots, taxC, {
+      numSimulations: 300,
+      accumulationVolatility: 12.0,
+      decumulationVolatility: 8.0,
+      maxAge: Math.min(100, scenarioC.profile.lifeExpectancyAge || 95),
+      stressedReturnDropPercent: 2.0,
+      crashStartAge: scenarioC.profile.targetRetirementAge,
+      crashDurationYears: 2,
+      crashYearDropsPercent: [30, 15],
+    });
+  }, [showScenarioC, scenarioC, taxC]);
+
+  // Historic 75-Year Sequence Simulations
+  const historicA = useMemo(() => {
+    if (!taxA) return null;
+    return runHistoricSimulation(scenarioA.profile, scenarioA.pots, taxA, 95, {
+      equityPercent: 70,
+      bondPercent: 20,
+      cashPercent: 10,
+    });
+  }, [scenarioA, taxA]);
+
+  const historicB = useMemo(() => {
+    if (!taxB) return null;
+    return runHistoricSimulation(scenarioB.profile, scenarioB.pots, taxB, 95, {
+      equityPercent: 70,
+      bondPercent: 20,
+      cashPercent: 10,
+    });
+  }, [scenarioB, taxB]);
+
+  const historicC = useMemo(() => {
+    if (!showScenarioC || !taxC) return null;
+    return runHistoricSimulation(scenarioC.profile, scenarioC.pots, taxC, 95, {
+      equityPercent: 70,
+      bondPercent: 20,
+      cashPercent: 10,
+    });
+  }, [showScenarioC, scenarioC, taxC]);
+
+  // 4-Dimensional Radar Scores (0 to 100)
+  const scoreLongevityA = Math.round(mcSimA?.successRate ?? (depA ? Math.max(10, Math.round((depA.age / 95) * 100)) : 95));
+  const scoreLongevityB = Math.round(mcSimB?.successRate ?? (depB ? Math.max(10, Math.round((depB.age / 95) * 100)) : 95));
+  const scoreLongevityC = showScenarioC ? Math.round(mcSimC?.successRate ?? (depC ? Math.max(10, Math.round((depC.age / 95) * 100)) : 95)) : 0;
+
+  const grossA = projA.reduce((sum, p) => sum + (p.grossIncome || 0), 0);
+  const grossB = projB.reduce((sum, p) => sum + (p.grossIncome || 0), 0);
+  const grossC = showScenarioC ? projC.reduce((sum, p) => sum + (p.grossIncome || 0), 0) : 0;
+
+  const taxRateA = grossA > 0 ? (lifetimeTaxA / grossA) * 100 : 0;
+  const taxRateB = grossB > 0 ? (lifetimeTaxB / grossB) * 100 : 0;
+  const taxRateC = grossC > 0 ? (lifetimeTaxC / grossC) * 100 : 0;
+
+  const scoreTaxA = Math.min(100, Math.max(10, Math.round(100 - taxRateA * 2)));
+  const scoreTaxB = Math.min(100, Math.max(10, Math.round(100 - taxRateB * 2)));
+  const scoreTaxC = Math.min(100, Math.max(10, Math.round(100 - taxRateC * 2)));
+
+  const maxEstate = Math.max(ihtA85.netPassedToHeirs, ihtB85.netPassedToHeirs, ihtC85?.netPassedToHeirs || 0, 1);
+  const scoreEstateA = Math.min(100, Math.max(10, Math.round((ihtA85.netPassedToHeirs / maxEstate) * 100)));
+  const scoreEstateB = Math.min(100, Math.max(10, Math.round((ihtB85.netPassedToHeirs / maxEstate) * 100)));
+  const scoreEstateC = showScenarioC && ihtC85 ? Math.min(100, Math.max(10, Math.round((ihtC85.netPassedToHeirs / maxEstate) * 100))) : 0;
+
+  const scoreFloorA = Math.min(100, Math.round(floorStateA.coveragePct));
+  const scoreFloorB = Math.min(100, Math.round(floorStateB.coveragePct));
+  const scoreFloorC = Math.min(100, Math.round(floorStateC?.coveragePct || 0));
+
+  const radarData = [
+    {
+      dimension: 'Capital Longevity',
+      [scenarioA.name]: scoreLongevityA,
+      [scenarioB.name]: scoreLongevityB,
+      ...(showScenarioC ? { [scenarioC.name]: scoreLongevityC } : {}),
+      fullMark: 100,
+    },
+    {
+      dimension: 'Tax Efficiency',
+      [scenarioA.name]: scoreTaxA,
+      [scenarioB.name]: scoreTaxB,
+      ...(showScenarioC ? { [scenarioC.name]: scoreTaxC } : {}),
+      fullMark: 100,
+    },
+    {
+      dimension: 'Estate & IHT Shield',
+      [scenarioA.name]: scoreEstateA,
+      [scenarioB.name]: scoreEstateB,
+      ...(showScenarioC ? { [scenarioC.name]: scoreEstateC } : {}),
+      fullMark: 100,
+    },
+    {
+      dimension: 'Floor Safety',
+      [scenarioA.name]: scoreFloorA,
+      [scenarioB.name]: scoreFloorB,
+      ...(showScenarioC ? { [scenarioC.name]: scoreFloorC } : {}),
+      fullMark: 100,
+    },
+  ];
+
+  // Guaranteed Income Safety Floor Winner
+  const floorCandidates = [
+    { name: scenarioA.name, cov: floorStateA.coveragePct },
+    { name: scenarioB.name, cov: floorStateB.coveragePct },
+    ...(showScenarioC && floorStateC ? [{ name: scenarioC.name, cov: floorStateC.coveragePct }] : []),
+  ].sort((a, b) => b.cov - a.cov);
+  const floorWinnerName = floorCandidates[0].name;
+
+  const scenariosToCompare = [scenarioA, scenarioB, ...(showScenarioC ? [scenarioC] : [])];
+
+  const scoreLongA = scoreLongevityA;
+  const scoreLongB = scoreLongevityB;
+  const scoreLongC = scoreLongevityC;
+
+  const scoreA = Math.round((scoreLongevityA + scoreTaxA + scoreEstateA + scoreFloorA) / 4);
+  const scoreB = Math.round((scoreLongevityB + scoreTaxB + scoreEstateB + scoreFloorB) / 4);
+  const scoreC = showScenarioC ? Math.round((scoreLongevityC + scoreTaxC + scoreEstateC + scoreFloorC) / 4) : 0;
+
+  const overallCandidates = [
+    { name: scenarioA.name, score: scoreA },
+    { name: scenarioB.name, score: scoreB },
+    ...(showScenarioC ? [{ name: scenarioC.name, score: scoreC }] : []),
+  ].sort((x, y) => y.score - x.score);
+
+  const leadingWinnerName = overallCandidates[0].name;
+  const leadingWinnerScore = overallCandidates[0].score;
+
   // Pure jsPDF Vector Comparison PDF Export Handler (100% Reliable, Zero Canvas Errors)
   const handleExportComparisonPDF = async () => {
     try {
@@ -891,243 +1147,6 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
       setIsExportingPdf(false);
     }
   };
-
-  // Lifetime tax calculations for KPI Delta Cards & Tax Efficiency Scorecard
-  const lifetimeTaxA = useMemo(() => projA.reduce((sum, p) => sum + (p.totalTaxPaid || 0), 0), [projA]);
-  const lifetimeTaxB = useMemo(() => projB.reduce((sum, p) => sum + (p.totalTaxPaid || 0), 0), [projB]);
-  const lifetimeTaxC = useMemo(() => showScenarioC ? projC.reduce((sum, p) => sum + (p.totalTaxPaid || 0), 0) : 0, [showScenarioC, projC]);
-
-  // Dynamic Chart Data for Overlaid Comparison Chart based on selected metric
-  const chartData = useMemo(() => {
-    const ages = Array.from(
-      new Set([
-        ...projA.map((p) => p.age),
-        ...projB.map((p) => p.age),
-        ...(showScenarioC ? projC.map((p) => p.age) : []),
-      ])
-    ).sort((a, b) => a - b);
-
-    return ages.map((age) => {
-      const pA = projA.find((p) => p.age === age);
-      const pB = projB.find((p) => p.age === age);
-      const pC = showScenarioC ? projC.find((p) => p.age === age) : null;
-
-      const getValue = (p: YearProjection | null | undefined, infRate: number = 2.5) => {
-        if (!p) return 0;
-        let rawVal = 0;
-        if (chartMetric === 'wealth') rawVal = p.totalPot || 0;
-        else if (chartMetric === 'income') rawVal = p.netRetirementIncome || 0;
-        else if (chartMetric === 'tax') rawVal = p.totalTaxPaid || 0;
-        else if (chartMetric === 'guaranteed') {
-          rawVal =
-            (p.statePensionReceived || 0) +
-            (p.dbPensionIncomeReceived || 0) +
-            (p.annuityIncomeReceived || 0) +
-            (p.taxableFixedIncomeReceived || 0) +
-            (p.taxFreeFixedIncomeReceived || 0);
-        } else rawVal = p.totalPot || 0;
-
-        if (isRealTodayPounds && p.age > currentAge) {
-          const years = p.age - currentAge;
-          const factor = Math.pow(1 + infRate / 100, years);
-          return Math.round(rawVal / factor);
-        }
-        return Math.round(rawVal);
-      };
-
-      const item: Record<string, any> = {
-        age,
-        year: new Date().getFullYear() + (age - currentAge),
-        [scenarioA.name]: getValue(pA, scenarioA.profile.expectedInflationRate || 2.5),
-        [scenarioB.name]: getValue(pB, scenarioB.profile.expectedInflationRate || 2.5),
-      };
-
-      if (showScenarioC) {
-        item[scenarioC.name] = getValue(pC, scenarioC.profile.expectedInflationRate || 2.5);
-      }
-
-      return item;
-    });
-  }, [projA, projB, projC, showScenarioC, currentAge, scenarioA.name, scenarioB.name, scenarioC.name, chartMetric, isRealTodayPounds]);
-
-  // Executive Summary & Milestone Wealth Calculations
-  const pot75A = projA.find((p) => p.age === 75)?.totalPot || 0;
-  const pot75B = projB.find((p) => p.age === 75)?.totalPot || 0;
-  const pot75C = showScenarioC ? projC.find((p) => p.age === 75)?.totalPot || 0 : 0;
-
-  const pot85A = projA.find((p) => p.age === 85)?.totalPot || 0;
-  const pot85B = projB.find((p) => p.age === 85)?.totalPot || 0;
-  const pot85C = showScenarioC ? projC.find((p) => p.age === 85)?.totalPot || 0 : -Infinity;
-
-  const candidatePots = [
-    { scenario: scenarioA, pot: pot85A, dep: depA },
-    { scenario: scenarioB, pot: pot85B, dep: depB },
-    ...(showScenarioC ? [{ scenario: scenarioC, pot: pot85C, dep: depC }] : []),
-  ];
-
-  const sortedCandidates = [...candidatePots].sort((a, b) => b.pot - a.pot);
-  const winnerCandidate = sortedCandidates[0];
-  const runnerUpCandidate = sortedCandidates[1];
-  const winnerName = winnerCandidate.scenario.name;
-  const diffFromRunnerUp = Math.max(0, winnerCandidate.pot - runnerUpCandidate.pot);
-
-  // Dimension Winners for Recommendations Scorecard
-  // 1. Longevity & Wealth Preservation Winner
-  const longevityWinnerName = sortedCandidates[0].scenario.name;
-  // 2. Tax Efficiency Winner (Lowest lifetime tax paid)
-  const taxCandidates = [
-    { name: scenarioA.name, tax: lifetimeTaxA },
-    { name: scenarioB.name, tax: lifetimeTaxB },
-    ...(showScenarioC ? [{ name: scenarioC.name, tax: lifetimeTaxC }] : []),
-  ].sort((a, b) => a.tax - b.tax);
-  const taxWinnerName = taxCandidates[0].name;
-
-  // 3. Inheritance & Estate Protection Winner (Highest Net Estate at Age 85)
-  const ihtA85 = calcScenarioIht(scenarioA, projA, 85);
-  const ihtB85 = calcScenarioIht(scenarioB, projB, 85);
-  const ihtC85 = showScenarioC ? calcScenarioIht(scenarioC, projC, 85) : null;
-  const estateCandidates = [
-    { name: scenarioA.name, netEstate: ihtA85.netPassedToHeirs },
-    { name: scenarioB.name, netEstate: ihtB85.netPassedToHeirs },
-    ...(showScenarioC && ihtC85 ? [{ name: scenarioC.name, netEstate: ihtC85.netPassedToHeirs }] : []),
-  ].sort((a, b) => b.netEstate - a.netEstate);
-  const estateWinnerName = estateCandidates[0].name;
-
-  // Monte Carlo & Historic Market Data simulations for comparison
-  const mcSimA = useMemo(() => {
-    if (!taxA) return null;
-    return runMonteCarloSimulation(scenarioA.profile, scenarioA.pots, taxA, {
-      numSimulations: 300,
-      accumulationVolatility: 12.0,
-      decumulationVolatility: 8.0,
-      maxAge: Math.min(100, scenarioA.profile.lifeExpectancyAge || 95),
-      stressedReturnDropPercent: 2.0,
-      crashStartAge: scenarioA.profile.targetRetirementAge,
-      crashDurationYears: 2,
-      crashYearDropsPercent: [30, 15],
-    });
-  }, [scenarioA, taxA]);
-
-  const mcSimB = useMemo(() => {
-    if (!taxB) return null;
-    return runMonteCarloSimulation(scenarioB.profile, scenarioB.pots, taxB, {
-      numSimulations: 300,
-      accumulationVolatility: 12.0,
-      decumulationVolatility: 8.0,
-      maxAge: Math.min(100, scenarioB.profile.lifeExpectancyAge || 95),
-      stressedReturnDropPercent: 2.0,
-      crashStartAge: scenarioB.profile.targetRetirementAge,
-      crashDurationYears: 2,
-      crashYearDropsPercent: [30, 15],
-    });
-  }, [scenarioB, taxB]);
-
-  const mcSimC = useMemo(() => {
-    if (!showScenarioC || !taxC) return null;
-    return runMonteCarloSimulation(scenarioC.profile, scenarioC.pots, taxC, {
-      numSimulations: 300,
-      accumulationVolatility: 12.0,
-      decumulationVolatility: 8.0,
-      maxAge: Math.min(100, scenarioC.profile.lifeExpectancyAge || 95),
-      stressedReturnDropPercent: 2.0,
-      crashStartAge: scenarioC.profile.targetRetirementAge,
-      crashDurationYears: 2,
-      crashYearDropsPercent: [30, 15],
-    });
-  }, [showScenarioC, scenarioC, taxC]);
-
-  // Historic 75-Year Sequence Simulations
-  const historicA = useMemo(() => {
-    if (!taxA) return null;
-    return runHistoricSimulation(scenarioA.profile, scenarioA.pots, taxA, 95, {
-      equityPercent: 70,
-      bondPercent: 20,
-      cashPercent: 10,
-    });
-  }, [scenarioA, taxA]);
-
-  const historicB = useMemo(() => {
-    if (!taxB) return null;
-    return runHistoricSimulation(scenarioB.profile, scenarioB.pots, taxB, 95, {
-      equityPercent: 70,
-      bondPercent: 20,
-      cashPercent: 10,
-    });
-  }, [scenarioB, taxB]);
-
-  const historicC = useMemo(() => {
-    if (!showScenarioC || !taxC) return null;
-    return runHistoricSimulation(scenarioC.profile, scenarioC.pots, taxC, 95, {
-      equityPercent: 70,
-      bondPercent: 20,
-      cashPercent: 10,
-    });
-  }, [showScenarioC, scenarioC, taxC]);
-
-  // 4-Dimensional Radar Scores (0 to 100)
-  const scoreLongevityA = Math.round(mcSimA?.successRate ?? (depA ? Math.max(10, Math.round((depA.age / 95) * 100)) : 95));
-  const scoreLongevityB = Math.round(mcSimB?.successRate ?? (depB ? Math.max(10, Math.round((depB.age / 95) * 100)) : 95));
-  const scoreLongevityC = showScenarioC ? Math.round(mcSimC?.successRate ?? (depC ? Math.max(10, Math.round((depC.age / 95) * 100)) : 95)) : 0;
-
-  const grossA = projA.reduce((sum, p) => sum + (p.grossIncome || 0), 0);
-  const grossB = projB.reduce((sum, p) => sum + (p.grossIncome || 0), 0);
-  const grossC = showScenarioC ? projC.reduce((sum, p) => sum + (p.grossIncome || 0), 0) : 0;
-
-  const taxRateA = grossA > 0 ? (lifetimeTaxA / grossA) * 100 : 0;
-  const taxRateB = grossB > 0 ? (lifetimeTaxB / grossB) * 100 : 0;
-  const taxRateC = grossC > 0 ? (lifetimeTaxC / grossC) * 100 : 0;
-
-  const scoreTaxA = Math.min(100, Math.max(10, Math.round(100 - taxRateA * 2)));
-  const scoreTaxB = Math.min(100, Math.max(10, Math.round(100 - taxRateB * 2)));
-  const scoreTaxC = Math.min(100, Math.max(10, Math.round(100 - taxRateC * 2)));
-
-  const maxEstate = Math.max(ihtA85.netPassedToHeirs, ihtB85.netPassedToHeirs, ihtC85?.netPassedToHeirs || 0, 1);
-  const scoreEstateA = Math.min(100, Math.max(10, Math.round((ihtA85.netPassedToHeirs / maxEstate) * 100)));
-  const scoreEstateB = Math.min(100, Math.max(10, Math.round((ihtB85.netPassedToHeirs / maxEstate) * 100)));
-  const scoreEstateC = showScenarioC && ihtC85 ? Math.min(100, Math.max(10, Math.round((ihtC85.netPassedToHeirs / maxEstate) * 100))) : 0;
-
-  const scoreFloorA = Math.min(100, Math.round(floorStateA.coveragePct));
-  const scoreFloorB = Math.min(100, Math.round(floorStateB.coveragePct));
-  const scoreFloorC = Math.min(100, Math.round(floorStateC?.coveragePct || 0));
-
-  const radarData = [
-    {
-      dimension: 'Capital Longevity',
-      [scenarioA.name]: scoreLongevityA,
-      [scenarioB.name]: scoreLongevityB,
-      ...(showScenarioC ? { [scenarioC.name]: scoreLongevityC } : {}),
-      fullMark: 100,
-    },
-    {
-      dimension: 'Tax Efficiency',
-      [scenarioA.name]: scoreTaxA,
-      [scenarioB.name]: scoreTaxB,
-      ...(showScenarioC ? { [scenarioC.name]: scoreTaxC } : {}),
-      fullMark: 100,
-    },
-    {
-      dimension: 'Estate & IHT Shield',
-      [scenarioA.name]: scoreEstateA,
-      [scenarioB.name]: scoreEstateB,
-      ...(showScenarioC ? { [scenarioC.name]: scoreEstateC } : {}),
-      fullMark: 100,
-    },
-    {
-      dimension: 'Floor Safety',
-      [scenarioA.name]: scoreFloorA,
-      [scenarioB.name]: scoreFloorB,
-      ...(showScenarioC ? { [scenarioC.name]: scoreFloorC } : {}),
-      fullMark: 100,
-    },
-  ];
-
-  // Guaranteed Income Safety Floor Winner
-  const floorCandidates = [
-    { name: scenarioA.name, cov: floorStateA.coveragePct },
-    { name: scenarioB.name, cov: floorStateB.coveragePct },
-    ...(showScenarioC && floorStateC ? [{ name: scenarioC.name, cov: floorStateC.coveragePct }] : []),
-  ].sort((a, b) => b.cov - a.cov);
-  const floorWinnerName = floorCandidates[0].name;
 
   return (
     <div ref={containerRef} className="scroll-mt-20 bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-xl border-2 border-indigo-500/30 dark:border-indigo-500/40 space-y-6 transition-colors">

@@ -8,6 +8,7 @@ import { getProjectedPensionAtTakeAge, getPensionAccessAge, getPartnerPensionAcc
 import { runMonteCarloSimulation } from '../utils/monteCarloEngine';
 import { runHistoricSimulation } from '../utils/historicModelingEngine';
 import { getTargetIncomeForAge } from '../utils/projectionEngine';
+import { generatePlanNarrative } from '../utils/pdfNarrativeGenerator';
 
 interface ExportSectionProps {
   profile: UserProfile;
@@ -548,6 +549,15 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       });
       const mcNormalSuccessRate = mcNormalPrelim?.successRate ?? mcNormalPrelim?.successRateTargetAge ?? 0;
 
+      // Generate dynamic auto-narrative text
+      const autoNarrative = generatePlanNarrative({
+        profile,
+        projections,
+        mcResult: mcNormalPrelim,
+        taxRegion: profile.taxRegion,
+        drawdownStrategy: profile.decumulationStrategy || 'Tax-Optimised Waterfall',
+      });
+
       // =========================================================================
       // PAGE 1: COVER PAGE
       // =========================================================================
@@ -873,6 +883,29 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
 
         y += boxH + 6;
       }
+
+      // SECTION 1b: AUTOMATED STRATEGIC NARRATIVE ANALYSIS
+      doc.setFillColor(248, 250, 252);
+      doc.roundedRect(14, y, 182, 38, 3, 3, 'F');
+      doc.setDrawColor(226, 232, 240);
+      doc.roundedRect(14, y, 182, 38, 3, 3, 'D');
+
+      doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9.5);
+      doc.text('Automated Strategic Narrative Analysis', 18, y + 6.5);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(51, 65, 85);
+
+      const execLines = doc.splitTextToSize(`• Executive Summary: ${autoNarrative.executiveSummary}`, 174);
+      doc.text(execLines, 18, y + 13);
+
+      const decumLines = doc.splitTextToSize(`• Decumulation & Tax Strategy: ${autoNarrative.decumulationStrategy}`, 174);
+      doc.text(decumLines, 18, y + 25);
+
+      y += 44;
 
       // SECTION 2: DETAILED HOUSEHOLD INCOME & PERSONAL PROFILE (WITH TRIPLE LOCK DETAIL)
       const macroPre = profile.expectedInvestmentReturn ?? 6.5;
