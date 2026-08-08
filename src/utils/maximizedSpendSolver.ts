@@ -288,14 +288,9 @@ export function createCandidateProfile(
     annuityDurationUntilAge: annuityFloorOpts?.annuityDurationUntilAge,
   };
 
-  // Set target income: if reinvest surplus is enabled, living spending target remains baseline, while maximized drawdown target is stored in maximizedSpendConfig.
-  if (isReinvestExcess) {
-    candidate.targetRetirementIncomeAnnual = baselineTargetAnnualIncome;
-    candidate.spendingPhases = baselineSpendingPhases;
-  } else {
-    candidate.targetRetirementIncomeAnnual = roundedBaseline;
-    candidate.spendingPhases = maxPhases;
-  }
+  // Explicitly set the target income: targetRetirementIncomeAnnual is always the maximized target income
+  candidate.targetRetirementIncomeAnnual = roundedBaseline;
+  candidate.spendingPhases = maxPhases;
 
   // Clamping bridge ranges is done whenever pots are provided and retAge < pensionAccessAge
   if (pots) {
