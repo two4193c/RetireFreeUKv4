@@ -310,6 +310,8 @@ export interface UserProfile {
   maximizedSpendConfig?: MaximizedSpendConfig; // Separate income requirement configuration calculated by Max Spend Solver
   expectedInflationRate: number; // percentage e.g. 2.5
   adjustForInflation?: boolean; // Global Real Terms (Today's £) vs Nominal Terms toggle
+  incomeIncreaseMode?: 'inflation' | 'custom'; // Mode for retirement income increase
+  customIncomeIncreasePercent?: number; // Custom percentage (e.g. 0, 1) when mode is custom
   indexTaxBands?: boolean; // Index Income Tax bands & Personal Allowance with CPI inflation (default true)
   expectedInvestmentReturn: number; // percentage pre-retirement e.g. 6.5
   postRetirementReturn: number; // percentage post-retirement e.g. 4.5

@@ -845,14 +845,14 @@ export function runHistoricModelingSimulation(
   const sortedByRealWealth = [...runResults].sort((a, b) => a.finalRealBalance - b.finalRealBalance);
   const sortedByNominalWealth = [...runResults].sort((a, b) => a.finalNominalBalance - b.finalNominalBalance);
 
-  // Worst start year: earliest depletion age, or lowest min balance
+  // Worst start year: earliest depletion age, or lowest final real balance
   const sortedByWorst = [...runResults].sort((a, b) => {
     if (a.depletedAtAge !== null && b.depletedAtAge !== null) {
       return a.depletedAtAge - b.depletedAtAge;
     }
     if (a.depletedAtAge !== null) return -1;
     if (b.depletedAtAge !== null) return 1;
-    return a.minPotBalance - b.minPotBalance;
+    return a.finalRealBalance - b.finalRealBalance;
   });
 
   const worstStartYear = sortedByWorst[0];

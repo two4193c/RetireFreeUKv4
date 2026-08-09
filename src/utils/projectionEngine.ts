@@ -1612,8 +1612,14 @@ function parseAnnuityTypeConfig(type?: string) {
         profile.maximizedSpendConfig?.reinvestExcessDrawdown
       );
 
-      const requiredNetIncomeTarget = actualSpendingBase * inflationFactor;
-      const drawdownNetTarget = isReinvestExcess ? (maxDrawdownIncomeTarget * inflationFactor) : requiredNetIncomeTarget;
+      let incomeIncreaseFactor = inflationFactor;
+      if (profile.incomeIncreaseMode === 'custom') {
+        const customRate = (profile.customIncomeIncreasePercent ?? 0) / 100;
+        incomeIncreaseFactor = Math.pow(1 + customRate, yearOffset);
+      }
+
+      const requiredNetIncomeTarget = actualSpendingBase * incomeIncreaseFactor;
+      const drawdownNetTarget = isReinvestExcess ? (maxDrawdownIncomeTarget * incomeIncreaseFactor) : requiredNetIncomeTarget;
 
       // Individual Personal Allowance — indexed with CPI inflation or frozen at base level based on user preference
       const paBase = profile.customTaxBands?.enabled ? (profile.customTaxBands.personalAllowance ?? PERSONAL_ALLOWANCE) : PERSONAL_ALLOWANCE;
