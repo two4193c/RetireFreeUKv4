@@ -213,6 +213,7 @@ export const NAV_STRUCTURE: TabGroup[] = [
       { id: 'card-doc-recyclingguide', label: 'Pension Recycling & Taper Guide' },
       { id: 'card-doc-fourpercentguide', label: 'The 4% Rule vs UK Reality Guide' },
       { id: 'card-doc-spendingsmileguide', label: 'Retirement Spending Smile Guide' },
+      { id: 'card-doc-sayebayeguide', label: 'Workplace SAYE & BAYE Scheme Guide' },
     ],
   },
 ];
@@ -256,6 +257,7 @@ export function getFilteredNavStructure(mode: AppMode = 'basic'): TabGroup[] {
     'card-doc-recyclingguide',
     'card-doc-fourpercentguide',
     'card-doc-spendingsmileguide',
+    'card-doc-sayebayeguide',
   ]);
 
   return NAV_STRUCTURE.filter((group) => !hiddenTabs.has(group.id)).map((group) => ({

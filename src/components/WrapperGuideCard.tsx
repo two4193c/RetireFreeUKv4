@@ -202,6 +202,60 @@ export const WrapperGuideCard: React.FC = () => {
         </div>
       </div>
 
+      {/* Innovative Finance ISA (IFISA) & Junior ISA (JISA) Deep Dive */}
+      <div className="p-6 rounded-2xl bg-teal-50/70 dark:bg-teal-950/30 border border-teal-200/80 dark:border-teal-800/80 space-y-4">
+        <div className="flex items-center gap-2.5 text-teal-900 dark:text-teal-300 font-bold text-sm">
+          <Layers className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+          <span>Innovative Finance ISA (IFISA) & Junior ISA (JISA) Deep Dive</span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+          {/* Innovative Finance ISA */}
+          <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-teal-200/60 dark:border-teal-900/60 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <h4 className="font-bold text-teal-900 dark:text-teal-300 text-sm">Innovative Finance ISA (IFISA)</h4>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-teal-100 dark:bg-teal-950 text-teal-800 dark:text-teal-300">Counts in £20k Limit</span>
+            </div>
+            <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+              Allows UK taxpayers to invest in <strong>peer-to-peer (P2P) loans, property crowdfunding debentures, and corporate bonds</strong> with 100% tax-free interest and capital returns.
+            </p>
+            <div className="space-y-1.5 pt-1 border-t border-teal-100 dark:border-teal-900/40">
+              <div className="flex items-start gap-1.5 text-slate-700 dark:text-slate-300">
+                <span className="font-bold text-teal-600 dark:text-teal-400">• Allowance:</span> Shares the annual <strong>£20,000 ISA limit</strong> across Cash, Stocks & Shares, LISA, and IFISA.
+              </div>
+              <div className="flex items-start gap-1.5 text-slate-700 dark:text-slate-300">
+                <span className="font-bold text-rose-600 dark:text-rose-400">• FSCS Warning:</span> <strong>NOT covered by the Financial Services Compensation Scheme (FSCS)</strong>. Borrower defaults can result in permanent capital loss.
+              </div>
+              <div className="flex items-start gap-1.5 text-slate-700 dark:text-slate-300">
+                <span className="font-bold text-teal-600 dark:text-teal-400">• Role in Planning:</span> Niche wrapper for targeted high-yield fixed income, but illiquid and higher risk than Cash/Index ISAs.
+              </div>
+            </div>
+          </div>
+
+          {/* Junior ISA */}
+          <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-teal-200/60 dark:border-teal-900/60 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <h4 className="font-bold text-teal-900 dark:text-teal-300 text-sm">Junior ISA (JISA)</h4>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">Separate £9,000 Allowance</span>
+            </div>
+            <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+              A tax-free long-term savings and investment vehicle for UK children under 18, available as either <strong>Cash JISA</strong> or <strong>Stocks & Shares JISA</strong>.
+            </p>
+            <div className="space-y-1.5 pt-1 border-t border-teal-100 dark:border-teal-900/40">
+              <div className="flex items-start gap-1.5 text-slate-700 dark:text-slate-300">
+                <span className="font-bold text-emerald-600 dark:text-emerald-400">• Allowance:</span> <strong>£9,000 per child per tax year</strong>. This is <em>completely separate</em> from parents' £20k ISA limit.
+              </div>
+              <div className="flex items-start gap-1.5 text-slate-700 dark:text-slate-300">
+                <span className="font-bold text-teal-600 dark:text-teal-400">• Access & Ownership:</span> Locked until the child turns <strong>18</strong>, when it automatically converts into an adult ISA under their sole ownership.
+              </div>
+              <div className="flex items-start gap-1.5 text-slate-700 dark:text-slate-300">
+                <span className="font-bold text-teal-600 dark:text-teal-400">• Role in Planning:</span> Powerful for multi-generational wealth transfers, compounding wealth tax-free for children/grandchildren early.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Low Coupon Gilts & Gilt Ladder Strategy */}
       <div className="p-6 rounded-2xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/80 dark:border-blue-800/80 space-y-4">
         <div className="flex items-center gap-2.5 text-blue-900 dark:text-blue-300 font-bold text-sm">

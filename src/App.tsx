@@ -60,6 +60,7 @@ import { CgtHarvestingGuideCard } from './components/CgtHarvestingGuideCard';
 import { PensionRecyclingGuideCard } from './components/PensionRecyclingGuideCard';
 import { FourPercentRuleGuideCard } from './components/FourPercentRuleGuideCard';
 import { SpendingSmileGuideCard } from './components/SpendingSmileGuideCard';
+import { SayeBayeGuideCard } from './components/SayeBayeGuideCard';
 import { SwrMatrixCard } from './components/SwrMatrixCard';
 import { WithdrawalGuardrailGaugeCard } from './components/WithdrawalGuardrailGaugeCard';
 import { EssentialFloorSplitCard } from './components/EssentialFloorSplitCard';
@@ -218,7 +219,7 @@ function App() {
   });
 
   const [activeTab, setActiveTab] = useState<DashboardTab>('inputs');
-  const [docSubTab, setDocSubTab] = useState<'user_guide' | 'living_standards' | 'healthy_life' | 'tax_rules' | 'mortgage_guide' | 'risk_guide' | 'iht_guide' | 'floor_guide' | 'couple_guide' | 'benchmark_guide' | 'sipp_guide' | 'wrapper_guide' | 'self_employed_guide' | 'db_guide' | 'dynamic_guide' | 'care_guide' | 'fire_bridge_guide' | 'cgt_harvesting_guide' | 'recycling_guide' | 'four_percent_guide' | 'spending_smile_guide'>('user_guide');
+  const [docSubTab, setDocSubTab] = useState<'user_guide' | 'living_standards' | 'healthy_life' | 'tax_rules' | 'mortgage_guide' | 'risk_guide' | 'iht_guide' | 'floor_guide' | 'couple_guide' | 'benchmark_guide' | 'sipp_guide' | 'wrapper_guide' | 'self_employed_guide' | 'db_guide' | 'dynamic_guide' | 'care_guide' | 'fire_bridge_guide' | 'cgt_harvesting_guide' | 'recycling_guide' | 'four_percent_guide' | 'spending_smile_guide' | 'saye_baye_guide'>('user_guide');
   const [appMode, setAppMode] = useState<AppMode>(() => {
     try {
       const saved = localStorage.getItem('retireready_mode_v1');
@@ -758,6 +759,8 @@ function App() {
             setDocSubTab('four_percent_guide');
           } else if (cardId === 'card-doc-spendingsmileguide') {
             setDocSubTab('spending_smile_guide');
+          } else if (cardId === 'card-doc-sayebayeguide') {
+            setDocSubTab('saye_baye_guide');
           }
           setTimeout(() => {
             const elem = document.getElementById(cardId);
@@ -1270,6 +1273,11 @@ function App() {
                 {/* Page 21: Retirement Spending Smile Guide */}
                 {docSubTab === 'spending_smile_guide' && (
                   <SpendingSmileGuideCard />
+                )}
+
+                {/* Page 22: Workplace SAYE & BAYE Scheme Guide */}
+                {docSubTab === 'saye_baye_guide' && (
+                  <SayeBayeGuideCard />
                 )}
               </div>
             )}
