@@ -58,12 +58,20 @@ import { CareCostsGuideCard } from './components/CareCostsGuideCard';
 import { FireBridgeGuideCard } from './components/FireBridgeGuideCard';
 import { CgtHarvestingGuideCard } from './components/CgtHarvestingGuideCard';
 import { PensionRecyclingGuideCard } from './components/PensionRecyclingGuideCard';
+import { FourPercentRuleGuideCard } from './components/FourPercentRuleGuideCard';
+import { SpendingSmileGuideCard } from './components/SpendingSmileGuideCard';
+import { SwrMatrixCard } from './components/SwrMatrixCard';
+import { WithdrawalGuardrailGaugeCard } from './components/WithdrawalGuardrailGaugeCard';
+import { EssentialFloorSplitCard } from './components/EssentialFloorSplitCard';
+import { PwrMetricBannerCard } from './components/PwrMetricBannerCard';
+import { SwrTrajectoryChart } from './components/SwrTrajectoryChart';
+import { SwrUkUsBenchmarkCard } from './components/SwrUkUsBenchmarkCard';
 import { AccumulationLedgerCard } from './components/AccumulationLedgerCard';
 import { MortgageDebtCard } from './components/MortgageDebtCard';
 import { LifeEventsDecumulationCard } from './components/LifeEventsDecumulationCard';
 import { InvestmentFeesCard } from './components/InvestmentFeesCard';
 import { PlanManagementCard } from './components/PlanManagementCard';
-import { Sparkles, ArrowUpRight, RotateCcw, Pencil, X, Check, LayoutDashboard, Wallet, Percent, LineChart, Shield, Landmark, Download, ArrowRightLeft, TrendingUp, Home, Trash2, AlertTriangle, BookOpen, Award, Scale, Heart, Users, Briefcase, Flame, ShieldAlert } from 'lucide-react';
+import { Sparkles, ArrowUpRight, RotateCcw, Pencil, X, Check, LayoutDashboard, Wallet, Percent, LineChart, Shield, Landmark, Download, ArrowRightLeft, TrendingUp, Home, Trash2, AlertTriangle, BookOpen, Award, Scale, Heart, Users, Briefcase, Flame, ShieldAlert, Smile } from 'lucide-react';
 import { SidebarNav } from './components/SidebarNav';
 import { PlanErrorBoundary } from './components/PlanErrorBoundary';
 
@@ -210,7 +218,7 @@ function App() {
   });
 
   const [activeTab, setActiveTab] = useState<DashboardTab>('inputs');
-  const [docSubTab, setDocSubTab] = useState<'user_guide' | 'living_standards' | 'healthy_life' | 'tax_rules' | 'mortgage_guide' | 'risk_guide' | 'iht_guide' | 'floor_guide' | 'couple_guide' | 'benchmark_guide' | 'sipp_guide' | 'wrapper_guide' | 'self_employed_guide' | 'db_guide' | 'dynamic_guide' | 'care_guide' | 'fire_bridge_guide' | 'cgt_harvesting_guide' | 'recycling_guide'>('user_guide');
+  const [docSubTab, setDocSubTab] = useState<'user_guide' | 'living_standards' | 'healthy_life' | 'tax_rules' | 'mortgage_guide' | 'risk_guide' | 'iht_guide' | 'floor_guide' | 'couple_guide' | 'benchmark_guide' | 'sipp_guide' | 'wrapper_guide' | 'self_employed_guide' | 'db_guide' | 'dynamic_guide' | 'care_guide' | 'fire_bridge_guide' | 'cgt_harvesting_guide' | 'recycling_guide' | 'four_percent_guide' | 'spending_smile_guide'>('user_guide');
   const [appMode, setAppMode] = useState<AppMode>(() => {
     try {
       const saved = localStorage.getItem('retireready_mode_v1');
@@ -228,7 +236,7 @@ function App() {
   // Redirect to inputs tab if switching to basic mode while on an advanced-only tab
   useEffect(() => {
     if (appMode === 'basic') {
-      const advancedTabs: DashboardTab[] = ['accumulation_review', 'estate', 'compare', 'mortgage', 'advanced_settings'];
+      const advancedTabs: DashboardTab[] = ['accumulation_review', 'strategy_analysis', 'estate', 'compare', 'mortgage', 'advanced_settings'];
       if (advancedTabs.includes(activeTab)) {
         setActiveTab('inputs');
       }
@@ -237,6 +245,8 @@ function App() {
       }
     }
   }, [appMode, activeTab, docSubTab]);
+  const [swrHorizonYears, setSwrHorizonYears] = useState<number>(30);
+  const [swrEquityPct, setSwrEquityPct] = useState<number>(60);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [activeCardId, setActiveCardId] = useState<string>('');
   const [compareScenarioAId, setCompareScenarioAId] = useState<string>('');
@@ -744,6 +754,10 @@ function App() {
             setDocSubTab('cgt_harvesting_guide');
           } else if (cardId === 'card-doc-recyclingguide') {
             setDocSubTab('recycling_guide');
+          } else if (cardId === 'card-doc-fourpercentguide') {
+            setDocSubTab('four_percent_guide');
+          } else if (cardId === 'card-doc-spendingsmileguide') {
+            setDocSubTab('spending_smile_guide');
           }
           setTimeout(() => {
             const elem = document.getElementById(cardId);
@@ -959,6 +973,42 @@ function App() {
                     onOpenMaximizedSpendModal={() => setIsMaximizedSpendModalOpen(true)}
                     appMode={appMode}
                   />
+                </div>
+              </div>
+            )}
+
+            {/* Tab 3b: Strategy Analysis (Advanced Mode Only) */}
+            {activeTab === 'strategy_analysis' && (
+              <div className="space-y-6">
+                <div id="card-pwr-metric" className="scroll-mt-24 transition-all duration-300">
+                  <PwrMetricBannerCard profile={profile} pots={pots} />
+                </div>
+                <div id="card-swr-matrix" className="scroll-mt-24 transition-all duration-300">
+                  <SwrMatrixCard
+                    profile={profile}
+                    pots={pots}
+                    horizonYears={swrHorizonYears}
+                    onHorizonYearsChange={setSwrHorizonYears}
+                    equityPct={swrEquityPct}
+                    onEquityPctChange={setSwrEquityPct}
+                  />
+                </div>
+                <div id="card-guardrail-gauge" className="scroll-mt-24 transition-all duration-300">
+                  <WithdrawalGuardrailGaugeCard
+                    profile={profile}
+                    pots={pots}
+                    horizonYears={swrHorizonYears}
+                    equityPct={swrEquityPct}
+                  />
+                </div>
+                <div id="card-essential-floor-split" className="scroll-mt-24 transition-all duration-300">
+                  <EssentialFloorSplitCard profile={profile} pots={pots} />
+                </div>
+                <div id="card-swr-trajectory-chart" className="scroll-mt-24 transition-all duration-300">
+                  <SwrTrajectoryChart projections={projections} profile={profile} />
+                </div>
+                <div id="card-swr-uk-us-benchmark" className="scroll-mt-24 transition-all duration-300">
+                  <SwrUkUsBenchmarkCard />
                 </div>
               </div>
             )}
@@ -1210,6 +1260,16 @@ function App() {
                 {/* Page 19: Pension Recycling & Taper Guide */}
                 {docSubTab === 'recycling_guide' && (
                   <PensionRecyclingGuideCard />
+                )}
+
+                {/* Page 20: The 4% Rule vs UK Reality Guide */}
+                {docSubTab === 'four_percent_guide' && (
+                  <FourPercentRuleGuideCard />
+                )}
+
+                {/* Page 21: Retirement Spending Smile Guide */}
+                {docSubTab === 'spending_smile_guide' && (
+                  <SpendingSmileGuideCard />
                 )}
               </div>
             )}

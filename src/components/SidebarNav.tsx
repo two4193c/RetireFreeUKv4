@@ -90,9 +90,23 @@ export const NAV_STRUCTURE: TabGroup[] = [
     ],
   },
   {
+    id: 'strategy_analysis',
+    label: 'Strategy Analysis',
+    icon: LineChart,
+    description: 'SWR Heatmap Matrix, Dynamic Guardrails, Essential Floor Split, PWR Metric, SWR Trajectory, and Bengen UK/US Benchmarks',
+    cards: [
+      { id: 'card-pwr-metric', label: 'Personalized Withdrawal Rate (PWR) Metric' },
+      { id: 'card-swr-matrix', label: 'Safe Withdrawal Rate (SWR) Heatmap Matrix' },
+      { id: 'card-guardrail-gauge', label: 'Dynamic Guardrail Threshold Gauge' },
+      { id: 'card-essential-floor-split', label: 'Essential Floor vs Discretionary Split' },
+      { id: 'card-swr-trajectory-chart', label: 'Effective Withdrawal Rate Trajectory Chart' },
+      { id: 'card-swr-uk-us-benchmark', label: 'Bengen (US) vs UK Return Benchmark' },
+    ],
+  },
+  {
     id: 'projections',
     label: 'Deterministic Projection',
-    icon: LineChart,
+    icon: TrendingUp,
     description: 'Long-term income, capital forecasts, and year-by-year tables',
     cards: [
       { id: 'card-proj-chart', label: 'Capital & Income Growth Chart' },
@@ -139,31 +153,27 @@ export const NAV_STRUCTURE: TabGroup[] = [
     id: 'compare',
     label: 'Compare',
     icon: ArrowRightLeft,
-    description: 'Side-by-side comparison of retirement plan variants',
+    description: 'Side-by-side strategy variant comparisons',
     cards: [
-      { id: 'card-compare-scenarios', label: 'Side-by-Side Plan Comparison' },
+      { id: 'card-compare-scorecard', label: 'Scenario Comparison & Scorecard' },
     ],
   },
   {
     id: 'mortgage',
-    label: 'Mortgage Debt',
+    label: 'Mortgage',
     icon: Home,
-    description: 'Liabilities, interest rates, and payoff strategies',
+    description: 'Mortgage payoff & debt clearance strategy',
     cards: [
-      { id: 'card-mortgage-debt', label: 'Mortgage & Liabilities' },
+      { id: 'card-mortgage-debt', label: 'Mortgage & Debt Repayment Strategy' },
     ],
   },
   {
     id: 'advanced_settings',
     label: 'Advanced',
-    icon: SlidersHorizontal,
-    description: 'Custom tax band overrides, inflation indexing, fee drag modeling, pot growth overrides, and AI Tax Advisor',
+    icon: Layers,
+    description: 'Custom parameters & advanced settings',
     cards: [
-      { id: 'card-adv-tax-indexing', label: 'Tax Bands Inflation Indexing' },
-      { id: 'card-adv-tax-overrides', label: 'Income Tax Bands Overrides' },
-      { id: 'card-adv-growth-overrides', label: 'Pot Growth Rate Overrides' },
-      { id: 'card-adv-fees', label: 'Investment & Adviser Fees' },
-      { id: 'card-other-aitaxadvisor', label: 'AI Tax Advisor' },
+      { id: 'card-advanced-settings', label: 'Advanced Settings & AI Advisor' },
     ],
   },
   {
@@ -201,6 +211,8 @@ export const NAV_STRUCTURE: TabGroup[] = [
       { id: 'card-doc-firebridgeguide', label: 'FIRE Pre-57 ISA Bridge Guide' },
       { id: 'card-doc-cgtharvestingguide', label: 'CGT & GIA Harvesting Guide' },
       { id: 'card-doc-recyclingguide', label: 'Pension Recycling & Taper Guide' },
+      { id: 'card-doc-fourpercentguide', label: 'The 4% Rule vs UK Reality Guide' },
+      { id: 'card-doc-spendingsmileguide', label: 'Retirement Spending Smile Guide' },
     ],
   },
 ];
@@ -210,8 +222,8 @@ export function getFilteredNavStructure(mode: AppMode = 'basic'): TabGroup[] {
     return NAV_STRUCTURE;
   }
 
-  // Hidden tabs in basic mode: accumulation_review, estate, compare, mortgage, advanced_settings
-  const hiddenTabs = new Set(['accumulation_review', 'estate', 'compare', 'mortgage', 'advanced_settings']);
+  // Hidden tabs in basic mode: accumulation_review, strategy_analysis, estate, compare, mortgage, advanced_settings
+  const hiddenTabs = new Set(['accumulation_review', 'strategy_analysis', 'estate', 'compare', 'mortgage', 'advanced_settings']);
 
   // Hidden cards in basic mode:
   const hiddenCards = new Set([
@@ -242,6 +254,8 @@ export function getFilteredNavStructure(mode: AppMode = 'basic'): TabGroup[] {
     'card-doc-firebridgeguide',
     'card-doc-cgtharvestingguide',
     'card-doc-recyclingguide',
+    'card-doc-fourpercentguide',
+    'card-doc-spendingsmileguide',
   ]);
 
   return NAV_STRUCTURE.filter((group) => !hiddenTabs.has(group.id)).map((group) => ({

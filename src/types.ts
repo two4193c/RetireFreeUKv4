@@ -145,6 +145,8 @@ export interface PotTransfer {
   description?: string;
 }
 
+export type DashboardTab = 'plan_management' | 'inputs' | 'accumulation_review' | 'strategy' | 'strategy_analysis' | 'projections' | 'risk' | 'estate' | 'overview' | 'compare' | 'mortgage' | 'advanced_settings' | 'documentation';
+
 export type LifeEventType = 'income' | 'expense';
 
 export type LifeEventPotTarget = 'cash_savings' | 'stocks_and_shares_isa' | 'cash_isa' | 'sipp' | 'gia';
