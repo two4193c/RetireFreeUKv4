@@ -38,6 +38,7 @@ export interface CardSubItem {
   id: string;
   label: string;
   badge?: string;
+  category?: string;
 }
 
 export interface TabGroup {
@@ -193,36 +194,36 @@ export const NAV_STRUCTURE: TabGroup[] = [
     description: 'Comprehensive Guides: Foundations, Tax Wrappers, Decumulation, Guaranteed Income, and Care/Estate Planning',
     cards: [
       // 1. Getting Started & Foundations
-      { id: 'card-doc-userguide', label: 'Quick Start Guide' },
-      { id: 'card-doc-livingstandards', label: 'Retirement Living Standards' },
-      { id: 'card-doc-healthylife', label: 'Healthy Life Expectancy' },
-      { id: 'card-doc-benchmarkguide', label: 'Scenario Benchmark & Scorecard Guide' },
+      { id: 'card-doc-userguide', label: 'Quick Start Guide', category: '1. Foundations' },
+      { id: 'card-doc-livingstandards', label: 'Retirement Living Standards', category: '1. Foundations' },
+      { id: 'card-doc-healthylife', label: 'Healthy Life Expectancy', category: '1. Foundations' },
+      { id: 'card-doc-benchmarkguide', label: 'Scenario Benchmark & Scorecard Guide', category: '1. Foundations' },
 
       // 2. Tax Wrappers, Pensions & Workplace Schemes
-      { id: 'card-doc-taxrules', label: 'UK Tax Guide' },
-      { id: 'card-doc-wrapperguide', label: 'Workplace Pension / SIPP / ISA Guide' },
-      { id: 'card-doc-sayebayeguide', label: 'Workplace SAYE & BAYE Scheme Guide' },
-      { id: 'card-doc-sippguide', label: 'SIPP Consolidation Guide' },
-      { id: 'card-doc-dbguide', label: 'Defined Benefit (DB) Pension Guide' },
-      { id: 'card-doc-selfemployedguide', label: 'Self-Employed Tax & Pension Guide' },
+      { id: 'card-doc-taxrules', label: 'UK Tax Guide', category: '2. Tax Wrappers & Pensions' },
+      { id: 'card-doc-wrapperguide', label: 'Workplace Pension / SIPP / ISA Guide', category: '2. Tax Wrappers & Pensions' },
+      { id: 'card-doc-sayebayeguide', label: 'Workplace SAYE & BAYE Scheme Guide', category: '2. Tax Wrappers & Pensions' },
+      { id: 'card-doc-sippguide', label: 'SIPP Consolidation Guide', category: '2. Tax Wrappers & Pensions' },
+      { id: 'card-doc-dbguide', label: 'Defined Benefit (DB) Pension Guide', category: '2. Tax Wrappers & Pensions' },
+      { id: 'card-doc-selfemployedguide', label: 'Self-Employed Tax & Pension Guide', category: '2. Tax Wrappers & Pensions' },
 
       // 3. Withdrawal Strategies & Decumulation
-      { id: 'card-doc-fourpercentguide', label: 'The 4% Rule vs UK Reality Guide' },
-      { id: 'card-doc-dynamicguide', label: 'Dynamic Withdrawal Guardrails Guide' },
-      { id: 'card-doc-spendingsmileguide', label: 'Retirement Spending Smile Guide' },
-      { id: 'card-doc-firebridgeguide', label: 'FIRE Pre-57 ISA Bridge Guide' },
-      { id: 'card-doc-cgtharvestingguide', label: 'CGT & GIA Harvesting Guide' },
-      { id: 'card-doc-recyclingguide', label: 'Pension Recycling & Taper Guide' },
+      { id: 'card-doc-fourpercentguide', label: 'The 4% Rule vs UK Reality Guide', category: '3. Decumulation Strategies' },
+      { id: 'card-doc-dynamicguide', label: 'Dynamic Withdrawal Guardrails Guide', category: '3. Decumulation Strategies' },
+      { id: 'card-doc-spendingsmileguide', label: 'Retirement Spending Smile Guide', category: '3. Decumulation Strategies' },
+      { id: 'card-doc-firebridgeguide', label: 'FIRE Pre-57 ISA Bridge Guide', category: '3. Decumulation Strategies' },
+      { id: 'card-doc-cgtharvestingguide', label: 'CGT & GIA Harvesting Guide', category: '3. Decumulation Strategies' },
+      { id: 'card-doc-recyclingguide', label: 'Pension Recycling & Taper Guide', category: '3. Decumulation Strategies' },
 
       // 4. Guaranteed Income & Debt Management
-      { id: 'card-doc-floorguide', label: 'Guaranteed Floor & Annuity Guide' },
-      { id: 'card-doc-mortgageguide', label: 'Mortgage & Debt Strategy Guide' },
+      { id: 'card-doc-floorguide', label: 'Guaranteed Floor & Annuity Guide', category: '4. Guaranteed Income & Debt' },
+      { id: 'card-doc-mortgageguide', label: 'Mortgage & Debt Strategy Guide', category: '4. Guaranteed Income & Debt' },
 
       // 5. Complex Scenarios, Care & Estate Planning
-      { id: 'card-doc-coupleguide', label: 'Couple & Joint Planning Guide' },
-      { id: 'card-doc-riskguide', label: 'Sequence Risk & Stress Test Guide' },
-      { id: 'card-doc-ihtguide', label: 'April 2027 IHT & Estate Guide' },
-      { id: 'card-doc-careguide', label: 'Care Costs & Equity Release Guide' },
+      { id: 'card-doc-coupleguide', label: 'Couple & Joint Planning Guide', category: '5. Estate & Care Planning' },
+      { id: 'card-doc-riskguide', label: 'Sequence Risk & Stress Test Guide', category: '5. Estate & Care Planning' },
+      { id: 'card-doc-ihtguide', label: 'April 2027 IHT & Estate Guide', category: '5. Estate & Care Planning' },
+      { id: 'card-doc-careguide', label: 'Care Costs & Equity Release Guide', category: '5. Estate & Care Planning' },
     ],
   },
 ];
@@ -586,26 +587,33 @@ export function SidebarNav({
                 {/* Sub-Items (Cards) Collapsible List */}
                 {!isCollapsed && isGroupOpen && (
                   <div className="mt-1 ml-4 pl-3 border-l-2 border-slate-200 dark:border-slate-800 space-y-1 py-1 animate-fade-in">
-                    {group.cards.map((card) => {
+                    {group.cards.map((card, idx) => {
                       const isCardActive = activeCardId === card.id;
+                      const showCategoryHeader = card.category && (idx === 0 || group.cards[idx - 1].category !== card.category);
 
                       return (
-                        <button
-                          key={card.id}
-                          onClick={() => handleSubCardClick(group.id, card.id)}
-                          className={`flex items-center gap-2 w-full text-left px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all cursor-pointer group ${
-                            isCardActive && isTabActive
-                              ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-200 dark:border-emerald-800'
-                              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50'
-                          }`}
-                        >
-                          <Target className={`w-3 h-3 shrink-0 transition-colors ${
-                            isCardActive && isTabActive
-                              ? 'text-emerald-600 dark:text-emerald-400'
-                              : 'text-slate-400 dark:text-slate-500 group-hover:text-emerald-500'
-                          }`} />
-                          <span className="truncate">{card.label}</span>
-                        </button>
+                        <React.Fragment key={card.id}>
+                          {showCategoryHeader && (
+                            <div className="pt-2.5 pb-1 px-1 text-[9px] font-extrabold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-1 border-b border-slate-100 dark:border-slate-800/60 mb-1">
+                              <span>{card.category}</span>
+                            </div>
+                          )}
+                          <button
+                            onClick={() => handleSubCardClick(group.id, card.id)}
+                            className={`flex items-center gap-2 w-full text-left px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all cursor-pointer group ${
+                              isCardActive && isTabActive
+                                ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-200 dark:border-emerald-800'
+                                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50'
+                            }`}
+                          >
+                            <Target className={`w-3 h-3 shrink-0 transition-colors ${
+                              isCardActive && isTabActive
+                                ? 'text-emerald-600 dark:text-emerald-400'
+                                : 'text-slate-400 dark:text-slate-500 group-hover:text-emerald-500'
+                            }`} />
+                            <span className="truncate">{card.label}</span>
+                          </button>
+                        </React.Fragment>
                       );
                     })}
                   </div>
