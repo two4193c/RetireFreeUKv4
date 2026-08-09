@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Percent, ShieldCheck, Calendar } from 'lucide-react';
 import { UserProfile, InvestmentPots, YearProjection } from '../types';
+import { getPensionAccessAge } from '../utils/projectionEngine';
 
 interface PwrMetricBannerCardProps {
   profile: UserProfile;
@@ -9,16 +10,12 @@ interface PwrMetricBannerCardProps {
 }
 
 export const PwrMetricBannerCard: React.FC<PwrMetricBannerCardProps> = ({ profile, pots, projections }) => {
-  const [basis, setBasis] = useState<'retirement_start' | 'today'>('retirement_start');
+  const [basis, setBasis] = useState<'retirement_start' | 'today' | 'private_pension_start' | 'state_pension_start'>('retirement_start');
 
   const baseTargetIncome = profile.targetRetirementIncomeAnnual || 30000;
   
-  // Projected portfolio at retirement start from engine projections
-  const retirementYearRow = projections?.find((p) => p.isRetired || p.age === profile.targetRetirementAge);
-  
-  const targetIncome = basis === 'retirement_start' && retirementYearRow && retirementYearRow.targetRetirementIncome > 0 
-    ? retirementYearRow.targetRetirementIncome 
-    : baseTargetIncome;
+  const pensionAccessAge = getPensionAccessAge(profile);
+  const statePensionAge = profile.statePensionAge || 67;
 
   // --- Correct InvestmentPots field names per types.ts ---
   const todayAssets =
@@ -30,11 +27,36 @@ export const PwrMetricBannerCard: React.FC<PwrMetricBannerCardProps> = ({ profil
     (pots.giaBalance || 0) +
     (pots.cashSavingsBalance || 0);
 
-
+  // Projected portfolios at various milestones (end of year prior)
   const preRetirementYearRow = projections?.find((p) => p.age === (profile.targetRetirementAge - 1));
-  const retirementStartAssets = preRetirementYearRow?.totalPot ?? todayAssets;
+  const prePrivatePensionYearRow = projections?.find((p) => p.age === (pensionAccessAge - 1));
+  const preStatePensionYearRow = projections?.find((p) => p.age === (statePensionAge - 1));
 
-  const totalInvestedAssets = basis === 'retirement_start' ? retirementStartAssets : todayAssets;
+  const retirementStartAssets = preRetirementYearRow?.totalPot ?? todayAssets;
+  const privatePensionStartAssets = prePrivatePensionYearRow?.totalPot ?? todayAssets;
+  const statePensionStartAssets = preStatePensionYearRow?.totalPot ?? todayAssets;
+
+  let totalInvestedAssets = todayAssets;
+  let calculationAge = profile.currentAge;
+  let calculationYearRow: YearProjection | undefined = undefined;
+
+  if (basis === 'retirement_start') {
+    totalInvestedAssets = retirementStartAssets;
+    calculationAge = profile.targetRetirementAge;
+    calculationYearRow = projections?.find((p) => p.age === profile.targetRetirementAge);
+  } else if (basis === 'private_pension_start') {
+    totalInvestedAssets = privatePensionStartAssets;
+    calculationAge = pensionAccessAge;
+    calculationYearRow = projections?.find((p) => p.age === pensionAccessAge);
+  } else if (basis === 'state_pension_start') {
+    totalInvestedAssets = statePensionStartAssets;
+    calculationAge = statePensionAge;
+    calculationYearRow = projections?.find((p) => p.age === statePensionAge);
+  }
+
+  const targetIncome = basis !== 'today' && calculationYearRow && calculationYearRow.targetRetirementIncome > 0 
+    ? calculationYearRow.targetRetirementIncome 
+    : baseTargetIncome;
 
   // --- Theoretical vs Actual Drawdown ---
   const staticStatePension = profile.includeStatePension ? (profile.statePensionAmountAnnual || 0) : 0;
@@ -49,14 +71,14 @@ export const PwrMetricBannerCard: React.FC<PwrMetricBannerCardProps> = ({ profil
 
   const staticGuaranteedIncome = staticStatePension + staticPartnerStatePension + staticDbPension;
 
-  const year1GuaranteedIncome = retirementYearRow
-    ? (retirementYearRow.statePensionReceived + (retirementYearRow.dbPensionIncomeReceived || 0) + (retirementYearRow.annuityIncomeReceived || 0))
+  const yearGuaranteedIncome = calculationYearRow
+    ? (calculationYearRow.statePensionReceived + (calculationYearRow.dbPensionIncomeReceived || 0) + (calculationYearRow.annuityIncomeReceived || 0))
     : staticGuaranteedIncome;
 
-  const guaranteedIncome = basis === 'retirement_start' ? year1GuaranteedIncome : staticGuaranteedIncome;
+  const guaranteedIncome = basis !== 'today' ? yearGuaranteedIncome : staticGuaranteedIncome;
 
-  const netDrawdownNeeded = basis === 'retirement_start' && retirementYearRow
-    ? retirementYearRow.totalWithdrawalAmount
+  const netDrawdownNeeded = basis !== 'today' && calculationYearRow
+    ? calculationYearRow.totalWithdrawalAmount
     : Math.max(0, targetIncome - guaranteedIncome);
 
   // PWR — guard against zero capital
@@ -109,12 +131,12 @@ export const PwrMetricBannerCard: React.FC<PwrMetricBannerCardProps> = ({ profil
       </div>
 
       {/* Basis Selector */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60 text-xs">
-        <span className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60 text-xs">
+        <span className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2 whitespace-nowrap">
           <Calendar className="w-4 h-4 text-emerald-500" />
           <span>Capital Basis:</span>
         </span>
-        <div className="flex rounded-xl bg-slate-200 dark:bg-slate-700 p-1 gap-1">
+        <div className="flex flex-wrap rounded-xl bg-slate-200 dark:bg-slate-700 p-1 gap-1">
           <button
             type="button"
             onClick={() => setBasis('retirement_start')}
@@ -124,7 +146,29 @@ export const PwrMetricBannerCard: React.FC<PwrMetricBannerCardProps> = ({ profil
                 : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            At Retirement Start (Age {profile.targetRetirementAge}) — £{Math.round(retirementStartAssets).toLocaleString()}
+            Retirement Start (Age {profile.targetRetirementAge}) — £{Math.round(retirementStartAssets).toLocaleString()}
+          </button>
+          <button
+            type="button"
+            onClick={() => setBasis('private_pension_start')}
+            className={`px-3 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+              basis === 'private_pension_start'
+                ? 'bg-emerald-600 text-white shadow-xs'
+                : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            Private Pension (Age {pensionAccessAge}) — £{Math.round(privatePensionStartAssets).toLocaleString()}
+          </button>
+          <button
+            type="button"
+            onClick={() => setBasis('state_pension_start')}
+            className={`px-3 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+              basis === 'state_pension_start'
+                ? 'bg-emerald-600 text-white shadow-xs'
+                : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            State Pension (Age {statePensionAge}) — £{Math.round(statePensionStartAssets).toLocaleString()}
           </button>
           <button
             type="button"
@@ -158,7 +202,7 @@ export const PwrMetricBannerCard: React.FC<PwrMetricBannerCardProps> = ({ profil
 
         <div className="p-5 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200/80 dark:border-indigo-800/80 space-y-1">
           <span className="text-xs font-bold text-indigo-900 dark:text-indigo-300">
-            {basis === 'retirement_start' ? `PWR at Age ${profile.targetRetirementAge}` : "PWR on Today's Pots"}
+            {basis === 'today' ? "PWR on Today's Pots" : `PWR at Age ${calculationAge}`}
           </span>
           <div className="text-3xl font-black text-indigo-600 dark:text-indigo-400">
             {pwrPct.toFixed(2)}% <span className="text-xs font-normal text-slate-500 dark:text-slate-400">SWR</span>
