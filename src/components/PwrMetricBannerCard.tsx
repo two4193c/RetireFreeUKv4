@@ -11,7 +11,14 @@ interface PwrMetricBannerCardProps {
 export const PwrMetricBannerCard: React.FC<PwrMetricBannerCardProps> = ({ profile, pots, projections }) => {
   const [basis, setBasis] = useState<'retirement_start' | 'today'>('retirement_start');
 
-  const targetIncome = profile.targetRetirementIncomeAnnual || 30000;
+  const baseTargetIncome = profile.targetRetirementIncomeAnnual || 30000;
+  
+  // Projected portfolio at retirement start from engine projections
+  const retirementYearRow = projections?.find((p) => p.isRetired || p.age === profile.targetRetirementAge);
+  
+  const targetIncome = basis === 'retirement_start' && retirementYearRow && retirementYearRow.targetRetirementIncome > 0 
+    ? retirementYearRow.targetRetirementIncome 
+    : baseTargetIncome;
 
   // --- Correct InvestmentPots field names per types.ts ---
   const todayAssets =
@@ -23,26 +30,34 @@ export const PwrMetricBannerCard: React.FC<PwrMetricBannerCardProps> = ({ profil
     (pots.giaBalance || 0) +
     (pots.cashSavingsBalance || 0);
 
-  // Projected portfolio at retirement start from engine projections
-  const retirementYearRow = projections?.find((p) => p.isRetired || p.age === profile.targetRetirementAge);
-  const retirementStartAssets = retirementYearRow?.totalPot ?? todayAssets;
+
+  const preRetirementYearRow = projections?.find((p) => p.age === (profile.targetRetirementAge - 1));
+  const retirementStartAssets = preRetirementYearRow?.totalPot ?? todayAssets;
 
   const totalInvestedAssets = basis === 'retirement_start' ? retirementStartAssets : todayAssets;
 
-  // --- Correct UserProfile field names per types.ts ---
-  const statePensionAnnual = profile.includeStatePension ? (profile.statePensionAmountAnnual || 0) : 0;
-  const partnerStatePensionAnnual =
+  // --- Theoretical vs Actual Drawdown ---
+  const staticStatePension = profile.includeStatePension ? (profile.statePensionAmountAnnual || 0) : 0;
+  const staticPartnerStatePension =
     profile.isCouplePlanning && profile.partnerIncludeStatePension
       ? (profile.partnerStatePensionAmountAnnual || 0)
       : 0;
-  // DbPension uses annualIncome not annualAmount
-  const dbAnnual =
+  const staticDbPension =
     profile.dbPensions
       ?.filter((p) => p.enabled)
       .reduce((sum, p) => sum + (p.annualIncome || 0), 0) ?? 0;
 
-  const guaranteedIncome = statePensionAnnual + partnerStatePensionAnnual + dbAnnual;
-  const netDrawdownNeeded = Math.max(0, targetIncome - guaranteedIncome);
+  const staticGuaranteedIncome = staticStatePension + staticPartnerStatePension + staticDbPension;
+
+  const year1GuaranteedIncome = retirementYearRow
+    ? (retirementYearRow.statePensionReceived + (retirementYearRow.dbPensionIncomeReceived || 0) + (retirementYearRow.annuityIncomeReceived || 0))
+    : staticGuaranteedIncome;
+
+  const guaranteedIncome = basis === 'retirement_start' ? year1GuaranteedIncome : staticGuaranteedIncome;
+
+  const netDrawdownNeeded = basis === 'retirement_start' && retirementYearRow
+    ? retirementYearRow.totalWithdrawalAmount
+    : Math.max(0, targetIncome - guaranteedIncome);
 
   // PWR — guard against zero capital
   const pwrPct = totalInvestedAssets > 0 ? (netDrawdownNeeded / totalInvestedAssets) * 100 : 0;
