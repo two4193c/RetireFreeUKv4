@@ -35,8 +35,16 @@ export const SwrMatrixCard: React.FC<SwrMatrixCardProps> = ({
     else setInternalEquity(val);
   };
 
-  const swrRates = [3.0, 3.25, 3.5, 3.75, 4.0, 4.25, 4.5, 4.75, 5.0];
+  const swrRates = [2.5, 2.75, 3.0, 3.25, 3.5, 3.75, 4.0, 4.25, 4.5, 4.75, 5.0];
   const retirementAges = [50, 55, 60, 65, 67];
+
+  // Category label per SWR rate
+  const getSwrLabel = (swr: number): string => {
+    if (swr <= 2.75) return 'UK FIRE';
+    if (swr <= 3.5) return 'UK Standard';
+    if (swr <= 4.5) return 'Dynamic/Guardrail';
+    return 'Aggressive';
+  };
 
   // Helper matrix success rates based on Trinity Study & UK historical return distribution
   const getSuccessRate = (swr: number, age: number, equity: number, horizon: number): number => {
@@ -161,23 +169,32 @@ export const SwrMatrixCard: React.FC<SwrMatrixCardProps> = ({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-            {swrRates.map((rate) => (
-              <tr key={rate} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
-                <td className="p-3 text-left font-extrabold text-slate-900 dark:text-white">
-                  {rate.toFixed(2)}%
-                </td>
-                {retirementAges.map((age) => {
-                  const success = getSuccessRate(rate, age, equityPct, horizonYears);
-                  return (
-                    <td key={age} className="p-2">
-                      <div className={`py-1.5 px-2 rounded-xl text-xs ${getCellColor(success)} transition-all shadow-2xs`}>
-                        {success}%
-                      </div>
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
+            {swrRates.map((rate) => {
+              const label = getSwrLabel(rate);
+              const labelColor =
+                label === 'UK FIRE' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300' :
+                label === 'UK Standard' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' :
+                label === 'Dynamic/Guardrail' ? 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300' :
+                'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300';
+              return (
+                <tr key={rate} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+                  <td className="p-3 text-left">
+                    <div className="font-extrabold text-slate-900 dark:text-white">{rate.toFixed(2)}%</div>
+                    <span className={`mt-0.5 inline-block text-[10px] font-bold px-1.5 py-0.5 rounded-full ${labelColor}`}>{label}</span>
+                  </td>
+                  {retirementAges.map((age) => {
+                    const success = getSuccessRate(rate, age, equityPct, horizonYears);
+                    return (
+                      <td key={age} className="p-2">
+                        <div className={`py-1.5 px-2 rounded-xl text-xs ${getCellColor(success)} transition-all shadow-2xs`}>
+                          {success}%
+                        </div>
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

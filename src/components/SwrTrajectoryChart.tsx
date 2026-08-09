@@ -105,11 +105,14 @@ export const SwrTrajectoryChart: React.FC<SwrTrajectoryChartProps> = ({ projecti
             />
             <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
             
-            {/* Safe 4% Reference Line */}
-            <ReferenceLine y={4.0} label={{ value: '4% Benchmark', fill: '#10b981', fontSize: 10, position: 'right' }} stroke="#10b981" strokeDasharray="5 5" />
+            {/* UK FIRE Reference Line (2.8%) */}
+            <ReferenceLine y={2.8} label={{ value: '2.8% UK FIRE', fill: '#6366f1', fontSize: 10, position: 'right' }} stroke="#6366f1" strokeDasharray="4 4" />
+
+            {/* UK Standard SWR Reference Line (3.5%) */}
+            <ReferenceLine y={3.5} label={{ value: '3.5% UK Standard', fill: '#10b981', fontSize: 10, position: 'right' }} stroke="#10b981" strokeDasharray="5 5" />
             
-            {/* 6% Danger Reference Line */}
-            <ReferenceLine y={6.0} label={{ value: '6% Danger Zone', fill: '#f43f5e', fontSize: 10, position: 'right' }} stroke="#f43f5e" strokeDasharray="5 5" />
+            {/* 5% Danger Reference Line */}
+            <ReferenceLine y={5.0} label={{ value: '5% Danger Zone', fill: '#f43f5e', fontSize: 10, position: 'right' }} stroke="#f43f5e" strokeDasharray="5 5" />
 
             <Line
               type="monotone"

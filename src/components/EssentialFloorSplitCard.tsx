@@ -12,14 +12,23 @@ export const EssentialFloorSplitCard: React.FC<EssentialFloorSplitCardProps> = (
 
   const targetIncome = profile.targetRetirementIncomeAnnual || 30000;
   
-  // Total guaranteed floor income (State pension + DB pensions)
-  const statePensionAnnual = (profile.statePensionPoundsPerWeek || 221.20) * 52;
-  const partnerStatePensionAnnual = profile.includePartner
-    ? (profile.partnerStatePensionPoundsPerWeek || 221.20) * 52
-    : 0;
-  const dbAnnual = profile.definedBenefitPensions?.reduce((sum, p) => sum + (p.annualAmount || 0), 0) || 0;
+  // --- Correct UserProfile field names per types.ts ---
+  const statePensionAnnual = profile.includeStatePension ? (profile.statePensionAmountAnnual || 0) : 0;
+  const partnerStatePensionAnnual =
+    profile.isCouplePlanning && profile.partnerIncludeStatePension
+      ? (profile.partnerStatePensionAmountAnnual || 0)
+      : 0;
+  // DbPension uses annualIncome not annualAmount
+  const dbAnnual =
+    profile.dbPensions
+      ?.filter((p) => p.enabled)
+      .reduce((sum, p) => sum + (p.annualIncome || 0), 0) ?? 0;
 
   const totalGuaranteedIncome = statePensionAnnual + partnerStatePensionAnnual + dbAnnual;
+
+  // Spending phase context labels
+  const spendingPhases = profile.spendingPhases;
+  const hasSpendingPhases = spendingPhases?.enabled;
 
   const essentialAmount = Math.round((targetIncome * essentialPct) / 100);
   const discretionaryAmount = Math.max(0, targetIncome - essentialAmount);

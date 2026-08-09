@@ -981,7 +981,7 @@ function App() {
             {activeTab === 'strategy_analysis' && (
               <div className="space-y-6">
                 <div id="card-pwr-metric" className="scroll-mt-24 transition-all duration-300">
-                  <PwrMetricBannerCard profile={profile} pots={pots} />
+                  <PwrMetricBannerCard profile={profile} pots={pots} projections={projections} />
                 </div>
                 <div id="card-swr-matrix" className="scroll-mt-24 transition-all duration-300">
                   <SwrMatrixCard
