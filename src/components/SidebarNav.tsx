@@ -190,30 +190,39 @@ export const NAV_STRUCTURE: TabGroup[] = [
     id: 'documentation',
     label: 'Documentation',
     icon: BookOpen,
-    description: 'Quick Start Guide, Living Standards, Tax Rules, Healthy Life, Mortgage Debt, Risk & Stress, IHT Estate, Income Floor, Couple Planning, and Scenario Benchmark',
+    description: 'Comprehensive Guides: Foundations, Tax Wrappers, Decumulation, Guaranteed Income, and Care/Estate Planning',
     cards: [
+      // 1. Getting Started & Foundations
       { id: 'card-doc-userguide', label: 'Quick Start Guide' },
       { id: 'card-doc-livingstandards', label: 'Retirement Living Standards' },
       { id: 'card-doc-healthylife', label: 'Healthy Life Expectancy' },
-      { id: 'card-doc-taxrules', label: 'UK Tax Guide' },
-      { id: 'card-doc-mortgageguide', label: 'Mortgage & Debt Strategy Guide' },
-      { id: 'card-doc-riskguide', label: 'Sequence Risk & Stress Test Guide' },
-      { id: 'card-doc-ihtguide', label: 'April 2027 IHT & Estate Guide' },
-      { id: 'card-doc-floorguide', label: 'Guaranteed Floor & Annuity Guide' },
-      { id: 'card-doc-coupleguide', label: 'Couple & Joint Planning Guide' },
       { id: 'card-doc-benchmarkguide', label: 'Scenario Benchmark & Scorecard Guide' },
-      { id: 'card-doc-sippguide', label: 'SIPP Consolidation Guide' },
+
+      // 2. Tax Wrappers, Pensions & Workplace Schemes
+      { id: 'card-doc-taxrules', label: 'UK Tax Guide' },
       { id: 'card-doc-wrapperguide', label: 'Workplace Pension / SIPP / ISA Guide' },
-      { id: 'card-doc-selfemployedguide', label: 'Self-Employed Tax & Pension Guide' },
+      { id: 'card-doc-sayebayeguide', label: 'Workplace SAYE & BAYE Scheme Guide' },
+      { id: 'card-doc-sippguide', label: 'SIPP Consolidation Guide' },
       { id: 'card-doc-dbguide', label: 'Defined Benefit (DB) Pension Guide' },
+      { id: 'card-doc-selfemployedguide', label: 'Self-Employed Tax & Pension Guide' },
+
+      // 3. Withdrawal Strategies & Decumulation
+      { id: 'card-doc-fourpercentguide', label: 'The 4% Rule vs UK Reality Guide' },
       { id: 'card-doc-dynamicguide', label: 'Dynamic Withdrawal Guardrails Guide' },
-      { id: 'card-doc-careguide', label: 'Care Costs & Equity Release Guide' },
+      { id: 'card-doc-spendingsmileguide', label: 'Retirement Spending Smile Guide' },
       { id: 'card-doc-firebridgeguide', label: 'FIRE Pre-57 ISA Bridge Guide' },
       { id: 'card-doc-cgtharvestingguide', label: 'CGT & GIA Harvesting Guide' },
       { id: 'card-doc-recyclingguide', label: 'Pension Recycling & Taper Guide' },
-      { id: 'card-doc-fourpercentguide', label: 'The 4% Rule vs UK Reality Guide' },
-      { id: 'card-doc-spendingsmileguide', label: 'Retirement Spending Smile Guide' },
-      { id: 'card-doc-sayebayeguide', label: 'Workplace SAYE & BAYE Scheme Guide' },
+
+      // 4. Guaranteed Income & Debt Management
+      { id: 'card-doc-floorguide', label: 'Guaranteed Floor & Annuity Guide' },
+      { id: 'card-doc-mortgageguide', label: 'Mortgage & Debt Strategy Guide' },
+
+      // 5. Complex Scenarios, Care & Estate Planning
+      { id: 'card-doc-coupleguide', label: 'Couple & Joint Planning Guide' },
+      { id: 'card-doc-riskguide', label: 'Sequence Risk & Stress Test Guide' },
+      { id: 'card-doc-ihtguide', label: 'April 2027 IHT & Estate Guide' },
+      { id: 'card-doc-careguide', label: 'Care Costs & Equity Release Guide' },
     ],
   },
 ];
