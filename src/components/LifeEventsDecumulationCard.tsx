@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { UserProfile, DecumulationLifeEvent, LifeEventType, LifeEventPotTarget, ItemOwner } from '../types';
+import { ModalShell } from './ModalShell';
 import {
   Sparkles,
   Calendar,
@@ -19,6 +20,7 @@ import {
   DollarSign,
   Heart,
   HelpCircle,
+  Pencil,
 } from 'lucide-react';
 
 interface LifeEventsDecumulationCardProps {
@@ -41,8 +43,10 @@ export const LifeEventsDecumulationCard: React.FC<LifeEventsDecumulationCardProp
   const events = profile.decumulationLifeEvents || [];
   const isCouple = Boolean(profile.isCouplePlanning);
   const [activeOwnerFilter, setActiveOwnerFilter] = useState<'all' | 'primary' | 'partner'>('all');
+  const [editItem, setEditItem] = useState<DecumulationLifeEvent | null>(null);
+  const [isAdding, setIsAdding] = useState(false);
 
-  const handleAddPreset = (
+  const openAddModal = (
     presetType: 'downsizing' | 'inheritance' | 'car' | 'trip' | 'renovation' | 'gift' | 'custom'
   ) => {
     const ownerToAssign: ItemOwner = isCouple
@@ -154,18 +158,24 @@ export const LifeEventsDecumulationCard: React.FC<LifeEventsDecumulationCardProp
         };
     }
 
-    onChange({
-      ...profile,
-      decumulationLifeEvents: [...events, newEvent],
-    });
+    setEditItem(newEvent);
+    setIsAdding(true);
   };
 
-  const handleUpdateEvent = (id: string, updates: Partial<DecumulationLifeEvent>) => {
-    const updated = events.map((e) => (e.id === id ? { ...e, ...updates } : e));
+  const handleSaveModal = () => {
+    if (!editItem) return;
+    let updated: DecumulationLifeEvent[];
+    if (isAdding) {
+      updated = [...events, editItem];
+    } else {
+      updated = events.map((e) => (e.id === editItem.id ? editItem : e));
+    }
     onChange({
       ...profile,
       decumulationLifeEvents: updated,
     });
+    setEditItem(null);
+    setIsAdding(false);
   };
 
   const handleDeleteEvent = (id: string) => {
@@ -259,7 +269,7 @@ export const LifeEventsDecumulationCard: React.FC<LifeEventsDecumulationCardProp
         </span>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2">
           <button
-            onClick={() => handleAddPreset('downsizing')}
+            onClick={() => openAddModal('downsizing')}
             className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 hover:border-emerald-300 dark:hover:border-emerald-800 transition-all text-left flex flex-col justify-between group cursor-pointer"
           >
             <div className="flex items-center justify-between w-full text-emerald-600 dark:text-emerald-400">
@@ -277,7 +287,7 @@ export const LifeEventsDecumulationCard: React.FC<LifeEventsDecumulationCardProp
           </button>
 
           <button
-            onClick={() => handleAddPreset('inheritance')}
+            onClick={() => openAddModal('inheritance')}
             className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 hover:border-emerald-300 dark:hover:border-emerald-800 transition-all text-left flex flex-col justify-between group cursor-pointer"
           >
             <div className="flex items-center justify-between w-full text-emerald-600 dark:text-emerald-400">
@@ -295,7 +305,7 @@ export const LifeEventsDecumulationCard: React.FC<LifeEventsDecumulationCardProp
           </button>
 
           <button
-            onClick={() => handleAddPreset('car')}
+            onClick={() => openAddModal('car')}
             className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:bg-rose-50 dark:hover:bg-rose-950/30 hover:border-rose-300 dark:hover:border-rose-800 transition-all text-left flex flex-col justify-between group cursor-pointer"
           >
             <div className="flex items-center justify-between w-full text-rose-600 dark:text-rose-400">
@@ -313,7 +323,7 @@ export const LifeEventsDecumulationCard: React.FC<LifeEventsDecumulationCardProp
           </button>
 
           <button
-            onClick={() => handleAddPreset('trip')}
+            onClick={() => openAddModal('trip')}
             className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:bg-rose-50 dark:hover:bg-rose-950/30 hover:border-rose-300 dark:hover:border-rose-800 transition-all text-left flex flex-col justify-between group cursor-pointer"
           >
             <div className="flex items-center justify-between w-full text-rose-600 dark:text-rose-400">
@@ -331,7 +341,7 @@ export const LifeEventsDecumulationCard: React.FC<LifeEventsDecumulationCardProp
           </button>
 
           <button
-            onClick={() => handleAddPreset('renovation')}
+            onClick={() => openAddModal('renovation')}
             className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:bg-rose-50 dark:hover:bg-rose-950/30 hover:border-rose-300 dark:hover:border-rose-800 transition-all text-left flex flex-col justify-between group cursor-pointer"
           >
             <div className="flex items-center justify-between w-full text-rose-600 dark:text-rose-400">
@@ -349,7 +359,7 @@ export const LifeEventsDecumulationCard: React.FC<LifeEventsDecumulationCardProp
           </button>
 
           <button
-            onClick={() => handleAddPreset('gift')}
+            onClick={() => openAddModal('gift')}
             className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:bg-rose-50 dark:hover:bg-rose-950/30 hover:border-rose-300 dark:hover:border-rose-800 transition-all text-left flex flex-col justify-between group cursor-pointer"
           >
             <div className="flex items-center justify-between w-full text-rose-600 dark:text-rose-400">
@@ -367,7 +377,7 @@ export const LifeEventsDecumulationCard: React.FC<LifeEventsDecumulationCardProp
           </button>
 
           <button
-            onClick={() => handleAddPreset('custom')}
+            onClick={() => openAddModal('custom')}
             className="p-2.5 rounded-xl border border-dashed border-purple-300 dark:border-purple-800/80 bg-purple-50/40 dark:bg-purple-950/20 hover:bg-purple-100/60 dark:hover:bg-purple-900/40 transition-all text-left flex flex-col justify-between group cursor-pointer col-span-2 sm:col-span-1"
           >
             <div className="flex items-center justify-between w-full text-purple-600 dark:text-purple-400">
@@ -444,7 +454,7 @@ export const LifeEventsDecumulationCard: React.FC<LifeEventsDecumulationCardProp
             return (
               <div
                 key={event.id}
-                className={`p-4 rounded-2xl border transition-all space-y-4 ${
+                className={`p-4 rounded-2xl border transition-all flex items-center justify-between gap-4 ${
                   event.enabled
                     ? isIncome
                       ? 'bg-emerald-50/30 dark:bg-emerald-950/10 border-emerald-200/80 dark:border-emerald-900/60'
@@ -452,208 +462,193 @@ export const LifeEventsDecumulationCard: React.FC<LifeEventsDecumulationCardProp
                     : 'bg-slate-100/60 dark:bg-slate-900/40 border-slate-200/40 dark:border-slate-800/40 opacity-60'
                 }`}
               >
-                {/* Event Row Header Controls */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="flex items-center gap-3 flex-1">
-                    {/* Toggle Switch */}
-                    <label className="relative inline-flex items-center cursor-pointer shrink-0">
-                      <input
-                        type="checkbox"
-                        checked={event.enabled}
-                        onChange={(e) => handleUpdateEvent(event.id, { enabled: e.target.checked })}
-                        className="sr-only peer"
-                      />
-                      <div className="w-9 h-5 bg-slate-300 peer-focus:outline-none dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:after:border-slate-600 peer-checked:bg-purple-600 rounded-full"></div>
-                    </label>
-
-                    {/* Name Input */}
-                    <input
-                      type="text"
-                      value={event.name}
-                      onChange={(e) => handleUpdateEvent(event.id, { name: e.target.value })}
-                      placeholder="e.g. Property Downsizing"
-                      className="text-sm font-bold text-slate-900 dark:text-white bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-purple-500 w-full sm:w-64"
-                    />
-
-                    {/* Income vs Expense Badge */}
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleUpdateEvent(event.id, { type: isIncome ? 'expense' : 'income' })
-                      }
-                      className={`px-3 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 cursor-pointer transition-all shrink-0 ${
-                        isIncome
-                          ? 'bg-emerald-600 text-white shadow-xs'
-                          : 'bg-rose-600 text-white shadow-xs'
-                      }`}
-                      title="Click to toggle between Income and Expense"
-                    >
-                      {isIncome ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
-                      <span>{isIncome ? 'Inflow (Income)' : 'Outflow (Expense)'}</span>
-                    </button>
+                <div className="flex items-center gap-4 flex-1">
+                  <div className={`p-2 rounded-xl flex-shrink-0 ${isIncome ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400' : 'bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400'}`}>
+                    {isIncome ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
                   </div>
-
-                  <div className="flex items-center gap-2 self-end sm:self-auto">
-                    {/* Delete button */}
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteEvent(event.id)}
-                      className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition-colors cursor-pointer"
-                      title="Remove event"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Form Fields Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-1">
-                  {/* Amount (£) */}
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 flex items-center gap-1">
-                      <Banknote className="w-3.5 h-3.5 text-slate-400" />
-                      Amount (£)
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-2 text-xs font-bold text-slate-400">£</span>
-                      <input
-                        type="number"
-                        min="0"
-                        step="1000"
-                        value={event.amount || ''}
-                        onChange={(e) =>
-                          handleUpdateEvent(event.id, { amount: Math.max(0, Number(e.target.value)) })
-                        }
-                        className="w-full pl-7 pr-3 py-1.5 text-xs font-bold bg-white dark:bg-slate-900 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-purple-500"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Age when event occurs */}
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between">
-                      <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 flex items-center gap-1">
-                        <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                        Target Age
-                      </label>
-                      <span className="text-xs font-extrabold text-purple-600 dark:text-purple-400">
-                        Age {event.age}
-                      </span>
-                    </div>
+                  <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <input
-                        type="range"
-                        min={profile.currentAge}
-                        max={profile.lifeExpectancyAge || 90}
-                        value={event.age}
-                        onChange={(e) =>
-                          handleUpdateEvent(event.id, { age: Number(e.target.value) })
-                        }
-                        className="w-full accent-purple-600 cursor-pointer"
-                      />
-                      <input
-                        type="number"
-                        min={profile.currentAge}
-                        max={100}
-                        value={event.age}
-                        onChange={(e) =>
-                          handleUpdateEvent(event.id, { age: Number(e.target.value) })
-                        }
-                        className="w-16 px-2 py-1 text-xs font-bold bg-white dark:bg-slate-900 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 rounded-xl text-center"
-                      />
+                      <h4 className="text-sm font-bold text-slate-900 dark:text-white line-clamp-1">{event.name}</h4>
+                      {!event.enabled && (
+                        <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500 bg-slate-200 dark:bg-slate-700 px-1.5 rounded">Disabled</span>
+                      )}
+                    </div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1">
+                      Age {event.age} • £{Number(event.amount).toLocaleString()} {isCouple && `• ${event.owner === 'partner' ? profile.partnerName || 'Partner' : profile.name || 'Primary'}`}
                     </div>
                   </div>
-
-                  {/* Target / Source Pot */}
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 flex items-center gap-1">
-                      <DollarSign className="w-3.5 h-3.5 text-slate-400" />
-                      {isIncome ? 'Target Pot (Inflow)' : 'Primary Pot (Outflow)'}
-                    </label>
-                    <select
-                      value={event.targetPot || 'cash_savings'}
-                      onChange={(e) =>
-                        handleUpdateEvent(event.id, {
-                          targetPot: e.target.value as LifeEventPotTarget,
-                        })
-                      }
-                      className="w-full px-3 py-1.5 text-xs font-bold bg-white dark:bg-slate-900 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-purple-500 cursor-pointer"
-                    >
-                      {POT_TARGET_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Owner (if couple) */}
-                  {isCouple ? (
-                    <div className="space-y-1">
-                      <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 flex items-center gap-1">
-                        <User className="w-3.5 h-3.5 text-slate-400" />
-                        Owner
-                      </label>
-                      <select
-                        value={event.owner || 'primary'}
-                        onChange={(e) =>
-                          handleUpdateEvent(event.id, {
-                            owner: e.target.value as ItemOwner,
-                          })
-                        }
-                        className="w-full px-3 py-1.5 text-xs font-bold bg-white dark:bg-slate-900 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-purple-500 cursor-pointer"
-                      >
-                        <option value="primary">{profile.name || 'Primary Person'}</option>
-                        <option value="partner">{profile.partnerName || 'Partner'}</option>
-                      </select>
-                    </div>
-                  ) : (
-                    <div className="space-y-1 flex items-center pt-4">
-                      <label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={event.inflationLinked ?? true}
-                          onChange={(e) =>
-                            handleUpdateEvent(event.id, { inflationLinked: e.target.checked })
-                          }
-                          className="rounded text-purple-600 focus:ring-purple-500 w-4 h-4 cursor-pointer"
-                        />
-                        <span>Scale with CPI Inflation</span>
-                      </label>
-                    </div>
-                  )}
                 </div>
 
-                {/* Additional Settings & Notes Row */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-slate-200/60 dark:border-slate-800/60">
-                  <div className="flex items-center gap-4">
-                    {isCouple && (
-                      <label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={event.inflationLinked ?? true}
-                          onChange={(e) =>
-                            handleUpdateEvent(event.id, { inflationLinked: e.target.checked })
-                          }
-                          className="rounded text-purple-600 focus:ring-purple-500 w-4 h-4 cursor-pointer"
-                        />
-                        <span>Scale with CPI Inflation</span>
-                      </label>
-                    )}
-                  </div>
-
-                  <input
-                    type="text"
-                    value={event.description || ''}
-                    onChange={(e) => handleUpdateEvent(event.id, { description: e.target.value })}
-                    placeholder="Add notes or details (e.g. expected sale price, model name)..."
-                    className="text-xs text-slate-600 dark:text-slate-400 bg-white/80 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 rounded-xl px-3 py-1 focus:outline-none focus:ring-2 focus:ring-purple-500 flex-1 max-w-xl"
-                  />
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditItem({ ...event });
+                      setIsAdding(false);
+                    }}
+                    className="p-1.5 text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/40 rounded-xl transition-colors cursor-pointer"
+                    title="Edit event"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteEvent(event.id)}
+                    className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition-colors cursor-pointer"
+                    title="Remove event"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
             );
           })}
         </div>
+      )}
+
+      {/* Edit / Add Modal */}
+      {editItem && (
+        <ModalShell
+          title={isAdding ? 'Add Life Event' : 'Edit Life Event'}
+          onSave={handleSaveModal}
+          onCancel={() => {
+            setEditItem(null);
+            setIsAdding(false);
+          }}
+          saveLabel={isAdding ? 'Add Event' : 'Save Changes'}
+        >
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Enabled</label>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={editItem.enabled}
+                  onChange={(e) => setEditItem({ ...editItem, enabled: e.target.checked })}
+                  className="sr-only peer"
+                />
+                <div className="w-9 h-5 bg-slate-300 peer-focus:outline-none dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:after:border-slate-600 peer-checked:bg-purple-600 rounded-full"></div>
+              </label>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Event Name</label>
+              <input
+                type="text"
+                value={editItem.name}
+                onChange={(e) => setEditItem({ ...editItem, name: e.target.value })}
+                className="w-full text-sm font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Type</label>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditItem({ ...editItem, type: 'income' })}
+                    className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all border ${
+                      editItem.type === 'income'
+                        ? 'bg-emerald-100 border-emerald-300 text-emerald-800 dark:bg-emerald-900/40 dark:border-emerald-700 dark:text-emerald-300'
+                        : 'bg-white border-slate-200 text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400'
+                    }`}
+                  >
+                    Income
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditItem({ ...editItem, type: 'expense' })}
+                    className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all border ${
+                      editItem.type === 'expense'
+                        ? 'bg-rose-100 border-rose-300 text-rose-800 dark:bg-rose-900/40 dark:border-rose-700 dark:text-rose-300'
+                        : 'bg-white border-slate-200 text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400'
+                    }`}
+                  >
+                    Expense
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Amount (£)</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={editItem.amount}
+                  onChange={(e) => setEditItem({ ...editItem, amount: Math.max(0, Number(e.target.value)) })}
+                  className="w-full text-sm font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 focus:ring-2 focus:ring-purple-500"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Target Age</label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="range"
+                  min={profile.currentAge || 0}
+                  max={profile.lifeExpectancyAge || 90}
+                  value={editItem.age}
+                  onChange={(e) => setEditItem({ ...editItem, age: Number(e.target.value) })}
+                  className="flex-1 accent-purple-600 cursor-pointer"
+                />
+                <span className="text-sm font-bold w-12 text-center">{editItem.age}</span>
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Target Pot</label>
+              <select
+                value={editItem.targetPot || 'cash_savings'}
+                onChange={(e) => setEditItem({ ...editItem, targetPot: e.target.value as LifeEventPotTarget })}
+                className="w-full px-3 py-2 text-sm font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-purple-500"
+              >
+                {POT_TARGET_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {isCouple && (
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Owner</label>
+                <select
+                  value={editItem.owner || 'primary'}
+                  onChange={(e) => setEditItem({ ...editItem, owner: e.target.value as ItemOwner })}
+                  className="w-full px-3 py-2 text-sm font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-purple-500"
+                >
+                  <option value="primary">{profile.name || 'Primary Person'}</option>
+                  <option value="partner">{profile.partnerName || 'Partner'}</option>
+                </select>
+              </div>
+            )}
+
+            <div className="space-y-1">
+              <label className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={editItem.inflationLinked ?? true}
+                  onChange={(e) => setEditItem({ ...editItem, inflationLinked: e.target.checked })}
+                  className="rounded text-purple-600 focus:ring-purple-500 w-4 h-4 cursor-pointer"
+                />
+                <span>Scale with CPI Inflation</span>
+              </label>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Description</label>
+              <textarea
+                value={editItem.description || ''}
+                onChange={(e) => setEditItem({ ...editItem, description: e.target.value })}
+                className="w-full text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 focus:ring-2 focus:ring-purple-500 min-h-[80px]"
+                placeholder="Add notes or details..."
+              />
+            </div>
+          </div>
+        </ModalShell>
       )}
     </div>
   );

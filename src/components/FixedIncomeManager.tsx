@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { UserProfile, FixedIncomeStream } from '../types';
-import { Banknote, Plus, Trash2, ShieldCheck, HeartHandshake, Sparkles, AlertCircle, Info, User, Heart, Users } from 'lucide-react';
+import { Banknote, Plus, Trash2, ShieldCheck, HeartHandshake, Sparkles, AlertCircle, Info, User, Heart, Users, Pencil } from 'lucide-react';
+import { ModalShell } from './ModalShell';
 
 interface FixedIncomeManagerProps {
   profile: UserProfile;
@@ -8,18 +9,15 @@ interface FixedIncomeManagerProps {
 }
 
 export const FixedIncomeManager: React.FC<FixedIncomeManagerProps> = ({ profile, onChange }) => {
-  const updateField = (field: keyof UserProfile, value: any) => {
-    onChange({
-      ...profile,
-      [field]: value,
-    });
-  };
   const streams = profile.fixedIncomeStreams || [];
   const [activePersonFilter, setActivePersonFilter] = useState<'all' | 'primary' | 'partner'>('all');
 
+  const [editItem, setEditItem] = useState<FixedIncomeStream | null>(null);
+  const [isAdding, setIsAdding] = useState(false);
+
   const isCouple = Boolean(profile.isCouplePlanning);
 
-  const handleAddStream = (presetType: 'pip' | 'rental' | 'consulting' | 'custom_taxfree' | 'custom_taxable') => {
+  const openAddModal = (presetType: 'pip' | 'rental' | 'consulting' | 'custom_taxfree' | 'custom_taxable') => {
     let newStream: FixedIncomeStream;
 
     const ownerToAssign = isCouple
@@ -47,7 +45,7 @@ export const FixedIncomeManager: React.FC<FixedIncomeManagerProps> = ({ profile,
         owner: ownerToAssign,
         type: 'taxable',
         annualAmount: 12000,
-        startAge: profile.targetRetirementAge,
+        startAge: profile.targetRetirementAge || 65,
         endAge: undefined,
         inflationLinked: true,
         enabled: true,
@@ -59,8 +57,8 @@ export const FixedIncomeManager: React.FC<FixedIncomeManagerProps> = ({ profile,
         owner: ownerToAssign,
         type: 'taxable',
         annualAmount: 15000,
-        startAge: profile.targetRetirementAge,
-        endAge: profile.targetRetirementAge + 10,
+        startAge: profile.targetRetirementAge || 65,
+        endAge: (profile.targetRetirementAge || 65) + 10,
         inflationLinked: true,
         enabled: true,
       };
@@ -83,25 +81,42 @@ export const FixedIncomeManager: React.FC<FixedIncomeManagerProps> = ({ profile,
         owner: ownerToAssign,
         type: 'taxable',
         annualAmount: 6000,
-        startAge: profile.targetRetirementAge,
+        startAge: profile.targetRetirementAge || 65,
         endAge: undefined,
         inflationLinked: true,
         enabled: true,
       };
     }
 
-    onChange({
-      ...profile,
-      fixedIncomeStreams: [...streams, newStream],
-    });
+    setEditItem(newStream);
+    setIsAdding(true);
   };
 
-  const handleUpdateStream = (id: string, updates: Partial<FixedIncomeStream>) => {
-    const updated = streams.map((s) => (s.id === id ? { ...s, ...updates } : s));
-    onChange({
-      ...profile,
-      fixedIncomeStreams: updated,
-    });
+  const openEditModal = (stream: FixedIncomeStream) => {
+    setEditItem({ ...stream });
+    setIsAdding(false);
+  };
+
+  const handleUpdateDraft = (updates: Partial<FixedIncomeStream>) => {
+    if (editItem) {
+      setEditItem({ ...editItem, ...updates });
+    }
+  };
+
+  const handleSave = () => {
+    if (!editItem) return;
+    if (isAdding) {
+      onChange({
+        ...profile,
+        fixedIncomeStreams: [...streams, editItem],
+      });
+    } else {
+      onChange({
+        ...profile,
+        fixedIncomeStreams: streams.map(s => s.id === editItem.id ? editItem : s),
+      });
+    }
+    setEditItem(null);
   };
 
   const handleDeleteStream = (id: string) => {
@@ -146,7 +161,7 @@ export const FixedIncomeManager: React.FC<FixedIncomeManagerProps> = ({ profile,
         {/* Quick Add Buttons */}
         <div className="flex items-center gap-2 flex-wrap">
           <button
-            onClick={() => handleAddStream('pip')}
+            onClick={() => openAddModal('pip')}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer"
             title="Add PIP (Personal Independence Payment - 100% Tax-Free)"
           >
@@ -155,7 +170,7 @@ export const FixedIncomeManager: React.FC<FixedIncomeManagerProps> = ({ profile,
           </button>
           
           <button
-            onClick={() => handleAddStream('rental')}
+            onClick={() => openAddModal('rental')}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer"
             title="Add Taxable Income (e.g. Rental, Consulting)"
           >
@@ -254,7 +269,7 @@ export const FixedIncomeManager: React.FC<FixedIncomeManagerProps> = ({ profile,
           
           <div className="flex justify-center gap-3 flex-wrap">
             <button
-              onClick={() => handleAddStream('pip')}
+              onClick={() => openAddModal('pip')}
               className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer"
             >
               <HeartHandshake className="w-4 h-4" />
@@ -262,7 +277,7 @@ export const FixedIncomeManager: React.FC<FixedIncomeManagerProps> = ({ profile,
             </button>
 
             <button
-              onClick={() => handleAddStream('rental')}
+              onClick={() => openAddModal('rental')}
               className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 dark:bg-indigo-600 hover:bg-slate-800 dark:hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer"
             >
               <Plus className="w-4 h-4" />
@@ -271,219 +286,59 @@ export const FixedIncomeManager: React.FC<FixedIncomeManagerProps> = ({ profile,
           </div>
         </div>
       ) : (
-        /* List of Streams */
-        <div className="space-y-4">
+        /* List of Streams (Compact Read-Only) */
+        <div className="space-y-3">
           {streams
             .filter((s) => (isCouple ? (activePersonFilter === 'all' || (s.owner || 'primary') === activePersonFilter) : (s.owner || 'primary') === 'primary'))
-            .map((stream, index) => {
+            .map((stream) => {
               const isTaxFree = stream.type === 'tax_free';
-
-            return (
-              <div
-                key={stream.id}
-                className={`p-5 rounded-2xl border transition-all space-y-4 ${
-                  !stream.enabled
-                    ? 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700 opacity-60'
-                    : isTaxFree
-                    ? 'bg-emerald-50/40 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800/60'
-                    : 'bg-blue-50/40 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800/60'
-                }`}
-              >
-                {/* Card Top Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200/60 dark:border-slate-700/60">
-                  <div className="flex flex-wrap items-center gap-2 sm:gap-3 flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-1 min-w-[180px]">
-                      <span
-                        className={`w-6 h-6 rounded-lg font-black text-xs flex items-center justify-center shrink-0 ${
-                          isTaxFree ? 'bg-emerald-200 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-200' : 'bg-blue-200 dark:bg-blue-900 text-blue-900 dark:text-blue-200'
-                        }`}
-                      >
-                        #{index + 1}
+              return (
+                <div key={stream.id} className="flex items-center justify-between p-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 hover:border-slate-300 dark:hover:border-slate-600 transition-all">
+                  <div className="flex flex-col gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-bold text-sm text-slate-800 dark:text-slate-100">
+                        {stream.name || 'Fixed Income'}
                       </span>
-                      <input
-                        type="text"
-                        value={stream.name}
-                        onChange={(e) => handleUpdateStream(stream.id, { name: e.target.value })}
-                        className="font-bold text-sm text-slate-900 dark:text-slate-100 bg-transparent border-b border-dashed border-slate-300 dark:border-slate-700 focus:border-indigo-600 focus:outline-none px-1 py-0.5 w-full min-w-0"
-                        placeholder="Income Name (e.g. PIP Payment)"
-                      />
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${isTaxFree ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300' : 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300'}`}>
+                        {isTaxFree ? 'Tax-Free' : 'Taxable'}
+                      </span>
+                      {!stream.enabled && (
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                          Disabled
+                        </span>
+                      )}
                     </div>
-
-                    {profile.isCouplePlanning && (
-                      <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700 shrink-0">
-                        <User className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
-                        <select
-                          value={stream.owner || 'primary'}
-                          onChange={(e) => handleUpdateStream(stream.id, { owner: e.target.value as 'primary' | 'partner' })}
-                          className="text-xs font-bold bg-transparent text-slate-800 dark:text-slate-100 focus:outline-none cursor-pointer max-w-[120px] sm:max-w-none truncate"
-                        >
-                          <option value="primary" className="bg-white dark:bg-slate-900">{profile.name || 'Primary'}</option>
-                          <option value="partner" className="bg-white dark:bg-slate-900">{profile.partnerName || 'Partner'}</option>
-                        </select>
-                      </div>
-                    )}
+                    <div className="text-xs text-slate-600 dark:text-slate-400 flex items-center gap-2.5 flex-wrap font-medium">
+                      {isCouple && (
+                        <span className="flex items-center gap-1 text-slate-700 dark:text-slate-300">
+                          <User className="w-3.5 h-3.5"/> 
+                          {stream.owner === 'partner' ? profile.partnerName || 'Partner' : profile.name || 'Primary'}
+                        </span>
+                      )}
+                      {isCouple && <span className="opacity-40">•</span>}
+                      <span>Ages {stream.startAge} - {stream.endAge || 'Life'}</span>
+                      <span className="opacity-40">•</span>
+                      <span className={`${isTaxFree ? 'text-emerald-700 dark:text-emerald-400' : 'text-blue-700 dark:text-blue-400'} font-bold`}>
+                        £{stream.annualAmount?.toLocaleString()}/yr
+                      </span>
+                    </div>
                   </div>
-
-                  <div className="flex items-center justify-between sm:justify-end gap-4 shrink-0">
-                    <label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={stream.enabled}
-                        onChange={(e) => handleUpdateStream(stream.id, { enabled: e.target.checked })}
-                        className="w-4 h-4 text-indigo-600 rounded border-slate-300 dark:border-slate-700 focus:ring-indigo-500 cursor-pointer"
-                      />
-                      <span>{stream.enabled ? 'Included in Projections' : 'Disabled'}</span>
-                    </label>
-
-                    <button
-                      onClick={() => handleDeleteStream(stream.id)}
-                      className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-lg transition-all cursor-pointer"
-                      title="Delete stream"
-                    >
+                  <div className="flex items-center gap-1.5 shrink-0 ml-4">
+                    <button onClick={() => openEditModal(stream)} className="p-2 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-xl hover:bg-indigo-50 dark:hover:bg-indigo-950/50 transition-colors" title="Edit">
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => handleDeleteStream(stream.id)} className="p-2 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors" title="Delete">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
-
-                {/* Stream Controls */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 text-xs font-bold">
-                  {/* Tax Status Selector */}
-                  <div className="space-y-1">
-                    <label className="text-slate-700 dark:text-slate-300">Tax Treatment</label>
-                    <select
-                      value={stream.type}
-                      onChange={(e) => handleUpdateStream(stream.id, { type: e.target.value as 'taxable' | 'tax_free' })}
-                      className={`w-full px-3 py-2 border rounded-xl font-bold focus:outline-none focus:ring-2 cursor-pointer ${
-                        isTaxFree
-                          ? 'bg-emerald-100/80 dark:bg-emerald-950/80 border-emerald-300 dark:border-emerald-700 text-emerald-950 dark:text-emerald-200 focus:ring-emerald-500/20'
-                          : 'bg-blue-100/80 dark:bg-blue-950/80 border-blue-300 dark:border-blue-700 text-blue-950 dark:text-blue-200 focus:ring-blue-500/20'
-                      }`}
-                    >
-                      <option value="tax_free">Tax-Free (e.g. PIP, Disability)</option>
-                      <option value="taxable">Taxable (e.g. Rental, Consulting)</option>
-                    </select>
-                    <p className="text-[10px] text-slate-400 dark:text-slate-500 font-normal">
-                      {isTaxFree ? '100% Tax-Free (PIP/DLA)' : 'Subject to UK Income Tax'}
-                    </p>
-                  </div>
-
-                  {/* Annual Amount */}
-                  <div className="space-y-1">
-                    <label className="text-slate-700 dark:text-slate-300 flex items-center justify-between">
-                      <span>Annual Income (£/yr)</span>
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-2 text-slate-400 dark:text-slate-500 font-medium">£</span>
-                      <input
-                        type="number"
-                        min={0}
-                        step={250}
-                        value={stream.annualAmount ?? ''}
-                        onChange={(e) => handleUpdateStream(stream.id, { annualAmount: e.target.value === '' ? ('' as any) : Math.max(0, Number(e.target.value)) })}
-                        onBlur={(e) => {
-                          let val = Number(e.target.value);
-                          if (isNaN(val) || e.target.value === '') val = 0;
-                          handleUpdateStream(stream.id, { annualAmount: val });
-                        }}
-                        className="w-full pl-7 pr-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                      />
-                    </div>
-                    <p className="text-[10px] text-slate-400 dark:text-slate-500 font-normal">Amount in today's money</p>
-                  </div>
-
-                  {/* Start Age */}
-                  <div className="space-y-1">
-                    <label className="text-slate-700 dark:text-slate-300">Start Age</label>
-                    <input
-                      type="number"
-                      min={18}
-                      max={100}
-                      value={stream.startAge || ''}
-                      onChange={(e) => {
-                        const val = e.target.value === '' ? 0 : Number(e.target.value);
-                        handleUpdateStream(stream.id, { startAge: val });
-                      }}
-                      onBlur={(e) => {
-                        let val = Number(e.target.value);
-                        if (isNaN(val) || e.target.value === '') val = 0;
-                        if (val <= 0) val = profile.targetRetirementAge || 65;
-                        val = Math.max(18, Math.min(100, val));
-                        handleUpdateStream(stream.id, { startAge: val });
-                      }}
-                      className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                    />
-                    <p className="text-[10px] text-slate-400 dark:text-slate-500 font-normal">Age income begins</p>
-                  </div>
-
-                  {/* End Age (Optional) */}
-                  <div className="space-y-1">
-                    <label className="text-slate-700 dark:text-slate-300 flex items-center justify-between">
-                      <span>End Age (Optional)</span>
-                      <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal">Blank = Lifelong</span>
-                    </label>
-                    <input
-                      type="number"
-                      min={stream.startAge}
-                      max={100}
-                      value={stream.endAge || ''}
-                      placeholder="Lifelong"
-                      onChange={(e) => {
-                        const val = e.target.value ? Number(e.target.value) : undefined;
-                        handleUpdateStream(stream.id, { endAge: val });
-                      }}
-                      onBlur={(e) => {
-                        if (e.target.value === '') {
-                          handleUpdateStream(stream.id, { endAge: undefined });
-                          return;
-                        }
-                        let val = Number(e.target.value);
-                        if (isNaN(val)) val = 0;
-                        if (val < stream.startAge) val = stream.startAge;
-                        val = Math.min(100, val);
-                        handleUpdateStream(stream.id, { endAge: val });
-                      }}
-                      className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                    />
-                    <p className="text-[10px] text-slate-400 dark:text-slate-500 font-normal">Age income ceases</p>
-                  </div>
-
-                  {/* Inflation Linking */}
-                  <div className="space-y-1 flex flex-col justify-between">
-                    <label className="text-slate-700 dark:text-slate-300">Inflation Protection</label>
-                    <label className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
-                      <input
-                        type="checkbox"
-                        checked={stream.inflationLinked}
-                        onChange={(e) => handleUpdateStream(stream.id, { inflationLinked: e.target.checked })}
-                        className="w-4 h-4 text-indigo-600 rounded border-slate-300 dark:border-slate-700 focus:ring-indigo-500 cursor-pointer"
-                      />
-                      <span className="text-xs text-slate-800 dark:text-slate-200 font-bold">
-                        {stream.inflationLinked ? 'CPI Index-Linked' : 'Fixed Nominal'}
-                      </span>
-                    </label>
-                    <p className="text-[10px] text-slate-400 dark:text-slate-500 font-normal">Grows with annual inflation</p>
-                  </div>
-                </div>
-
-                {/* Informational Footer for Stream */}
-                <div
-                  className={`p-2.5 rounded-xl text-[11px] font-medium flex items-center justify-between border ${
-                    isTaxFree ? 'bg-emerald-100/60 dark:bg-emerald-950/40 border-emerald-200/50 dark:border-emerald-800/40 text-emerald-900 dark:text-emerald-200' : 'bg-blue-100/60 dark:bg-blue-950/40 border-blue-200/50 dark:border-blue-800/40 text-blue-900 dark:text-blue-200'
-                  }`}
-                >
-                  <span>
-                    <strong>{stream.name}</strong> pays <strong>£{(stream.annualAmount || 0).toLocaleString()}/yr</strong> ({isTaxFree ? '100% Tax-Free' : 'Taxable'}) from age <strong>{stream.startAge}</strong> {stream.endAge ? `until age ${stream.endAge}` : 'for life'}.
-                  </span>
-                  <Sparkles className="w-3.5 h-3.5 opacity-80 shrink-0" />
-                </div>
-              </div>
-            );
+              );
           })}
         </div>
       )}
 
       {/* Tax Notice & Guidance */}
-      <div className="bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-1.5 text-xs text-slate-600 dark:text-slate-300">
+      <div className="bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-1.5 text-xs text-slate-600 dark:text-slate-300 mt-4">
         <div className="flex items-center gap-2 text-slate-800 dark:text-slate-100 font-bold">
           <Info className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
           <span>UK Tax Guidance for Personal Independence Payment (PIP) & Fixed Income</span>
@@ -494,8 +349,118 @@ export const FixedIncomeManager: React.FC<FixedIncomeManagerProps> = ({ profile,
           • <strong>Taxable Fixed Income (Rental / Freelance / Consulting):</strong> Property rental and freelance earnings are subject to standard UK Income Tax rules and absorb available Personal Allowance before pension drawdown tax calculations.
         </p>
       </div>
+
+      {/* Modal for Add / Edit */}
+      {editItem && (
+        <ModalShell
+          title={isAdding ? 'Add Fixed Income' : 'Edit Fixed Income'}
+          size="lg"
+          onSave={handleSave}
+          onCancel={() => setEditItem(null)}
+        >
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex-1 min-w-[200px]">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">Income Stream Name</label>
+                <input
+                  type="text"
+                  value={editItem.name}
+                  onChange={(e) => handleUpdateDraft({ name: e.target.value })}
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-sm"
+                  placeholder="e.g. PIP Payment"
+                />
+              </div>
+              {profile.isCouplePlanning && (
+                <div className="w-full sm:w-48 shrink-0">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">Owner</label>
+                  <select
+                    value={editItem.owner || 'primary'}
+                    onChange={(e) => handleUpdateDraft({ owner: e.target.value as 'primary' | 'partner' })}
+                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-sm"
+                  >
+                    <option value="primary">{profile.name || 'Primary'}</option>
+                    <option value="partner">{profile.partnerName || 'Partner'}</option>
+                  </select>
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              <div className="space-y-1.5 lg:col-span-2">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block">Tax Treatment</label>
+                <select
+                  value={editItem.type}
+                  onChange={(e) => handleUpdateDraft({ type: e.target.value as 'taxable' | 'tax_free' })}
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-sm"
+                >
+                  <option value="tax_free">Tax-Free (e.g. PIP, Disability)</option>
+                  <option value="taxable">Taxable (e.g. Rental, Consulting)</option>
+                </select>
+              </div>
+
+              <div className="space-y-1.5 lg:col-span-2">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block">Annual Income (£/yr)</label>
+                <input
+                  type="number"
+                  min={0} step={250}
+                  value={editItem.annualAmount || ''}
+                  onChange={(e) => handleUpdateDraft({ annualAmount: e.target.value === '' ? 0 : Number(e.target.value) })}
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-sm"
+                />
+              </div>
+
+              <div className="space-y-1.5 lg:col-span-2">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block">Start Age</label>
+                <input
+                  type="number"
+                  min={18} max={100}
+                  value={editItem.startAge || ''}
+                  onChange={(e) => handleUpdateDraft({ startAge: e.target.value === '' ? 0 : Number(e.target.value) })}
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-sm"
+                />
+              </div>
+
+              <div className="space-y-1.5 lg:col-span-2">
+                <label className="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-300">
+                  <span>End Age</span>
+                  <span className="font-normal text-[10px] text-slate-500">(Optional / Blank = Life)</span>
+                </label>
+                <input
+                  type="number"
+                  min={editItem.startAge || 18} max={100}
+                  placeholder="Lifelong"
+                  value={editItem.endAge || ''}
+                  onChange={(e) => handleUpdateDraft({ endAge: e.target.value === '' ? undefined : Number(e.target.value) })}
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-sm placeholder:font-normal"
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-4 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <label className="flex items-center gap-2 cursor-pointer flex-1">
+                <input
+                  type="checkbox"
+                  checked={editItem.inflationLinked}
+                  onChange={(e) => handleUpdateDraft({ inflationLinked: e.target.checked })}
+                  className="w-4 h-4 text-indigo-600 rounded border-slate-300 dark:border-slate-700 focus:ring-indigo-500"
+                />
+                <span className="text-sm font-bold text-slate-800 dark:text-slate-200">Inflation-Linked (CPI Index)</span>
+              </label>
+
+              <label className="flex items-center gap-2 cursor-pointer flex-1">
+                <input
+                  type="checkbox"
+                  checked={editItem.enabled}
+                  onChange={(e) => handleUpdateDraft({ enabled: e.target.checked })}
+                  className="w-4 h-4 text-indigo-600 rounded border-slate-300 dark:border-slate-700 focus:ring-indigo-500"
+                />
+                <span className="text-sm font-bold text-slate-800 dark:text-slate-200">Enabled in Projections</span>
+              </label>
+            </div>
+          </div>
+        </ModalShell>
+      )}
+
     </div>
   );
 };
-
-
