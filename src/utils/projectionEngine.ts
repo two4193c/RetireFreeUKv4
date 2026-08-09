@@ -2440,9 +2440,9 @@ function parseAnnuityTypeConfig(type?: string) {
       const priTotalTaxableRetirement = primaryTaxableGuaranteed + priDrawTaxable;
       const partTotalTaxableRetirement = partnerTaxableGuaranteed + partDrawTaxable;
 
-      const priTaxRetirement = computeIncomeTax(Math.max(0, priTotalTaxableRetirement - singlePersonalAllowance), inflationFactor, isScottishTax);
+      const priTaxRetirement = computeIncomeTax(priTotalTaxableRetirement, inflationFactor, isScottishTax);
       const partTaxRetirement = profile.isCouplePlanning
-        ? computeIncomeTax(Math.max(0, partTotalTaxableRetirement - singlePersonalAllowance), inflationFactor, isPartnerScottishTax)
+        ? computeIncomeTax(partTotalTaxableRetirement, inflationFactor, isPartnerScottishTax)
         : 0;
 
       totalRetirementTax = priTaxRetirement + partTaxRetirement;

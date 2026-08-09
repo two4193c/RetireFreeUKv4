@@ -300,7 +300,7 @@ export function getPartnerPensionAccessAge(profile: UserProfile): number {
   }
   const partnerAge = profile.partnerCurrentAge || profile.currentAge || 35;
   const partnerBirthYear = new Date().getFullYear() - partnerAge;
-  return partnerBirthYear <= 1971 ? 55 : 57;
+  return partnerBirthYear < 1971 ? 55 : 57;
 }
 
 export function getPartnerLumpSumTakeAge(profile: UserProfile): number {
@@ -520,47 +520,47 @@ export function calculateStandardIncomeTax(grossSalary: number, taxRegion?: stri
   if (taxRegion === 'scotland') {
     let tax = 0;
     let rem = taxable;
-    const b1 = Math.min(rem, 14876 - 12570);
-    tax += b1 * 0.19;
+    const b1 = Math.min(rem, SCOT_STARTER_THRESHOLD);
+    tax += b1 * SCOT_STARTER_RATE;
     rem -= b1;
 
     if (rem > 0) {
-      const b2 = Math.min(rem, 26561 - 14876);
-      tax += b2 * 0.20;
+      const b2 = Math.min(rem, SCOT_BASIC_THRESHOLD - SCOT_STARTER_THRESHOLD);
+      tax += b2 * SCOT_BASIC_RATE;
       rem -= b2;
     }
     if (rem > 0) {
-      const b3 = Math.min(rem, 43662 - 26561);
-      tax += b3 * 0.21;
+      const b3 = Math.min(rem, SCOT_INTERMEDIATE_THRESHOLD - SCOT_BASIC_THRESHOLD);
+      tax += b3 * SCOT_INTERMEDIATE_RATE;
       rem -= b3;
     }
     if (rem > 0) {
-      const b4 = Math.min(rem, 62430 - 43662);
-      tax += b4 * 0.42;
+      const b4 = Math.min(rem, SCOT_HIGHER_THRESHOLD - SCOT_INTERMEDIATE_THRESHOLD);
+      tax += b4 * SCOT_HIGHER_RATE;
       rem -= b4;
     }
     if (rem > 0) {
-      const b5 = Math.min(rem, 125140 - 62430);
-      tax += b5 * 0.45;
+      const b5 = Math.min(rem, SCOT_ADVANCED_THRESHOLD - SCOT_HIGHER_THRESHOLD);
+      tax += b5 * SCOT_ADVANCED_RATE;
       rem -= b5;
     }
     if (rem > 0) {
-      tax += rem * 0.48;
+      tax += rem * SCOT_TOP_RATE;
     }
     return tax;
   } else {
     let tax = 0;
-    const basicPortion = Math.min(taxable, 37700);
-    tax += basicPortion * 0.20;
+    const basicPortion = Math.min(taxable, RUK_BASIC_THRESHOLD);
+    tax += basicPortion * RUK_BASIC_RATE;
 
     const remainingAfterBasic = taxable - basicPortion;
     if (remainingAfterBasic > 0) {
-      const higherPortion = Math.min(remainingAfterBasic, 125140 - 37700);
-      tax += Math.max(0, higherPortion) * 0.40;
+      const higherPortion = Math.min(remainingAfterBasic, RUK_ADDITIONAL_THRESHOLD - RUK_BASIC_THRESHOLD);
+      tax += Math.max(0, higherPortion) * RUK_HIGHER_RATE;
 
       const additionalPortion = remainingAfterBasic - higherPortion;
       if (additionalPortion > 0) {
-        tax += additionalPortion * 0.45;
+        tax += additionalPortion * RUK_ADDITIONAL_RATE;
       }
     }
     return tax;
