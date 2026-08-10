@@ -78,3 +78,39 @@ export function getEffectiveDecumulationReturn(
   const feePercent = getTotalFeePercent(fees);
   return grossReturn - feePercent;
 }
+
+export function getPotAssetAllocation(
+  aaSplit?: AssetAllocationSplit,
+  owner: 'primary' | 'partner' = 'primary',
+  potType?: 'workplacePension' | 'sipp' | 'stocksAndSharesIsa' | 'cashIsa' | 'gia' | 'pension',
+  phase: 'accumulation' | 'decumulation' = 'accumulation'
+): AssetAllocationConfig {
+  if (aaSplit?.enabled && aaSplit?.perPotAllocationsEnabled && potType) {
+    const personPots = owner === 'partner' ? aaSplit.partnerPots : aaSplit.primaryPots;
+    if (personPots) {
+      const potPhases = potType === 'pension' ? (personPots.workplacePension || personPots.sipp) : personPots[potType];
+      if (potPhases) {
+        const config = phase === 'decumulation' ? potPhases.decumulation : potPhases.accumulation;
+        if (config) return config;
+      }
+    }
+  }
+  if (aaSplit?.enabled) {
+    return phase === 'decumulation' ? aaSplit.decumulation : aaSplit.accumulation;
+  }
+  return phase === 'decumulation' ? { equity: 40, bond: 50, cash: 10 } : { equity: 80, bond: 15, cash: 5 };
+}
+
+export function getPotGrossReturn(
+  aaSplit?: AssetAllocationSplit,
+  owner: 'primary' | 'partner' = 'primary',
+  potType?: 'workplacePension' | 'sipp' | 'stocksAndSharesIsa' | 'cashIsa' | 'gia' | 'pension',
+  phase: 'accumulation' | 'decumulation' = 'accumulation',
+  fallbackReturn?: number
+): number {
+  if (aaSplit?.enabled) {
+    const alloc = getPotAssetAllocation(aaSplit, owner, potType, phase);
+    return calculateWeightedAssetReturn(alloc, aaSplit.assetClassReturns);
+  }
+  return fallbackReturn ?? (phase === 'decumulation' ? 4.5 : 6.5);
+}

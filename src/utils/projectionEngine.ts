@@ -1,6 +1,6 @@
 import { UserProfile, InvestmentPots, YearProjection, TaxCalculationResult } from '../types';
 import { DEFAULT_PARTNER_POTS, DEFAULT_POTS, sanitizePots } from './defaultData';
-import { getEffectiveAccumulationReturn, getEffectiveDecumulationReturn, getTotalFeePercent, getPotFeePercent, calculateWeightedAssetReturn } from './assetAllocation';
+import { getEffectiveAccumulationReturn, getEffectiveDecumulationReturn, getTotalFeePercent, getPotFeePercent, calculateWeightedAssetReturn, getPotGrossReturn } from './assetAllocation';
 import {
   getPensionAccessAge,
   getLumpSumTakeAge,
@@ -1193,14 +1193,33 @@ function parseAnnuityTypeConfig(type?: string) {
       const primaryGiaFee = getPotFeePercent(profile.investmentFees, 'primary', 'gia') / 100;
       const partnerGiaFee = getPotFeePercent(profile.investmentFees, 'partner', 'gia') / 100;
 
-      const primaryAccumPensionRate = useOverrides ? Math.max(-0.05, ((overrides!.workplacePensionReturn || 7.0) / 100) - primaryPensionFee) : Math.max(-0.05, returnAccumulationGross - primaryPensionFee);
-      const partnerAccumPensionRate = useOverrides ? Math.max(-0.05, ((overrides!.workplacePensionReturn || 7.0) / 100) - partnerPensionFee) : Math.max(-0.05, returnAccumulationGross - partnerPensionFee);
+      const primaryAccumPensionGross = useOverrides
+        ? (overrides!.workplacePensionReturn || 7.0) / 100
+        : getPotGrossReturn(profile.assetAllocationSplit, 'primary', 'pension', 'accumulation', returnAccumulationGross * 100) / 100;
+      const partnerAccumPensionGross = useOverrides
+        ? (overrides!.workplacePensionReturn || 7.0) / 100
+        : getPotGrossReturn(profile.assetAllocationSplit, 'partner', 'pension', 'accumulation', returnAccumulationGross * 100) / 100;
 
-      const primaryAccumIsaRate = useOverrides ? Math.max(-0.05, ((overrides!.stocksAndSharesIsaReturn || 7.5) / 100) - primaryIsaFee) : Math.max(-0.05, returnAccumulationGross - primaryIsaFee);
-      const partnerAccumIsaRate = useOverrides ? Math.max(-0.05, ((overrides!.stocksAndSharesIsaReturn || 7.5) / 100) - partnerIsaFee) : Math.max(-0.05, returnAccumulationGross - partnerIsaFee);
+      const primaryAccumIsaGross = useOverrides
+        ? (overrides!.stocksAndSharesIsaReturn || 7.5) / 100
+        : getPotGrossReturn(profile.assetAllocationSplit, 'primary', 'stocksAndSharesIsa', 'accumulation', returnAccumulationGross * 100) / 100;
+      const partnerAccumIsaGross = useOverrides
+        ? (overrides!.stocksAndSharesIsaReturn || 7.5) / 100
+        : getPotGrossReturn(profile.assetAllocationSplit, 'partner', 'stocksAndSharesIsa', 'accumulation', returnAccumulationGross * 100) / 100;
 
-      const primaryAccumGiaRate = useOverrides ? Math.max(-0.05, ((overrides!.giaReturn || 6.5) / 100) - primaryGiaFee) : Math.max(-0.05, returnAccumulationGross * 0.90 - primaryGiaFee);
-      const partnerAccumGiaRate = useOverrides ? Math.max(-0.05, ((overrides!.giaReturn || 6.5) / 100) - partnerGiaFee) : Math.max(-0.05, returnAccumulationGross * 0.90 - partnerGiaFee);
+      const primaryAccumGiaGross = useOverrides
+        ? (overrides!.giaReturn || 6.5) / 100
+        : getPotGrossReturn(profile.assetAllocationSplit, 'primary', 'gia', 'accumulation', returnAccumulationGross * 90) / 100;
+      const partnerAccumGiaGross = useOverrides
+        ? (overrides!.giaReturn || 6.5) / 100
+        : getPotGrossReturn(profile.assetAllocationSplit, 'partner', 'gia', 'accumulation', returnAccumulationGross * 90) / 100;
+
+      const primaryAccumPensionRate = Math.max(-0.05, primaryAccumPensionGross - primaryPensionFee);
+      const partnerAccumPensionRate = Math.max(-0.05, partnerAccumPensionGross - partnerPensionFee);
+      const primaryAccumIsaRate = Math.max(-0.05, primaryAccumIsaGross - primaryIsaFee);
+      const partnerAccumIsaRate = Math.max(-0.05, partnerAccumIsaGross - partnerIsaFee);
+      const primaryAccumGiaRate = Math.max(-0.05, primaryAccumGiaGross - primaryGiaFee);
+      const partnerAccumGiaRate = Math.max(-0.05, partnerAccumGiaGross - partnerGiaFee);
 
       const accumCashRate = useOverrides ? (overrides!.cashSavingsReturn || 3.5) / 100 : returnAccumulationGross * 0.85;
 
@@ -1384,33 +1403,39 @@ function parseAnnuityTypeConfig(type?: string) {
       const primaryGiaFeeDecum = getPotFeePercent(profile.investmentFees, 'primary', 'gia') / 100;
       const partnerGiaFeeDecum = getPotFeePercent(profile.investmentFees, 'partner', 'gia') / 100;
 
-      const primaryPensionRateDecum = useOverrides
-        ? Math.max(-0.05, ((overrides!.workplacePensionReturn || 7.0) / 100) - primaryPensionFeeDecum)
-        : Math.max(-0.05, returnBaseGross - primaryPensionFeeDecum);
+      const currentPhase = isRetired ? 'decumulation' : 'accumulation';
 
-      const partnerPensionRateDecum = useOverrides
-        ? Math.max(-0.05, ((overrides!.workplacePensionReturn || 7.0) / 100) - partnerPensionFeeDecum)
-        : Math.max(-0.05, returnBaseGross - partnerPensionFeeDecum);
+      const primaryPensionGrossDecum = useOverrides
+        ? (overrides!.workplacePensionReturn || 7.0) / 100
+        : getPotGrossReturn(profile.assetAllocationSplit, 'primary', 'pension', currentPhase, returnBaseGross * 100) / 100;
+      const partnerPensionGrossDecum = useOverrides
+        ? (overrides!.workplacePensionReturn || 7.0) / 100
+        : getPotGrossReturn(profile.assetAllocationSplit, 'partner', 'pension', currentPhase, returnBaseGross * 100) / 100;
 
-      const primaryIsaRateDecum = useOverrides
-        ? Math.max(-0.05, ((overrides!.stocksAndSharesIsaReturn || 7.5) / 100) - primaryIsaFeeDecum)
-        : Math.max(-0.05, returnBaseGross - primaryIsaFeeDecum);
+      const primaryIsaGrossDecum = useOverrides
+        ? (overrides!.stocksAndSharesIsaReturn || 7.5) / 100
+        : getPotGrossReturn(profile.assetAllocationSplit, 'primary', 'stocksAndSharesIsa', currentPhase, returnBaseGross * 100) / 100;
+      const partnerIsaGrossDecum = useOverrides
+        ? (overrides!.stocksAndSharesIsaReturn || 7.5) / 100
+        : getPotGrossReturn(profile.assetAllocationSplit, 'partner', 'stocksAndSharesIsa', currentPhase, returnBaseGross * 100) / 100;
 
-      const partnerIsaRateDecum = useOverrides
-        ? Math.max(-0.05, ((overrides!.stocksAndSharesIsaReturn || 7.5) / 100) - partnerIsaFeeDecum)
-        : Math.max(-0.05, returnBaseGross - partnerIsaFeeDecum);
+      const primaryGiaGrossDecum = useOverrides
+        ? (overrides!.giaReturn || 6.5) / 100
+        : getPotGrossReturn(profile.assetAllocationSplit, 'primary', 'gia', currentPhase, (isRetired ? returnDecumulationGross * 95 : returnAccumulationGross * 90)) / 100;
+      const partnerGiaGrossDecum = useOverrides
+        ? (overrides!.giaReturn || 6.5) / 100
+        : getPotGrossReturn(profile.assetAllocationSplit, 'partner', 'gia', currentPhase, (isRetired ? returnDecumulationGross * 95 : returnAccumulationGross * 90)) / 100;
+
+      const primaryPensionRateDecum = Math.max(-0.05, primaryPensionGrossDecum - primaryPensionFeeDecum);
+      const partnerPensionRateDecum = Math.max(-0.05, partnerPensionGrossDecum - partnerPensionFeeDecum);
+      const primaryIsaRateDecum = Math.max(-0.05, primaryIsaGrossDecum - primaryIsaFeeDecum);
+      const partnerIsaRateDecum = Math.max(-0.05, partnerIsaGrossDecum - partnerIsaFeeDecum);
+      const primaryGiaRateDecum = Math.max(-0.05, primaryGiaGrossDecum - primaryGiaFeeDecum);
+      const partnerGiaRateDecum = Math.max(-0.05, partnerGiaGrossDecum - partnerGiaFeeDecum);
 
       const effectiveCashIsaRate = useOverrides
         ? (overrides!.cashIsaReturn || 4.2) / 100
         : (isRetired ? returnDecumulation * 0.85 : returnAccumulation * 0.85);
-
-      const primaryGiaRateDecum = useOverrides
-        ? Math.max(-0.05, ((overrides!.giaReturn || 6.5) / 100) - primaryGiaFeeDecum)
-        : Math.max(-0.05, (isRetired ? returnDecumulationGross * 0.95 : returnAccumulationGross * 0.90) - primaryGiaFeeDecum);
-
-      const partnerGiaRateDecum = useOverrides
-        ? Math.max(-0.05, ((overrides!.giaReturn || 6.5) / 100) - partnerGiaFeeDecum)
-        : Math.max(-0.05, (isRetired ? returnDecumulationGross * 0.95 : returnAccumulationGross * 0.90) - partnerGiaFeeDecum);
 
       const effectiveCashSavingsRate = useOverrides
         ? (overrides!.cashSavingsReturn || 3.5) / 100

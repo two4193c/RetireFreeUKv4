@@ -434,11 +434,29 @@ export interface AssetClassReturns {
   cashReturn: number;   // e.g. 2.0 (% p.a.)
 }
 
+export interface PerPotPhaseAllocations {
+  accumulation?: AssetAllocationConfig;
+  decumulation?: AssetAllocationConfig;
+}
+
+export interface PerPersonPotAllocations {
+  workplacePension?: PerPotPhaseAllocations;
+  sipp?: PerPotPhaseAllocations;
+  stocksAndSharesIsa?: PerPotPhaseAllocations;
+  cashIsa?: PerPotPhaseAllocations;
+  gia?: PerPotPhaseAllocations;
+}
+
 export interface AssetAllocationSplit {
   enabled: boolean;
   accumulation: AssetAllocationConfig;
   decumulation: AssetAllocationConfig;
   assetClassReturns: AssetClassReturns;
+
+  // Per-pot granular allocation overrides (Pre & Post Retirement)
+  perPotAllocationsEnabled?: boolean;
+  primaryPots?: PerPersonPotAllocations;
+  partnerPots?: PerPersonPotAllocations;
 }
 
 export type MortgageRepaymentType = 'repayment' | 'interest_only';

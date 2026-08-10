@@ -589,6 +589,235 @@ export const MacroSettingsCard: React.FC<MacroSettingsCardProps> = ({ profile, o
               </div>
             </div>
 
+            {/* PER-POT GRANULAR ASSET ALLOCATION OVERRIDES */}
+            <div className="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-indigo-50/60 dark:bg-indigo-950/30 p-3.5 rounded-2xl border border-indigo-200/60 dark:border-indigo-800/60">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-indigo-100 dark:bg-indigo-900/80 text-indigo-600 dark:text-indigo-300 shrink-0">
+                    <Sliders className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-extrabold text-slate-900 dark:text-slate-100 block">
+                      Per-Pot Granular Asset Allocations (Pre & Post Retirement)
+                    </span>
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                      Customize stock/bond/cash ratios individually for Workplace Pension, SIPP, ISAs & GIA
+                    </span>
+                  </div>
+                </div>
+
+                <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(aaSplit.perPotAllocationsEnabled)}
+                    onChange={(e) => updateAaSplit({ ...aaSplit, perPotAllocationsEnabled: e.target.checked })}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-slate-300 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                </label>
+              </div>
+
+              {aaSplit.perPotAllocationsEnabled && (
+                <div className="space-y-4 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800">
+                  {/* Presets Bar */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-200 dark:border-slate-800">
+                    <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
+                      Asset Location Presets:
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const primaryPots = {
+                            workplacePension: { accumulation: { equity: 80, bond: 20, cash: 0 }, decumulation: { equity: 40, bond: 50, cash: 10 } },
+                            sipp: { accumulation: { equity: 100, bond: 0, cash: 0 }, decumulation: { equity: 100, bond: 0, cash: 0 } },
+                            stocksAndSharesIsa: { accumulation: { equity: 100, bond: 0, cash: 0 }, decumulation: { equity: 100, bond: 0, cash: 0 } },
+                            cashIsa: { accumulation: { equity: 0, bond: 0, cash: 100 }, decumulation: { equity: 0, bond: 0, cash: 100 } },
+                            gia: { accumulation: { equity: 70, bond: 30, cash: 0 }, decumulation: { equity: 50, bond: 50, cash: 0 } },
+                          };
+                          updateAaSplit({
+                            ...aaSplit,
+                            perPotAllocationsEnabled: true,
+                            primaryPots,
+                            partnerPots: profile.isCouplePlanning ? primaryPots : undefined,
+                          });
+                        }}
+                        className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-indigo-100 dark:bg-indigo-950 text-indigo-800 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-200 transition-colors cursor-pointer"
+                      >
+                        ⚡ 100% Equity ISAs & SIPP (Tax Arbitrage)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const primaryPots = {
+                            workplacePension: { accumulation: { equity: 80, bond: 15, cash: 5 }, decumulation: { equity: 40, bond: 40, cash: 20 } },
+                            sipp: { accumulation: { equity: 90, bond: 10, cash: 0 }, decumulation: { equity: 60, bond: 30, cash: 10 } },
+                            stocksAndSharesIsa: { accumulation: { equity: 100, bond: 0, cash: 0 }, decumulation: { equity: 90, bond: 10, cash: 0 } },
+                            cashIsa: { accumulation: { equity: 0, bond: 0, cash: 100 }, decumulation: { equity: 0, bond: 0, cash: 100 } },
+                            gia: { accumulation: { equity: 60, bond: 40, cash: 0 }, decumulation: { equity: 40, bond: 40, cash: 20 } },
+                          };
+                          updateAaSplit({
+                            ...aaSplit,
+                            perPotAllocationsEnabled: true,
+                            primaryPots,
+                            partnerPots: profile.isCouplePlanning ? primaryPots : undefined,
+                          });
+                        }}
+                        className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300 transition-colors cursor-pointer"
+                      >
+                        🛡️ 3-Year Cash Buffer
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Account Types Cards */}
+                  {[
+                    { key: 'workplacePension', label: 'Workplace Pension', defaultAccum: { equity: 80, bond: 15, cash: 5 }, defaultDecum: { equity: 40, bond: 50, cash: 10 } },
+                    { key: 'sipp', label: 'SIPP Pension', defaultAccum: { equity: 80, bond: 15, cash: 5 }, defaultDecum: { equity: 40, bond: 50, cash: 10 } },
+                    { key: 'stocksAndSharesIsa', label: 'Stocks & Shares ISA', defaultAccum: { equity: 100, bond: 0, cash: 0 }, defaultDecum: { equity: 100, bond: 0, cash: 0 } },
+                    { key: 'cashIsa', label: 'Cash ISA', defaultAccum: { equity: 0, bond: 0, cash: 100 }, defaultDecum: { equity: 0, bond: 0, cash: 100 } },
+                    { key: 'gia', label: 'General Investment Account (GIA)', defaultAccum: { equity: 70, bond: 25, cash: 5 }, defaultDecum: { equity: 50, bond: 40, cash: 10 } },
+                  ].map((pot) => {
+                    const potKey = pot.key as keyof PerPersonPotAllocations;
+                    const primaryConfig = aaSplit.primaryPots?.[potKey];
+                    const accum = primaryConfig?.accumulation || aaSplit.accumulation || pot.defaultAccum;
+                    const decum = primaryConfig?.decumulation || aaSplit.decumulation || pot.defaultDecum;
+
+                    const accumReturn = calculateWeightedAssetReturn(accum, aaSplit.assetClassReturns);
+                    const decumReturn = calculateWeightedAssetReturn(decum, aaSplit.assetClassReturns);
+
+                    const updatePotPhase = (phase: 'accumulation' | 'decumulation', updatedAlloc: { equity: number; bond: number; cash: number }) => {
+                      const currentPrimaryPots = aaSplit.primaryPots || {};
+                      const currentPotObj = currentPrimaryPots[potKey] || {};
+                      const newPrimaryPots = {
+                        ...currentPrimaryPots,
+                        [potKey]: {
+                          ...currentPotObj,
+                          [phase]: updatedAlloc,
+                        },
+                      };
+                      updateAaSplit({
+                        ...aaSplit,
+                        primaryPots: newPrimaryPots,
+                      });
+                    };
+
+                    return (
+                      <div key={pot.key} className="bg-white dark:bg-slate-900 rounded-xl p-3.5 border border-slate-200 dark:border-slate-800 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="font-extrabold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                            <Building2 className="w-3.5 h-3.5 text-indigo-500" />
+                            {pot.label}
+                          </span>
+                          <div className="flex items-center gap-2 text-[11px] font-bold">
+                            <span className="text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950 px-2 py-0.5 rounded-md">
+                              Pre: +{accumReturn}% p.a.
+                            </span>
+                            <span className="text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950 px-2 py-0.5 rounded-md">
+                              Post: +{decumReturn}% p.a.
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                          {/* Pre-Retirement (Accumulation) */}
+                          <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/80 dark:border-slate-800 space-y-2">
+                            <div className="flex items-center justify-between text-[11px] font-extrabold text-slate-700 dark:text-slate-300">
+                              <span>Pre-Retirement (Accumulation)</span>
+                              <span className="text-emerald-600 dark:text-emerald-400">{accum.equity}% Eq / {accum.bond}% Bd / {accum.cash}% Cs</span>
+                            </div>
+                            <div className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden flex">
+                              <div style={{ width: `${accum.equity}%` }} className="bg-emerald-500 h-full" />
+                              <div style={{ width: `${accum.bond}%` }} className="bg-indigo-500 h-full" />
+                              <div style={{ width: `${accum.cash}%` }} className="bg-amber-400 h-full" />
+                            </div>
+                            <div className="space-y-1.5 pt-1">
+                              <div className="flex items-center justify-between text-[10px] font-bold text-slate-600 dark:text-slate-400">
+                                <span>Equity: {accum.equity}%</span>
+                                <input
+                                  type="range" min="0" max="100" step="5"
+                                  value={accum.equity}
+                                  onChange={(e) => {
+                                    const eq = Number(e.target.value);
+                                    const rem = 100 - eq;
+                                    const bd = Math.round(rem * 0.80);
+                                    const cs = rem - bd;
+                                    updatePotPhase('accumulation', { equity: eq, bond: bd, cash: cs });
+                                  }}
+                                  className="w-28 h-1 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+                                />
+                              </div>
+                              <div className="flex items-center justify-between text-[10px] font-bold text-slate-600 dark:text-slate-400">
+                                <span>Bonds: {accum.bond}%</span>
+                                <input
+                                  type="range" min="0" max="100" step="5"
+                                  value={accum.bond}
+                                  onChange={(e) => {
+                                    const bd = Number(e.target.value);
+                                    const rem = 100 - bd;
+                                    const eq = Math.min(rem, accum.equity);
+                                    const cs = rem - eq;
+                                    updatePotPhase('accumulation', { equity: eq, bond: bd, cash: cs });
+                                  }}
+                                  className="w-28 h-1 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Post-Retirement (Decumulation) */}
+                          <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/80 dark:border-slate-800 space-y-2">
+                            <div className="flex items-center justify-between text-[11px] font-extrabold text-slate-700 dark:text-slate-300">
+                              <span>Post-Retirement (Decumulation)</span>
+                              <span className="text-indigo-600 dark:text-indigo-400">{decum.equity}% Eq / {decum.bond}% Bd / {decum.cash}% Cs</span>
+                            </div>
+                            <div className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden flex">
+                              <div style={{ width: `${decum.equity}%` }} className="bg-emerald-500 h-full" />
+                              <div style={{ width: `${decum.bond}%` }} className="bg-indigo-500 h-full" />
+                              <div style={{ width: `${decum.cash}%` }} className="bg-amber-400 h-full" />
+                            </div>
+                            <div className="space-y-1.5 pt-1">
+                              <div className="flex items-center justify-between text-[10px] font-bold text-slate-600 dark:text-slate-400">
+                                <span>Equity: {decum.equity}%</span>
+                                <input
+                                  type="range" min="0" max="100" step="5"
+                                  value={decum.equity}
+                                  onChange={(e) => {
+                                    const eq = Number(e.target.value);
+                                    const rem = 100 - eq;
+                                    const bd = Math.round(rem * 0.80);
+                                    const cs = rem - bd;
+                                    updatePotPhase('decumulation', { equity: eq, bond: bd, cash: cs });
+                                  }}
+                                  className="w-28 h-1 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+                                />
+                              </div>
+                              <div className="flex items-center justify-between text-[10px] font-bold text-slate-600 dark:text-slate-400">
+                                <span>Bonds: {decum.bond}%</span>
+                                <input
+                                  type="range" min="0" max="100" step="5"
+                                  value={decum.bond}
+                                  onChange={(e) => {
+                                    const bd = Number(e.target.value);
+                                    const rem = 100 - bd;
+                                    const eq = Math.min(rem, decum.equity);
+                                    const cs = rem - eq;
+                                    updatePotPhase('decumulation', { equity: eq, bond: bd, cash: cs });
+                                  }}
+                                  className="w-28 h-1 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
           </div>
         )}
 
