@@ -88,6 +88,7 @@ export const NAV_STRUCTURE: TabGroup[] = [
     cards: [
       { id: 'card-strat-planner', label: 'Drawdown Strategy Planner' },
       { id: 'card-strat-phases', label: 'Retirement Income Requirement' },
+      { id: 'card-strat-macro', label: 'Asset Allocation & Macro Settings' },
     ],
   },
   {
@@ -175,6 +176,7 @@ export const NAV_STRUCTURE: TabGroup[] = [
     description: 'Custom parameters & advanced settings',
     cards: [
       { id: 'card-advanced-settings', label: 'Advanced Settings & AI Advisor' },
+      { id: 'card-adv-macro', label: 'Asset Allocation & Macro Settings' },
     ],
   },
   {
@@ -242,6 +244,8 @@ export function getFilteredNavStructure(mode: AppMode = 'basic'): TabGroup[] {
     'card-inputs-statepension',
     'card-inputs-lifeevents',
     'card-inputs-fees',
+    'card-strat-macro',
+    'card-adv-macro',
     'card-proj-macro',
     'card-proj-table',
     'card-risk-macro',
