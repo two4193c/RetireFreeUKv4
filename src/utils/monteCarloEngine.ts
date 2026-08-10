@@ -884,16 +884,24 @@ function parseAnnuityTypeConfig(type?: string) {
           const bufSummary = calculateCashBufferRequiredDetails(profile, pots, crashStartAge, cashBufYears);
           const neededBuffer = bufSummary.totalNetCashBufferRequired;
           if (cashGiaPot < neededBuffer) {
-            const shortfall = neededBuffer - cashGiaPot;
-            const availPensionsAndIsa = pensionPot + isaPot;
-            const transferAmt = Math.min(shortfall, Math.max(0, availPensionsAndIsa));
-            if (transferAmt > 0 && availPensionsAndIsa > 0) {
-              const pensionRatio = pensionPot / availPensionsAndIsa;
-              const pensionDraw = transferAmt * pensionRatio;
-              const isaDraw = transferAmt * (1 - pensionRatio);
-              deductProRata("pension", pensionDraw);
+            let shortfall = neededBuffer - cashGiaPot;
+            
+            // Draw from ISA first (tax free)
+            if (isaPot > 0 && shortfall > 0) {
+              const isaDraw = Math.min(isaPot, shortfall);
               deductProRata("isa", isaDraw);
-              addProRata("cashGia", transferAmt, false);
+              addProRata("cashGia", isaDraw, false);
+              shortfall -= isaDraw;
+            }
+            
+            // Draw remaining from Pension (approximate 15% effective tax)
+            if (pensionPot > 0 && shortfall > 0) {
+              const pensionGrossNeeded = shortfall / 0.85; 
+              const pensionDraw = Math.min(pensionPot, pensionGrossNeeded);
+              const actualNetAdded = pensionDraw * 0.85;
+              deductProRata("pension", pensionDraw);
+              addProRata("cashGia", actualNetAdded, false);
+              shortfall -= actualNetAdded;
             }
           }
         }
@@ -1082,14 +1090,6 @@ function parseAnnuityTypeConfig(type?: string) {
 
         const isCashBufferActiveYr = useCashBuf && marketScenario === 'early_crash' && age >= crashStartAge && age < (crashStartAge + cashBufYears);
 
-        if (isCashBufferActiveYr && remainingNeeded > 0) {
-          if (cashGiaPot > 0) {
-            const cashDraw = Math.min(cashGiaPot, remainingNeeded);
-            deductProRata("cashGia", cashDraw);
-            remainingNeeded -= cashDraw;
-          }
-        }
-
         const primaryStrategy = profile.drawdownStrategy || 'isa_first';
         const partnerStrategy = profile.isCouplePlanning ? (profile.partnerDrawdownStrategy || primaryStrategy) : primaryStrategy;
 
@@ -1109,7 +1109,15 @@ function parseAnnuityTypeConfig(type?: string) {
           }
         }
 
-        if (isReinvestExcess) {
+        let actualIsReinvestExcess = isReinvestExcess;
+
+        // Force Cash First and disable reinvestment during active buffer years to prevent equity sales
+        if (isCashBufferActiveYr) {
+          effectiveStrategy = 'cash_first';
+          actualIsReinvestExcess = false;
+        }
+
+        if (actualIsReinvestExcess) {
           const hasPensionAccess = canAccessPension || partnerCanAccessPension;
           if (hasPensionAccess && pensionPot > 0) {
             const pensionNetNeeded = Math.max(0, drawdownNetTarget - netGuaranteedIncomeSecured);
