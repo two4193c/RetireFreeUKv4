@@ -298,7 +298,7 @@ export function runMonteCarloSimulation(
 
   const getCrashDropForYearIndex = (yearIdx: number): number => {
     if (customParams?.crashYearDropsPercent && customParams.crashYearDropsPercent[yearIdx] !== undefined) {
-      return Math.abs(customParams.crashYearDropsPercent[yearIdx]) / 100;
+      return customParams.crashYearDropsPercent[yearIdx] / 100;
     }
     if (yearIdx === 0) return (customParams?.crashDepthPercent ?? 30.0) / 100;
     if (yearIdx === 1) return 0.15;

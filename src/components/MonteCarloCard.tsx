@@ -1102,7 +1102,7 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
               {/* Per-Year Drop Settings */}
               <div className="space-y-2 pt-2 border-t border-rose-200/60 dark:border-rose-900/60">
                 <label className="text-[11px] font-extrabold text-rose-900 dark:text-rose-200 block">
-                  Configurable Percentage Drop for Each Crash Year:
+                  Configurable Percentage Event (Drop or Bounce) for Each Crash Year:
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {currentCrashYearDrops.map((drop, idx) => {
@@ -1115,23 +1115,29 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
                       >
                         <div className="flex justify-between items-center text-xs font-bold text-rose-950 dark:text-rose-100">
                           <span>Year {idx + 1} (Age {crashAge} / {crashYear}):</span>
-                          <span className="font-extrabold text-rose-700 dark:text-rose-400 bg-rose-100 dark:bg-rose-950 px-2 py-0.5 rounded border border-rose-200 dark:border-rose-800">
-                            -{drop}%
+                          <span className={`font-extrabold px-2 py-0.5 rounded border ${
+                            drop > 0 
+                              ? 'text-rose-700 dark:text-rose-400 bg-rose-100 dark:bg-rose-950 border-rose-200 dark:border-rose-800' 
+                              : drop < 0 
+                                ? 'text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950 border-emerald-200 dark:border-emerald-800'
+                                : 'text-slate-700 dark:text-slate-400 bg-slate-100 dark:bg-slate-900 border-slate-200 dark:border-slate-800'
+                          }`}>
+                            {drop > 0 ? `-${drop}% (Drop)` : drop < 0 ? `+${Math.abs(drop)}% (Bounce)` : '0%'}
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
                           <input
                             type="range"
-                            min="0"
+                            min="-100"
                             max="60"
                             step="1"
                             value={drop}
                             onChange={(e) => handleCrashYearDropChange(idx, parseInt(e.target.value, 10))}
-                            className="w-full accent-rose-600 cursor-pointer"
+                            className={`w-full cursor-pointer ${drop < 0 ? 'accent-emerald-600' : 'accent-rose-600'}`}
                           />
                           <input
                             type="number"
-                            min="0"
+                            min="-100"
                             max="90"
                             value={drop}
                             onChange={(e) => handleCrashYearDropChange(idx, parseInt(e.target.value, 10) || 0)}
