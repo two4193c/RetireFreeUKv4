@@ -62,8 +62,8 @@ export function calculateCashBufferRequiredDetails(
   const sanitizedPots = sanitizePots(pots);
   const sanitizedPartnerPots = sanitizePots(profile.partnerPots || DEFAULT_PARTNER_POTS);
 
-  const startingCashToday = (sanitizedPots.cashSavingsBalance || 0) + (sanitizedPots.cashIsaBalance || 0) + (sanitizedPots.giaBalance || 0) +
-    (profile.isCouplePlanning ? ((sanitizedPartnerPots.cashSavingsBalance || 0) + (sanitizedPartnerPots.cashIsaBalance || 0) + (sanitizedPartnerPots.giaBalance || 0)) : 0);
+  const startingCashToday = (sanitizedPots.cashSavingsBalance || 0) + (sanitizedPots.cashIsaBalance || 0) +
+    (profile.isCouplePlanning ? ((sanitizedPartnerPots.cashSavingsBalance || 0) + (sanitizedPartnerPots.cashIsaBalance || 0)) : 0);
 
   let existingCashAvailable = startingCashToday;
 
@@ -74,8 +74,8 @@ export function calculateCashBufferRequiredDetails(
     const primaryTax = calculateUKTax(profile, pots, false, safeCurrentAge);
     const partnerTax = profile.isCouplePlanning ? calculatePartnerUKTax(profile, profile.partnerPots || DEFAULT_PARTNER_POTS, profile.partnerCurrentAge ?? safeCurrentAge) : null;
     
-    const annualCashContribPrimary = (primaryTax.regularCashGiaContributionsAnnual ?? primaryTax.totalCashGiaContributionsAnnual ?? 0) + (primaryTax.regularCashIsaContributionsAnnual ?? 0);
-    const annualCashContribPartner = partnerTax ? ((partnerTax.regularCashGiaContributionsAnnual ?? partnerTax.totalCashGiaContributionsAnnual ?? 0) + (partnerTax.regularCashIsaContributionsAnnual ?? 0)) : 0;
+    const annualCashContribPrimary = (primaryTax.regularCashIsaContributionsAnnual ?? 0) + ((pots.cashSavingsMonthlyContribution || 0) * 12);
+    const annualCashContribPartner = partnerTax ? ((partnerTax.regularCashIsaContributionsAnnual ?? 0) + ((profile.partnerPots?.cashSavingsMonthlyContribution || 0) * 12)) : 0;
     const totalAnnualCashContrib = annualCashContribPrimary + annualCashContribPartner;
 
     let projCash = startingCashToday;
@@ -103,8 +103,14 @@ export function calculateCashBufferRequiredDetails(
     const calendarYear = currentYear + yearOffset;
     const inflationFactor = Math.pow(1 + inflation, Math.max(0, yearOffset));
 
+    let incomeIncreaseFactor = inflationFactor;
+    if (profile.incomeIncreaseMode === 'custom') {
+      const customRate = (profile.customIncomeIncreasePercent ?? 0) / 100;
+      incomeIncreaseFactor = Math.pow(1 + customRate, Math.max(0, yearOffset));
+    }
+
     const baseIncomeTarget = getTargetIncomeForAge(profile, age);
-    const targetNetIncome = baseIncomeTarget * inflationFactor;
+    const targetNetIncome = baseIncomeTarget * incomeIncreaseFactor;
 
     // Guaranteed State Pension
     let statePension = 0;

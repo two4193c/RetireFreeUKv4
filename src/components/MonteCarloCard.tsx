@@ -131,9 +131,8 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
 
   // Compute 3 scenario results for Overview tab comparison view (gated to active view)
   const baseResult = useMemo(() => {
-    if (!showAllScenarios) return mcResult;
-    return runMonteCarloSimulation(profile, pots, taxResult, { ...params, marketScenario: 'standard' });
-  }, [profile, pots, taxResult, params, showAllScenarios, mcResult]);
+    return runMonteCarloSimulation(profile, pots, taxResult, { ...params, marketScenario: 'standard', useCashBuffer: false });
+  }, [profile, pots, taxResult, params]);
 
   const stressedResult = useMemo(() => {
     if (!showAllScenarios) return mcResult;
@@ -151,10 +150,10 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
   }, [profile, pots, taxResult, params, showAllScenarios, mcResult]);
 
   const projectedCashAtCrashStart = useMemo(() => {
-    if (!crashResult || !crashResult.agePercentiles) return 0;
-    const targetAgeData = crashResult.agePercentiles.find((p) => p.age === currentCrashStartAge);
+    if (!baseResult || !baseResult.agePercentiles) return 0;
+    const targetAgeData = baseResult.agePercentiles.find((p) => p.age === currentCrashStartAge);
     return targetAgeData?.p50CashGiaPot ?? 0;
-  }, [crashResult, currentCrashStartAge]);
+  }, [baseResult, currentCrashStartAge]);
 
   const cashBufferSummary = useMemo(() => {
     return calculateCashBufferRequiredDetails(
