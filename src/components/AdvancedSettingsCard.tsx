@@ -14,6 +14,7 @@ import {
 import { UserProfile, CustomTaxBandOverrides, PotReturnOverrides } from '../types';
 import { DEFAULT_CUSTOM_TAX_BANDS, DEFAULT_POT_RETURN_OVERRIDES } from '../utils/defaultData';
 import { InvestmentFeesCard } from './InvestmentFeesCard';
+import { MacroSettingsCard } from './MacroSettingsCard';
 
 interface AdvancedSettingsCardProps {
   profile: UserProfile;
@@ -713,9 +714,9 @@ export const AdvancedSettingsCard: React.FC<AdvancedSettingsCardProps> = ({ prof
             )}
           </section>
 
-          {/* Investment, Platform & Adviser Fees */}
-          <div id="card-adv-fees" className="scroll-mt-24 transition-all duration-300">
-            <InvestmentFeesCard profile={profile} onChange={onChange} />
+          {/* Investment Returns & Asset Allocation Split */}
+          <div id="card-adv-macro" className="scroll-mt-24 transition-all duration-300">
+            <MacroSettingsCard profile={profile} onChange={onChange} />
           </div>
 
           {/* AI Tax & Pension Advisor */}

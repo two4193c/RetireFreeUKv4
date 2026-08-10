@@ -977,6 +977,11 @@ function App() {
                     appMode={appMode}
                   />
                 </div>
+                {appMode === 'advanced' && (
+                  <div id="card-strat-macro" className="scroll-mt-24 transition-all duration-300">
+                    <MacroSettingsCard profile={profile} onChange={handleProfileChange} />
+                  </div>
+                )}
               </div>
             )}
 
