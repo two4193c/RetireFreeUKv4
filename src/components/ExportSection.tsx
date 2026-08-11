@@ -504,27 +504,30 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       const primaryAccessAge = getPensionAccessAge(profile);
       const primarySpaAge = profile.statePensionAge || 67;
 
-      const privateAccessYear = (projections && projections.length > 0)
-        ? (projections.find((p) => p.age === primaryAccessAge) || projections[0])
-        : { totalPot: 0, pensionPot: 0, isaPot: 0, cashGiaPot: 0, targetRetirementIncome: 0, age: primaryAccessAge, year: 2024 };
+      const getSnapshotForAge = (targetAgeVal: number) => {
+        if (!projections || projections.length === 0) {
+          return { totalPot: 0, pensionPot: 0, isaPot: 0, cashGiaPot: 0, targetRetirementIncome: 0, age: targetAgeVal, year: new Date().getFullYear() };
+        }
+        const match = projections.find((p) => p.age === targetAgeVal);
+        if (match) return match;
+        if (targetAgeVal < projections[0].age) return projections[0];
+        return projections[projections.length - 1];
+      };
 
-      const retirementYear = (projections && projections.length > 0)
-        ? (projections.find((p) => p.age === profile.targetRetirementAge) || projections[0])
-        : { totalPot: 0, pensionPot: 0, isaPot: 0, cashGiaPot: 0, targetRetirementIncome: 0, age: profile.targetRetirementAge, year: 2024 };
-
-      const statePensionYear = (projections && projections.length > 0)
-        ? (projections.find((p) => p.age === primarySpaAge) || projections[0])
-        : { totalPot: 0, pensionPot: 0, isaPot: 0, cashGiaPot: 0, targetRetirementIncome: 0, age: primarySpaAge, year: 2024 };
+      const privateAccessYear = getSnapshotForAge(primaryAccessAge);
+      const retirementYear = getSnapshotForAge(profile.targetRetirementAge);
+      const statePensionYear = getSnapshotForAge(primarySpaAge);
 
       // Calculate totals for cover page & summary
+      const isCouplePrelim = Boolean(profile.isCouplePlanning);
       const potRowsPrelim = [
-        { name: 'Workplace Pension', primary: pots?.workplacePensionBalance || 0, partner: profile.partnerPots?.workplacePensionBalance || profile.partnerWorkplacePensionBalance || 0 },
-        { name: 'SIPP / Personal Pension', primary: pots?.sippBalance || 0, partner: profile.partnerPots?.sippBalance || profile.partnerSippBalance || 0 },
-        { name: 'Stocks & Shares ISA', primary: pots?.stocksAndSharesIsaBalance || 0, partner: profile.partnerPots?.stocksAndSharesIsaBalance || profile.partnerIsaBalance || 0 },
-        { name: 'Cash ISA', primary: pots?.cashIsaBalance || 0, partner: profile.partnerPots?.cashIsaBalance || 0 },
-        { name: 'Lifetime ISA (LISA)', primary: pots?.lisaBalance || 0, partner: profile.partnerPots?.lisaBalance || 0 },
-        { name: 'General Investment Account (GIA)', primary: pots?.giaBalance || 0, partner: profile.partnerPots?.giaBalance || 0 },
-        { name: 'Cash Savings & Emergency Fund', primary: pots?.cashSavingsBalance || 0, partner: profile.partnerPots?.cashSavingsBalance || 0 },
+        { name: 'Workplace Pension', primary: pots?.workplacePensionBalance || 0, partner: isCouplePrelim ? (profile.partnerPots?.workplacePensionBalance || profile.partnerWorkplacePensionBalance || 0) : 0 },
+        { name: 'SIPP / Personal Pension', primary: pots?.sippBalance || 0, partner: isCouplePrelim ? (profile.partnerPots?.sippBalance || profile.partnerSippBalance || 0) : 0 },
+        { name: 'Stocks & Shares ISA', primary: pots?.stocksAndSharesIsaBalance || 0, partner: isCouplePrelim ? (profile.partnerPots?.stocksAndSharesIsaBalance || profile.partnerIsaBalance || 0) : 0 },
+        { name: 'Cash ISA', primary: pots?.cashIsaBalance || 0, partner: isCouplePrelim ? (profile.partnerPots?.cashIsaBalance || 0) : 0 },
+        { name: 'Lifetime ISA (LISA)', primary: pots?.lisaBalance || 0, partner: isCouplePrelim ? (profile.partnerPots?.lisaBalance || 0) : 0 },
+        { name: 'General Investment Account (GIA)', primary: pots?.giaBalance || 0, partner: isCouplePrelim ? (profile.partnerPots?.giaBalance || 0) : 0 },
+        { name: 'Cash Savings & Emergency Fund', primary: pots?.cashSavingsBalance || 0, partner: isCouplePrelim ? (profile.partnerPots?.cashSavingsBalance || 0) : 0 },
       ];
       let totalCurrentPrimary = 0;
       let totalCurrentPartner = 0;
@@ -532,6 +535,9 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
         totalCurrentPrimary += row.primary;
         totalCurrentPartner += row.partner;
       });
+      if (!isCouplePrelim) {
+        totalCurrentPartner = 0;
+      }
 
       const shortfallYears = (projections || []).filter((p) => p.isRetired && (p.incomeShortfall || 0) > 0);
       const isPlanFeasible = shortfallYears.length === 0;
@@ -640,8 +646,19 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       doc.text(`£${Math.round(totalCurrentPrimary + totalCurrentPartner).toLocaleString()}`, 22, covY + 21.5);
 
       // KPI 2 (First milestone age)
+      const isAdjusted = Boolean(profile.adjustForInflation);
+      const getScaledPot = (snap: any) => {
+        const ageVal = snap?.age || profile.targetRetirementAge;
+        const off = Math.max(0, ageVal - profile.currentAge);
+        const f = Math.pow(1 + (profile.expectedInflationRate || 2.5) / 100, off);
+        const s = (isAdjusted && f > 0) ? (1 / f) : 1;
+        return Math.round((snap?.totalPot || 0) * s);
+      };
+
       const kpi2Obj = targetAge <= primaryAccessAge ? retirementYear : privateAccessYear;
-      const kpi2Title = targetAge <= primaryAccessAge ? `PROJECTED WEALTH AT RETIREMENT AGE (${targetAge})` : `PROJECTED WEALTH AT PRIVATE PENSION AGE (${primaryAccessAge})`;
+      const kpi2Title = targetAge <= primaryAccessAge
+        ? `PROJECTED WEALTH AT RETIREMENT AGE (${targetAge})${isAdjusted ? ' (REAL)' : ''}`
+        : `PROJECTED WEALTH AT PRIVATE PENSION AGE (${primaryAccessAge})${isAdjusted ? ' (REAL)' : ''}`;
       doc.setFillColor(255, 255, 255);
       doc.roundedRect(107, covY + 11, 85, 14, 2, 2, 'F');
       doc.setFontSize(6.5);
@@ -650,12 +667,14 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       doc.setFontSize(9);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(16, 185, 129);
-      doc.text(`£${Math.round(kpi2Obj.totalPot || 0).toLocaleString()}`, 111, covY + 21.5);
+      doc.text(`£${getScaledPot(kpi2Obj).toLocaleString()}`, 111, covY + 21.5);
 
       // Grid Row 2
       // KPI 3 (Second milestone age)
       const kpi3Obj = targetAge <= primaryAccessAge ? privateAccessYear : retirementYear;
-      const kpi3Title = targetAge <= primaryAccessAge ? `PROJECTED WEALTH AT PRIVATE PENSION AGE (${primaryAccessAge})` : `PROJECTED WEALTH AT RETIREMENT AGE (${targetAge})`;
+      const kpi3Title = targetAge <= primaryAccessAge
+        ? `PROJECTED WEALTH AT PRIVATE PENSION AGE (${primaryAccessAge})${isAdjusted ? ' (REAL)' : ''}`
+        : `PROJECTED WEALTH AT RETIREMENT AGE (${targetAge})${isAdjusted ? ' (REAL)' : ''}`;
       doc.setFillColor(255, 255, 255);
       doc.roundedRect(18, covY + 27, 85, 14, 2, 2, 'F');
       doc.setFontSize(6.5);
@@ -664,18 +683,18 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       doc.setFontSize(9);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(120, 53, 15);
-      doc.text(`£${Math.round(kpi3Obj.totalPot || 0).toLocaleString()}`, 22, covY + 37.5);
+      doc.text(`£${getScaledPot(kpi3Obj).toLocaleString()}`, 22, covY + 37.5);
 
       // KPI 4
       doc.setFillColor(255, 255, 255);
       doc.roundedRect(107, covY + 27, 85, 14, 2, 2, 'F');
       doc.setFontSize(6.5);
       doc.setTextColor(100, 116, 139);
-      doc.text(`PROJECTED WEALTH AT STATE PENSION AGE (${primarySpaAge})`, 111, covY + 31.5);
+      doc.text(`PROJECTED WEALTH AT STATE PENSION AGE (${primarySpaAge})${isAdjusted ? ' (REAL)' : ''}`, 111, covY + 31.5);
       doc.setFontSize(9);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(79, 70, 229);
-      doc.text(`£${Math.round(statePensionYear.totalPot || 0).toLocaleString()}`, 111, covY + 37.5);
+      doc.text(`£${getScaledPot(statePensionYear).toLocaleString()}`, 111, covY + 37.5);
 
       // Grid Row 3
       // KPI 5: Plan Feasibility & Stochastic Status (Full Width)
@@ -1152,7 +1171,9 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
           const pTaxYr = calculateUKTax(profile, pPotsThisYear, false, pAgeAtYear);
           const partTaxYr = profile.isCouplePlanning ? calculatePartnerUKTax(profile, partnerPotsThisYear, partAgeAtYear) : null;
 
-          const taxRelief = (pTaxYr.totalPensionTaxRelief || 0) + (profile.isCouplePlanning ? (partTaxYr?.totalPensionTaxRelief || 0) : 0);
+          const taxRelief = (p.annualTaxReliefTotal !== undefined && p.annualTaxReliefTotal > 0)
+            ? p.annualTaxReliefTotal
+            : ((pTaxYr.totalPensionTaxRelief || 0) + (profile.isCouplePlanning ? (partTaxYr?.totalPensionTaxRelief || 0) : 0));
           const savingsTax = p.savingsInterestTax ?? ((pTaxYr.savingsInterestTax || 0) + (partTaxYr?.savingsInterestTax || 0));
 
           const pensionUsed = (pTaxYr.totalPensionContributionsAnnual || 0) + (profile.isCouplePlanning ? (partTaxYr?.totalPensionContributionsAnnual || 0) : 0);
@@ -1266,10 +1287,16 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
           tableY = 24;
         }
 
+        const isAdjusted = Boolean(profile.adjustForInflation);
+        const snapAge = snapshot?.age || profile.targetRetirementAge;
+        const snapOffset = Math.max(0, snapAge - profile.currentAge);
+        const snapInflFact = Math.pow(1 + (profile.expectedInflationRate || 2.5) / 100, snapOffset);
+        const snapScale = (isAdjusted && snapInflFact > 0) ? (1 / snapInflFact) : 1;
+
         doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(9.5);
-        doc.text(`${sectionNum}. ${titleText}`, 14, tableY);
+        doc.text(`${sectionNum}. ${titleText}${isAdjusted ? " (Real Terms - Today's £)" : " (Nominal £)"}`, 14, tableY);
 
         tableY += 4;
         doc.setFillColor(30, 41, 59);
@@ -1287,33 +1314,67 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
         doc.setTextColor(51, 65, 85);
         doc.setFontSize(7.5);
 
-        const penPri = snapshot.primaryPensionPot ?? ((snapshot.pensionPot || 0) * 0.7);
-        const penPart = snapshot.partnerPensionPot ?? ((snapshot.pensionPot || 0) * 0.3);
+        const isCouple = Boolean(profile.isCouplePlanning);
 
-        const isaPri = snapshot.primaryIsaPot ?? ((snapshot.isaPot || 0) * 0.8);
-        const isaPart = snapshot.partnerIsaPot ?? ((snapshot.isaPot || 0) * 0.2);
+        const penPri = (isCouple
+          ? (snapshot.primaryPensionPot ?? ((snapshot.pensionPot || 0) * 0.7))
+          : (snapshot.primaryPensionPot ?? (snapshot.pensionPot || 0))) * snapScale;
+        const penPart = (isCouple
+          ? (snapshot.partnerPensionPot ?? ((snapshot.pensionPot || 0) * 0.3))
+          : 0) * snapScale;
 
-        const cashPri = snapshot.primaryCashGiaPot ?? ((snapshot.cashGiaPot || 0) * 0.5);
-        const cashPart = snapshot.partnerCashGiaPot ?? ((snapshot.cashGiaPot || 0) * 0.5);
+        const isaPri = (isCouple
+          ? (snapshot.primaryIsaPot ?? ((snapshot.isaPot || 0) * 0.8))
+          : (snapshot.primaryIsaPot ?? (snapshot.isaPot || 0))) * snapScale;
+        const isaPart = (isCouple
+          ? (snapshot.partnerIsaPot ?? ((snapshot.isaPot || 0) * 0.2))
+          : 0) * snapScale;
+
+        const cashPri = (isCouple
+          ? (snapshot.primaryCashGiaPot ?? ((snapshot.cashGiaPot || 0) * 0.5))
+          : (snapshot.primaryCashGiaPot ?? (snapshot.cashGiaPot || 0))) * snapScale;
+        const cashPart = (isCouple
+          ? (snapshot.partnerCashGiaPot ?? ((snapshot.cashGiaPot || 0) * 0.5))
+          : 0) * snapScale;
 
         const wpPri = penPri * priWpRatio;
         const sippPri = penPri * priSippRatio;
-        const wpPart = penPart * partWpRatio;
-        const sippPart = penPart * partSippRatio;
+        const wpPart = isCouple ? (penPart * partWpRatio) : 0;
+        const sippPart = isCouple ? (penPart * partSippRatio) : 0;
 
-        const ssIsaPri = isaPri * priSsIsaRatio;
-        const cashIsaPri = isaPri * priCashIsaRatio;
-        const lisaPri = isaPri * priLisaRatio;
-        const ssIsaPart = isaPart * partSsIsaRatio;
-        const cashIsaPart = isaPart * partCashIsaRatio;
-        const lisaPart = isaPart * partLisaRatio;
+        const ssIsaPri = (snapshot.primaryStocksAndSharesIsaPot !== undefined
+          ? snapshot.primaryStocksAndSharesIsaPot * snapScale
+          : isaPri * priSsIsaRatio);
+        const cashIsaPri = (snapshot.primaryCashIsaPot !== undefined
+          ? snapshot.primaryCashIsaPot * snapScale
+          : isaPri * priCashIsaRatio);
+        const lisaPri = (snapshot.primaryLisaPot !== undefined
+          ? snapshot.primaryLisaPot * snapScale
+          : isaPri * priLisaRatio);
 
+        const ssIsaPart = isCouple ? (snapshot.partnerStocksAndSharesIsaPot !== undefined
+          ? snapshot.partnerStocksAndSharesIsaPot * snapScale
+          : isaPart * partSsIsaRatio) : 0;
+        const cashIsaPart = isCouple ? (snapshot.partnerCashIsaPot !== undefined
+          ? snapshot.partnerCashIsaPot * snapScale
+          : isaPart * partCashIsaRatio) : 0;
+        const lisaPart = isCouple ? (snapshot.partnerLisaPot !== undefined
+          ? snapshot.partnerLisaPot * snapScale
+          : isaPart * partLisaRatio) : 0;
 
+        const giaPri = (snapshot.primaryGiaPot !== undefined
+          ? snapshot.primaryGiaPot * snapScale
+          : cashPri * priGiaRatio);
+        const cashSavPri = (snapshot.primaryCashSavingsPot !== undefined
+          ? snapshot.primaryCashSavingsPot * snapScale
+          : cashPri * priCashSavRatio);
 
-        const giaPri = snapshot.primaryGiaPot ?? (cashPri * priGiaRatio);
-        const giaPart = snapshot.partnerGiaPot ?? (cashPart * partGiaRatio);
-        const cashSavPri = snapshot.primaryCashSavingsPot ?? (cashPri * priCashSavRatio);
-        const cashSavPart = snapshot.partnerCashSavingsPot ?? (cashPart * partCashSavRatio);
+        const giaPart = isCouple ? (snapshot.partnerGiaPot !== undefined
+          ? snapshot.partnerGiaPot * snapScale
+          : cashPart * partGiaRatio) : 0;
+        const cashSavPart = isCouple ? (snapshot.partnerCashSavingsPot !== undefined
+          ? snapshot.partnerCashSavingsPot * snapScale
+          : cashPart * partCashSavRatio) : 0;
 
         const potRows = [
           { name: 'Workplace Pension', primary: wpPri, partner: wpPart, total: wpPri + wpPart },
@@ -1350,7 +1411,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
         doc.text('TOTAL ASSETS', 18, tableY + 3.8);
         doc.text(`£${Math.round(totPri).toLocaleString()}`, 85, tableY + 3.8);
         doc.text(profile.isCouplePlanning ? `£${Math.round(totPart).toLocaleString()}` : '—', 125, tableY + 3.8);
-        doc.text(`£${Math.round(snapshot.totalPot || 0).toLocaleString()}`, 160, tableY + 3.8);
+        doc.text(`£${Math.round((snapshot.totalPot || 0) * snapScale).toLocaleString()}`, 160, tableY + 3.8);
 
         return tableY + 8;
       };
@@ -2151,11 +2212,21 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(10);
-      doc.text(`Diagram 1: Portfolio Asset Distribution at Retirement Start (Age ${targetAge})`, 18, p4Y + 8);
 
-      const totalPotRet = retirementYear.totalPot || 1;
-      const pPct = Math.round(((retirementYear.pensionPot || 0) / totalPotRet) * 100);
-      const iPct = Math.round(((retirementYear.isaPot || 0) / totalPotRet) * 100);
+      const isAdjustedDiagram = Boolean(profile.adjustForInflation);
+      const retOffset = Math.max(0, targetAge - currentAge);
+      const retInflFact = Math.pow(1 + (profile.expectedInflationRate || 2.5) / 100, retOffset);
+      const retScale = (isAdjustedDiagram && retInflFact > 0) ? (1 / retInflFact) : 1;
+
+      doc.text(`Diagram 1: Portfolio Asset Distribution at Retirement Start (Age ${targetAge})${isAdjustedDiagram ? " (Real Terms - Today's £)" : " (Nominal £)"}`, 18, p4Y + 8);
+
+      const totalPotRet = (retirementYear.totalPot || 1) * retScale;
+      const penValRet = (retirementYear.pensionPot || 0) * retScale;
+      const isaValRet = (retirementYear.isaPot || 0) * retScale;
+      const cashValRet = (retirementYear.cashGiaPot || 0) * retScale;
+
+      const pPct = Math.round((penValRet / (totalPotRet || 1)) * 100);
+      const iPct = Math.round((isaValRet / (totalPotRet || 1)) * 100);
       const cPct = Math.max(0, 100 - pPct - iPct);
 
       const dBarX = 18;
@@ -2187,15 +2258,15 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       doc.setFillColor(16, 185, 129);
       doc.rect(18, dLgY, 4, 4, 'F');
       doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
-      doc.text(`Pension Pot: £${(retirementYear.pensionPot || 0).toLocaleString()} (${pPct}%)`, 24, dLgY + 3.5);
+      doc.text(`Pension Pot: £${Math.round(penValRet).toLocaleString()} (${pPct}%)`, 24, dLgY + 3.5);
 
       doc.setFillColor(99, 102, 241);
       doc.rect(80, dLgY, 4, 4, 'F');
-      doc.text(`ISA Pot: £${(retirementYear.isaPot || 0).toLocaleString()} (${iPct}%)`, 86, dLgY + 3.5);
+      doc.text(`ISA Pot: £${Math.round(isaValRet).toLocaleString()} (${iPct}%)`, 86, dLgY + 3.5);
 
       doc.setFillColor(245, 158, 11);
       doc.rect(140, dLgY, 4, 4, 'F');
-      doc.text(`Cash/GIA Pot: £${(retirementYear.cashGiaPot || 0).toLocaleString()} (${cPct}%)`, 146, dLgY + 3.5);
+      doc.text(`Cash/GIA Pot: £${Math.round(cashValRet).toLocaleString()} (${cPct}%)`, 146, dLgY + 3.5);
 
       // DIAGRAM ILLUSTRATION 2: Projected Portfolio Wealth Trajectory Curve (SHOWING INDIVIDUAL POT SIZES)
       p4Y += 54;
