@@ -148,6 +148,7 @@ export function runHistoricModelingSimulation(
     let retirementPotBalance = 0;
 
     let annuityPurchased = false;
+    let partnerAnnuityPurchased = false;
     const historicAnnuityStreams: Array<{
       baseNominal: number;
       isInflationLinked: boolean;

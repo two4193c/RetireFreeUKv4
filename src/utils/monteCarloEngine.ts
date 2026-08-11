@@ -387,6 +387,7 @@ function parseAnnuityTypeConfig(type?: string) {
     let cashGiaPot = primaryCashGiaPot + partnerCashGiaPot;
 
     let annuityPurchased = false;
+    let partnerAnnuityPurchased = false;
     let pclsTaken = false;
     let partnerPclsTaken = false;
     let primaryCumulativeTaxFreeDrawn = 0;
@@ -422,12 +423,6 @@ function parseAnnuityTypeConfig(type?: string) {
           primaryPensionPot = Math.max(0, primaryPensionPot - primaryDraw);
           partnerPensionPot = Math.max(0, partnerPensionPot - partnerDraw);
           pensionPot = primaryPensionPot + partnerPensionPot;
-          if (!pclsTaken && primaryCumulativeTaxFreeDrawn < maxLsa) {
-            primaryCumulativeTaxFreeDrawn += primaryDraw * 0.25;
-          }
-          if (!partnerPclsTaken && partnerCumulativeTaxFreeDrawn < partnerMaxLsa) {
-            partnerCumulativeTaxFreeDrawn += partnerDraw * 0.25;
-          }
         } else if (potType === 'isa') {
           const priRatio = primaryIsaPot / (isaPot || 1);
           primaryIsaPot = Math.max(0, primaryIsaPot - amount * priRatio);
@@ -445,12 +440,6 @@ function parseAnnuityTypeConfig(type?: string) {
         primaryPensionPot = Math.max(0, primaryPensionPot - primaryDraw);
         partnerPensionPot = Math.max(0, partnerPensionPot - partnerDraw);
         pensionPot = primaryPensionPot + partnerPensionPot;
-        if (!pclsTaken && primaryCumulativeTaxFreeDrawn < maxLsa) {
-          primaryCumulativeTaxFreeDrawn += primaryDraw * 0.25;
-        }
-        if (!partnerPclsTaken && partnerCumulativeTaxFreeDrawn < partnerMaxLsa) {
-          partnerCumulativeTaxFreeDrawn += partnerDraw * 0.25;
-        }
       };
       const addProRata = (potType, amount, isPartner = false) => {
         if (potType === 'pension') {
@@ -685,7 +674,39 @@ function parseAnnuityTypeConfig(type?: string) {
       });
 
       let remainingNeeded = 0;
-      let partnerAnnuityPurchased = false;
+
+      const useCashBuf = customParams?.useCashBuffer ?? false;
+      const cashBufYears = Math.max(1, customParams?.cashBufferYears ?? crashDuration);
+
+      // If Cash Buffer strategy is enabled, ensure required buffer is ring-fenced in cash at crash start age
+      if (useCashBuf && marketScenario === 'early_crash' && age === crashStartAge) {
+        const bufSummary = calculateCashBufferRequiredDetails(profile, pots, crashStartAge, cashBufYears);
+        const neededBuffer = bufSummary.totalNetCashBufferRequired;
+        if (cashGiaPot < neededBuffer) {
+          let shortfall = neededBuffer - cashGiaPot;
+          
+          // Draw from ISA first (tax free)
+          if (isaPot > 0 && shortfall > 0) {
+            const isaDraw = Math.min(isaPot, shortfall);
+            deductProRata("isa", isaDraw);
+            addProRata("cashGia", isaDraw, false);
+            shortfall -= isaDraw;
+          }
+          
+          // Draw remaining from Pension (approximate 15% effective tax)
+          if ((canAccessPension || partnerCanAccessPension) && pensionPot > 0 && shortfall > 0) {
+            const pensionGrossNeeded = shortfall / 0.85; 
+            const pensionDraw = Math.min(pensionPot, pensionGrossNeeded);
+            const actualNetAdded = pensionDraw * 0.85;
+            deductProRata("pension", pensionDraw);
+            if (!pclsTaken && primaryCumulativeTaxFreeDrawn < maxLsa) {
+              primaryCumulativeTaxFreeDrawn += Math.min(pensionDraw * 0.25, Math.max(0, maxLsa - primaryCumulativeTaxFreeDrawn));
+            }
+            addProRata("cashGia", actualNetAdded, false);
+            shortfall -= actualNetAdded;
+          }
+        }
+      }
 
       if (!isRetired) {
         // ACCUMULATION PHASE
@@ -761,12 +782,25 @@ function parseAnnuityTypeConfig(type?: string) {
               ? 100
               : Math.min(100, Math.max(1, profile.annuityAllocationPercent ?? 50));
 
-          const potForAnnuity = primaryPensionPot * (allocPercent / 100);
-          primaryPensionPot = Math.max(0, primaryPensionPot - potForAnnuity);
+          const grossPotForAnnuity = primaryPensionPot * (allocPercent / 100);
+          let actualCapitalToAnnuity = grossPotForAnnuity;
+
+          if (!pclsTaken && primaryCumulativeTaxFreeDrawn < maxLsa) {
+            const uncrystPcls = Math.min(grossPotForAnnuity * 0.25, Math.max(0, maxLsa - primaryCumulativeTaxFreeDrawn));
+            actualCapitalToAnnuity = grossPotForAnnuity - uncrystPcls;
+            const alloc = allocateLumpSumToPots(uncrystPcls, profile.lumpSumTargetPot, profile.lumpSumSplits);
+            primaryIsaPot += alloc.toIsa;
+            primaryCashGiaPot += alloc.toCashGia;
+            isaPot = primaryIsaPot + partnerIsaPot;
+            cashGiaPot = primaryCashGiaPot + partnerCashGiaPot;
+            primaryCumulativeTaxFreeDrawn += uncrystPcls;
+          }
+
+          primaryPensionPot = Math.max(0, primaryPensionPot - grossPotForAnnuity);
           pensionPot = primaryPensionPot + partnerPensionPot;
 
           const rate = (profile.annuityRatePercent || 4.2) / 100;
-          const baseNominal = potForAnnuity * rate;
+          const baseNominal = actualCapitalToAnnuity * rate;
           annuityPurchased = true;
 
           const cfgPrimary = parseAnnuityTypeConfig(profile.annuityType);
@@ -798,12 +832,25 @@ function parseAnnuityTypeConfig(type?: string) {
               ? 100
               : Math.min(100, Math.max(1, profile.partnerAnnuityAllocationPercent ?? 50));
 
-          const potForAnnuity = partnerPensionPot * (allocPercent / 100);
-          partnerPensionPot = Math.max(0, partnerPensionPot - potForAnnuity);
+          const grossPotForAnnuity = partnerPensionPot * (allocPercent / 100);
+          let actualCapitalToAnnuity = grossPotForAnnuity;
+
+          if (!partnerPclsTaken && partnerCumulativeTaxFreeDrawn < partnerMaxLsa) {
+            const uncrystPcls = Math.min(grossPotForAnnuity * 0.25, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn));
+            actualCapitalToAnnuity = grossPotForAnnuity - uncrystPcls;
+            const alloc = allocateLumpSumToPots(uncrystPcls, profile.partnerLumpSumTargetPot || profile.lumpSumTargetPot, profile.partnerLumpSumSplits || profile.lumpSumSplits);
+            partnerIsaPot += alloc.toIsa;
+            partnerCashGiaPot += alloc.toCashGia;
+            isaPot = primaryIsaPot + partnerIsaPot;
+            cashGiaPot = primaryCashGiaPot + partnerCashGiaPot;
+            partnerCumulativeTaxFreeDrawn += uncrystPcls;
+          }
+
+          partnerPensionPot = Math.max(0, partnerPensionPot - grossPotForAnnuity);
           pensionPot = primaryPensionPot + partnerPensionPot;
 
           const rate = (profile.partnerAnnuityRatePercent || 4.2) / 100;
-          const baseNominal = potForAnnuity * rate;
+          const baseNominal = actualCapitalToAnnuity * rate;
           partnerAnnuityPurchased = true;
 
           const cfgPartner = parseAnnuityTypeConfig(profile.partnerAnnuityType || profile.annuityType);
@@ -824,12 +871,25 @@ function parseAnnuityTypeConfig(type?: string) {
           (profile.annuityTranches || []).forEach((t) => {
             if (t.enabled && (t.owner || 'primary') === 'primary' && t.purchaseAge === age && primaryPensionPot > 0) {
               const allocPercent = Math.min(100, Math.max(1, t.allocationPercent ?? 25));
-              const potForAnnuity = primaryPensionPot * (allocPercent / 100);
-              primaryPensionPot = Math.max(0, primaryPensionPot - potForAnnuity);
+              const grossPotForAnnuity = primaryPensionPot * (allocPercent / 100);
+              let actualCapitalToAnnuity = grossPotForAnnuity;
+
+              if (!pclsTaken && primaryCumulativeTaxFreeDrawn < maxLsa) {
+                const uncrystPcls = Math.min(grossPotForAnnuity * 0.25, Math.max(0, maxLsa - primaryCumulativeTaxFreeDrawn));
+                actualCapitalToAnnuity = grossPotForAnnuity - uncrystPcls;
+                const alloc = allocateLumpSumToPots(uncrystPcls, profile.lumpSumTargetPot, profile.lumpSumSplits);
+                primaryIsaPot += alloc.toIsa;
+                primaryCashGiaPot += alloc.toCashGia;
+                isaPot = primaryIsaPot + partnerIsaPot;
+                cashGiaPot = primaryCashGiaPot + partnerCashGiaPot;
+                primaryCumulativeTaxFreeDrawn += uncrystPcls;
+              }
+
+              primaryPensionPot = Math.max(0, primaryPensionPot - grossPotForAnnuity);
               pensionPot = primaryPensionPot + partnerPensionPot;
 
               const rate = (t.annuityRatePercent || 4.2) / 100;
-              const baseNominal = potForAnnuity * rate;
+              const baseNominal = actualCapitalToAnnuity * rate;
 
               const cfgTranchePrimary = parseAnnuityTypeConfig(t.annuityType || profile.annuityType);
               mcAnnuityStreams.push({
@@ -852,12 +912,25 @@ function parseAnnuityTypeConfig(type?: string) {
           partnerTranches.forEach((t) => {
             if (t.enabled && t.purchaseAge === partnerAge && partnerPensionPot > 0) {
               const allocPercent = Math.min(100, Math.max(1, t.allocationPercent ?? 25));
-              const potForAnnuity = partnerPensionPot * (allocPercent / 100);
-              partnerPensionPot = Math.max(0, partnerPensionPot - potForAnnuity);
+              const grossPotForAnnuity = partnerPensionPot * (allocPercent / 100);
+              let actualCapitalToAnnuity = grossPotForAnnuity;
+
+              if (!partnerPclsTaken && partnerCumulativeTaxFreeDrawn < partnerMaxLsa) {
+                const uncrystPcls = Math.min(grossPotForAnnuity * 0.25, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn));
+                actualCapitalToAnnuity = grossPotForAnnuity - uncrystPcls;
+                const alloc = allocateLumpSumToPots(uncrystPcls, profile.partnerLumpSumTargetPot || profile.lumpSumTargetPot, profile.partnerLumpSumSplits || profile.lumpSumSplits);
+                partnerIsaPot += alloc.toIsa;
+                partnerCashGiaPot += alloc.toCashGia;
+                isaPot = primaryIsaPot + partnerIsaPot;
+                cashGiaPot = primaryCashGiaPot + partnerCashGiaPot;
+                partnerCumulativeTaxFreeDrawn += uncrystPcls;
+              }
+
+              partnerPensionPot = Math.max(0, partnerPensionPot - grossPotForAnnuity);
               pensionPot = primaryPensionPot + partnerPensionPot;
 
               const rate = (t.annuityRatePercent || 4.2) / 100;
-              const baseNominal = potForAnnuity * rate;
+              const baseNominal = actualCapitalToAnnuity * rate;
 
               const cfgTranchePartner = parseAnnuityTypeConfig(t.annuityType || profile.partnerAnnuityType || profile.annuityType);
               mcAnnuityStreams.push({
@@ -906,36 +979,6 @@ function parseAnnuityTypeConfig(type?: string) {
           randomReturn = sampleLogNormalReturn(-crashDrop, decumulationVolatility);
         } else {
           randomReturn = sampleLogNormalReturn(meanDecumReturn, decumulationVolatility);
-        }
-
-        const useCashBuf = customParams?.useCashBuffer ?? false;
-        const cashBufYears = Math.max(1, customParams?.cashBufferYears ?? crashDuration);
-
-        // If Cash Buffer strategy is enabled, ensure required buffer is ring-fenced in cash at crash start age
-        if (useCashBuf && marketScenario === 'early_crash' && age === crashStartAge) {
-          const bufSummary = calculateCashBufferRequiredDetails(profile, pots, crashStartAge, cashBufYears);
-          const neededBuffer = bufSummary.totalNetCashBufferRequired;
-          if (cashGiaPot < neededBuffer) {
-            let shortfall = neededBuffer - cashGiaPot;
-            
-            // Draw from ISA first (tax free)
-            if (isaPot > 0 && shortfall > 0) {
-              const isaDraw = Math.min(isaPot, shortfall);
-              deductProRata("isa", isaDraw);
-              addProRata("cashGia", isaDraw, false);
-              shortfall -= isaDraw;
-            }
-            
-            // Draw remaining from Pension (approximate 15% effective tax)
-            if ((canAccessPension || partnerCanAccessPension) && pensionPot > 0 && shortfall > 0) {
-              const pensionGrossNeeded = shortfall / 0.85; 
-              const pensionDraw = Math.min(pensionPot, pensionGrossNeeded);
-              const actualNetAdded = pensionDraw * 0.85;
-              deductProRata("pension", pensionDraw);
-              addProRata("cashGia", actualNetAdded, false);
-              shortfall -= actualNetAdded;
-            }
-          }
         }
 
         // Cash savings return in decumulation during a crash year does not suffer equity crash drop
@@ -1035,7 +1078,8 @@ function parseAnnuityTypeConfig(type?: string) {
         const priBaseTax = computeIncomeTax(Math.max(0, primaryTaxableGuaranteed - singlePersonalAllowance), inflationFactor, isScottishTax);
         const partBaseTax = profile.isCouplePlanning ? computeIncomeTax(Math.max(0, partnerTaxableGuaranteed - singlePersonalAllowance), inflationFactor, isPartnerScottishTax) : 0;
         const guaranteedTaxLiability = priBaseTax + partBaseTax;
-        const guaranteedIncomeTotal = primaryStatePension + partnerStatePension + primaryAnnuityIncomeThisYear + partnerAnnuityIncomeThisYear + primaryDbIncomeThisYear + partnerDbIncomeThisYear + primaryTaxableFixedIncomeThisYr + partnerTaxableFixedIncomeThisYr + primaryTaxFreeFixedIncomeThisYr + partnerTaxFreeFixedIncomeThisYr;
+        const partnerTaxFreeSecured = (profile.isCouplePlanning && !partnerDead) ? partnerTaxFreeFixedIncomeThisYr : 0;
+        const guaranteedIncomeTotal = primaryTaxableGuaranteed + partnerTaxableGuaranteed + primaryTaxFreeFixedIncomeThisYr + partnerTaxFreeSecured;
         const netGuaranteedIncomeSecured = Math.max(0, guaranteedIncomeTotal - guaranteedTaxLiability);
 
         let remainingNeeded = Math.max(0, drawdownNetTarget - netGuaranteedIncomeSecured);
@@ -1179,10 +1223,18 @@ function parseAnnuityTypeConfig(type?: string) {
             if (pensionNetNeeded > 0) {
               const grossDraw = getGrossPensionNeededForNet(pensionNetNeeded, pensionPot);
               const draw = Math.min(pensionPot, grossDraw);
-              deductProRata("pension", draw);
               const totalAvail = (canAccessPension ? primaryPensionPot : 0) + (partnerCanAccessPension ? partnerPensionPot : 0);
               const priR = (canAccessPension && totalAvail > 0) ? primaryPensionPot / totalAvail : (canAccessPension ? 1 : 0);
-              const netPensionDraw = getNetFromSpecificDraws(canAccessPension ? draw * priR : 0, partnerCanAccessPension ? draw * (1 - priR) : 0);
+              const priDraw = canAccessPension ? draw * priR : 0;
+              const partDraw = partnerCanAccessPension ? draw * (1 - priR) : 0;
+              const netPensionDraw = getNetFromSpecificDraws(priDraw, partDraw);
+              deductProRata("pension", draw);
+              if (!pclsTaken && primaryCumulativeTaxFreeDrawn < maxLsa && priDraw > 0) {
+                primaryCumulativeTaxFreeDrawn += Math.min(priDraw * 0.25, Math.max(0, maxLsa - primaryCumulativeTaxFreeDrawn));
+              }
+              if (!partnerPclsTaken && partnerCumulativeTaxFreeDrawn < partnerMaxLsa && partDraw > 0) {
+                partnerCumulativeTaxFreeDrawn += Math.min(partDraw * 0.25, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn));
+              }
               const actualNetSecured = netGuaranteedIncomeSecured + netPensionDraw;
               if (actualNetSecured > requiredNetIncomeTarget) {
                 const surplus = actualNetSecured - requiredNetIncomeTarget;
@@ -1234,8 +1286,16 @@ function parseAnnuityTypeConfig(type?: string) {
             const draw = Math.min(pensionPot, grossDrawNeeded);
             const totalAvail = (canAccessPension ? primaryPensionPot : 0) + (partnerCanAccessPension ? partnerPensionPot : 0);
             const priR = (canAccessPension && totalAvail > 0) ? primaryPensionPot / totalAvail : (canAccessPension ? 1 : 0);
+            const priDraw = canAccessPension ? draw * priR : 0;
+            const partDraw = partnerCanAccessPension ? draw * (1 - priR) : 0;
             deductProRata("pension", draw);
-            const netDraw = getNetFromSpecificDraws(canAccessPension ? draw * priR : 0, partnerCanAccessPension ? draw * (1 - priR) : 0);
+            const netDraw = getNetFromSpecificDraws(priDraw, partDraw);
+            if (!pclsTaken && primaryCumulativeTaxFreeDrawn < maxLsa && priDraw > 0) {
+              primaryCumulativeTaxFreeDrawn += Math.min(priDraw * 0.25, Math.max(0, maxLsa - primaryCumulativeTaxFreeDrawn));
+            }
+            if (!partnerPclsTaken && partnerCumulativeTaxFreeDrawn < partnerMaxLsa && partDraw > 0) {
+              partnerCumulativeTaxFreeDrawn += Math.min(partDraw * 0.25, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn));
+            }
             remainingNeeded = Math.max(0, remainingNeeded - netDraw);
           }
         } else if (effectiveStrategy === 'tax_free_bracket' || effectiveStrategy === 'basic_rate_bracket' || effectiveStrategy === 'higher_rate_bracket') {
@@ -1259,20 +1319,32 @@ function parseAnnuityTypeConfig(type?: string) {
             partThresholdGross = (isPartnerScot ? (12570 + SCOT_HIGHER_THRESHOLD) : RUK_ADDITIONAL_THRESHOLD) * inflMult;
           }
 
-          const primaryTaxablePercent = (primaryCumulativeTaxFreeDrawn >= maxLsa || pclsTaken) ? 1.0 : 0.75;
-          const partnerTaxablePercent = (partnerCumulativeTaxFreeDrawn >= partnerMaxLsa || partnerPclsTaken) ? 1.0 : 0.75;
+          const remLsaPri = (!pclsTaken) ? Math.max(0, maxLsa - primaryCumulativeTaxFreeDrawn) : 0;
+          const remLsaPart = (!partnerPclsTaken) ? Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn) : 0;
 
-          const primaryCashGrowth = primaryCashGiaPot - (primaryCashGiaPot / (1 + decumCashGiaReturn));
-          const partnerCashGrowth = partnerCashGiaPot - (partnerCashGiaPot / (1 + decumCashGiaReturn));
-
-          const priIncomeAlready = primaryTaxableGuaranteed + primaryCashGrowth;
-          const partIncomeAlready = partnerTaxableGuaranteed + partnerCashGrowth;
+          const priIncomeAlready = primaryTaxableGuaranteed;
+          const partIncomeAlready = partnerTaxableGuaranteed;
 
           const priRoom = Math.max(0, priThresholdGross - priIncomeAlready);
           const partRoom = profile.isCouplePlanning ? Math.max(0, partThresholdGross - partIncomeAlready) : 0;
 
-          const maxPriGrossForBracket = primaryTaxablePercent > 0 ? priRoom / primaryTaxablePercent : priRoom;
-          const maxPartGrossForBracket = partnerTaxablePercent > 0 ? partRoom / partnerTaxablePercent : partRoom;
+          let maxPriGrossForBracket = 0;
+          if (priRoom > 0) {
+            if (remLsaPri >= priRoom / 3) {
+              maxPriGrossForBracket = priRoom / 0.75;
+            } else {
+              maxPriGrossForBracket = priRoom + remLsaPri;
+            }
+          }
+
+          let maxPartGrossForBracket = 0;
+          if (partRoom > 0) {
+            if (remLsaPart >= partRoom / 3) {
+              maxPartGrossForBracket = partRoom / 0.75;
+            } else {
+              maxPartGrossForBracket = partRoom + remLsaPart;
+            }
+          }
 
           priTargetGross = Math.min(canAccessPension ? primaryPensionPot : 0, maxPriGrossForBracket);
           partTargetGross = Math.min(partnerCanAccessPension ? partnerPensionPot : 0, maxPartGrossForBracket);
@@ -1289,11 +1361,23 @@ function parseAnnuityTypeConfig(type?: string) {
               addProRata("cashGia", surplus, false);
             }
             deductExactPension(priTargetGross, partTargetGross);
+            if (!pclsTaken && primaryCumulativeTaxFreeDrawn < maxLsa && priTargetGross > 0) {
+              primaryCumulativeTaxFreeDrawn += Math.min(priTargetGross * 0.25, Math.max(0, maxLsa - primaryCumulativeTaxFreeDrawn));
+            }
+            if (!partnerPclsTaken && partnerCumulativeTaxFreeDrawn < partnerMaxLsa && partTargetGross > 0) {
+              partnerCumulativeTaxFreeDrawn += Math.min(partTargetGross * 0.25, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn));
+            }
             remainingNeeded = 0;
           } else {
             const totalPensionDraw = priTargetGross + partTargetGross;
             if (totalPensionDraw > 0) {
               deductExactPension(priTargetGross, partTargetGross);
+              if (!pclsTaken && primaryCumulativeTaxFreeDrawn < maxLsa && priTargetGross > 0) {
+                primaryCumulativeTaxFreeDrawn += Math.min(priTargetGross * 0.25, Math.max(0, maxLsa - primaryCumulativeTaxFreeDrawn));
+              }
+              if (!partnerPclsTaken && partnerCumulativeTaxFreeDrawn < partnerMaxLsa && partTargetGross > 0) {
+                partnerCumulativeTaxFreeDrawn += Math.min(partTargetGross * 0.25, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn));
+              }
               remainingNeeded = Math.max(0, remainingNeeded - totalTargetNet);
             }
           }
@@ -1318,8 +1402,16 @@ function parseAnnuityTypeConfig(type?: string) {
               const draw = Math.min(pensionPot, grossDrawNeeded);
               const totalAvail = (canAccessPension ? primaryPensionPot : 0) + (partnerCanAccessPension ? partnerPensionPot : 0);
               const priR = (canAccessPension && totalAvail > 0) ? primaryPensionPot / totalAvail : (canAccessPension ? 1 : 0);
+              const priDraw = canAccessPension ? draw * priR : 0;
+              const partDraw = partnerCanAccessPension ? draw * (1 - priR) : 0;
               deductProRata("pension", draw);
-              const netDraw = getNetFromSpecificDraws(canAccessPension ? draw * priR : 0, partnerCanAccessPension ? draw * (1 - priR) : 0);
+              const netDraw = getNetFromSpecificDraws(priDraw, partDraw);
+              if (!pclsTaken && primaryCumulativeTaxFreeDrawn < maxLsa && priDraw > 0) {
+                primaryCumulativeTaxFreeDrawn += Math.min(priDraw * 0.25, Math.max(0, maxLsa - primaryCumulativeTaxFreeDrawn));
+              }
+              if (!partnerPclsTaken && partnerCumulativeTaxFreeDrawn < partnerMaxLsa && partDraw > 0) {
+                partnerCumulativeTaxFreeDrawn += Math.min(partDraw * 0.25, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn));
+              }
               remainingNeeded = Math.max(0, remainingNeeded - netDraw);
             }
             if (isaPot > 0 && remainingNeeded > 0) {
@@ -1342,8 +1434,16 @@ function parseAnnuityTypeConfig(type?: string) {
             const draw = Math.min(pensionPot, grossDrawNeeded);
             const totalAvail = (canAccessPension ? primaryPensionPot : 0) + (partnerCanAccessPension ? partnerPensionPot : 0);
             const priR = (canAccessPension && totalAvail > 0) ? primaryPensionPot / totalAvail : (canAccessPension ? 1 : 0);
+            const priDraw = canAccessPension ? draw * priR : 0;
+            const partDraw = partnerCanAccessPension ? draw * (1 - priR) : 0;
             deductProRata("pension", draw);
-            const netDraw = getNetFromSpecificDraws(canAccessPension ? draw * priR : 0, partnerCanAccessPension ? draw * (1 - priR) : 0);
+            const netDraw = getNetFromSpecificDraws(priDraw, partDraw);
+            if (!pclsTaken && primaryCumulativeTaxFreeDrawn < maxLsa && priDraw > 0) {
+              primaryCumulativeTaxFreeDrawn += Math.min(priDraw * 0.25, Math.max(0, maxLsa - primaryCumulativeTaxFreeDrawn));
+            }
+            if (!partnerPclsTaken && partnerCumulativeTaxFreeDrawn < partnerMaxLsa && partDraw > 0) {
+              partnerCumulativeTaxFreeDrawn += Math.min(partDraw * 0.25, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn));
+            }
             remainingNeeded = Math.max(0, remainingNeeded - netDraw);
           }
           if (isaPot > 0 && remainingNeeded > 0) {
@@ -1376,8 +1476,16 @@ function parseAnnuityTypeConfig(type?: string) {
             const draw = Math.min(pensionPot, extraPensionGross);
             const totalAvail = (canAccessPension ? primaryPensionPot : 0) + (partnerCanAccessPension ? partnerPensionPot : 0);
             const priR = (canAccessPension && totalAvail > 0) ? primaryPensionPot / totalAvail : (canAccessPension ? 1 : 0);
+            const priDraw = canAccessPension ? draw * priR : 0;
+            const partDraw = partnerCanAccessPension ? draw * (1 - priR) : 0;
             deductProRata("pension", draw);
-            const netDraw = getNetFromSpecificDraws(canAccessPension ? (priTargetGross + draw * priR) : 0, partnerCanAccessPension ? (partTargetGross + draw * (1 - priR)) : 0) - totalTargetNet;
+            const netDraw = getNetFromSpecificDraws(canAccessPension ? (priTargetGross + priDraw) : 0, partnerCanAccessPension ? (partTargetGross + partDraw) : 0) - totalTargetNet;
+            if (!pclsTaken && primaryCumulativeTaxFreeDrawn < maxLsa && priDraw > 0) {
+              primaryCumulativeTaxFreeDrawn += Math.min(priDraw * 0.25, Math.max(0, maxLsa - primaryCumulativeTaxFreeDrawn));
+            }
+            if (!partnerPclsTaken && partnerCumulativeTaxFreeDrawn < partnerMaxLsa && partDraw > 0) {
+              partnerCumulativeTaxFreeDrawn += Math.min(partDraw * 0.25, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn));
+            }
             remainingNeeded = Math.max(0, remainingNeeded - Math.max(0, netDraw));
           }
         }
@@ -1395,18 +1503,19 @@ function parseAnnuityTypeConfig(type?: string) {
         partnerCashGiaPot = 0;
       }
 
+      const deflator = profile.adjustForInflation ? inflationFactor : 1.0;
       const totalPot = Math.max(0, pensionPot + isaPot + cashGiaPot);
-      simPensionPots[sim][yr] = Math.round(pensionPot);
-      simIsaPots[sim][yr] = Math.round(isaPot);
-      simCashGiaPots[sim][yr] = Math.round(cashGiaPot);
-      simTotalPots[sim][yr] = Math.round(totalPot);
+      simPensionPots[sim][yr] = Math.round(pensionPot / deflator);
+      simIsaPots[sim][yr] = Math.round(isaPot / deflator);
+      simCashGiaPots[sim][yr] = Math.round(cashGiaPot / deflator);
+      simTotalPots[sim][yr] = Math.round(totalPot / deflator);
       // Track whether this sim has ever had an unfunded shortfall
       // Once depleted, mark ALL subsequent years as failed (remainingNeeded = 1)
       if (isRetired && Math.round(remainingNeeded) >= 1 && depletedAtAge === null && age >= profile.targetRetirementAge) {
         depletedAtAge = age;
       }
       // If the sim has already depleted, persistently mark it as failed
-      const effectiveRemaining = isRetired ? Math.round(remainingNeeded) : 0;
+      const effectiveRemaining = isRetired ? Math.round(remainingNeeded / deflator) : 0;
       simRemainingNeeded[sim][yr] = effectiveRemaining;
     }
 

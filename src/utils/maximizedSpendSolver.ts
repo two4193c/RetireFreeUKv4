@@ -135,6 +135,7 @@ export function getScopeEvaluationInputs(
 
   if (scope === 'primary') {
     // Only evaluate primary wealth
+    evalProfile.isCouplePlanning = false;
     evalProfile.partnerPots = {
       workplacePensionBalance: 0,
       sippBalance: 0,
@@ -155,7 +156,21 @@ export function getScopeEvaluationInputs(
     evalProfile.partnerSippBalance = 0;
     evalProfile.partnerIsaBalance = 0;
   } else if (scope === 'partner') {
-    // Evaluate partner wealth by replacing primary pots with partner's pots, and clearing partner pots
+    // Evaluate partner wealth by replacing primary pots with partner's pots, and setting profile to single partner mode
+    evalProfile.isCouplePlanning = false;
+    evalProfile.currentAge = profileInput.partnerCurrentAge ?? profileInput.currentAge;
+    evalProfile.targetRetirementAge = profileInput.partnerTargetRetirementAge ?? profileInput.targetRetirementAge;
+    evalProfile.statePensionAge = profileInput.partnerStatePensionAge ?? 67;
+    evalProfile.grossAnnualSalary = profileInput.partnerGrossAnnualSalary ?? 0;
+    evalProfile.taxRegion = profileInput.partnerTaxRegion ?? profileInput.taxRegion;
+    evalProfile.includeStatePension = profileInput.partnerIncludeStatePension ?? profileInput.includeStatePension;
+    if (profileInput.partnerStatePensionAmountAnnual) {
+      evalProfile.statePensionAmountAnnual = profileInput.partnerStatePensionAmountAnnual;
+    }
+    if (profileInput.partnerQualifyingYears !== undefined) {
+      evalProfile.qualifyingYears = profileInput.partnerQualifyingYears;
+    }
+
     const pPots = profileInput.partnerPots || DEFAULT_PARTNER_POTS;
     evalPots.workplacePensionBalance = pPots.workplacePensionBalance || profileInput.partnerWorkplacePensionBalance || 0;
     evalPots.sippBalance = pPots.sippBalance || profileInput.partnerSippBalance || 0;
@@ -191,11 +206,6 @@ export function getScopeEvaluationInputs(
     evalProfile.partnerWorkplacePensionBalance = 0;
     evalProfile.partnerSippBalance = 0;
     evalProfile.partnerIsaBalance = 0;
-    
-    // Align target retirement age to partner's retirement age if defined
-    if (profileInput.partnerTargetRetirementAge) {
-      evalProfile.targetRetirementAge = profileInput.partnerTargetRetirementAge;
-    }
   }
 
   return { evalProfile, evalPots };

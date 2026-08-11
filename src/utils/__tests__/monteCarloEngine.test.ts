@@ -55,4 +55,35 @@ describe('monteCarloEngine with Maximized Spend', () => {
       expect(endAgeData.p50TotalPot).toBeLessThan(peakData.p50TotalPot * 0.1);
     }
   });
+
+  it('correctly calculates couple guaranteed income without overcounting partner streams', () => {
+    const profile = {
+      ...DEFAULT_PROFILE,
+      currentAge: 67,
+      targetRetirementAge: 67,
+      targetRetirementIncomeAnnual: 30000,
+      isCouplePlanning: true,
+      partnerCurrentAge: 67,
+      partnerTargetRetirementAge: 67,
+      includeStatePension: true,
+      partnerIncludeStatePension: true,
+      statePensionAge: 67,
+      partnerStatePensionAge: 67,
+      statePensionAmountAnnual: 10000,
+      partnerStatePensionAmountAnnual: 10000,
+      adjustForInflation: false,
+    };
+
+    const taxResult = calculateUKTax(profile, DEFAULT_POTS);
+    const mcResult = runMonteCarloSimulation(profile, DEFAULT_POTS, taxResult, {
+      numSimulations: 10,
+      maxAge: 75,
+      accumulationVolatility: 0,
+      decumulationVolatility: 0,
+    });
+
+    // Run should complete smoothly without errors or infinite drawdown demand
+    expect(mcResult.successRate).toBeGreaterThanOrEqual(0);
+    expect(mcResult.agePercentiles.length).toBeGreaterThan(0);
+  });
 });

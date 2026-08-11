@@ -24,6 +24,7 @@ import {
   RUK_ADDITIONAL_THRESHOLD,
   SCOT_INTERMEDIATE_THRESHOLD,
   SCOT_HIGHER_THRESHOLD,
+  PA_TAPER_THRESHOLD,
 } from '../config/ukTaxRates';
 
 export { getPensionAccessAge, getLsaLimit };
@@ -216,6 +217,7 @@ export function generateProjections(
   const partnerMaxLsa = profile.isCouplePlanning ? getPartnerLsaLimit(profile) : 268275;
 
   const partnerTaxResult = profile.isCouplePlanning ? calculatePartnerUKTax(profile, partnerPots) : null;
+  let partnerDead = false;
 
   // Annual contribution totals (regular ongoing recurring contributions; one-offs are added separately by year)
   const annualPensionContribution = effectiveTaxResult.regularPensionContributionsAnnual ?? effectiveTaxResult.totalPensionContributionsAnnual;
@@ -302,6 +304,29 @@ function parseAnnuityTypeConfig(type?: string) {
       ? age + ((profile.partnerCurrentAge ?? profile.currentAge) - profile.currentAge)
       : age;
     const partnerCanAccessPension = partnerAge >= partnerPensionAccessAge;
+
+    // Partner Mortality Inheritance
+    if (profile.isCouplePlanning && !partnerDead && partnerAge >= (profile.partnerLifeExpectancyAge || 95)) {
+      partnerDead = true;
+      primaryPensionPot += partnerPensionPot;
+      primaryUncrystallisedPot += partnerUncrystallisedPot;
+      primaryCrystallisedPot += partnerCrystallisedPot;
+      partnerPensionPot = 0;
+      partnerUncrystallisedPot = 0;
+      partnerCrystallisedPot = 0;
+
+      primaryIsaPot += partnerIsaPot;
+      primarySsIsaPot += partnerSsIsaPot;
+      partnerIsaPot = 0;
+      partnerSsIsaPot = 0;
+
+      primaryCashGiaPot += partnerCashGiaPot;
+      primaryGiaPot += partnerGiaPot;
+      primaryCashSavingsPot += partnerCashSavingsPot;
+      partnerCashGiaPot = 0;
+      partnerGiaPot = 0;
+      partnerCashSavingsPot = 0;
+    }
 
     const primaryPensionPotBeforePcls = Math.round(primaryPensionPot);
     const partnerPensionPotBeforePcls = Math.round(partnerPensionPot);
@@ -394,7 +419,7 @@ function parseAnnuityTypeConfig(type?: string) {
 
     activeDbPensions.forEach((db) => {
       const isPartner = db.owner === 'partner';
-      if (isPartner && !profile.isCouplePlanning) return;
+      if (isPartner && (!profile.isCouplePlanning || partnerDead)) return;
 
       const evalAge = isPartner
         ? age + ((profile.partnerCurrentAge ?? profile.currentAge) - profile.currentAge)
@@ -804,7 +829,7 @@ function parseAnnuityTypeConfig(type?: string) {
 
     activeFixedIncomeStreams.forEach((stream) => {
       const isPartner = stream.owner === 'partner';
-      if (isPartner && !profile.isCouplePlanning) return;
+      if (isPartner && (!profile.isCouplePlanning || partnerDead)) return;
 
       const evalAge = isPartner
         ? age + ((profile.partnerCurrentAge ?? profile.currentAge) - profile.currentAge)
@@ -1124,7 +1149,9 @@ function parseAnnuityTypeConfig(type?: string) {
           amt = stream.baseNominal * Math.pow(1 + stream.fixedEscalationRate, yearsSincePurchase);
         }
         if (stream.owner === 'partner') {
-          partnerAnnuityIncomeThisYear += amt;
+          if (!partnerDead) {
+            partnerAnnuityIncomeThisYear += amt;
+          }
         } else {
           primaryAnnuityIncomeThisYear += amt;
         }
@@ -1148,7 +1175,7 @@ function parseAnnuityTypeConfig(type?: string) {
           primaryStatePensionReceived = primaryBaseAmount * primaryIndexFactor;
         }
       }
-      if (profile.isCouplePlanning && (profile.partnerIncludeStatePension ?? true)) {
+      if (profile.isCouplePlanning && !partnerDead && (profile.partnerIncludeStatePension ?? true)) {
         const partnerAge = age + ((profile.partnerCurrentAge ?? profile.currentAge) - profile.currentAge);
         if (partnerAge >= (profile.partnerStatePensionAge || 67)) {
           const partnerYears = profile.partnerQualifyingYears ?? 35;
@@ -1311,7 +1338,7 @@ function parseAnnuityTypeConfig(type?: string) {
         const partnerAge = age + ((profile.partnerCurrentAge ?? profile.currentAge) - profile.currentAge);
         const partnerRetireAge = profile.partnerTargetRetirementAge ?? 60;
         
-        if (partnerAge < partnerRetireAge) {
+        if (partnerAge < partnerRetireAge && !partnerDead) {
           partnerPContrib = partnerAnnualPensionContrib;
           partnerIContrib = partnerAnnualIsaContrib;
           partnerCContrib = partnerAnnualCashGiaContrib;
@@ -2089,7 +2116,11 @@ function parseAnnuityTypeConfig(type?: string) {
           const isPartBracket = profile.isCouplePlanning && isBracketStrat(partnerStrategy);
 
           if (totalTargetNet > remainingIncomeNeeded && totalTargetNet > 0) {
-            if (!isPriBracket && !isPartBracket) {
+            if (isPriBracket && isPartBracket) {
+              const scale = remainingIncomeNeeded / totalTargetNet;
+              priTargetGross *= scale;
+              partTargetGross *= scale;
+            } else if (!isPriBracket && !isPartBracket) {
               const scale = remainingIncomeNeeded / totalTargetNet;
               priTargetGross *= scale;
               partTargetGross *= scale;

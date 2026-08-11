@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { solveMaximizedSpend, createCandidateProfile, testFeasibility, disableMaximizedSpend } from '../maximizedSpendSolver';
+import { solveMaximizedSpend, createCandidateProfile, testFeasibility, disableMaximizedSpend, getScopeEvaluationInputs } from '../maximizedSpendSolver';
 import { calculateUKTax } from '../ukTaxEngine';
 import { generateProjections } from '../projectionEngine';
 import { DEFAULT_PROFILE, DEFAULT_POTS, DEFAULT_PARTNER_POTS } from '../defaultData';
@@ -792,6 +792,40 @@ describe('maximizedSpendSolver', () => {
       });
       console.table(table);
     }
+  });
+
+  it('prepares single scope evaluation inputs correctly in getScopeEvaluationInputs', () => {
+    const profile = {
+      ...DEFAULT_PROFILE,
+      isCouplePlanning: true,
+      currentAge: 50,
+      partnerCurrentAge: 52,
+      partnerTargetRetirementAge: 60,
+      partnerStatePensionAmountAnnual: 11000,
+      partnerPots: {
+        ...DEFAULT_POTS,
+        workplacePensionBalance: 150000,
+        stocksAndSharesIsaBalance: 40000,
+      },
+    };
+    const pots = {
+      ...DEFAULT_POTS,
+      workplacePensionBalance: 250000,
+      stocksAndSharesIsaBalance: 80000,
+    };
+
+    // 1. Primary scope
+    const primaryResult = getScopeEvaluationInputs(profile, pots, 'primary');
+    expect(primaryResult.evalProfile.isCouplePlanning).toBe(false);
+    expect(primaryResult.evalPots.workplacePensionBalance).toBe(250000);
+
+    // 2. Partner scope
+    const partnerResult = getScopeEvaluationInputs(profile, pots, 'partner');
+    expect(partnerResult.evalProfile.isCouplePlanning).toBe(false);
+    expect(partnerResult.evalProfile.currentAge).toBe(52);
+    expect(partnerResult.evalProfile.targetRetirementAge).toBe(60);
+    expect(partnerResult.evalPots.workplacePensionBalance).toBe(150000);
+    expect(partnerResult.evalPots.stocksAndSharesIsaBalance).toBe(40000);
   });
 });
 

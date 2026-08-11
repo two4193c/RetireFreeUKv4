@@ -320,4 +320,43 @@ describe('projectionEngine - generateProjections', () => {
       expect(Math.abs((r.primaryTotalPot + r.partnerTotalPot) - r.totalPot)).toBeLessThanOrEqual(1);
     }
   });
+
+  it('handles partner mortality inheritance and stops partner state pension and DB pension after partner death', () => {
+    const profile: UserProfile = {
+      ...DEFAULT_PROFILE,
+      currentAge: 60,
+      targetRetirementAge: 60,
+      lifeExpectancyAge: 95,
+      isCouplePlanning: true,
+      partnerCurrentAge: 60,
+      partnerTargetRetirementAge: 60,
+      partnerLifeExpectancyAge: 70, // Partner dies at age 70
+      includeStatePension: true,
+      partnerIncludeStatePension: true,
+      partnerStatePensionAge: 67,
+      partnerPots: {
+        ...DEFAULT_POTS,
+        workplacePensionBalance: 100000,
+        stocksAndSharesIsaBalance: 50000,
+      },
+    };
+
+    const pots: InvestmentPots = {
+      ...DEFAULT_POTS,
+      workplacePensionBalance: 200000,
+      stocksAndSharesIsaBalance: 100000,
+    };
+
+    const rows = generateProjections(profile, pots);
+
+    // At age 68 (before death at 70), partner is receiving state pension
+    const row68 = rows.find((r) => r.age === 68)!;
+    expect(row68.partnerStatePensionReceived).toBeGreaterThan(0);
+    expect(row68.partnerTotalPot).toBeGreaterThan(0);
+
+    // At age 72 (after partner death at 70), partner state pension should be 0, partner pots should be 0 (inherited by primary)
+    const row72 = rows.find((r) => r.age === 72)!;
+    expect(row72.partnerStatePensionReceived).toBe(0);
+    expect(row72.partnerTotalPot).toBe(0);
+  });
 });
