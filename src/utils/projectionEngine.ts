@@ -2089,7 +2089,7 @@ function parseAnnuityTypeConfig(type?: string) {
             if (isBracketStrat(primaryStrategy)) {
               maxPriGrossForBracket = curPrimaryTaxablePercent > 0 ? priRoom / curPrimaryTaxablePercent : priRoom;
             } else if (primaryStrategy === 'pension_first') {
-              maxPriGrossForBracket = primaryPensionPotBeforeAnnuity;
+              maxPriGrossForBracket = primaryPensionPot;
             }
           }
 
@@ -2098,12 +2098,12 @@ function parseAnnuityTypeConfig(type?: string) {
             if (isBracketStrat(partnerStrategy)) {
               maxPartGrossForBracket = curPartnerTaxablePercent > 0 ? partRoom / curPartnerTaxablePercent : partRoom;
             } else if (partnerStrategy === 'pension_first') {
-              maxPartGrossForBracket = partnerPensionPotBeforeAnnuity;
+              maxPartGrossForBracket = partnerPensionPot;
             }
           }
 
-          let priTargetGross = Math.min(canAccessPension ? primaryPensionPotBeforeAnnuity : 0, maxPriGrossForBracket);
-          let partTargetGross = Math.min(profile.isCouplePlanning && partnerCanAccessPension ? partnerPensionPotBeforeAnnuity : 0, maxPartGrossForBracket);
+          let priTargetGross = Math.min(canAccessPension ? primaryPensionPot : 0, maxPriGrossForBracket);
+          let partTargetGross = Math.min(profile.isCouplePlanning && partnerCanAccessPension ? partnerPensionPot : 0, maxPartGrossForBracket);
 
           const getNetFromSpecificDraws = (priG: number, partG: number) => {
             const priCrystDrawn = Math.min(primaryCrystallisedPot, priG);
