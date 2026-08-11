@@ -1835,12 +1835,12 @@ function parseAnnuityTypeConfig(type?: string) {
           const partGrossTotal = existingPartGross + (gross * partRatio);
 
           const priCrystDrawn = Math.min(primaryCrystallisedPot, priGrossTotal);
-          const priUncrystDrawn = Math.max(0, priGrossTotal - priCrystDrawn);
+          const priUncrystDrawn = Math.min(primaryUncrystallisedPot, Math.max(0, priGrossTotal - priCrystDrawn));
           const priTaxFree = Math.min(priUncrystDrawn * 0.25, Math.max(0, primaryMaxLsa - primaryCumulativeTaxFreeDrawn));
           const priTaxableDrawdown = priGrossTotal - priTaxFree;
           
           const partCrystDrawn = Math.min(partnerCrystallisedPot, partGrossTotal);
-          const partUncrystDrawn = Math.max(0, partGrossTotal - partCrystDrawn);
+          const partUncrystDrawn = Math.min(partnerUncrystallisedPot, Math.max(0, partGrossTotal - partCrystDrawn));
           const partTaxFree = Math.min(partUncrystDrawn * 0.25, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn));
           const partTaxableDrawdown = partGrossTotal - partTaxFree;
           
@@ -1854,12 +1854,12 @@ function parseAnnuityTypeConfig(type?: string) {
 
           // Calculate base tax on existing gross draws alone
           const priCrystBase = Math.min(primaryCrystallisedPot, existingPriGross);
-          const priUncrystBase = Math.max(0, existingPriGross - priCrystBase);
+          const priUncrystBase = Math.min(primaryUncrystallisedPot, Math.max(0, existingPriGross - priCrystBase));
           const priTaxFreeBase = Math.min(priUncrystBase * 0.25, Math.max(0, primaryMaxLsa - primaryCumulativeTaxFreeDrawn));
           const priTaxableBase = existingPriGross - priTaxFreeBase;
 
           const partCrystBase = Math.min(partnerCrystallisedPot, existingPartGross);
-          const partUncrystBase = Math.max(0, existingPartGross - partCrystBase);
+          const partUncrystBase = Math.min(partnerUncrystallisedPot, Math.max(0, existingPartGross - partCrystBase));
           const partTaxFreeBase = Math.min(partUncrystBase * 0.25, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn));
           const partTaxableBase = existingPartGross - partTaxFreeBase;
 
@@ -1926,12 +1926,12 @@ function parseAnnuityTypeConfig(type?: string) {
         const partGrossTotal = existingPartGross + (gross * partRatio);
 
         const priCrystDrawn = Math.min(primaryCrystallisedPot, priGrossTotal);
-        const priUncrystDrawn = Math.max(0, priGrossTotal - priCrystDrawn);
+        const priUncrystDrawn = Math.min(primaryUncrystallisedPot, Math.max(0, priGrossTotal - priCrystDrawn));
         const priTaxFree = Math.min(priUncrystDrawn * 0.25, Math.max(0, primaryMaxLsa - primaryCumulativeTaxFreeDrawn));
         const priTaxableDrawdown = priGrossTotal - priTaxFree;
 
         const partCrystDrawn = Math.min(partnerCrystallisedPot, partGrossTotal);
-        const partUncrystDrawn = Math.max(0, partGrossTotal - partCrystDrawn);
+        const partUncrystDrawn = Math.min(partnerUncrystallisedPot, Math.max(0, partGrossTotal - partCrystDrawn));
         const partTaxFree = Math.min(partUncrystDrawn * 0.25, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn));
         const partTaxableDrawdown = partGrossTotal - partTaxFree;
 
@@ -1945,12 +1945,12 @@ function parseAnnuityTypeConfig(type?: string) {
 
         // Calculate base tax on existing gross draws alone
         const priCrystBase = Math.min(primaryCrystallisedPot, existingPriGross);
-        const priUncrystBase = Math.max(0, existingPriGross - priCrystBase);
+        const priUncrystBase = Math.min(primaryUncrystallisedPot, Math.max(0, existingPriGross - priCrystBase));
         const priTaxFreeBase = Math.min(priUncrystBase * 0.25, Math.max(0, primaryMaxLsa - primaryCumulativeTaxFreeDrawn));
         const priTaxableBase = existingPriGross - priTaxFreeBase;
 
         const partCrystBase = Math.min(partnerCrystallisedPot, existingPartGross);
-        const partUncrystBase = Math.max(0, existingPartGross - partCrystBase);
+        const partUncrystBase = Math.min(partnerUncrystallisedPot, Math.max(0, existingPartGross - partCrystBase));
         const partTaxFreeBase = Math.min(partUncrystBase * 0.25, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn));
         const partTaxableBase = existingPartGross - partTaxFreeBase;
 
@@ -2079,10 +2079,15 @@ function parseAnnuityTypeConfig(type?: string) {
         if ((canAccessPension || partnerCanAccessPension) && pensionPot > 0 && remainingIncomeNeeded > 0) {
           const isBracketStrat = (s: string) => s === 'tax_free_bracket' || s === 'basic_rate_bracket' || s === 'higher_rate_bracket';
 
+          const curPriUncrystRatio = primaryPensionPot > 0 ? Math.max(0, Math.min(1.0, primaryUncrystallisedPot / primaryPensionPot)) : 0;
+          const curPartUncrystRatio = partnerPensionPot > 0 ? Math.max(0, Math.min(1.0, partnerUncrystallisedPot / partnerPensionPot)) : 0;
+          const curPrimaryTaxablePercent = (primaryCumulativeTaxFreeDrawn >= primaryMaxLsa || curPriUncrystRatio <= 0) ? 1.0 : 1.0 - (0.25 * curPriUncrystRatio);
+          const curPartnerTaxablePercent = (partnerCumulativeTaxFreeDrawn >= partnerMaxLsa || curPartUncrystRatio <= 0) ? 1.0 : 1.0 - (0.25 * curPartUncrystRatio);
+
           let maxPriGrossForBracket = 0;
           if (canAccessPension) {
             if (isBracketStrat(primaryStrategy)) {
-              maxPriGrossForBracket = primaryTaxablePercent > 0 ? priRoom / primaryTaxablePercent : priRoom;
+              maxPriGrossForBracket = curPrimaryTaxablePercent > 0 ? priRoom / curPrimaryTaxablePercent : priRoom;
             } else if (primaryStrategy === 'pension_first') {
               maxPriGrossForBracket = primaryPensionPotBeforeAnnuity;
             }
@@ -2091,7 +2096,7 @@ function parseAnnuityTypeConfig(type?: string) {
           let maxPartGrossForBracket = 0;
           if (profile.isCouplePlanning && partnerCanAccessPension) {
             if (isBracketStrat(partnerStrategy)) {
-              maxPartGrossForBracket = partnerTaxablePercent > 0 ? partRoom / partnerTaxablePercent : partRoom;
+              maxPartGrossForBracket = curPartnerTaxablePercent > 0 ? partRoom / curPartnerTaxablePercent : partRoom;
             } else if (partnerStrategy === 'pension_first') {
               maxPartGrossForBracket = partnerPensionPotBeforeAnnuity;
             }
@@ -2102,12 +2107,12 @@ function parseAnnuityTypeConfig(type?: string) {
 
           const getNetFromSpecificDraws = (priG: number, partG: number) => {
             const priCrystDrawn = Math.min(primaryCrystallisedPot, priG);
-            const priUncrystDrawn = Math.max(0, priG - priCrystDrawn);
+            const priUncrystDrawn = Math.min(primaryUncrystallisedPot, Math.max(0, priG - priCrystDrawn));
             const priTaxFree = Math.min(priUncrystDrawn * 0.25, Math.max(0, primaryMaxLsa - primaryCumulativeTaxFreeDrawn));
             const priTaxableDrawdown = priG - priTaxFree;
 
             const partCrystDrawn = Math.min(partnerCrystallisedPot, partG);
-            const partUncrystDrawn = Math.max(0, partG - partCrystDrawn);
+            const partUncrystDrawn = Math.min(partnerUncrystallisedPot, Math.max(0, partG - partCrystDrawn));
             const partTaxFree = Math.min(partUncrystDrawn * 0.25, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn));
             const partTaxableDrawdown = partG - partTaxFree;
 
