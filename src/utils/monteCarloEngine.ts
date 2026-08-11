@@ -1608,7 +1608,9 @@ function parseAnnuityTypeConfig(type?: string) {
         depletedAtAge = age;
       }
       // If the sim has already depleted, persistently mark it as failed
-      const effectiveRemaining = isRetired ? Math.round(remainingNeeded / deflator) : 0;
+      const effectiveRemaining = isRetired
+        ? (depletedAtAge !== null ? Math.max(1, Math.round(remainingNeeded / deflator)) : Math.round(remainingNeeded / deflator))
+        : 0;
       simRemainingNeeded[sim][yr] = effectiveRemaining;
     }
 
