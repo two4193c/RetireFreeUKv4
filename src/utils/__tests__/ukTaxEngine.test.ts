@@ -227,4 +227,29 @@ describe('ukTaxEngine - aggregateIncome & Threshold Income Taper', () => {
     expect(result.isTaperedAnnualAllowance).toBe(true);
     expect(result.pensionAnnualAllowanceLimit).toBe(50000);
   });
+
+  it('calculates full Salary Sacrifice NI savings for employee and employer without artificial caps', () => {
+    const profile: any = {
+      ...DEFAULT_PROFILE,
+      currentAge: 40,
+      targetRetirementAge: 65,
+      grossAnnualSalary: 60000,
+      pensionContributionMethod: 'salary_sacrifice',
+    };
+
+    const pots: any = {
+      ...DEFAULT_POTS,
+      workplacePensionMonthlyEmployee: 500, // £6,000/yr salary sacrifice
+      workplacePensionMonthlyEmployeeType: 'amount',
+    };
+
+    const result = calculateUKTax(profile, pots);
+    // Salary sacrificed = £6,000
+    // Gross salary before sacrifice = £60,000. Post-sacrifice salary = £54,000.
+    // NI on £60,000 = (50270 - 12570) * 0.08 + (60000 - 50270) * 0.02 = 3016 + 194.6 = 3210.6
+    // NI on £54,000 = (50270 - 12570) * 0.08 + (54000 - 50270) * 0.02 = 3016 + 74.6 = 3090.6
+    // NI saved = 120 (since £6,000 sacrifice is entirely above upper earnings limit of £50,270, saved at 2% = £120)
+    expect(result.salarySacrificeNicSavedEmployee).toBeCloseTo(120, 1);
+    expect(result.salarySacrificeNicSavedEmployer).toBeCloseTo(6000 * 0.138, 1);
+  });
 });

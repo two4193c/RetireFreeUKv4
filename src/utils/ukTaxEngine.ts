@@ -1076,7 +1076,7 @@ export function calculateUKTax(
   totalIncomeTax = Math.max(0, totalIncomeTax - marriageAllowanceTaxCredit);
 
   // Calculate National Insurance
-  // Salary sacrifice NI relief is capped at the first £2,000 of sacrificed salary
+  // Salary sacrifice reduces employee gross salary for National Insurance purposes
   const niTaxableIncome = profile.pensionContributionMethod === 'salary_sacrifice'
     ? Math.max(0, grossSalary - niReliefEligibleSacrifice)
     : grossSalary;
