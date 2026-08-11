@@ -5,6 +5,7 @@ import {
   getLsaLimit,
   calculateMaxPcls,
   getPensionAccessAge,
+  aggregateIncome,
 } from '../ukTaxEngine';
 import { DEFAULT_PROFILE, DEFAULT_POTS } from '../defaultData';
 import { UserProfile } from '../../types';
@@ -183,5 +184,47 @@ describe('ukTaxEngine - getPensionAccessAge', () => {
   it('respects explicitly configured pension access age', () => {
     const profile: any = { ...DEFAULT_PROFILE, pensionAccessAge: 58 };
     expect(getPensionAccessAge(profile)).toBe(58);
+  });
+});
+
+describe('ukTaxEngine - aggregateIncome & Threshold Income Taper', () => {
+  it('correctly aggregates non-investment taxable income from salary, fixed income, and DB pensions', () => {
+    const profile: any = {
+      ...DEFAULT_PROFILE,
+      currentAge: 50,
+      targetRetirementAge: 65,
+      grossAnnualSalary: 150000,
+      fixedIncomeStreams: [
+        { id: '1', name: 'Consulting', owner: 'primary', type: 'taxable', annualAmount: 30000, startAge: 40, endAge: 60, enabled: true },
+        { id: '2', name: 'Gift', owner: 'primary', type: 'tax_free', annualAmount: 10000, startAge: 40, endAge: 60, enabled: true },
+      ],
+      dbPensions: [
+        { id: 'db1', name: 'DB Scheme', owner: 'primary', annualIncome: 25000, startAge: 50, enabled: true },
+      ],
+    };
+
+    const agg = aggregateIncome(profile, false, 50);
+    expect(agg.grossSalary).toBe(150000);
+    expect(agg.taxableFixedIncome).toBe(30000);
+    expect(agg.dbPensionIncome).toBe(25000);
+    expect(agg.nonInvestmentTaxableIncome).toBe(205000);
+    expect(agg.investmentIncome).toBe(0);
+  });
+
+  it('triggers Annual Allowance taper when Threshold Income (>£200k) and Adjusted Income (>£260k) are met via aggregated non-investment income', () => {
+    const profile: any = {
+      ...DEFAULT_PROFILE,
+      currentAge: 50,
+      targetRetirementAge: 65,
+      grossAnnualSalary: 280000,
+      hasTriggeredMpaa: false,
+      carryForwardAllowance: 0,
+    };
+
+    const result = calculateUKTax(profile, DEFAULT_POTS);
+    expect(result.thresholdIncome).toBe(280000);
+    expect(result.adjustedIncome).toBe(280000);
+    expect(result.isTaperedAnnualAllowance).toBe(true);
+    expect(result.pensionAnnualAllowanceLimit).toBe(50000);
   });
 });

@@ -568,6 +568,77 @@ export function calculateStandardIncomeTax(grossSalary: number, taxRegion?: stri
   }
 }
 
+export interface IncomeAggregation {
+  grossSalary: number;
+  taxableFixedIncome: number;
+  dbPensionIncome: number;
+  statePensionIncome: number;
+  nonInvestmentTaxableIncome: number;
+  investmentIncome: number;
+  totalTaxableIncome: number;
+}
+
+export function aggregateIncome(
+  profile: UserProfile,
+  isPartner: boolean = false,
+  evalAge?: number
+): IncomeAggregation {
+  const ownerTarget = isPartner ? 'partner' : 'primary';
+  const ownerCurrentAge = isPartner ? (profile.partnerCurrentAge ?? profile.currentAge) : profile.currentAge;
+  const ownerRetireAge = isPartner ? (profile.partnerTargetRetirementAge ?? profile.targetRetirementAge) : profile.targetRetirementAge;
+  const currentEvalAge = evalAge ?? ownerCurrentAge;
+  const isRetired = currentEvalAge >= ownerRetireAge;
+
+  const grossSalary = isRetired ? 0 : (isPartner ? (profile.partnerGrossAnnualSalary || 0) : (profile.grossAnnualSalary || 0));
+
+  let taxableFixedIncome = 0;
+  (profile.fixedIncomeStreams || []).forEach((stream) => {
+    if (stream.enabled === false) return;
+    const streamOwner = stream.owner || 'primary';
+    if (streamOwner !== ownerTarget) return;
+    if (stream.type !== 'taxable') return;
+    const start = stream.startAge ?? 0;
+    const end = stream.endAge ?? 100;
+    if (currentEvalAge >= start && currentEvalAge <= end) {
+      taxableFixedIncome += stream.annualAmount || 0;
+    }
+  });
+
+  let dbPensionIncome = 0;
+  (profile.dbPensions || []).forEach((db) => {
+    if (db.enabled === false) return;
+    const dbOwner = db.owner || 'primary';
+    if (dbOwner !== ownerTarget) return;
+    const startAge = db.startAge ?? 60;
+    if (currentEvalAge >= startAge) {
+      dbPensionIncome += db.annualIncome || 0;
+    }
+  });
+
+  let statePensionIncome = 0;
+  const includeSp = isPartner ? profile.partnerIncludeStatePension : profile.includeStatePension;
+  const spAge = isPartner ? (profile.partnerStatePensionAge ?? 67) : (profile.statePensionAge ?? 67);
+  if (includeSp && currentEvalAge >= spAge) {
+    statePensionIncome = isPartner
+      ? (profile.partnerStatePensionAmountAnnual ?? profile.partnerFullStatePensionAmount ?? 11502)
+      : (profile.statePensionAmountAnnual ?? profile.fullStatePensionAmount ?? 11502);
+  }
+
+  const nonInvestmentTaxableIncome = grossSalary + taxableFixedIncome + dbPensionIncome + statePensionIncome;
+  const investmentIncome = 0; // Explicitly excluded from threshold income taper
+  const totalTaxableIncome = nonInvestmentTaxableIncome + investmentIncome;
+
+  return {
+    grossSalary,
+    taxableFixedIncome,
+    dbPensionIncome,
+    statePensionIncome,
+    nonInvestmentTaxableIncome,
+    investmentIncome,
+    totalTaxableIncome,
+  };
+}
+
 export function calculateUKTax(
   profile: UserProfile,
   pots: InvestmentPots,
@@ -579,11 +650,12 @@ export function calculateUKTax(
   const ownerCurrentAge = isPartner ? (profile.partnerCurrentAge ?? profile.currentAge) : profile.currentAge;
   const ownerRetireAge = isPartner ? (profile.partnerTargetRetirementAge ?? profile.targetRetirementAge) : profile.targetRetirementAge;
   const currentEvalAge = evalAge ?? ownerCurrentAge;
-  const isRetired = currentEvalAge >= ownerRetireAge;
   const currentCalYear = new Date().getFullYear();
   const evalCalYear = currentCalYear + (currentEvalAge - ownerCurrentAge);
 
-  const gross = isRetired ? 0 : (isPartner ? (profile.partnerGrossAnnualSalary || 0) : (profile.grossAnnualSalary || 0));
+  const incomeAgg = aggregateIncome(profile, isPartner, evalAge);
+  const grossSalary = incomeAgg.grossSalary;
+  const gross = incomeAgg.nonInvestmentTaxableIncome;
 
 
   const activeContributions = (profile.oneOffContributions || []).filter((c) => {
@@ -1047,7 +1119,7 @@ export function calculateUKTax(
   }
 
   // Allowances & Pension Cap Checks
-  const eligibleEarnings = Math.max(3600, gross);
+  const eligibleEarnings = Math.max(3600, grossSalary);
 
   // Threshold Income Test (£200,000): Taxable earnings minus member pension contributions
   const thresholdIncome = Math.max(0, gross - totalWorkplacePensionGross - grossSippAnnual);
