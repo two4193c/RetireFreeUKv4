@@ -752,7 +752,7 @@ function parseAnnuityTypeConfig(type?: string) {
           const dstIsCashSavings = transfer.destinationPot === 'cash_savings';
 
           let addedAmount = actualTransfer;
-          if (dstIsSipp) {
+          if (dstIsSipp && !srcIsPension) {
             addedAmount = actualTransfer * 1.25; // 20% UK tax relief bonus
           } else if (dstIsLisa) {
             let bonus = 0;

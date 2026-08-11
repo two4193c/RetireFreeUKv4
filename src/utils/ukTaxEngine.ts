@@ -422,8 +422,9 @@ export function getProjectedPensionAtTakeAge(
       }
       if (tYear !== undefined && tYear === calendarYear) {
         const isMatchDst = isPartner ? dstOwner === 'partner' : dstOwner === 'primary';
+        const srcIsPension = t.sourcePot === 'sipp' || t.sourcePot === 'workplace_pension';
         if (isMatchDst && ((t.destinationPot as string) === 'sipp' || (t.destinationPot as string) === 'workplace_pension')) {
-          const added = t.destinationPot === 'sipp' ? (t.amount || 0) * 1.25 : (t.amount || 0);
+          const added = ((t.destinationPot as string) === 'sipp' && !srcIsPension) ? (t.amount || 0) * 1.25 : (t.amount || 0);
           pensionPot += added;
         }
       }

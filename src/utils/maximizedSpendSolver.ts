@@ -148,6 +148,7 @@ export function getScopeEvaluationInputs(
       giaBalance: 0,
       cashSavingsBalance: 0,
       sippMonthlyContribution: 0,
+      sippContributionType: 'net',
       stocksAndSharesIsaMonthlyContribution: 0,
       cashIsaMonthlyContribution: 0,
       lisaMonthlyContribution: 0,
@@ -182,8 +183,10 @@ export function getScopeEvaluationInputs(
     evalPots.giaBalance = pPots.giaBalance || 0;
     evalPots.cashSavingsBalance = pPots.cashSavingsBalance || 0;
     evalPots.workplacePensionMonthlyEmployee = pPots.workplacePensionMonthlyEmployee || 0;
-    evalPots.workplacePensionMonthlyEmployee = pPots.workplacePensionMonthlyEmployee || 0;
+    evalPots.workplacePensionMonthlyEmployeeType = pPots.workplacePensionMonthlyEmployeeType || 'percent';
+    evalPots.employerMatchPercentage = pPots.employerMatchPercentage || 0;
     evalPots.sippMonthlyContribution = pPots.sippMonthlyContribution || 0;
+    evalPots.sippContributionType = pPots.sippContributionType || 'net';
     evalPots.stocksAndSharesIsaMonthlyContribution = pPots.stocksAndSharesIsaMonthlyContribution || 0;
     evalPots.cashIsaMonthlyContribution = pPots.cashIsaMonthlyContribution || 0;
     evalPots.lisaMonthlyContribution = pPots.lisaMonthlyContribution || 0;
@@ -202,6 +205,7 @@ export function getScopeEvaluationInputs(
       giaBalance: 0,
       cashSavingsBalance: 0,
       sippMonthlyContribution: 0,
+      sippContributionType: 'net',
       stocksAndSharesIsaMonthlyContribution: 0,
       cashIsaMonthlyContribution: 0,
       lisaMonthlyContribution: 0,

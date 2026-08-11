@@ -642,8 +642,9 @@ function parseAnnuityTypeConfig(type?: string) {
             const dstIsLisa = transfer.destinationPot === 'lisa';
             const dstIsGiaCash = transfer.destinationPot === 'gia' || transfer.destinationPot === 'cash_savings' || transfer.destinationPot === 'cash_isa';
 
+            const srcIsPension = transfer.sourcePot === 'sipp' || transfer.sourcePot === 'workplace_pension';
             let addedAmount = actualTransfer;
-            if (dstIsSipp) addedAmount = actualTransfer * 1.25;
+            if (dstIsSipp && !srcIsPension) addedAmount = actualTransfer * 1.25;
             else if (dstIsLisa) addedAmount = actualTransfer + Math.min(actualTransfer, 4000) * 0.25;
 
             if (dstIsPension) addProRata("pension", addedAmount, isDstPartner);
