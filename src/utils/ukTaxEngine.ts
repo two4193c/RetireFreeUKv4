@@ -707,8 +707,8 @@ export function calculateUKTax(
             regularWorkplaceEmployeeAnnual += (c.employeeMonthlyAmount ?? c.grossAmount ?? 0) * 12;
             regularEmployerMatchAnnual += (c.employerMonthlyAmount ?? 0) * 12;
           } else {
-            regularWorkplaceEmployeeAnnual += gross * ((c.employeePercent ?? 5) / 100);
-            regularEmployerMatchAnnual += gross * ((c.employerPercent ?? 3) / 100);
+            regularWorkplaceEmployeeAnnual += grossSalary * ((c.employeePercent ?? 5) / 100);
+            regularEmployerMatchAnnual += grossSalary * ((c.employerPercent ?? 3) / 100);
           }
         } else if (c.targetPot === 'sipp') {
           const rawAmt = (c.grossAmount || 0) * 12;
@@ -841,11 +841,11 @@ export function calculateUKTax(
 
   if (!hasWorkplaceInActive && currentEvalAge < ownerRetireAge) {
     if (pots.workplacePensionMonthlyEmployeeType === 'percent') {
-      workplaceEmployeeAnnual += gross * ((pots.workplacePensionMonthlyEmployee || 0) / 100);
+      workplaceEmployeeAnnual += grossSalary * ((pots.workplacePensionMonthlyEmployee || 0) / 100);
     } else {
       workplaceEmployeeAnnual += (pots.workplacePensionMonthlyEmployee || 0) * 12;
     }
-    employerMatchAnnual += gross * ((pots.employerMatchPercentage || 0) / 100);
+    employerMatchAnnual += grossSalary * ((pots.employerMatchPercentage || 0) / 100);
   }
 
   // Include baseline pot monthly contributions if pre-retirement
@@ -897,8 +897,8 @@ export function calculateUKTax(
     effectiveGross = Math.max(0, gross - totalWorkplacePensionGross);
     
     // Calculate NI savings on salary sacrificed
-    const niOnGross = calculateStandardNI(gross);
-    const niOnGrossAfterSacrifice = calculateStandardNI(Math.max(0, gross - niReliefEligibleSacrifice));
+    const niOnGross = calculateStandardNI(grossSalary);
+    const niOnGrossAfterSacrifice = calculateStandardNI(Math.max(0, grossSalary - niReliefEligibleSacrifice));
     salarySacrificeNicSavedEmployee = Math.max(0, niOnGross - niOnGrossAfterSacrifice);
 
     salarySacrificeNicSavedEmployer = niReliefEligibleSacrifice * EMPLOYER_NI_RATE;
@@ -1078,8 +1078,8 @@ export function calculateUKTax(
   // Calculate National Insurance
   // Salary sacrifice NI relief is capped at the first £2,000 of sacrificed salary
   const niTaxableIncome = profile.pensionContributionMethod === 'salary_sacrifice'
-    ? Math.max(0, gross - niReliefEligibleSacrifice)
-    : gross;
+    ? Math.max(0, grossSalary - niReliefEligibleSacrifice)
+    : grossSalary;
   const totalNationalInsurance = calculateStandardNI(niTaxableIncome);
 
   // Net Take-Home Pay
