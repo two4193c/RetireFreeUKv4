@@ -115,7 +115,7 @@ export function calculateCashBufferRequiredDetails(
     // Guaranteed State Pension
     let statePension = 0;
     if ((profile.includeStatePension ?? true) && age >= (profile.statePensionAge || 67)) {
-      const primaryYears = profile.qualifyingYears ?? 35;
+      const primaryYears = Math.min(35, profile.qualifyingYears ?? 35);
       if (primaryYears >= 10) {
         const primaryTripleLock = profile.enableTripleLock ?? true;
         const primaryIndexFactor = primaryTripleLock ? inflationFactor : 1;
@@ -128,7 +128,7 @@ export function calculateCashBufferRequiredDetails(
     if (profile.isCouplePlanning && (profile.partnerIncludeStatePension ?? true)) {
       const partnerAge = age + ((profile.partnerCurrentAge ?? profile.currentAge) - profile.currentAge);
       if (partnerAge >= (profile.partnerStatePensionAge || 67)) {
-        const partnerYears = profile.partnerQualifyingYears ?? 35;
+        const partnerYears = Math.min(35, profile.partnerQualifyingYears ?? 35);
         if (partnerYears >= 10) {
           const partnerTripleLock = profile.partnerEnableTripleLock ?? true;
           const partnerIndexFactor = partnerTripleLock ? inflationFactor : 1;
@@ -569,7 +569,7 @@ function parseAnnuityTypeConfig(type?: string) {
         }
 
         if (contribYear !== undefined && !isNaN(contribYear) && contribYear === simCalendarYear) {
-          const gross = contrib.grossAmount || 0;
+          const gross = (contrib.grossAmount || 0) * (contrib.inflationLinked !== false ? inflationFactor : 1);
           if (gross > 0) {
             if (contrib.targetPot === 'workplace_pension') {
               addProRata("pension", gross, isPartner);
@@ -585,6 +585,24 @@ function parseAnnuityTypeConfig(type?: string) {
               addProRata("cashGia", gross, isPartner);
             }
           }
+        }
+      });
+
+      // Process decumulation life events
+      const activeLifeEvents = (profile.decumulationLifeEvents || []).filter(e => e.enabled !== false);
+      activeLifeEvents.forEach(e => {
+        const isEvtPartner = e.owner === 'partner';
+        if (isEvtPartner && (!profile.isCouplePlanning || partnerDead)) return;
+        const evalAge = isEvtPartner ? partnerAge : age;
+        if (e.age !== evalAge) return;
+        const evtAmount = e.inflationLinked !== false ? (e.amount || 0) * inflationFactor : (e.amount || 0);
+        const potStr = (e.targetPot || '') as string;
+        const evtPotType = (potStr === 'stocks_and_shares_isa' || potStr === 'cash_isa' || potStr === 'lisa') ? 'isa'
+          : (potStr === 'sipp' || potStr === 'workplace_pension') ? 'pension' : 'cashGia';
+        if (e.type === 'income') {
+          addProRata(evtPotType, evtAmount, isEvtPartner);
+        } else {
+          deductProRata(evtPotType, evtAmount);
         }
       });
 
@@ -610,8 +628,8 @@ function parseAnnuityTypeConfig(type?: string) {
 
         if (match) {
           const srcIsPension = transfer.sourcePot === 'workplace_pension' || transfer.sourcePot === 'sipp';
-          const srcIsIsa = transfer.sourcePot === 'stocks_and_shares_isa' || transfer.sourcePot === 'lisa';
-          const srcIsGiaCash = transfer.sourcePot === 'gia' || transfer.sourcePot === 'cash_savings' || transfer.sourcePot === 'cash_isa';
+          const srcIsIsa = transfer.sourcePot === 'stocks_and_shares_isa' || transfer.sourcePot === 'cash_isa' || transfer.sourcePot === 'lisa';
+          const srcIsGiaCash = transfer.sourcePot === 'gia' || transfer.sourcePot === 'cash_savings';
 
           let availableSrc = 0;
           if (isSrcPartner) {
@@ -619,7 +637,8 @@ function parseAnnuityTypeConfig(type?: string) {
           } else {
             availableSrc = srcIsPension ? primaryPensionPot : srcIsIsa ? primaryIsaPot : srcIsGiaCash ? primaryCashGiaPot : 0;
           }
-          const actualTransfer = Math.min(transfer.amount || 0, Math.max(0, availableSrc));
+          const requestedTransfer = (transfer.amount != null && transfer.amount > 0) ? transfer.amount : availableSrc;
+          const actualTransfer = Math.min(requestedTransfer, Math.max(0, availableSrc));
 
           if (actualTransfer > 0) {
             if (isSrcPartner) {
@@ -638,9 +657,9 @@ function parseAnnuityTypeConfig(type?: string) {
             const dstIsSipp = transfer.destinationPot === 'sipp';
             const dstIsWorkplace = transfer.destinationPot === 'workplace_pension';
             const dstIsPension = dstIsSipp || dstIsWorkplace;
-            const dstIsIsa = transfer.destinationPot === 'stocks_and_shares_isa';
+            const dstIsIsa = transfer.destinationPot === 'stocks_and_shares_isa' || transfer.destinationPot === 'cash_isa';
             const dstIsLisa = transfer.destinationPot === 'lisa';
-            const dstIsGiaCash = transfer.destinationPot === 'gia' || transfer.destinationPot === 'cash_savings' || transfer.destinationPot === 'cash_isa';
+            const dstIsGiaCash = transfer.destinationPot === 'gia' || transfer.destinationPot === 'cash_savings';
 
             let addedAmount = actualTransfer;
             if (dstIsSipp && !srcIsPension) addedAmount = actualTransfer * 1.25;
@@ -1054,7 +1073,7 @@ function parseAnnuityTypeConfig(type?: string) {
         // State Pension (Primary + Partner if couple mode)
         let primaryStatePension = 0;
         if ((profile.includeStatePension ?? true) && age >= (profile.statePensionAge || 67)) {
-          const primaryYears = profile.qualifyingYears ?? 35;
+          const primaryYears = Math.min(35, profile.qualifyingYears ?? 35);
           if (primaryYears >= 10) {
             const primaryTripleLock = profile.enableTripleLock ?? true;
             const primaryIndexFactor = primaryTripleLock ? inflationFactor : 1;
@@ -1068,7 +1087,7 @@ function parseAnnuityTypeConfig(type?: string) {
         if (profile.isCouplePlanning && !partnerDead && (profile.partnerIncludeStatePension ?? true)) {
           const partnerAge = age + ((profile.partnerCurrentAge ?? profile.currentAge) - profile.currentAge);
           if (partnerAge >= (profile.partnerStatePensionAge || 67)) {
-            const partnerYears = profile.partnerQualifyingYears ?? 35;
+            const partnerYears = Math.min(35, profile.partnerQualifyingYears ?? 35);
             if (partnerYears >= 10) {
               const partnerTripleLock = profile.partnerEnableTripleLock ?? true;
               const partnerIndexFactor = partnerTripleLock ? inflationFactor : 1;

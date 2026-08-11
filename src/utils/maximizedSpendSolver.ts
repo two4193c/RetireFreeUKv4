@@ -136,6 +136,8 @@ export function getScopeEvaluationInputs(
   if (scope === 'primary') {
     // Only evaluate primary wealth
     evalProfile.isCouplePlanning = false;
+    evalProfile.partnerGrossAnnualSalary = 0;
+    evalProfile.dbPensions = (profileInput.dbPensions || []).filter((p) => p.owner !== 'partner');
     evalProfile.partnerPots = {
       workplacePensionBalance: 0,
       workplacePensionMonthlyEmployee: 0,
@@ -215,6 +217,7 @@ export function getScopeEvaluationInputs(
     evalProfile.partnerWorkplacePensionBalance = 0;
     evalProfile.partnerSippBalance = 0;
     evalProfile.partnerIsaBalance = 0;
+    evalProfile.dbPensions = (profileInput.dbPensions || []).filter((p) => p.owner === 'partner').map((p) => ({ ...p, owner: 'primary' as const }));
   }
 
   return { evalProfile, evalPots };

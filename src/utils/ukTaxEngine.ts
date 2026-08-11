@@ -783,7 +783,9 @@ export function calculateUKTax(
 
     regularSsIsaAnnual += (pots.stocksAndSharesIsaMonthlyContribution || 0) * 12;
     regularCashIsaAnnual += (pots.cashIsaMonthlyContribution || 0) * 12;
-    regularLisaAnnual += (pots.lisaMonthlyContribution || 0) * 12;
+    if (currentEvalAge < 50) {
+      regularLisaAnnual += (pots.lisaMonthlyContribution || 0) * 12;
+    }
     regularGiaAnnual += (pots.giaMonthlyContribution || 0) * 12;
     regularCashSavingsAnnual += (pots.cashSavingsMonthlyContribution || 0) * 12;
   }
@@ -802,8 +804,9 @@ export function calculateUKTax(
     ? (profile.customTaxBands.lisaAnnualAllowance ?? LISA_ANNUAL_LIMIT)
     : LISA_ANNUAL_LIMIT;
 
+  const lisaEligibleAge = currentEvalAge < 50;
   const totalIsaAnnual = ssIsaAnnual + cashIsaAnnual + lisaAnnual;
-  const lisaBonusAnnual = Math.min(lisaAnnual, lisaLimit) * 0.25;
+  const lisaBonusAnnual = lisaEligibleAge ? Math.min(lisaAnnual, lisaLimit) * 0.25 : 0;
 
   let effectiveGross = gross;
   let salarySacrificeNicSavedEmployee = 0;
@@ -1439,8 +1442,8 @@ export function calculateCapitalGainsTax(
   // CGT is NOT devolved to Scotland. Always use UK-wide basic rate ceiling.
   // CGT does not use Personal Allowance, so the threshold is strictly taxable income (37700).
   const basicRateCeiling = 37700 + grossRasToExtendBand;
-  const basicRate = isResidentialProperty ? 0.18 : 0.10;
-  const higherRate = isResidentialProperty ? 0.24 : 0.20;
+  const basicRate = isResidentialProperty ? 0.18 : 0.18;
+  const higherRate = isResidentialProperty ? 0.24 : 0.24;
 
   let cgtTax = 0;
   if (taxableIncome >= basicRateCeiling) {

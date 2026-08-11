@@ -380,8 +380,15 @@ export function runHistoricModelingSimulation(
           const srcIsIsa = transfer.sourcePot === 'stocks_and_shares_isa' || transfer.sourcePot === 'cash_isa' || transfer.sourcePot === 'lisa';
           const srcIsGiaCash = transfer.sourcePot === 'gia' || transfer.sourcePot === 'cash_savings';
 
-          let availableSrc = srcIsPension ? pensionPot : srcIsIsa ? isaPot : srcIsGiaCash ? cashGiaPot : 0;
-          const actualTransfer = Math.min(transfer.amount || 0, Math.max(0, availableSrc));
+          let availableSrc: number;
+          if (isSrcPartner) {
+            availableSrc = srcIsPension ? partnerPensionPot : srcIsIsa ? partnerIsaPot : srcIsGiaCash ? partnerCashGiaPot : 0;
+          } else {
+            availableSrc = srcIsPension ? primaryPensionPot : srcIsIsa ? primaryIsaPot : srcIsGiaCash ? primaryCashGiaPot : 0;
+          }
+
+          const requestedTransfer = (transfer.amount != null && transfer.amount > 0) ? transfer.amount : availableSrc;
+          const actualTransfer = Math.min(requestedTransfer, Math.max(0, availableSrc));
 
           if (actualTransfer > 0) {
             if (isSrcPartner) {

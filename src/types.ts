@@ -123,6 +123,7 @@ export interface OneOffContribution {
   // For SIPP Pension Contributions (Net out-of-pocket vs Gross into pot):
   sippContributionType?: 'net' | 'gross'; // 'net' (out of pocket + 25% tax relief) or 'gross' (total into pension)
 
+  inflationLinked?: boolean;
   enabled: boolean;
   description?: string;
 }

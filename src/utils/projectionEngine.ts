@@ -699,7 +699,8 @@ function parseAnnuityTypeConfig(type?: string) {
           availableSrc = srcIsPension ? primaryPensionPot : srcIsSsIsa ? primarySsIsaPot : srcIsCashIsa ? primaryCashIsaPot : srcIsLisa ? primaryLisaPot : srcIsGia ? primaryGiaPot : srcIsCashSavings ? primaryCashSavingsPot : 0;
         }
 
-        const actualTransfer = Math.min(transfer.amount || 0, Math.max(0, availableSrc));
+        const requestedTransfer = (transfer.amount != null && transfer.amount > 0) ? transfer.amount : availableSrc;
+        const actualTransfer = Math.min(requestedTransfer, Math.max(0, availableSrc));
 
         if (actualTransfer > 0) {
           // Subtract from source
@@ -756,16 +757,20 @@ function parseAnnuityTypeConfig(type?: string) {
             addedAmount = actualTransfer * 1.25; // 20% UK tax relief bonus
           } else if (dstIsLisa) {
             let bonus = 0;
-            if (isDstPartner) {
-              const eligible = Math.max(0, 4000 - partnerLisaContribsThisYear);
-              const eligibleContrib = Math.min(actualTransfer, eligible);
-              bonus = eligibleContrib * 0.25;
-              partnerLisaContribsThisYear += eligibleContrib;
-            } else {
-              const eligible = Math.max(0, 4000 - primaryLisaContribsThisYear);
-              const eligibleContrib = Math.min(actualTransfer, eligible);
-              bonus = eligibleContrib * 0.25;
-              primaryLisaContribsThisYear += eligibleContrib;
+            const dstOwnerAge = isDstPartner ? partnerAge : age;
+            const srcIsLisa = transfer.sourcePot === 'lisa';
+            if (dstOwnerAge < 50 && !srcIsLisa) {
+              if (isDstPartner) {
+                const eligible = Math.max(0, 4000 - partnerLisaContribsThisYear);
+                const eligibleContrib = Math.min(actualTransfer, eligible);
+                bonus = eligibleContrib * 0.25;
+                partnerLisaContribsThisYear += eligibleContrib;
+              } else {
+                const eligible = Math.max(0, 4000 - primaryLisaContribsThisYear);
+                const eligibleContrib = Math.min(actualTransfer, eligible);
+                bonus = eligibleContrib * 0.25;
+                primaryLisaContribsThisYear += eligibleContrib;
+              }
             }
             addedAmount = actualTransfer + bonus;
           }
@@ -1319,6 +1324,15 @@ function parseAnnuityTypeConfig(type?: string) {
 
     if (!isRetired) {
       // ACCUMULATION PHASE
+      if (primaryStatePensionReceived > 0) {
+        primaryCashSavingsPot += primaryStatePensionReceived;
+        primaryCashGiaPot = primaryGiaPot + primaryCashSavingsPot;
+      }
+      if (partnerStatePensionReceived > 0 && profile.isCouplePlanning) {
+        partnerCashSavingsPot += partnerStatePensionReceived;
+        partnerCashGiaPot = partnerGiaPot + partnerCashSavingsPot;
+      }
+
       const primaryPensionContrib = annualPensionContribution;
       const primaryIsaContrib = annualIsaContribution;
       let primaryCashGiaPotContrib = annualCashGiaContribution;
@@ -2188,6 +2202,15 @@ function parseAnnuityTypeConfig(type?: string) {
           pensionPot -= pensionDrawdown;
           isaPot -= isaDrawdown;
           cashGiaPot -= cashDrawdown;
+
+          const isaTotalBeforeRata = primarySsIsaPot + primaryCashIsaPot + primaryLisaPot;
+          if (isaTotalBeforeRata > 0 && isaDrawdown > 0) {
+            const ratio = Math.min(1, isaDrawdown / isaTotalBeforeRata);
+            primarySsIsaPot = Math.max(0, primarySsIsaPot - primarySsIsaPot * ratio);
+            primaryCashIsaPot = Math.max(0, primaryCashIsaPot - primaryCashIsaPot * ratio);
+            primaryLisaPot = Math.max(0, primaryLisaPot - primaryLisaPot * ratio);
+            primaryIsaPot = primarySsIsaPot + primaryCashIsaPot + primaryLisaPot;
+          }
 
           const netPensionDrawdown = getNetProducedByPensionGross(pensionDrawdown);
           const currentNetAchieved = netPensionDrawdown + isaDrawdown + cashDrawdown;
