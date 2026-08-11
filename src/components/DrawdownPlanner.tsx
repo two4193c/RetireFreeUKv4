@@ -462,7 +462,8 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
   const activeProjectedPensionAtPurchase = getPensionPotForAge(activePurchaseAge, activeIncomePerson === 'partner');
   const activePclsPercentage = activeIncomePerson === 'partner' ? partnerPclsPct : primaryPclsPct;
   const activeTakeLumpSum = activeIncomePerson === 'partner' ? profile.partnerTakeLumpSumAtStart : profile.takeLumpSumAtStart;
-  const activePclsVal = activeProjectedPensionAtPurchase * (activePclsPercentage / 100);
+  const activeLsaLimit = activeIncomePerson === 'partner' ? partnerLsaLimit : primaryLsaLimit;
+  const activePclsVal = Math.min(activeProjectedPensionAtPurchase * (activePclsPercentage / 100), activeLsaLimit);
   const activePostPclsPension = activeTakeLumpSum ? Math.max(0, activeProjectedPensionAtPurchase - activePclsVal) : activeProjectedPensionAtPurchase;
 
   const singleAlloc = activeIncomeOption === 'annuity' ? 100 : activeAllocPercent;

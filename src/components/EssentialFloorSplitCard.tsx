@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Scale, CheckCircle2, ShieldCheck, AlertTriangle, RefreshCw, DollarSign, Wallet } from 'lucide-react';
 import { UserProfile, InvestmentPots } from '../types';
+import { getActualSpendingTargetForAge } from '../utils/projectionEngine';
 
 interface EssentialFloorSplitCardProps {
   profile: UserProfile;
@@ -10,7 +11,7 @@ interface EssentialFloorSplitCardProps {
 export const EssentialFloorSplitCard: React.FC<EssentialFloorSplitCardProps> = ({ profile, pots }) => {
   const [essentialPct, setEssentialPct] = useState<number>(65);
 
-  const targetIncome = profile.targetRetirementIncomeAnnual || 30000;
+  const targetIncome = getActualSpendingTargetForAge(profile, profile.targetRetirementAge || 60);
   
   // --- Correct UserProfile field names per types.ts ---
   const statePensionAnnual = profile.includeStatePension ? (profile.statePensionAmountAnnual || 0) : 0;

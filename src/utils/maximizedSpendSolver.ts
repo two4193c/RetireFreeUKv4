@@ -334,6 +334,9 @@ export function createCandidateProfile(
   candidate.reinvestExcessDrawdown = isReinvestExcess;
   candidate.actualSpendingTargetAnnual = actualSpendingTarget;
   candidate.annuityExcessReinvestOption = reinvestDestination;
+  if (targetEndAge !== undefined) {
+    candidate.lifeExpectancyAge = targetEndAge;
+  }
 
   candidate.maximizedSpendConfig = {
     enabled: true,
@@ -407,7 +410,7 @@ function clampBridgeRangesIfNeeded(candidateProfile: UserProfile, pots: Investme
       let bHigh = r.annualTargetIncome;
       let bestB = bLow;
 
-      for (let i = 0; i < 16; i++) {
+      for (let i = 0; i < 24; i++) {
         const bMid = Math.floor((bLow + bHigh) / 2);
         r.annualTargetIncome = bMid;
         const testTax = calculateUKTax(cloned, pots);
@@ -442,7 +445,7 @@ function clampBridgeRangesIfNeeded(candidateProfile: UserProfile, pots: Investme
 
     const bridgeRange = testProfile.maximizedSpendConfig!.spendingPhases.customRanges![0];
 
-    for (let i = 0; i < 16; i++) {
+    for (let i = 0; i < 24; i++) {
       const bMid = Math.floor((bLow + bHigh) / 2);
       bridgeRange.annualTargetIncome = bMid;
       const testTax = calculateUKTax(testProfile, pots);

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Shield, AlertTriangle, CheckCircle2, Info } from 'lucide-react';
 import { UserProfile, InvestmentPots } from '../types';
+import { getActualSpendingTargetForAge } from '../utils/projectionEngine';
 
 interface WithdrawalGuardrailGaugeCardProps {
   profile: UserProfile;
@@ -15,10 +16,10 @@ export const WithdrawalGuardrailGaugeCard: React.FC<WithdrawalGuardrailGaugeCard
   horizonYears = 30,
   equityPct = 60,
 }) => {
-  const targetIncome = profile.targetRetirementIncomeAnnual || 30000;
+  const targetIncome = getActualSpendingTargetForAge(profile, profile.targetRetirementAge);
 
   // --- Correct InvestmentPots field names per types.ts ---
-  const totalAssets =
+  let totalAssets =
     (pots.workplacePensionBalance || 0) +
     (pots.sippBalance || 0) +
     (pots.stocksAndSharesIsaBalance || 0) +
@@ -27,9 +28,54 @@ export const WithdrawalGuardrailGaugeCard: React.FC<WithdrawalGuardrailGaugeCard
     (pots.giaBalance || 0) +
     (pots.cashSavingsBalance || 0);
 
-  // Initial SWR — guard against zero
-  const initialSwr = totalAssets > 0 ? (targetIncome / totalAssets) * 100 : 3.5;
+  if (profile.isCouplePlanning && profile.partnerPots) {
+    totalAssets +=
+      (profile.partnerPots.workplacePensionBalance || 0) +
+      (profile.partnerPots.sippBalance || 0) +
+      (profile.partnerPots.stocksAndSharesIsaBalance || 0) +
+      (profile.partnerPots.cashIsaBalance || 0) +
+      (profile.partnerPots.lisaBalance || 0) +
+      (profile.partnerPots.giaBalance || 0) +
+      (profile.partnerPots.cashSavingsBalance || 0);
+  }
 
+  const retAge = profile.targetRetirementAge || 60;
+  
+  let guaranteedIncomeAtRetirement = 0;
+  
+  // State Pension
+  if ((profile.includeStatePension ?? true) && retAge >= (profile.statePensionAge || 67)) {
+    const yrs = Math.min(35, profile.qualifyingYears ?? 35);
+    if (yrs >= 10) {
+      guaranteedIncomeAtRetirement += profile.statePensionAmountAnnual ?? (Math.round((yrs / 35) * (profile.fullStatePensionAmount ?? 12547.6) * 100) / 100);
+    }
+  }
+  if (profile.isCouplePlanning && (profile.partnerIncludeStatePension ?? true)) {
+    const pRetAge = profile.partnerTargetRetirementAge || retAge;
+    if (pRetAge >= (profile.partnerStatePensionAge || 67)) {
+      const yrs = Math.min(35, profile.partnerQualifyingYears ?? 35);
+      if (yrs >= 10) {
+        guaranteedIncomeAtRetirement += profile.partnerStatePensionAmountAnnual ?? (Math.round((yrs / 35) * (profile.partnerFullStatePensionAmount ?? 12547.6) * 100) / 100);
+      }
+    }
+  }
+
+  // DB Pensions
+  (profile.dbPensions || []).filter(p => p.enabled).forEach(p => {
+    const evalAge = p.owner === 'partner' ? (profile.partnerTargetRetirementAge || retAge) : retAge;
+    if (evalAge >= p.startAge) guaranteedIncomeAtRetirement += p.annualIncome;
+  });
+
+  // Fixed Income
+  (profile.fixedIncomeStreams || []).filter(s => s.enabled).forEach(s => {
+    const evalAge = s.owner === 'partner' ? (profile.partnerTargetRetirementAge || retAge) : retAge;
+    if (evalAge >= s.startAge && (!s.endAge || evalAge <= s.endAge)) guaranteedIncomeAtRetirement += s.annualAmount;
+  });
+
+  const withdrawalNeeded = Math.max(0, targetIncome - guaranteedIncomeAtRetirement);
+  
+  // Initial SWR — guard against zero
+  const initialSwr = totalAssets > 0 ? (withdrawalNeeded / totalAssets) * 100 : 3.5;
   // Pure Guyton-Klinger ±20% corridor around initial SWR
   // Horizon adjustment: for horizons longer than 30 years, tighten upper guardrail slightly
   const horizonAdjustment = Math.max(0, (horizonYears - 30) * 0.03);

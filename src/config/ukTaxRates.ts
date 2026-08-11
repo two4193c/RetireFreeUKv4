@@ -12,7 +12,7 @@ export const RUK_ADDITIONAL_RATE = 0.45;
 
 // Scottish Income Tax Bands
 export const SCOT_STARTER_RATE = 0.19;
-export const SCOT_STARTER_THRESHOLD = 2_306;
+export const SCOT_STARTER_THRESHOLD = 2_297;
 export const SCOT_BASIC_RATE = 0.20;
 export const SCOT_BASIC_THRESHOLD = 13_991; // cumulative
 export const SCOT_INTERMEDIATE_RATE = 0.21;
@@ -40,9 +40,8 @@ export const PCLS_RECYCLING_THRESHOLD = 7_500;
 export const PCLS_RECYCLING_PERCENTAGE = 0.30;
 
 // State Pension
-export const STATE_PENSION_FULL_ANNUAL = 12_547.60; // 2026/27 full new State Pension (�241.30/wk)
+export const STATE_PENSION_FULL_ANNUAL = 11_973.00; // 2025/26 full new State Pension
 
 // NMPA
 export const NMPA_CURRENT = 55;
 export const NMPA_FROM_2028 = 57;
-

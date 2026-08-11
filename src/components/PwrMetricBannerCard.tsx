@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Percent, ShieldCheck, Calendar } from 'lucide-react';
 import { UserProfile, InvestmentPots, YearProjection } from '../types';
-import { getPensionAccessAge } from '../utils/projectionEngine';
+import { getPensionAccessAge, getActualSpendingTargetForAge } from '../utils/projectionEngine';
 
 interface PwrMetricBannerCardProps {
   profile: UserProfile;
@@ -12,13 +12,13 @@ interface PwrMetricBannerCardProps {
 export const PwrMetricBannerCard: React.FC<PwrMetricBannerCardProps> = ({ profile, pots, projections }) => {
   const [basis, setBasis] = useState<'retirement_start' | 'today' | 'private_pension_start' | 'state_pension_start'>('retirement_start');
 
-  const baseTargetIncome = profile.targetRetirementIncomeAnnual || 30000;
+  const baseTargetIncome = getActualSpendingTargetForAge(profile, profile.targetRetirementAge);
   
   const pensionAccessAge = getPensionAccessAge(profile);
   const statePensionAge = profile.statePensionAge || 67;
 
   // --- Correct InvestmentPots field names per types.ts ---
-  const todayAssets =
+  let todayAssets =
     (pots.workplacePensionBalance || 0) +
     (pots.sippBalance || 0) +
     (pots.stocksAndSharesIsaBalance || 0) +
@@ -26,6 +26,17 @@ export const PwrMetricBannerCard: React.FC<PwrMetricBannerCardProps> = ({ profil
     (pots.lisaBalance || 0) +
     (pots.giaBalance || 0) +
     (pots.cashSavingsBalance || 0);
+
+  if (profile.isCouplePlanning && profile.partnerPots) {
+    todayAssets +=
+      (profile.partnerPots.workplacePensionBalance || 0) +
+      (profile.partnerPots.sippBalance || 0) +
+      (profile.partnerPots.stocksAndSharesIsaBalance || 0) +
+      (profile.partnerPots.cashIsaBalance || 0) +
+      (profile.partnerPots.lisaBalance || 0) +
+      (profile.partnerPots.giaBalance || 0) +
+      (profile.partnerPots.cashSavingsBalance || 0);
+  }
 
   // Projected portfolios at various milestones (end of year prior)
   const preRetirementYearRow = projections?.find((p) => p.age === (profile.targetRetirementAge - 1));

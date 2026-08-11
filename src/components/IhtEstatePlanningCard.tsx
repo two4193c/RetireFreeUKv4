@@ -125,11 +125,14 @@ export const IhtEstatePlanningCard: React.FC<IhtEstatePlanningCardProps> = ({
       taxablePropertyAndAssets = 0;
     }
 
-    // Pension inclusion (April 2027 Budget Rule)
-    const taxablePensionPortion = iht.includePensionsInEstate ? pensionWealth : 0;
+    // Pension inclusion (April 2027 Budget Rule) - Spousal exemption applies to pensions too!
+    const taxablePensionPortion = iht.includePensionsInEstate && !isSpouseTransfer ? pensionWealth : 0;
 
     // Gross Taxable Estate before annual gifting & PETs
     const grossTaxableEstateBeforeGifting = taxablePropertyAndAssets + taxablePensionPortion;
+
+    // Gross Estate for RNRB Tapering (must be before BPR and Spousal Exemption)
+    const grossEstateForTaper = propertyValue + grossNonPensionWealth + otherAssets + (iht.includePensionsInEstate ? pensionWealth : 0);
 
     // Cumulative Annual Gifting Deduction (£3,000/yr HMRC exemption)
     const retirementAge = profile.targetRetirementAge || 60;
@@ -147,8 +150,8 @@ export const IhtEstatePlanningCard: React.FC<IhtEstatePlanningCardProps> = ({
 
       // HMRC Tapering Rule: RNRB tapers by £1 for every £2 gross estate exceeds £2,000,000
       const taperThreshold = 2000000;
-      if (grossTaxableEstateBeforeGifting > taperThreshold) {
-        const excess = grossTaxableEstateBeforeGifting - taperThreshold;
+      if (grossEstateForTaper > taperThreshold) {
+        const excess = grossEstateForTaper - taperThreshold;
         const reduction = Math.floor(excess / 2);
         baseRnrb = Math.max(0, baseRnrb - reduction);
       }

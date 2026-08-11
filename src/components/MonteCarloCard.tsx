@@ -126,8 +126,8 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
 
   // Compute Monte Carlo simulation for current single selection
   const mcResult = useMemo(() => {
-    return runMonteCarloSimulation(profile, pots, taxResult, params);
-  }, [profile, pots, taxResult, params]);
+    return runMonteCarloSimulation(profile, pots, taxResult, { ...params, cashBufferYears: currentCashBufferYears });
+  }, [profile, pots, taxResult, params, currentCashBufferYears]);
 
   // Compute 3 scenario results for Overview tab comparison view (gated to active view)
   const baseResult = useMemo(() => {

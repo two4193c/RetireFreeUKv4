@@ -47,7 +47,13 @@ export const SwrMatrixCard: React.FC<SwrMatrixCardProps> = ({
   };
 
   // Helper matrix success rates based on Trinity Study & UK historical return distribution
-  const getSuccessRate = (swr: number, age: number, equity: number, horizon: number): number => {
+  const getSuccessRate = (swr: number, age: number, equity: number, horizonParam: number): number => {
+    // Calculate the effective horizon for this specific retirement age column
+    // assuming horizonParam applies to the target retirement age
+    const targetRetAge = profile.targetRetirementAge || 60;
+    const lifeExpectancy = targetRetAge + horizonParam;
+    const horizon = Math.max(10, lifeExpectancy - age);
+
     // Base formula considering horizon length and asset allocation
     let base = 100;
     

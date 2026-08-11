@@ -32,7 +32,8 @@ export const SwrTrajectoryChart: React.FC<SwrTrajectoryChartProps> = ({ projecti
         ? p.totalWithdrawalAmount
         : (p.pensionDrawdown || 0) + (p.isaDrawdown || 0) + (p.cashDrawdown || 0);
 
-      const effectiveSwr = totalPortfolio > 0 ? Math.min(30, Math.max(0, (totalDrawdown / totalPortfolio) * 100)) : 0;
+      const startingPortfolio = totalPortfolio + totalDrawdown;
+      const effectiveSwr = startingPortfolio > 0 ? Math.min(30, Math.max(0, (totalDrawdown / startingPortfolio) * 100)) : 0;
 
       return {
         age: p.age,

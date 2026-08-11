@@ -147,8 +147,7 @@ export function computeIncomeTaxOnAmount(
 
   const taperCeiling = paTaperThresh + (paValue * 2);
   if (grossIncome > paTaperThresh && grossIncome <= taperCeiling) {
-    const basicEffect = useOverrides ? (customTaxBands?.basicRatePercent ?? 20) : 20;
-    marginalRate += basicEffect;
+    marginalRate += (marginalRate / 2);
   }
 
   return { tax, marginalRate };
@@ -165,9 +164,9 @@ export function getPensionAccessAge(profile: UserProfile): number {
   const dob = new Date(profile.dateOfBirth);
   if (isNaN(dob.getTime())) return 57;
 
-  // Born before 6 April 1971 -> Normal Minimum Pension Age (NMPA) is 55
-  // Born on or after 6 April 1971 -> NMPA increases to 57 starting 6 April 2028
-  const cutoff = new Date('1971-04-06');
+  // Born before 6 April 1973 -> Normal Minimum Pension Age (NMPA) is 55
+  // Born on or after 6 April 1973 -> NMPA increases to 57 starting 6 April 2028
+  const cutoff = new Date('1973-04-06');
   return dob < cutoff ? 55 : 57;
 }
 
@@ -294,7 +293,7 @@ export function getPartnerPensionAccessAge(profile: UserProfile): number {
   if (profile.partnerDateOfBirth) {
     const dob = new Date(profile.partnerDateOfBirth);
     if (!isNaN(dob.getTime())) {
-      const cutOff = new Date('1971-04-06');
+      const cutOff = new Date('1973-04-06');
       return dob < cutOff ? 55 : 57;
     }
   }
@@ -914,7 +913,7 @@ export function calculateUKTax(
         rem -= b3;
       }
       if (rem > 0) {
-        const b4 = Math.min(rem, 62430 - 43662); // 42%
+        const b4 = Math.min(rem, 62430 - 31092); // 42%
         totalIncomeTax += b4 * 0.42;
         rem -= b4;
       }
@@ -1036,7 +1035,7 @@ export function calculateUKTax(
   if (!hasTriggeredMpaa && thresholdIncome > 200000 && adjustedIncome > 260000) {
     isTaperedAnnualAllowance = true;
     taperedReduction = Math.min(50000, Math.floor((adjustedIncome - 260000) / 2));
-    pensionAnnualAllowanceLimit = Math.max(10000, basePensionAnnualAllowance - taperedReduction);
+    pensionAnnualAllowanceLimit = Math.max(10000, basePensionAnnualAllowance - taperedReduction) + carryForward;
   }
 
   const pensionAnnualAllowanceUsed = totalPensionContributionsAnnual;
@@ -1080,7 +1079,7 @@ export function calculateUKTax(
   let pclsRecyclingDetails: { pclsAmount: number; annualContributions: number; threshold: number; recyclingReason: string } | undefined = undefined;
 
   if (isUpfrontPcls && pclsLumpSumValue > 7500) {
-    const recyclingThreshold = Math.max(7500, Math.round(pclsLumpSumValue * 0.3));
+    const recyclingThreshold = Math.round(pclsLumpSumValue * 0.3);
 
     // Additional one-off pension contributions in the current tax year window beyond baseline routine salary contributions
     const totalIncreasedPensionContributions = totalOneOffPensionGross;
@@ -1196,23 +1195,21 @@ export function calculatePSAAndSavingsTax(
   taxBandLabel: 'Basic Rate' | 'Higher Rate' | 'Additional Rate';
 } {
   let personalSavingsAllowance = 1000;
-  let savingsInterestTaxRate = 0.20;
+  let savingsInterestTaxRate = 0;
   let taxBandLabel: 'Basic Rate' | 'Higher Rate' | 'Additional Rate' = 'Basic Rate';
 
   // Savings interest tax is NOT devolved to Scotland. Always use UK-wide rates and thresholds.
   const thresholdBasic = personalAllowance + RUK_BASIC_THRESHOLD;
+  const totalIncomeForPSA = taxableIncome + grossInterestEarned;
 
-  if (taxableIncome > RUK_ADDITIONAL_THRESHOLD) {
+  if (totalIncomeForPSA > RUK_ADDITIONAL_THRESHOLD) {
     personalSavingsAllowance = 0;
-    savingsInterestTaxRate = 0.45;
     taxBandLabel = 'Additional Rate';
-  } else if (taxableIncome > thresholdBasic) {
+  } else if (totalIncomeForPSA > thresholdBasic) {
     personalSavingsAllowance = 500;
-    savingsInterestTaxRate = 0.40;
     taxBandLabel = 'Higher Rate';
   } else {
     personalSavingsAllowance = 1000;
-    savingsInterestTaxRate = 0.20;
     taxBandLabel = 'Basic Rate';
   }
 
@@ -1224,7 +1221,37 @@ export function calculatePSAAndSavingsTax(
 
   const interestAfterStartingRate = Math.max(0, grossInterestEarned - startingRateForSavingsUsed);
   const taxableSavingsInterest = Math.max(0, interestAfterStartingRate - personalSavingsAllowance);
-  const savingsInterestTax = Math.round(taxableSavingsInterest * savingsInterestTaxRate);
+
+  // Band the taxable savings interest
+  let remainingInterest = taxableSavingsInterest;
+  let savingsInterestTax = 0;
+  let currentIncome = taxableIncome + startingRateForSavingsUsed + Math.min(interestAfterStartingRate, personalSavingsAllowance);
+
+  // Basic Rate Band (20%)
+  if (currentIncome < thresholdBasic && remainingInterest > 0) {
+    const spaceInBasic = thresholdBasic - currentIncome;
+    const amountInBasic = Math.min(spaceInBasic, remainingInterest);
+    savingsInterestTax += amountInBasic * 0.20;
+    remainingInterest -= amountInBasic;
+    currentIncome += amountInBasic;
+  }
+
+  // Higher Rate Band (40%)
+  if (currentIncome < RUK_ADDITIONAL_THRESHOLD && remainingInterest > 0) {
+    const spaceInHigher = RUK_ADDITIONAL_THRESHOLD - currentIncome;
+    const amountInHigher = Math.min(spaceInHigher, remainingInterest);
+    savingsInterestTax += amountInHigher * 0.40;
+    remainingInterest -= amountInHigher;
+    currentIncome += amountInHigher;
+  }
+
+  // Additional Rate Band (45%)
+  if (remainingInterest > 0) {
+    savingsInterestTax += remainingInterest * 0.45;
+  }
+
+  savingsInterestTax = Math.round(savingsInterestTax);
+  savingsInterestTaxRate = taxableSavingsInterest > 0 ? savingsInterestTax / taxableSavingsInterest : 0;
 
   return {
     personalSavingsAllowance,
@@ -1300,16 +1327,37 @@ export function calculateDividendTax(
 
   // Dividend tax is NOT devolved to Scotland. Always use UK-wide basic rate ceiling (£50,270).
   const basicRateCeiling = 50270 + grossRasToExtendBand;
-  let dividendTaxRate = 0.0875;
-  if (taxableIncome > 125140) {
-    dividendTaxRate = 0.3935;
-  } else if (taxableIncome > basicRateCeiling) {
-    dividendTaxRate = 0.3375;
-  } else {
-    dividendTaxRate = 0.0875;
+  const additionalRateThreshold = 125140 + grossRasToExtendBand;
+
+  let remainingDividend = taxableDividendIncome;
+  let dividendTax = 0;
+  let currentIncome = taxableIncome;
+
+  // Basic Rate Band (8.75%)
+  if (currentIncome < basicRateCeiling && remainingDividend > 0) {
+    const spaceInBasic = basicRateCeiling - currentIncome;
+    const amountInBasic = Math.min(spaceInBasic, remainingDividend);
+    dividendTax += amountInBasic * 0.0875;
+    remainingDividend -= amountInBasic;
+    currentIncome += amountInBasic;
   }
 
-  const dividendTax = Math.round(taxableDividendIncome * dividendTaxRate);
+  // Higher Rate Band (33.75%)
+  if (currentIncome < additionalRateThreshold && remainingDividend > 0) {
+    const spaceInHigher = additionalRateThreshold - currentIncome;
+    const amountInHigher = Math.min(spaceInHigher, remainingDividend);
+    dividendTax += amountInHigher * 0.3375;
+    remainingDividend -= amountInHigher;
+    currentIncome += amountInHigher;
+  }
+
+  // Additional Rate Band (39.35%)
+  if (remainingDividend > 0) {
+    dividendTax += remainingDividend * 0.3935;
+  }
+
+  dividendTax = Math.round(dividendTax);
+  const dividendTaxRate = dividendTax / taxableDividendIncome;
   return {
     dividendAllowance,
     taxableDividendIncome,

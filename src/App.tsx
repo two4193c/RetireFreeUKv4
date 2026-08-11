@@ -218,6 +218,16 @@ function App() {
     return scenarios[0]?.id || 'preset_standard';
   });
 
+  // Ensure activeScenarioId is always valid
+  useEffect(() => {
+    if (scenarios.length > 0) {
+      const exists = scenarios.some((s) => s.id === activeScenarioId);
+      if (!exists) {
+        setActiveScenarioId(scenarios[0].id);
+      }
+    }
+  }, [scenarios, activeScenarioId]);
+
   const [activeTab, setActiveTab] = useState<DashboardTab>('inputs');
   const [docSubTab, setDocSubTab] = useState<'user_guide' | 'living_standards' | 'healthy_life' | 'tax_rules' | 'mortgage_guide' | 'risk_guide' | 'iht_guide' | 'floor_guide' | 'couple_guide' | 'benchmark_guide' | 'sipp_guide' | 'wrapper_guide' | 'self_employed_guide' | 'db_guide' | 'dynamic_guide' | 'care_guide' | 'fire_bridge_guide' | 'cgt_harvesting_guide' | 'recycling_guide' | 'four_percent_guide' | 'spending_smile_guide' | 'saye_baye_guide'>('user_guide');
   const [appMode, setAppMode] = useState<AppMode>(() => {
@@ -333,13 +343,13 @@ function App() {
 
   const handlePartnerPotsChange = (updatedPartnerPots: InvestmentPots) => {
     const cleanPartnerPots = sanitizePots(updatedPartnerPots, DEFAULT_PARTNER_POTS);
-    handleProfileChange({
-      ...profile,
-      partnerPots: cleanPartnerPots,
-      partnerWorkplacePensionBalance: cleanPartnerPots.workplacePensionBalance,
-      partnerSippBalance: cleanPartnerPots.sippBalance,
-      partnerIsaBalance: cleanPartnerPots.stocksAndSharesIsaBalance,
-    });
+    setScenarios((prev) =>
+      prev.map((s) =>
+        s.id === activeScenarioId
+          ? { ...s, profile: { ...s.profile, partnerPots: cleanPartnerPots }, updatedAt: new Date().toISOString() }
+          : s
+      )
+    );
   };
 
   // Scenario management actions
@@ -637,7 +647,7 @@ function App() {
 
     const targetProfile = target === 'partner' ? {
       gross: profile.partnerGrossAnnualSalary || 0,
-      method: profile.pensionContributionMethod,
+      method: profile.partnerPensionContributionMethod || profile.pensionContributionMethod,
       pots: profile.partnerPots || DEFAULT_PARTNER_POTS,
     } : {
       gross: profile.grossAnnualSalary || 0,

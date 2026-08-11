@@ -295,9 +295,7 @@ export interface UserProfile {
   partnerCarryForwardAllowance?: number;
   partnerTaxRegion?: UKTaxRegion;
   partnerPensionContributionMethod?: ContributionMethod;
-  partnerWorkplacePensionBalance?: number;
-  partnerSippBalance?: number;
-  partnerIsaBalance?: number;
+
   partnerPots?: InvestmentPots;
 
   taxRegion: UKTaxRegion;
