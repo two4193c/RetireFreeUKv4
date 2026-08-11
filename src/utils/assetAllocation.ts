@@ -14,7 +14,6 @@ export function getPotFeePercent(
   potType?: 'workplacePension' | 'sipp' | 'stocksAndSharesIsa' | 'cashIsa' | 'gia' | 'pension'
 ): number {
   if (!fees || !fees.enabled) return 0;
-  console.log(`[getPotFeePercent] fees: ${JSON.stringify(fees)}`);
 
   if (fees.perPotFeesEnabled && potType) {
     const personPots = owner === 'partner' ? fees.partnerPots : fees.primaryPots;

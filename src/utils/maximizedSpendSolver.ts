@@ -244,9 +244,6 @@ export function createCandidateProfile(
   const isReinvestExcess = Boolean(
     reinvestOpts?.reinvestExcessDrawdown || profile.reinvestExcessDrawdown || profile.maximizedSpendConfig?.reinvestExcessDrawdown
   );
-  if (baselineIncome === 2000000) {
-     console.log('createCandidateProfile(2000000) -> isReinvestExcess:', isReinvestExcess, 'reinvestOpts:', reinvestOpts, 'profile:', profile.reinvestExcessDrawdown);
-  }
   const actualSpendingTarget =
     reinvestOpts?.actualSpendingTargetAnnual ??
     profile.actualSpendingTargetAnnual ??
@@ -534,10 +531,6 @@ export function testFeasibility(
   for (const p of projections) {
     if (p.age >= retAge && p.age <= targetEndAge) {
       const shortfall = p.incomeShortfall || 0;
-      if (candidateProfile.targetRetirementIncomeAnnual === 2000000) {
-        console.log(`Age: ${p.age}, shortfall: ${shortfall}, depletedAge: ${depletedAge}, pot: ${p.totalPot}`);
-      }
-
       if (shortfall > 50) {
         if (!depletedAge) depletedAge = p.age;
       }
