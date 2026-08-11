@@ -910,9 +910,9 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
 
       // Helper Header Bar
       const addHeader = (title: string, subtitle?: string) => {
-        pdf.setFillColor(...darkSlate);
+        pdf.setFillColor(darkSlate[0], darkSlate[1], darkSlate[2]);
         pdf.rect(0, 0, pageWidth, 12, 'F');
-        pdf.setFillColor(...emeraldAccent);
+        pdf.setFillColor(emeraldAccent[0], emeraldAccent[1], emeraldAccent[2]);
         pdf.rect(0, 10, pageWidth, 2, 'F');
         pdf.setTextColor(255, 255, 255);
         pdf.setFontSize(8.5);
@@ -929,13 +929,13 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
       y = 18;
 
       // Title Banner
-      pdf.setTextColor(...darkSlate);
+      pdf.setTextColor(darkSlate[0], darkSlate[1], darkSlate[2]);
       pdf.setFontSize(14);
       pdf.setFont('helvetica', 'bold');
       pdf.text('Scenario Trade-Off & Longevity Comparison', margin, y);
       pdf.setFontSize(8);
       pdf.setFont('helvetica', 'normal');
-      pdf.setTextColor(...mutedSlate);
+      pdf.setTextColor(mutedSlate[0], mutedSlate[1], mutedSlate[2]);
       pdf.text(`Generated: ${new Date().toLocaleDateString('en-GB')} • Comparing ${scenariosToCompare.length} Plan Variants`, margin, y + 4.5);
 
       y += 10;
@@ -958,7 +958,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
       y += 24;
 
       // Section 1: 4-Dimensional Trade-Off Scorecard
-      pdf.setTextColor(...darkSlate);
+      pdf.setTextColor(darkSlate[0], darkSlate[1], darkSlate[2]);
       pdf.setFontSize(11);
       pdf.setFont('helvetica', 'bold');
       pdf.text('1. Multi-Dimensional Trade-Off Scorecard & Category Winners', margin, y);
@@ -1035,14 +1035,14 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
       }
 
       // Table 1: Milestone Wealth Projections
-      pdf.setTextColor(...darkSlate);
+      pdf.setTextColor(darkSlate[0], darkSlate[1], darkSlate[2]);
       pdf.setFontSize(11);
       pdf.setFont('helvetica', 'bold');
       pdf.text('2. Portfolio Wealth & Net Income Milestones to Age 100', margin, y);
       y += 5;
 
       // Table Header
-      pdf.setFillColor(...darkSlate);
+      pdf.setFillColor(darkSlate[0], darkSlate[1], darkSlate[2]);
       pdf.rect(margin, y, contentWidth, 7, 'F');
       pdf.setTextColor(255, 255, 255);
       pdf.setFontSize(8);
@@ -1060,10 +1060,10 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
       milestoneComparison.forEach((m, idx) => {
         pdf.setFillColor(idx % 2 === 0 ? 255 : 248, idx % 2 === 0 ? 255 : 250, idx % 2 === 0 ? 255 : 252);
         pdf.rect(margin, y, contentWidth, 6, 'F');
-        pdf.setDrawColor(...borderSlate);
+        pdf.setDrawColor(borderSlate[0], borderSlate[1], borderSlate[2]);
         pdf.line(margin, y + 6, margin + contentWidth, y + 6);
 
-        pdf.setTextColor(...darkSlate);
+        pdf.setTextColor(darkSlate[0], darkSlate[1], darkSlate[2]);
         pdf.setFontSize(8);
         pdf.setFont('helvetica', 'normal');
         pdf.text(`Age ${m.age} (${m.year})`, margin + 3, y + 4.5);
@@ -1083,7 +1083,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
       y += 8;
 
       // Section 3: Risk-Adjusted Longevity & Stress Benchmark
-      pdf.setTextColor(...darkSlate);
+      pdf.setTextColor(darkSlate[0], darkSlate[1], darkSlate[2]);
       pdf.setFontSize(11);
       pdf.setFont('helvetica', 'bold');
       pdf.text('3. Risk-Adjusted Stress Benchmark (Monte Carlo & 75-Year Historic Backtest)', margin, y);
@@ -1104,7 +1104,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
       // Row 1: Monte Carlo
       pdf.setFillColor(255, 255, 255);
       pdf.rect(margin, y, contentWidth, 8, 'F');
-      pdf.setTextColor(...darkSlate);
+      pdf.setTextColor(darkSlate[0], darkSlate[1], darkSlate[2]);
       pdf.setFontSize(8);
       pdf.setFont('helvetica', 'bold');
       pdf.text('Monte Carlo Success Rate (300 Runs)', margin + 3, y + 5.5);
@@ -1118,7 +1118,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
       // Row 2: Historic 75-Year
       pdf.setFillColor(248, 250, 252);
       pdf.rect(margin, y, contentWidth, 8, 'F');
-      pdf.setTextColor(...darkSlate);
+      pdf.setTextColor(darkSlate[0], darkSlate[1], darkSlate[2]);
       pdf.setFontSize(8);
       pdf.setFont('helvetica', 'bold');
       pdf.text('75-Year Historic Backtest (1950-2024)', margin + 3, y + 5.5);
@@ -1132,7 +1132,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
       // Footer
       pdf.setFontSize(8);
       pdf.setFont('helvetica', 'normal');
-      pdf.setTextColor(...mutedSlate);
+      pdf.setTextColor(mutedSlate[0], mutedSlate[1], mutedSlate[2]);
       pdf.text('RetireFree UK v2 — Professional Strategic Retirement Comparison Document', margin, pageHeight - 10);
 
       const safeNameA = scenarioA.name.replace(/[^a-zA-Z0-9_-]/g, '_');

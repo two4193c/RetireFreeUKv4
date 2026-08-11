@@ -61,13 +61,13 @@ export const WithdrawalGuardrailGaugeCard: React.FC<WithdrawalGuardrailGaugeCard
   }
 
   // DB Pensions
-  (profile.dbPensions || []).filter(p => p.enabled).forEach(p => {
+  (profile.dbPensions || []).filter(p => p.enabled && (profile.isCouplePlanning || p.owner !== 'partner')).forEach(p => {
     const evalAge = p.owner === 'partner' ? (profile.partnerTargetRetirementAge || retAge) : retAge;
     if (evalAge >= p.startAge) guaranteedIncomeAtRetirement += p.annualIncome;
   });
 
   // Fixed Income
-  (profile.fixedIncomeStreams || []).filter(s => s.enabled).forEach(s => {
+  (profile.fixedIncomeStreams || []).filter(s => s.enabled && (profile.isCouplePlanning || s.owner !== 'partner')).forEach(s => {
     const evalAge = s.owner === 'partner' ? (profile.partnerTargetRetirementAge || retAge) : retAge;
     if (evalAge >= s.startAge && (!s.endAge || evalAge <= s.endAge)) guaranteedIncomeAtRetirement += s.annualAmount;
   });

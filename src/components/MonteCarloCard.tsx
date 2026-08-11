@@ -27,6 +27,19 @@ interface MonteCarloCardProps {
 }
 
 export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, taxResult, onChange, showAllScenarios = false, appMode = 'basic' }) => {
+  const [debouncedProfile, setDebouncedProfile] = useState(profile);
+  const [debouncedPots, setDebouncedPots] = useState(pots);
+  const [debouncedTaxResult, setDebouncedTaxResult] = useState(taxResult);
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedProfile(profile);
+      setDebouncedPots(pots);
+      setDebouncedTaxResult(taxResult);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [profile, pots, taxResult]);
+
   const minHorizonAge = Math.max(profile.currentAge + 1, profile.targetRetirementAge || 55);
 
   const [params, setParams] = useState<MonteCarloParams>({
@@ -126,28 +139,28 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
 
   // Compute Monte Carlo simulation for current single selection
   const mcResult = useMemo(() => {
-    return runMonteCarloSimulation(profile, pots, taxResult, { ...params, cashBufferYears: currentCashBufferYears });
-  }, [profile, pots, taxResult, params, currentCashBufferYears]);
+    return runMonteCarloSimulation(debouncedProfile, debouncedPots, debouncedTaxResult, { ...params, cashBufferYears: currentCashBufferYears });
+  }, [debouncedProfile, debouncedPots, debouncedTaxResult, params, currentCashBufferYears]);
 
   // Compute 3 scenario results for Overview tab comparison view (gated to active view)
   const baseResult = useMemo(() => {
-    return runMonteCarloSimulation(profile, pots, taxResult, { ...params, marketScenario: 'standard', useCashBuffer: false });
-  }, [profile, pots, taxResult, params]);
+    return runMonteCarloSimulation(debouncedProfile, debouncedPots, debouncedTaxResult, { ...params, marketScenario: 'standard', useCashBuffer: false });
+  }, [debouncedProfile, debouncedPots, debouncedTaxResult, params]);
 
   const stressedResult = useMemo(() => {
     if (!showAllScenarios) return mcResult;
-    return runMonteCarloSimulation(profile, pots, taxResult, { ...params, marketScenario: 'stressed' });
-  }, [profile, pots, taxResult, params, showAllScenarios, mcResult]);
+    return runMonteCarloSimulation(debouncedProfile, debouncedPots, debouncedTaxResult, { ...params, marketScenario: 'stressed' });
+  }, [debouncedProfile, debouncedPots, debouncedTaxResult, params, showAllScenarios, mcResult]);
 
   const crashResult = useMemo(() => {
     if (!showAllScenarios && params.marketScenario !== 'early_crash') return mcResult;
-    return runMonteCarloSimulation(profile, pots, taxResult, {
+    return runMonteCarloSimulation(debouncedProfile, debouncedPots, debouncedTaxResult, {
       ...params,
       marketScenario: 'early_crash',
       useCashBuffer: params.useCashBuffer ?? false,
       cashBufferYears: params.cashBufferYears ?? params.crashDurationYears ?? 2,
     });
-  }, [profile, pots, taxResult, params, showAllScenarios, mcResult]);
+  }, [debouncedProfile, debouncedPots, debouncedTaxResult, params, showAllScenarios, mcResult]);
 
   const projectedCashAtCrashStart = useMemo(() => {
     if (!baseResult || !baseResult.agePercentiles) return 0;
@@ -187,7 +200,7 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
   const endYr = mcResult.agePercentiles[mcResult.agePercentiles.length - 1];
 
   const prepareChartData = (result: typeof mcResult) => {
-    const inflationRate = (profile.expectedInflationRate || 2.5) / 100;
+    const inflationRate = (profile.expectedInflationRate ?? 2.5) / 100;
     return result.agePercentiles.map((p) => {
       const yearOffset = p.age - profile.currentAge;
       const discount = adjustInflation ? Math.pow(1 + inflationRate, yearOffset) : 1;

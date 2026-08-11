@@ -138,13 +138,15 @@ export function getScopeEvaluationInputs(
     evalProfile.isCouplePlanning = false;
     evalProfile.partnerPots = {
       workplacePensionBalance: 0,
+      workplacePensionMonthlyEmployee: 0,
+      workplacePensionMonthlyEmployeeType: 'percent',
+      employerMatchPercentage: 0,
       sippBalance: 0,
       stocksAndSharesIsaBalance: 0,
       cashIsaBalance: 0,
       lisaBalance: 0,
       giaBalance: 0,
       cashSavingsBalance: 0,
-      workplacePensionMonthlyContribution: 0,
       sippMonthlyContribution: 0,
       stocksAndSharesIsaMonthlyContribution: 0,
       cashIsaMonthlyContribution: 0,
@@ -179,7 +181,8 @@ export function getScopeEvaluationInputs(
     evalPots.lisaBalance = pPots.lisaBalance || 0;
     evalPots.giaBalance = pPots.giaBalance || 0;
     evalPots.cashSavingsBalance = pPots.cashSavingsBalance || 0;
-    evalPots.workplacePensionMonthlyContribution = pPots.workplacePensionMonthlyContribution || 0;
+    evalPots.workplacePensionMonthlyEmployee = pPots.workplacePensionMonthlyEmployee || 0;
+    evalPots.workplacePensionMonthlyEmployee = pPots.workplacePensionMonthlyEmployee || 0;
     evalPots.sippMonthlyContribution = pPots.sippMonthlyContribution || 0;
     evalPots.stocksAndSharesIsaMonthlyContribution = pPots.stocksAndSharesIsaMonthlyContribution || 0;
     evalPots.cashIsaMonthlyContribution = pPots.cashIsaMonthlyContribution || 0;
@@ -189,13 +192,15 @@ export function getScopeEvaluationInputs(
 
     evalProfile.partnerPots = {
       workplacePensionBalance: 0,
+      workplacePensionMonthlyEmployee: 0,
+      workplacePensionMonthlyEmployeeType: 'percent',
+      employerMatchPercentage: 0,
       sippBalance: 0,
       stocksAndSharesIsaBalance: 0,
       cashIsaBalance: 0,
       lisaBalance: 0,
       giaBalance: 0,
       cashSavingsBalance: 0,
-      workplacePensionMonthlyContribution: 0,
       sippMonthlyContribution: 0,
       stocksAndSharesIsaMonthlyContribution: 0,
       cashIsaMonthlyContribution: 0,
@@ -235,6 +240,9 @@ export function createCandidateProfile(
   const isReinvestExcess = Boolean(
     reinvestOpts?.reinvestExcessDrawdown || profile.reinvestExcessDrawdown || profile.maximizedSpendConfig?.reinvestExcessDrawdown
   );
+  if (baselineIncome === 2000000) {
+     console.log('createCandidateProfile(2000000) -> isReinvestExcess:', isReinvestExcess, 'reinvestOpts:', reinvestOpts, 'profile:', profile.reinvestExcessDrawdown);
+  }
   const actualSpendingTarget =
     reinvestOpts?.actualSpendingTargetAnnual ??
     profile.actualSpendingTargetAnnual ??
@@ -421,6 +429,7 @@ function clampBridgeRangesIfNeeded(candidateProfile: UserProfile, pots: Investme
       let bestB = bLow;
 
       for (let i = 0; i < 24; i++) {
+        if (bLow > bHigh) break;
         const bMid = Math.floor((bLow + bHigh) / 2);
         r.annualTargetIncome = bMid;
         const testTax = calculateUKTax(cloned, pots);
@@ -444,18 +453,35 @@ function clampBridgeRangesIfNeeded(candidateProfile: UserProfile, pots: Investme
     let bHigh = origTarget;
     let bestB = bLow;
 
+    const basePhases = maxConfig.spendingPhases || ({} as SpendingPhasesConfig);
+    const buildCustomRanges = (bridgeTarget: number) => {
+      const ranges = [
+        { id: 'bridge-auto', name: `Pre-Pension Bridge (Ages ${retAge}-${pensionAccessAge - 1})`, startAge: retAge, endAge: pensionAccessAge - 1, annualTargetIncome: bridgeTarget },
+      ];
+      if (basePhases.goGoEndAge) {
+        ranges.push({ id: 'gogo-auto', name: `Go-Go Phase`, startAge: pensionAccessAge, endAge: basePhases.goGoEndAge, annualTargetIncome: basePhases.goGoIncomeAnnual || origTarget });
+        if (basePhases.slowGoEndAge) {
+          ranges.push({ id: 'slowgo-auto', name: `Slow-Go Phase`, startAge: basePhases.goGoEndAge + 1, endAge: basePhases.slowGoEndAge, annualTargetIncome: basePhases.slowGoIncomeAnnual || origTarget });
+          ranges.push({ id: 'nogo-auto', name: `No-Go Phase`, startAge: basePhases.slowGoEndAge + 1, endAge: 100, annualTargetIncome: basePhases.noGoIncomeAnnual || origTarget });
+        } else {
+          ranges.push({ id: 'nogo-auto', name: `Slow/No-Go Phase`, startAge: basePhases.goGoEndAge + 1, endAge: 100, annualTargetIncome: basePhases.slowGoIncomeAnnual || origTarget });
+        }
+      } else {
+        ranges.push({ id: 'post-auto', name: `Pension Access (Ages ${pensionAccessAge}+)`, startAge: pensionAccessAge, endAge: 100, annualTargetIncome: origTarget });
+      }
+      return ranges;
+    };
+
     const testProfile = JSON.parse(JSON.stringify(cloned)) as UserProfile;
     testProfile.maximizedSpendConfig!.spendingPhases = {
       enabled: true,
-      customRanges: [
-        { id: 'bridge-auto', name: `Pre-Pension Bridge (Ages ${retAge}-${pensionAccessAge - 1})`, startAge: retAge, endAge: pensionAccessAge - 1, annualTargetIncome: origTarget },
-        { id: 'post-auto', name: `Pension Access (Ages ${pensionAccessAge}+)`, startAge: pensionAccessAge, endAge: 100, annualTargetIncome: origTarget },
-      ],
+      customRanges: buildCustomRanges(origTarget),
     };
 
     const bridgeRange = testProfile.maximizedSpendConfig!.spendingPhases.customRanges![0];
 
     for (let i = 0; i < 24; i++) {
+      if (bLow > bHigh) break;
       const bMid = Math.floor((bLow + bHigh) / 2);
       bridgeRange.annualTargetIncome = bMid;
       const testTax = calculateUKTax(testProfile, pots);
@@ -473,10 +499,7 @@ function clampBridgeRangesIfNeeded(candidateProfile: UserProfile, pots: Investme
 
     maxConfig.spendingPhases = {
       enabled: true,
-      customRanges: [
-        { id: 'bridge-auto', name: `Pre-Pension Bridge (Ages ${retAge}-${pensionAccessAge - 1})`, startAge: retAge, endAge: pensionAccessAge - 1, annualTargetIncome: bestB },
-        { id: 'post-auto', name: `Pension Access (Ages ${pensionAccessAge}+)`, startAge: pensionAccessAge, endAge: 100, annualTargetIncome: origTarget },
-      ],
+      customRanges: buildCustomRanges(bestB),
     };
   }
 
@@ -507,6 +530,9 @@ export function testFeasibility(
   for (const p of projections) {
     if (p.age >= retAge && p.age <= targetEndAge) {
       const shortfall = p.incomeShortfall || 0;
+      if (candidateProfile.targetRetirementIncomeAnnual === 2000000) {
+        console.log(`Age: ${p.age}, shortfall: ${shortfall}, depletedAge: ${depletedAge}, pot: ${p.totalPot}`);
+      }
 
       if (shortfall > 50) {
         if (!depletedAge) depletedAge = p.age;
@@ -603,6 +629,7 @@ export function solveMaximizedSpend(options: SolveMaximizedSpendOptions): SolveM
 
   // Binary search over 28 iterations to find maximum sustainable target income based on portfolio capacity and scope
   for (let i = 0; i < 28; i++) {
+    if (low > high) break;
     const mid = Math.floor((low + high) / 2);
     const candidateProfile = createCandidateProfile(
       evalProfile,
@@ -610,7 +637,7 @@ export function solveMaximizedSpend(options: SolveMaximizedSpendOptions): SolveM
       spendingPattern,
       evalPots,
       annuityFloorOpts,
-      undefined, // reinvestment option is applied to final profile, not used to alter binary search target income
+      undefined, // Disable reinvestment logic during binary search to properly find the maximum capacity
       clampedEndAge,
       targetLegacyBuffer,
       coupleScope

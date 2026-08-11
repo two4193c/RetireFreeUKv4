@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { UserProfile, LsaProtectionType, IncomeProductOption, AnnuityType, AnnuityDurationOption, AnnuityTranche, InvestmentPots, YearProjection, LumpSumSplit, PlannerScenario, DrawdownStrategy, AppMode } from '../types';
 import { AnnuityPclsTaxAdviceCard } from './AnnuityPclsTaxAdviceCard';
 import { QuickDrawdownStrategyBar } from './QuickDrawdownStrategyBar';
@@ -81,9 +81,10 @@ const LumpSumSplitEditor: React.FC<LumpSumSplitEditorProps> = ({
 
   let totalAllocated = 0;
   const computedSplits = splits.map((s) => {
-    const amt = s.mode === 'percentage'
+    let amt = s.mode === 'percentage'
       ? Math.round((s.value / 100) * lumpSumAmount)
       : Math.max(0, s.value);
+    amt = Math.min(amt, Math.max(0, lumpSumAmount - totalAllocated));
     totalAllocated += amt;
     return { ...s, calculatedAmount: amt };
   });
@@ -229,7 +230,7 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
   const [activeLumpSumPerson, setActiveLumpSumPerson] = useState<'primary' | 'partner'>('primary');
   const [activeIncomePerson, setActiveIncomePerson] = useState<'primary' | 'partner'>('primary');
 
-  const primaryTaxResult = calculateUKTax(profile, pots || DEFAULT_POTS);
+  const primaryTaxResult = useMemo(() => calculateUKTax(profile, pots || DEFAULT_POTS), [profile, pots]);
 
   const getPensionPotForAge = (targetAge: number, isPartnerPerson: boolean): number => {
     if (projections && projections.length > 0) {

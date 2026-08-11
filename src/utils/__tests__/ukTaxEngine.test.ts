@@ -102,7 +102,7 @@ describe('ukTaxEngine - computeIncomeTaxOnAmount', () => {
 
 describe('ukTaxEngine - calculateUKTax', () => {
   it('calculates tax and NI for a standard employee salary', () => {
-    const profile: UserProfile = {
+    const profile: any = {
       ...DEFAULT_PROFILE,
       grossAnnualSalary: 60000,
       pensionContributionMethod: 'salary_sacrifice',
@@ -141,17 +141,17 @@ describe('ukTaxEngine - calculateUKTax', () => {
 
 describe('ukTaxEngine - LSA and PCLS limits', () => {
   it('returns standard LSA limit (£268,275) for standard protection', () => {
-    const profile: UserProfile = { ...DEFAULT_PROFILE, lsaProtectionType: 'standard' };
+    const profile: any = { ...DEFAULT_PROFILE, lsaProtectionType: 'standard' };
     expect(getLsaLimit(profile)).toBe(268275);
   });
 
   it('returns fixed 2014 protection limit (£375,000)', () => {
-    const profile: UserProfile = { ...DEFAULT_PROFILE, lsaProtectionType: 'fixed_2014' };
+    const profile: any = { ...DEFAULT_PROFILE, lsaProtectionType: 'fixed_2014' };
     expect(getLsaLimit(profile)).toBe(375000);
   });
 
   it('caps max PCLS at LSA limit when 25% of pension pot exceeds LSA limit', () => {
-    const profile: UserProfile = { ...DEFAULT_PROFILE, lsaProtectionType: 'standard' }; // LSA = 268,275
+    const profile: any = { ...DEFAULT_PROFILE, lsaProtectionType: 'standard' }; // LSA = 268,275
     const largePensionPot = 1500000; // 25% = 375,000 > 268,275
     const pclsInfo = calculateMaxPcls(largePensionPot, profile);
 
@@ -160,7 +160,7 @@ describe('ukTaxEngine - LSA and PCLS limits', () => {
   });
 
   it('allows full 25% PCLS when 25% of pot is within LSA limit', () => {
-    const profile: UserProfile = { ...DEFAULT_PROFILE, lsaProtectionType: 'standard' };
+    const profile: any = { ...DEFAULT_PROFILE, lsaProtectionType: 'standard' };
     const moderatePensionPot = 800000; // 25% = 200,000 <= 268,275
     const pclsInfo = calculateMaxPcls(moderatePensionPot, profile);
 
@@ -171,17 +171,17 @@ describe('ukTaxEngine - LSA and PCLS limits', () => {
 
 describe('ukTaxEngine - getPensionAccessAge', () => {
   it('returns 55 for individuals born before 6 April 1971', () => {
-    const profile: UserProfile = { ...DEFAULT_PROFILE, dateOfBirth: '1970-01-01' };
+    const profile: any = { ...DEFAULT_PROFILE, dateOfBirth: '1970-01-01' };
     expect(getPensionAccessAge(profile)).toBe(55);
   });
 
   it('returns 57 for individuals born on or after 6 April 1971', () => {
-    const profile: UserProfile = { ...DEFAULT_PROFILE, dateOfBirth: '1985-05-20' };
+    const profile: any = { ...DEFAULT_PROFILE, dateOfBirth: '1985-05-20' };
     expect(getPensionAccessAge(profile)).toBe(57);
   });
 
   it('respects explicitly configured pension access age', () => {
-    const profile: UserProfile = { ...DEFAULT_PROFILE, pensionAccessAge: 58 };
+    const profile: any = { ...DEFAULT_PROFILE, pensionAccessAge: 58 };
     expect(getPensionAccessAge(profile)).toBe(58);
   });
 });

@@ -245,6 +245,7 @@ export interface CustomTaxBandOverrides {
   // Pension & ISA allowance overrides
   pensionAnnualAllowance?: number; // default 60000
   isaAnnualAllowance?: number; // default 20000
+  lisaAnnualAllowance?: number; // default 4000
 
   // Optional Scottish tax band overrides
   scotStarterRatePercent?: number; // default 19 (%)
@@ -297,6 +298,9 @@ export interface UserProfile {
   partnerPensionContributionMethod?: ContributionMethod;
 
   partnerPots?: InvestmentPots;
+  partnerWorkplacePensionBalance?: number;
+  partnerSippBalance?: number;
+  partnerIsaBalance?: number;
 
   taxRegion: UKTaxRegion;
   customTaxBands?: CustomTaxBandOverrides;

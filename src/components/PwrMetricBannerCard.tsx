@@ -77,7 +77,7 @@ export const PwrMetricBannerCard: React.FC<PwrMetricBannerCardProps> = ({ profil
       : 0;
   const staticDbPension =
     profile.dbPensions
-      ?.filter((p) => p.enabled)
+      ?.filter((p) => p.enabled && (profile.isCouplePlanning || p.owner !== 'partner'))
       .reduce((sum, p) => sum + (p.annualIncome || 0), 0) ?? 0;
 
   const staticGuaranteedIncome = staticStatePension + staticPartnerStatePension + staticDbPension;

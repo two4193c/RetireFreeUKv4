@@ -1,10 +1,10 @@
-import { UserProfile, YearProjection, MonteCarloResult, IhtState } from '../types';
+import { UserProfile, YearProjection } from '../types';
 
 export interface NarrativeContext {
   profile: UserProfile;
   projections: YearProjection[];
-  mcResult?: MonteCarloResult;
-  ihtState?: IhtState;
+  mcResult?: any;
+  ihtState?: any;
   taxRegion?: string;
   drawdownStrategy?: string;
 }
@@ -21,9 +21,9 @@ export function generatePlanNarrative(ctx: NarrativeContext): GeneratedPlanNarra
 
   const currentAge = profile.currentAge || 35;
   const retAge = profile.targetRetirementAge || 60;
-  const maxAge = profile.lifeExpectancy || 90;
-  const annualSpend = profile.annualRetirementSpend || 30000;
-  const isCouple = profile.isCouple ?? false;
+  const maxAge = profile.lifeExpectancyAge || 90;
+  const annualSpend = profile.maximizedSpendConfig?.targetAnnualIncome || 30000;
+  const isCouple = profile.isCouplePlanning ?? false;
 
   const retiredYears = (projections || []).filter((p) => p.isRetired);
   const shortfallYears = retiredYears.filter((p) => (p.incomeShortfall || 0) > 0);
@@ -59,8 +59,7 @@ export function generatePlanNarrative(ctx: NarrativeContext): GeneratedPlanNarra
   // ---------------------------------------------------------------------------
   let decumNarrative = '';
   const strategyName = (drawdownStrategy || 'Tax-Optimised Waterfall').replace(/_/g, ' ');
-  const firstRetYear = retiredYears[0];
-  const pclsTaken = firstRetYear ? (firstRetYear.pclsTaxFreeLumpSum || 0) : 0;
+  const pclsTaken = 0; 
 
   decumNarrative = `Your drawdown strategy is configured to '${strategyName}'. `;
 

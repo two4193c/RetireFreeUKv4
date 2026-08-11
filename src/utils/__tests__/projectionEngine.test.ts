@@ -5,7 +5,7 @@ import { UserProfile, InvestmentPots } from '../../types';
 
 describe('projectionEngine - generateProjections', () => {
   it('generates a full projection array covering ages from currentAge to effectiveMaxAge (100)', () => {
-    const profile: UserProfile = {
+    const profile: any = {
       ...DEFAULT_PROFILE,
       currentAge: 35,
       targetRetirementAge: 60,
@@ -19,13 +19,13 @@ describe('projectionEngine - generateProjections', () => {
   });
 
   it('accumulates pension pot during working years prior to targetRetirementAge', () => {
-    const profile: UserProfile = {
+    const profile: any = {
       ...DEFAULT_PROFILE,
       currentAge: 35,
       targetRetirementAge: 60,
       grossAnnualSalary: 60000,
     };
-    const pots: InvestmentPots = {
+    const pots: any = {
       ...DEFAULT_POTS,
       workplacePensionBalance: 100000,
       workplacePensionMonthlyEmployee: 400,
@@ -49,7 +49,7 @@ describe('projectionEngine - generateProjections', () => {
       expectedInflationRate: 3.0, // 3% CPI inflation
       includeStatePension: false,
     };
-    const pots: InvestmentPots = {
+    const pots: any = {
       ...DEFAULT_POTS,
       workplacePensionBalance: 1000000, // £1m pension pot
       sippBalance: 0,
@@ -79,7 +79,7 @@ describe('projectionEngine - generateProjections', () => {
   });
 
   it('supports couple planning and applies individual tax allowances to both partners', () => {
-    const profile: UserProfile = {
+    const profile: any = {
       ...DEFAULT_PROFILE,
       currentAge: 60,
       targetRetirementAge: 60,
@@ -89,7 +89,7 @@ describe('projectionEngine - generateProjections', () => {
       partnerTargetRetirementAge: 60,
       targetRetirementIncomeAnnual: 50000,
     };
-    const pots: InvestmentPots = {
+    const pots: any = {
       ...DEFAULT_POTS,
       workplacePensionBalance: 500000,
       sippBalance: 0,
@@ -104,7 +104,7 @@ describe('projectionEngine - generateProjections', () => {
   });
 
   it('correctly handles upfront PCLS (Tax-Free Lump Sum) extraction when takeLumpSumAtStart is enabled', () => {
-    const profile: UserProfile = {
+    const profile: any = {
       ...DEFAULT_PROFILE,
       currentAge: 57,
       targetRetirementAge: 60,
@@ -112,7 +112,7 @@ describe('projectionEngine - generateProjections', () => {
       pclsLumpSumPercent: 25,
       lumpSumTiming: 'access_age',
     };
-    const pots: InvestmentPots = {
+    const pots: any = {
       ...DEFAULT_POTS,
       workplacePensionBalance: 400000,
       sippBalance: 0,
@@ -127,7 +127,7 @@ describe('projectionEngine - generateProjections', () => {
   });
 
   it('detects pot depletion when retirement spending exceeds sustainable withdrawals', () => {
-    const profile: UserProfile = {
+    const profile: any = {
       ...DEFAULT_PROFILE,
       currentAge: 60,
       targetRetirementAge: 60,
@@ -135,13 +135,12 @@ describe('projectionEngine - generateProjections', () => {
       targetRetirementIncomeAnnual: 80000, // Very high target
       includeStatePension: false,
     };
-    const pots: InvestmentPots = {
+    const pots: any = {
       ...DEFAULT_POTS,
       workplacePensionBalance: 150000, // Small pot
       sippBalance: 0,
       stocksAndSharesIsaBalance: 0,
-      cashSavingsBalance: 0,
-    };
+      cashSavingsBalance: 0, workplacePensionMonthlyEmployee: 0, workplacePensionMonthlyEmployeeType: 'percent', employerMatchPercentage: 0, sippMonthlyContribution: 0, stocksAndSharesIsaMonthlyContribution: 0, cashIsaMonthlyContribution: 0, lisaMonthlyContribution: 0, giaMonthlyContribution: 0, cashSavingsMonthlyContribution: 0};
 
     const rows = generateProjections(profile, pots);
     const lastRow = rows[rows.length - 1];
@@ -152,7 +151,7 @@ describe('projectionEngine - generateProjections', () => {
   });
 
   it('correctly processes Decumulation Life Events (inflows and outflows) in retirement', () => {
-    const profile: UserProfile = {
+    const profile: any = {
       ...DEFAULT_PROFILE,
       currentAge: 60,
       targetRetirementAge: 60,
@@ -181,11 +180,10 @@ describe('projectionEngine - generateProjections', () => {
         },
       ],
     };
-    const pots: InvestmentPots = {
+    const pots: any = {
       ...DEFAULT_POTS,
       workplacePensionBalance: 300000,
-      cashSavingsBalance: 50000,
-    };
+      cashSavingsBalance: 50000, workplacePensionMonthlyEmployee: 0, workplacePensionMonthlyEmployeeType: 'percent', employerMatchPercentage: 0, sippMonthlyContribution: 0, stocksAndSharesIsaMonthlyContribution: 0, cashIsaMonthlyContribution: 0, lisaMonthlyContribution: 0, giaMonthlyContribution: 0, cashSavingsMonthlyContribution: 0};
 
     const rows = generateProjections(profile, pots);
 
@@ -202,7 +200,7 @@ describe('projectionEngine - generateProjections', () => {
   });
 
   it('correctly decrements sub-pots (giaPot and cashSavingsPot) when drawing down from cashGiaPot in decumulation', () => {
-    const profile: UserProfile = {
+    const profile: any = {
       ...DEFAULT_PROFILE,
       currentAge: 53,
       targetRetirementAge: 53,
@@ -212,13 +210,12 @@ describe('projectionEngine - generateProjections', () => {
       drawdownStrategy: 'isa_first',
       includeStatePension: false,
     };
-    const pots: InvestmentPots = {
+    const pots: any = {
       ...DEFAULT_POTS,
       workplacePensionBalance: 500000,
       stocksAndSharesIsaBalance: 0,
       giaBalance: 100000,
-      cashSavingsBalance: 50000,
-    };
+      cashSavingsBalance: 50000, workplacePensionMonthlyEmployee: 0, workplacePensionMonthlyEmployeeType: 'percent', employerMatchPercentage: 0, sippMonthlyContribution: 0, stocksAndSharesIsaMonthlyContribution: 0, cashIsaMonthlyContribution: 0, lisaMonthlyContribution: 0, giaMonthlyContribution: 0, cashSavingsMonthlyContribution: 0};
 
     const rows = generateProjections(profile, pots);
     const row53 = rows.find((r) => r.age === 53);
@@ -252,7 +249,7 @@ describe('projectionEngine - generateProjections', () => {
   });
 
   it('verifies sub-pot integrity across all pots (Pension, ISA, Cash, GIA) in couple planning mode', () => {
-    const partnerPots: InvestmentPots = {
+    const partnerPots: any = {
       workplacePensionBalance: 200000,
       sippBalance: 50000,
       stocksAndSharesIsaBalance: 30000,
@@ -270,7 +267,7 @@ describe('projectionEngine - generateProjections', () => {
       giaMonthlyContribution: 0,
       cashSavingsMonthlyContribution: 0,
     };
-    const profile: UserProfile = {
+    const profile: any = {
       ...DEFAULT_PROFILE,
       currentAge: 55,
       targetRetirementAge: 55,
@@ -284,7 +281,7 @@ describe('projectionEngine - generateProjections', () => {
       partnerProtectedPensionAccessAge: 57,
       partnerPots,
     };
-    const pots: InvestmentPots = {
+    const pots: any = {
       workplacePensionBalance: 300000,
       sippBalance: 150000,
       stocksAndSharesIsaBalance: 80000,
@@ -322,7 +319,7 @@ describe('projectionEngine - generateProjections', () => {
   });
 
   it('handles partner mortality inheritance and stops partner state pension and DB pension after partner death', () => {
-    const profile: UserProfile = {
+    const profile: any = {
       ...DEFAULT_PROFILE,
       currentAge: 60,
       targetRetirementAge: 60,
@@ -341,7 +338,7 @@ describe('projectionEngine - generateProjections', () => {
       },
     };
 
-    const pots: InvestmentPots = {
+    const pots: any = {
       ...DEFAULT_POTS,
       workplacePensionBalance: 200000,
       stocksAndSharesIsaBalance: 100000,

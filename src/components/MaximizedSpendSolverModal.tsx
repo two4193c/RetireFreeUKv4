@@ -256,22 +256,22 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
     return generateProjections(
       evalProfile,
       evalPots,
-      isCouple && coupleScope === 'couple' ? evalProfile.partnerPots : undefined,
-      isCouple && coupleScope === 'couple'
+      undefined,
+      100
     );
   }, [adjustedCandidateProfile, pots, coupleScope]);
 
   // Prepare chart comparison data (Solved Max vs Adjusted Target)
   const chartData = useMemo(() => {
-    const maxMap = new Map((projectionsWithMaxSpend || []).map((p) => [p.age, p]));
-    const adjustedMap = new Map((adjustedProjections || []).map((p) => [p.age, p]));
+    const maxMap = new Map((projectionsWithMaxSpend || []).map((p: any) => [p.age, p]));
+    const adjustedMap = new Map((adjustedProjections || []).map((p: any) => [p.age, p]));
 
     // Collect all unique ages >= currentRetirementAge and <= 100
     const agesSet = new Set<number>();
-    (projectionsWithMaxSpend || []).forEach((p) => {
+    (projectionsWithMaxSpend || []).forEach((p: any) => {
       if (p.age >= currentRetirementAge && p.age <= 100) agesSet.add(p.age);
     });
-    (adjustedProjections || []).forEach((p) => {
+    (adjustedProjections || []).forEach((p: any) => {
       if (p.age >= currentRetirementAge && p.age <= 100) agesSet.add(p.age);
     });
 
@@ -286,17 +286,17 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
     return sortedAges.map((age) => {
       const maxP = maxMap.get(age);
       const adjP = adjustedMap.get(age);
-      const year = maxP?.year || adjP?.year || (2024 + (age - currentRetirementAge));
+      const year = (maxP as any)?.year || (adjP as any)?.year || (2024 + (age - currentRetirementAge));
 
       return {
         age,
         year,
-        maximizedPot: maxP ? Math.round(maxP.totalPot || 0) : 0,
-        maxNetIncome: maxP ? Math.round(maxP.netRetirementIncome || 0) : 0,
-        maxTargetIncome: maxP ? Math.round(maxP.targetRetirementIncome || maxP.netRetirementIncome || 0) : 0,
-        adjustedPot: adjP ? Math.round(adjP.totalPot || 0) : maxP ? Math.round(maxP.totalPot || 0) : 0,
-        adjustedNetIncome: adjP ? Math.round(adjP.netRetirementIncome || 0) : maxP ? Math.round(maxP.netRetirementIncome || 0) : 0,
-        adjustedTargetIncome: adjP ? Math.round(adjP.targetRetirementIncome || adjP.netRetirementIncome || 0) : maxP ? Math.round(maxP.targetRetirementIncome || maxP.netRetirementIncome || 0) : 0,
+        maximizedPot: maxP ? Math.round((maxP as any).totalPot || 0) : 0,
+        maxNetIncome: maxP ? Math.round((maxP as any).netRetirementIncome || 0) : 0,
+        maxTargetIncome: maxP ? Math.round((maxP as any).targetRetirementIncome || (maxP as any).netRetirementIncome || 0) : 0,
+        adjustedPot: adjP ? Math.round((adjP as any).totalPot || 0) : maxP ? Math.round((maxP as any).totalPot || 0) : 0,
+        adjustedNetIncome: adjP ? Math.round((adjP as any).netRetirementIncome || 0) : maxP ? Math.round((maxP as any).netRetirementIncome || 0) : 0,
+        adjustedTargetIncome: adjP ? Math.round((adjP as any).targetRetirementIncome || (adjP as any).netRetirementIncome || 0) : maxP ? Math.round((maxP as any).targetRetirementIncome || (maxP as any).netRetirementIncome || 0) : 0,
       };
     });
   }, [projectionsWithMaxSpend, adjustedProjections, currentRetirementAge, targetEndAge]);

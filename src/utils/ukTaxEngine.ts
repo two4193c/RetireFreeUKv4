@@ -24,6 +24,7 @@ import {
   LSA_STANDARD_LIMIT,
   PENSION_ANNUAL_ALLOWANCE,
   ISA_ANNUAL_LIMIT,
+  LISA_ANNUAL_LIMIT,
 } from '../config/ukTaxRates';
 
 /**
@@ -129,7 +130,7 @@ export function computeIncomeTaxOnAmount(
     const higherGrossLimit = useOverrides ? (customTaxBands?.higherRateThreshold ?? RUK_ADDITIONAL_THRESHOLD) : RUK_ADDITIONAL_THRESHOLD;
     const additionalRate = useOverrides ? (customTaxBands?.additionalRatePercent ?? 45) / 100 : RUK_ADDITIONAL_RATE;
 
-    const higherTaxableMax = Math.max(0, higherGrossLimit - pa - basicThresh);
+    const higherTaxableMax = Math.max(0, higherGrossLimit - basicThresh);
 
     if (taxableIncome <= basicThresh) {
       tax = taxableIncome * basicRate;
@@ -581,7 +582,7 @@ export function calculateUKTax(
   const currentCalYear = new Date().getFullYear();
   const evalCalYear = currentCalYear + (currentEvalAge - ownerCurrentAge);
 
-  const gross = isRetired ? 0 : (isPartner ? (profile.partnerGrossAnnualSalary || 0) : profile.grossAnnualSalary);
+  const gross = isRetired ? 0 : (isPartner ? (profile.partnerGrossAnnualSalary || 0) : (profile.grossAnnualSalary || 0));
 
 
   const activeContributions = (profile.oneOffContributions || []).filter((c) => {
@@ -593,6 +594,7 @@ export function calculateUKTax(
 
   let oneOffWorkplacePensionGross = 0;
   let oneOffSippGross = 0;
+  let oneOffSippNet = 0;
   let oneOffSsIsa = 0;
   let oneOffCashIsa = 0;
   let oneOffLisa = 0;
@@ -668,8 +670,10 @@ export function calculateUKTax(
         case 'sipp':
           if (c.sippContributionType === 'gross') {
             oneOffSippGross += rawAmt;
+            oneOffSippNet += rawAmt * 0.8;
           } else {
             // Net out of pocket, grossed up by +25%
+            oneOffSippNet += rawAmt;
             oneOffSippGross += rawAmt * 1.25;
           }
           break;
@@ -718,6 +722,7 @@ export function calculateUKTax(
           break;
         case 'sipp':
           // Net transfer into SIPP grossed up by +25% (£19,000 net -> £23,750 gross in SIPP)
+          oneOffSippNet += rawAmt;
           oneOffSippGross += rawAmt * 1.25;
           break;
         case 'stocks_and_shares_isa':
@@ -782,7 +787,7 @@ export function calculateUKTax(
     regularCashSavingsAnnual += (pots.cashSavingsMonthlyContribution || 0) * 12;
   }
 
-  const sippNetAnnual = regularSippNetAnnual;
+  const sippNetAnnual = regularSippNetAnnual + oneOffSippNet;
   const grossSippAnnual = regularSippGrossAnnual + oneOffSippGross;
 
   // Calculate ISA & LISA annual contributions
@@ -792,8 +797,12 @@ export function calculateUKTax(
   const giaAnnual = regularGiaAnnual + oneOffGia;
   const cashSavingsAnnual = regularCashSavingsAnnual + oneOffCashSavings;
 
+  const lisaLimit = profile.customTaxBands?.enabled 
+    ? (profile.customTaxBands.lisaAnnualAllowance ?? LISA_ANNUAL_LIMIT)
+    : LISA_ANNUAL_LIMIT;
+
   const totalIsaAnnual = ssIsaAnnual + cashIsaAnnual + lisaAnnual;
-  const lisaBonusAnnual = Math.min(lisaAnnual, 4000) * 0.25;
+  const lisaBonusAnnual = Math.min(lisaAnnual, lisaLimit) * 0.25;
 
   let effectiveGross = gross;
   let salarySacrificeNicSavedEmployee = 0;
@@ -884,6 +893,30 @@ export function calculateUKTax(
     ? (totalWorkplacePensionGross + grossSippAnnual)
     : grossSippAnnual;
 
+  // Extract Custom Tax Bands with fallbacks to global constants
+  const cb = profile.customTaxBands;
+  const cEnabled = cb?.enabled;
+
+  const scotStarterThresh = cEnabled && cb.scotStarterThreshold != null ? cb.scotStarterThreshold : SCOT_STARTER_THRESHOLD;
+  const scotBasicThresh = cEnabled && cb.scotBasicThreshold != null ? cb.scotBasicThreshold : SCOT_BASIC_THRESHOLD;
+  const scotIntThresh = cEnabled && cb.scotIntermediateThreshold != null ? cb.scotIntermediateThreshold : SCOT_INTERMEDIATE_THRESHOLD;
+  const scotHigherThresh = cEnabled && cb.scotHigherThreshold != null ? cb.scotHigherThreshold : SCOT_HIGHER_THRESHOLD;
+  const scotAdvThresh = cEnabled && cb.scotAdvancedThreshold != null ? cb.scotAdvancedThreshold : SCOT_ADVANCED_THRESHOLD;
+
+  const scotStarterRate = cEnabled && cb.scotStarterRatePercent != null ? cb.scotStarterRatePercent / 100 : SCOT_STARTER_RATE;
+  const scotBasicRate = cEnabled && cb.scotBasicRatePercent != null ? cb.scotBasicRatePercent / 100 : SCOT_BASIC_RATE;
+  const scotIntRate = cEnabled && cb.scotIntermediateRatePercent != null ? cb.scotIntermediateRatePercent / 100 : SCOT_INTERMEDIATE_RATE;
+  const scotHigherRate = cEnabled && cb.scotHigherRatePercent != null ? cb.scotHigherRatePercent / 100 : SCOT_HIGHER_RATE;
+  const scotAdvRate = cEnabled && cb.scotAdvancedRatePercent != null ? cb.scotAdvancedRatePercent / 100 : SCOT_ADVANCED_RATE;
+  const scotTopRate = cEnabled && cb.scotTopRatePercent != null ? cb.scotTopRatePercent / 100 : SCOT_TOP_RATE;
+
+  const rukBasicThresh = cEnabled && cb.basicRateThreshold != null ? cb.basicRateThreshold : RUK_BASIC_THRESHOLD;
+  const rukAddThresh = cEnabled && cb.higherRateThreshold != null ? cb.higherRateThreshold : RUK_ADDITIONAL_THRESHOLD;
+
+  const rukBasicRate = cEnabled && cb.basicRatePercent != null ? cb.basicRatePercent / 100 : RUK_BASIC_RATE;
+  const rukHigherRate = cEnabled && cb.higherRatePercent != null ? cb.higherRatePercent / 100 : RUK_HIGHER_RATE;
+  const rukAddRate = cEnabled && cb.additionalRatePercent != null ? cb.additionalRatePercent / 100 : RUK_ADDITIONAL_RATE;
+
   // Calculate Income Tax
   let totalIncomeTax = 0;
   let marginalTaxRate = 20;
@@ -896,71 +929,71 @@ export function calculateUKTax(
       marginalTaxRate = 0;
     } else {
       let rem = taxable;
-      const b1 = Math.min(rem, 14876 - 12570); // 19%
-      totalIncomeTax += b1 * 0.19;
+      const b1 = Math.min(rem, scotStarterThresh);
+      totalIncomeTax += b1 * scotStarterRate;
       rem -= b1;
 
       if (rem > 0) {
         // Basic band extended by RAS
-        const basicWidth = (26561 - 14876) + grossRasToExtendBand;
-        const b2 = Math.min(rem, basicWidth); // 20%
-        totalIncomeTax += b2 * 0.20;
+        const basicWidth = (scotBasicThresh - scotStarterThresh) + grossRasToExtendBand;
+        const b2 = Math.min(rem, basicWidth);
+        totalIncomeTax += b2 * scotBasicRate;
         rem -= b2;
       }
       if (rem > 0) {
-        const b3 = Math.min(rem, 43662 - 26561); // 21%
-        totalIncomeTax += b3 * 0.21;
+        const b3 = Math.min(rem, scotIntThresh - scotBasicThresh);
+        totalIncomeTax += b3 * scotIntRate;
         rem -= b3;
       }
       if (rem > 0) {
-        const b4 = Math.min(rem, 62430 - 31092); // 42%
-        totalIncomeTax += b4 * 0.42;
+        const b4 = Math.min(rem, scotHigherThresh - scotIntThresh);
+        totalIncomeTax += b4 * scotHigherRate;
         rem -= b4;
       }
       if (rem > 0) {
-        // Advanced Rate band taxable width = 125140 - 62430 = 62710
-        const b5 = Math.min(rem, 125140 - 62430); // 45%
-        totalIncomeTax += b5 * 0.45;
+        // Advanced Rate band
+        const b5 = Math.min(rem, scotAdvThresh - scotHigherThresh);
+        totalIncomeTax += b5 * scotAdvRate;
         rem -= b5;
       }
       if (rem > 0) {
-        totalIncomeTax += rem * 0.48; // 48%
+        totalIncomeTax += rem * scotTopRate;
       }
 
-      // Scottish Top Rate (48%) starts when taxable income > 125140 (PA has already gone to 0 at this point)
-      if (taxable > (125140 + grossRasToExtendBand)) marginalTaxRate = 48;
-      else if (is60PercentTaxTrap) marginalTaxRate = 67.5; // Scottish 45% + 22.5% PA clawback
-      else if (taxable > (62430 + grossRasToExtendBand)) marginalTaxRate = 45;
-      else if (taxable > (31092 + grossRasToExtendBand)) marginalTaxRate = 42;
-      else if (taxable > (13991 + grossRasToExtendBand)) marginalTaxRate = 21;
-      else marginalTaxRate = 20;
+      // Scottish Top Rate starts when taxable income > Advanced Threshold
+      if (taxable > (scotAdvThresh + grossRasToExtendBand)) marginalTaxRate = scotTopRate * 100;
+      else if (is60PercentTaxTrap) marginalTaxRate = (scotAdvRate * 100) + 22.5; // PA clawback approx
+      else if (taxable > (scotHigherThresh + grossRasToExtendBand)) marginalTaxRate = scotAdvRate * 100;
+      else if (taxable > (scotIntThresh + grossRasToExtendBand)) marginalTaxRate = scotHigherRate * 100;
+      else if (taxable > (scotBasicThresh + grossRasToExtendBand)) marginalTaxRate = scotIntRate * 100;
+      else marginalTaxRate = scotBasicRate * 100;
     }
   } else {
     // Rest of UK (England, NI, Wales)
-    const basicRateBandWidth = 37700 + grossRasToExtendBand;
+    const basicRateBandWidth = rukBasicThresh + grossRasToExtendBand;
 
     if (taxable <= 0) {
       totalIncomeTax = 0;
       marginalTaxRate = 0;
     } else {
       const basicPortion = Math.min(taxable, basicRateBandWidth);
-      totalIncomeTax += basicPortion * 0.20;
+      totalIncomeTax += basicPortion * rukBasicRate;
 
       const remainingAfterBasic = taxable - basicPortion;
       if (remainingAfterBasic > 0) {
-        const higherPortion = Math.min(remainingAfterBasic, 87440); // H8 fixed width
-        totalIncomeTax += Math.max(0, higherPortion) * 0.40;
+        const higherPortion = Math.min(remainingAfterBasic, rukAddThresh - rukBasicThresh);
+        totalIncomeTax += Math.max(0, higherPortion) * rukHigherRate;
 
         const additionalPortion = remainingAfterBasic - higherPortion;
         if (additionalPortion > 0) {
-          totalIncomeTax += additionalPortion * 0.45;
+          totalIncomeTax += additionalPortion * rukAddRate;
         }
       }
 
-      if (taxable > (basicRateBandWidth + 87440)) marginalTaxRate = 45;
-      else if (is60PercentTaxTrap) marginalTaxRate = 60;
-      else if (taxable > basicRateBandWidth) marginalTaxRate = 40;
-      else marginalTaxRate = 20;
+      if (taxable > (basicRateBandWidth + (rukAddThresh - rukBasicThresh))) marginalTaxRate = rukAddRate * 100;
+      else if (is60PercentTaxTrap) marginalTaxRate = (rukHigherRate * 100) + 20; // 60% effective
+      else if (taxable > basicRateBandWidth) marginalTaxRate = rukHigherRate * 100;
+      else marginalTaxRate = rukBasicRate * 100;
     }
   }
 
@@ -1034,16 +1067,24 @@ export function calculateUKTax(
   // Annual Allowance Tapering: Applies ONLY IF Threshold Income > £200,000 AND Adjusted Income > £260,000 AND user has NOT triggered MPAA
   if (!hasTriggeredMpaa && thresholdIncome > 200000 && adjustedIncome > 260000) {
     isTaperedAnnualAllowance = true;
-    taperedReduction = Math.min(50000, Math.floor((adjustedIncome - 260000) / 2));
+    const maxReduction = Math.max(0, basePensionAnnualAllowance - 10000);
+    taperedReduction = Math.min(maxReduction, Math.floor((adjustedIncome - 260000) / 2));
     pensionAnnualAllowanceLimit = Math.max(10000, basePensionAnnualAllowance - taperedReduction) + carryForward;
   }
 
   const pensionAnnualAllowanceUsed = totalPensionContributionsAnnual;
   const pensionAnnualAllowanceRemaining = Math.max(0, pensionAnnualAllowanceLimit - pensionAnnualAllowanceUsed);
-  const actualPensionAllowance = Math.min(pensionAnnualAllowanceLimit, eligibleEarnings);
-  const actualPensionAllowanceRemaining = Math.max(0, actualPensionAllowance - pensionAnnualAllowanceUsed);
-  const exceedsEligibleIncome = pensionAnnualAllowanceUsed > eligibleEarnings;
-  const exceedsAnnualAllowanceOnly = pensionAnnualAllowanceUsed > pensionAnnualAllowanceLimit && pensionAnnualAllowanceUsed <= eligibleEarnings;
+  
+  // HMRC Rule: Employer contributions are NOT capped by 100% of the employee's relevant UK earnings.
+  // ONLY employee/personal contributions are capped by 100% of earnings. Both share the AA.
+  // Under salary sacrifice, the employee's contribution is treated as an employer contribution.
+  const eligibleEmployeePensionGross = profile.pensionContributionMethod === 'salary_sacrifice'
+    ? grossSippAnnual
+    : totalEmployeePensionGross;
+  const exceedsEligibleIncome = eligibleEmployeePensionGross > eligibleEarnings;
+  const actualPensionAllowance = pensionAnnualAllowanceLimit;
+  const actualPensionAllowanceRemaining = pensionAnnualAllowanceRemaining;
+  const exceedsAnnualAllowanceOnly = pensionAnnualAllowanceUsed > pensionAnnualAllowanceLimit && !exceedsEligibleIncome;
 
   const isaAllowanceLimit = profile.customTaxBands?.enabled
     ? (profile.customTaxBands.isaAnnualAllowance ?? ISA_ANNUAL_LIMIT)
@@ -1051,7 +1092,9 @@ export function calculateUKTax(
   const isaAllowanceUsed = totalIsaAnnual;
   const isaAllowanceRemaining = Math.max(0, isaAllowanceLimit - isaAllowanceUsed);
 
-  const lisaAllowanceLimit = 4000;
+  const lisaAllowanceLimit = profile.customTaxBands?.enabled 
+    ? (profile.customTaxBands.lisaAnnualAllowance ?? LISA_ANNUAL_LIMIT)
+    : LISA_ANNUAL_LIMIT;
   const lisaAllowanceUsed = lisaAnnual;
 
   // PCLS & NMPA calculations
@@ -1099,11 +1142,11 @@ export function calculateUKTax(
   const cashSavingsRate = ((profile.potReturnOverrides?.cashSavingsReturn ?? 3.5) / 100);
   const savingsInterestEarned = Math.round((pots.cashSavingsBalance || 0) * cashSavingsRate);
   const psaResult = calculatePSAAndSavingsTax(
-    adjustedNetIncome,
+    taxableIncomeBase,
     savingsInterestEarned,
     profile.taxRegion === 'scotland',
     taxableIncomeBase,
-    personalAllowance
+    Math.max(0, personalAllowance - taxableIncomeBase) // unused PA
   );
 
   return {
@@ -1130,7 +1173,7 @@ export function calculateUKTax(
     regularCashIsaContributionsAnnual: regularCashIsaAnnual,
     regularLisaContributionsAnnual: regularLisaAnnual,
     lisaGovernmentBonusAnnual: lisaBonusAnnual,
-    lisaAllowanceRemaining: Math.max(0, 4000 - lisaAnnual),
+    lisaAllowanceRemaining: Math.max(0, lisaAllowanceLimit - lisaAnnual),
     totalCashGiaContributionsAnnual: giaAnnual + cashSavingsAnnual,
     regularCashGiaContributionsAnnual: regularGiaAnnual + regularCashSavingsAnnual,
     regularGiaContributionsAnnual: regularGiaAnnual,
@@ -1185,7 +1228,7 @@ export function calculatePSAAndSavingsTax(
   grossInterestEarned: number,
   isScottish: boolean = false,
   nonSavingsEarnedIncome?: number,
-  personalAllowance: number = 12570
+  unusedPersonalAllowance: number = 0
 ): {
   personalSavingsAllowance: number;
   startingRateForSavingsUsed: number;
@@ -1199,13 +1242,13 @@ export function calculatePSAAndSavingsTax(
   let taxBandLabel: 'Basic Rate' | 'Higher Rate' | 'Additional Rate' = 'Basic Rate';
 
   // Savings interest tax is NOT devolved to Scotland. Always use UK-wide rates and thresholds.
-  const thresholdBasic = personalAllowance + RUK_BASIC_THRESHOLD;
-  const totalIncomeForPSA = taxableIncome + grossInterestEarned;
+  const thresholdBasic = RUK_BASIC_THRESHOLD;
+  const totalTaxableIncome = taxableIncome + Math.max(0, grossInterestEarned - unusedPersonalAllowance);
 
-  if (totalIncomeForPSA > RUK_ADDITIONAL_THRESHOLD) {
+  if (totalTaxableIncome > RUK_ADDITIONAL_THRESHOLD) {
     personalSavingsAllowance = 0;
     taxBandLabel = 'Additional Rate';
-  } else if (totalIncomeForPSA > thresholdBasic) {
+  } else if (totalTaxableIncome > thresholdBasic) {
     personalSavingsAllowance = 500;
     taxBandLabel = 'Higher Rate';
   } else {
@@ -1214,12 +1257,12 @@ export function calculatePSAAndSavingsTax(
   }
 
   // 0% Starting Rate for Savings (up to £5,000 if non-savings earned income <= PA)
-  // HMRC rule: Every £1 of non-savings earned income above Personal Allowance reduces the £5,000 starting rate £1-for-£1.
   const earnedInc = nonSavingsEarnedIncome !== undefined ? nonSavingsEarnedIncome : taxableIncome;
-  const startingRateAllowance = Math.max(0, 5000 - Math.max(0, earnedInc - personalAllowance));
-  const startingRateForSavingsUsed = Math.min(grossInterestEarned, startingRateAllowance);
+  const startingRateAllowance = Math.max(0, 5000 - earnedInc);
+  const interestAfterPA = Math.max(0, grossInterestEarned - unusedPersonalAllowance);
+  const startingRateForSavingsUsed = Math.min(interestAfterPA, startingRateAllowance);
 
-  const interestAfterStartingRate = Math.max(0, grossInterestEarned - startingRateForSavingsUsed);
+  const interestAfterStartingRate = Math.max(0, interestAfterPA - startingRateForSavingsUsed);
   const taxableSavingsInterest = Math.max(0, interestAfterStartingRate - personalSavingsAllowance);
 
   // Band the taxable savings interest
@@ -1312,7 +1355,8 @@ export function calculateDividendTax(
   taxableIncome: number,
   grossDividendIncome: number,
   isScottish: boolean = false,
-  grossRasToExtendBand: number = 0
+  grossRasToExtendBand: number = 0,
+  unusedPersonalAllowance: number = 0
 ): {
   dividendAllowance: number;
   taxableDividendIncome: number;
@@ -1320,18 +1364,19 @@ export function calculateDividendTax(
   dividendTaxRate: number;
 } {
   const dividendAllowance = 500;
-  const taxableDividendIncome = Math.max(0, grossDividendIncome - dividendAllowance);
+  const dividendAfterPA = Math.max(0, grossDividendIncome - unusedPersonalAllowance);
+  const taxableDividendIncome = Math.max(0, dividendAfterPA - dividendAllowance);
   if (taxableDividendIncome <= 0) {
     return { dividendAllowance, taxableDividendIncome: 0, dividendTax: 0, dividendTaxRate: 0 };
   }
 
-  // Dividend tax is NOT devolved to Scotland. Always use UK-wide basic rate ceiling (£50,270).
-  const basicRateCeiling = 50270 + grossRasToExtendBand;
+  // Dividend tax is NOT devolved to Scotland. Always use UK-wide basic rate ceiling.
+  const basicRateCeiling = 37700 + grossRasToExtendBand;
   const additionalRateThreshold = 125140 + grossRasToExtendBand;
 
   let remainingDividend = taxableDividendIncome;
   let dividendTax = 0;
-  let currentIncome = taxableIncome;
+  let currentIncome = taxableIncome + Math.min(dividendAfterPA, dividendAllowance);
 
   // Basic Rate Band (8.75%)
   if (currentIncome < basicRateCeiling && remainingDividend > 0) {
@@ -1390,8 +1435,9 @@ export function calculateCapitalGainsTax(
     return { annualExemptAmount, taxableGain: 0, cgtTax: 0, cgtRate: 0 };
   }
 
-  // CGT is NOT devolved to Scotland. Always use UK-wide basic rate ceiling (£50,270).
-  const basicRateCeiling = 50270 + grossRasToExtendBand;
+  // CGT is NOT devolved to Scotland. Always use UK-wide basic rate ceiling.
+  // CGT does not use Personal Allowance, so the threshold is strictly taxable income (37700).
+  const basicRateCeiling = 37700 + grossRasToExtendBand;
   const basicRate = isResidentialProperty ? 0.18 : 0.10;
   const higherRate = isResidentialProperty ? 0.24 : 0.20;
 

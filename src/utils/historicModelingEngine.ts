@@ -185,12 +185,8 @@ export function runHistoricModelingSimulation(
             primaryPensionPot = Math.max(0, primaryPensionPot - primaryDraw);
             partnerPensionPot = Math.max(0, partnerPensionPot - partnerDraw);
             pensionPot = primaryPensionPot + partnerPensionPot;
-            if (!pclsTaken && primaryCumulativeTaxFreeDrawn < maxLsa) {
-              primaryCumulativeTaxFreeDrawn += primaryDraw * 0.25;
-            }
-            if (!partnerPclsTaken && partnerCumulativeTaxFreeDrawn < partnerMaxLsa) {
-              partnerCumulativeTaxFreeDrawn += partnerDraw * 0.25;
-            }
+            primaryCumulativeTaxFreeDrawn += Math.min(primaryDraw * 0.25, Math.max(0, maxLsa - primaryCumulativeTaxFreeDrawn));
+            partnerCumulativeTaxFreeDrawn += Math.min(partnerDraw * 0.25, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn));
           }
         } else if (potType === 'isa') {
           const priRatio = primaryIsaPot / (isaPot || 1);
@@ -208,14 +204,10 @@ export function runHistoricModelingSimulation(
         if (potType === 'pension') {
           if (owner === 'primary') {
             primaryPensionPot = Math.max(0, primaryPensionPot - amount);
-            if (!pclsTaken && primaryCumulativeTaxFreeDrawn < maxLsa) {
-              primaryCumulativeTaxFreeDrawn += amount * 0.25;
-            }
+            primaryCumulativeTaxFreeDrawn += Math.min(amount * 0.25, Math.max(0, maxLsa - primaryCumulativeTaxFreeDrawn));
           } else {
             partnerPensionPot = Math.max(0, partnerPensionPot - amount);
-            if (!partnerPclsTaken && partnerCumulativeTaxFreeDrawn < partnerMaxLsa) {
-              partnerCumulativeTaxFreeDrawn += amount * 0.25;
-            }
+            partnerCumulativeTaxFreeDrawn += Math.min(amount * 0.25, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn));
           }
           pensionPot = primaryPensionPot + partnerPensionPot;
         } else if (potType === 'isa') {
@@ -256,10 +248,10 @@ export function runHistoricModelingSimulation(
       // Blended return based on dynamic asset allocation
       const isPartnerRetired = profile.isCouplePlanning ? (partnerAge >= (profile.partnerTargetRetirementAge ?? profile.targetRetirementAge)) : false;
       const isFullyRetired = profile.isCouplePlanning ? (isRetired && isPartnerRetired) : isRetired;
-      const allocationSplit = customAllocation || (isFullyRetired ? (profile.assetAllocationSplit?.decumulation ?? { equityPercent: 60, bondPercent: 30, cashPercent: 10 }) : (profile.assetAllocationSplit?.accumulation ?? { equityPercent: 80, bondPercent: 15, cashPercent: 5 }));
-      const eqRatio = allocationSplit.equityPercent / 100;
-      const bondRatio = allocationSplit.bondPercent / 100;
-      const cashRatio = allocationSplit.cashPercent / 100;
+      const allocationSplit: any = customAllocation || (isFullyRetired ? (profile.assetAllocationSplit?.decumulation ?? { equityPercent: 60, bondPercent: 30, cashPercent: 10 }) : (profile.assetAllocationSplit?.accumulation ?? { equityPercent: 80, bondPercent: 15, cashPercent: 5 }));
+      const eqRatio = (allocationSplit.equityPercent ?? allocationSplit.stocks ?? 60) / 100;
+      const bondRatio = (allocationSplit.bondPercent ?? allocationSplit.bonds ?? 30) / 100;
+      const cashRatio = (allocationSplit.cashPercent ?? allocationSplit.cash ?? 10) / 100;
       
       const blendedReturnRate = (
         eqRatio * (hData.equityReturn / 100) +
@@ -294,6 +286,8 @@ export function runHistoricModelingSimulation(
         const alloc = allocateLumpSumToPots(pclsAmount, profile.lumpSumTargetPot, profile.lumpSumSplits);
         primaryIsaPot += alloc.toIsa;
         primaryCashGiaPot += alloc.toCashGia;
+        isaPot = primaryIsaPot + partnerIsaPot;
+        cashGiaPot = primaryCashGiaPot + partnerCashGiaPot;
         pclsTaken = true;
         primaryCumulativeTaxFreeDrawn += pclsAmount;
       }
@@ -316,6 +310,8 @@ export function runHistoricModelingSimulation(
         const alloc = allocateLumpSumToPots(partnerPclsAmount, profile.partnerLumpSumTargetPot || profile.lumpSumTargetPot, profile.partnerLumpSumSplits || profile.lumpSumSplits);
         partnerIsaPot += alloc.toIsa;
         partnerCashGiaPot += alloc.toCashGia;
+        isaPot = primaryIsaPot + partnerIsaPot;
+        cashGiaPot = primaryCashGiaPot + partnerCashGiaPot;
         partnerPclsTaken = true;
         partnerCumulativeTaxFreeDrawn += partnerPclsAmount;
       }
@@ -473,7 +469,7 @@ export function runHistoricModelingSimulation(
         const grossPotForAnnuity = primaryPensionPot * (allocPercent / 100);
         let actualCapitalToAnnuity = grossPotForAnnuity;
         
-        if (!pclsTaken && primaryCumulativeTaxFreeDrawn < maxLsa) {
+        if (primaryCumulativeTaxFreeDrawn < maxLsa) {
           const uncrystPcls = Math.min(grossPotForAnnuity * 0.25, Math.max(0, maxLsa - primaryCumulativeTaxFreeDrawn));
           actualCapitalToAnnuity = grossPotForAnnuity - uncrystPcls;
           const alloc = allocateLumpSumToPots(uncrystPcls, profile.lumpSumTargetPot, profile.lumpSumSplits);
@@ -500,7 +496,7 @@ export function runHistoricModelingSimulation(
       }
 
       // Partner Single Annuity Purchase
-      const partnerTargetPurchaseAge = Math.max(pensionAccessAge, profile.partnerAnnuityPurchaseAge || profile.partnerTargetRetirementAge || 60);
+      const partnerTargetPurchaseAge = Math.max(partnerPensionAccessAge, profile.partnerAnnuityPurchaseAge || profile.partnerTargetRetirementAge || 60);
       if (
         profile.isCouplePlanning &&
         partnerCanAccessPension &&
@@ -514,10 +510,10 @@ export function runHistoricModelingSimulation(
         const grossPotForAnnuity = partnerPensionPot * (allocPercent / 100);
         let actualCapitalToAnnuity = grossPotForAnnuity;
         
-        if (!partnerPclsTaken && partnerCumulativeTaxFreeDrawn < partnerMaxLsa) {
+        if (partnerCumulativeTaxFreeDrawn < partnerMaxLsa) {
           const uncrystPcls = Math.min(grossPotForAnnuity * 0.25, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn));
           actualCapitalToAnnuity = grossPotForAnnuity - uncrystPcls;
-          const alloc = allocateLumpSumToPots(uncrystPcls, profile.partnerLumpSumTargetPot || 'cash_and_gia', profile.partnerLumpSumSplits);
+          const alloc = allocateLumpSumToPots(uncrystPcls, profile.partnerLumpSumTargetPot || profile.lumpSumTargetPot, profile.partnerLumpSumSplits);
           partnerIsaPot += alloc.toIsa;
           partnerCashGiaPot += alloc.toCashGia;
           partnerCumulativeTaxFreeDrawn += uncrystPcls;
@@ -600,11 +596,9 @@ export function runHistoricModelingSimulation(
           partnerWorkingCashGiaContrib = partnerTaxThisYr.regularCashGiaContributionsAnnual ?? partnerTaxThisYr.totalCashGiaContributionsAnnual;
         }
 
-        growPots(pensionReturnRate, isaReturnRate, cashGiaReturnRate);
-
-        if (partnerWorkingPensionContrib > 0) addProRata('pension', partnerWorkingPensionContrib * cumulativeInflationFactor * (1 + pensionReturnRate / 2), true);
-        if (partnerWorkingIsaContrib > 0) addProRata('isa', partnerWorkingIsaContrib * cumulativeInflationFactor * (1 + isaReturnRate / 2), true);
-        if (partnerWorkingCashGiaContrib > 0) addProRata('cashGia', partnerWorkingCashGiaContrib * cumulativeInflationFactor * (1 + cashGiaReturnRate / 2), true);
+        if (partnerWorkingPensionContrib > 0) addProRata('pension', partnerWorkingPensionContrib * cumulativeInflationFactor * ((1 + pensionReturnRate / 2) / (1 + pensionReturnRate)), true);
+        if (partnerWorkingIsaContrib > 0) addProRata('isa', partnerWorkingIsaContrib * cumulativeInflationFactor * ((1 + isaReturnRate / 2) / (1 + isaReturnRate)), true);
+        if (partnerWorkingCashGiaContrib > 0) addProRata('cashGia', partnerWorkingCashGiaContrib * cumulativeInflationFactor * ((1 + cashGiaReturnRate / 2) / (1 + cashGiaReturnRate)), true);
 
         // Target income calculations accounting for Maximized Spend & Reinvest Excess
         const maxDrawdownIncomeTarget = getTargetIncomeForAge(profile, age);
@@ -628,7 +622,7 @@ export function runHistoricModelingSimulation(
               if (event.type === 'income') {
                 const potTarget = event.targetPot || 'cash_savings';
                 const isPension = potTarget === 'sipp';
-                const isIsa = potTarget === 'stocks_and_shares_isa' || potTarget === 'cash_isa' || potTarget === 'lisa' || potTarget === 'isa';
+                const isIsa = (potTarget as string) === 'stocks_and_shares_isa' || (potTarget as string) === 'cash_isa' || (potTarget as string) === 'lisa' || (potTarget as string) === 'isa';
                 const potName = isPension ? 'pension' : isIsa ? 'isa' : 'cashGia';
                 addProRata(potName, eventAmount, isPartnerEvent);
               } else {
@@ -676,11 +670,11 @@ export function runHistoricModelingSimulation(
           let priTaxFree = 0;
           let partTaxFree = 0;
           
-          if (!pclsTaken && primaryCumulativeTaxFreeDrawn < maxLsa) {
-             priTaxFree = Math.min((grossDraw * priRatio) * 0.25, maxLsa - primaryCumulativeTaxFreeDrawn);
+          if (primaryCumulativeTaxFreeDrawn < maxLsa) {
+             priTaxFree = Math.min((grossDraw * priRatio) * 0.25, Math.max(0, maxLsa - primaryCumulativeTaxFreeDrawn));
           }
-          if (!partnerPclsTaken && partnerCumulativeTaxFreeDrawn < partnerMaxLsa) {
-             partTaxFree = Math.min((grossDraw * partRatio) * 0.25, partnerMaxLsa - partnerCumulativeTaxFreeDrawn);
+          if (partnerCumulativeTaxFreeDrawn < partnerMaxLsa) {
+             partTaxFree = Math.min((grossDraw * partRatio) * 0.25, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn));
           }
           
           const priTaxable = (grossDraw * priRatio) - priTaxFree;
@@ -800,12 +794,12 @@ export function runHistoricModelingSimulation(
             partThresholdGross = (isPartnerScot ? (12570 + SCOT_HIGHER_THRESHOLD) : RUK_ADDITIONAL_THRESHOLD) * inflMult;
           }
 
-          const primaryTaxablePercent = (primaryCumulativeTaxFreeDrawn >= maxLsa || pclsTaken) ? 1.0 : 0.75;
-          const partnerTaxablePercent = (partnerCumulativeTaxFreeDrawn >= partnerMaxLsa || partnerPclsTaken) ? 1.0 : 0.75;
+          const primaryTaxablePercent = (primaryCumulativeTaxFreeDrawn >= maxLsa) ? 1.0 : 0.75;
+          const partnerTaxablePercent = (partnerCumulativeTaxFreeDrawn >= partnerMaxLsa) ? 1.0 : 0.75;
 
           const cashGiaReturn = cashGiaReturnRate !== undefined ? cashGiaReturnRate : (blendedReturnRate * 0.90);
-          const primaryCashGrowth = primaryCashGiaPot - (primaryCashGiaPot / (1 + cashGiaReturn));
-          const partnerCashGrowth = partnerCashGiaPot - (partnerCashGiaPot / (1 + cashGiaReturn));
+          const primaryCashGrowth = primaryCashGiaPot * cashGiaReturn;
+          const partnerCashGrowth = partnerCashGiaPot * cashGiaReturn;
 
           const priIncomeAlready = statePensionThisYr / (profile.isCouplePlanning ? 2 : 1) + (annuityIncomeThisYear + dbIncomeThisYr + (fixedIncomeThisYr || 0)) / (profile.isCouplePlanning ? 2 : 1) + primaryCashGrowth;
           const partIncomeAlready = profile.isCouplePlanning ? (statePensionThisYr / 2 + (annuityIncomeThisYear + dbIncomeThisYr + (fixedIncomeThisYr || 0)) / 2 + partnerCashGrowth) : 0;
@@ -827,7 +821,7 @@ export function runHistoricModelingSimulation(
                 executeDeduct('pension', partTargetGross, 'partner');
              }
              
-             const netDraw = approximateNetFromGross(priTargetGross + partTargetGross, guaranteedIncome);
+             const netDraw = approximateNetFromGross(priTargetGross + partTargetGross);
              netDrawdownAchieved += netDraw;
              remainingNeeded = Math.max(0, remainingNeeded - netDraw);
           }
@@ -850,10 +844,10 @@ export function runHistoricModelingSimulation(
             if (hasPensionAccess && pensionPot > 0) {
               const portion = pensionPot / totalAccessible;
               const netToDraw = remainingNeeded * portion;
-              const grossDrawNeeded = getGrossPensionNeededForNet(netToDraw, pensionPot, guaranteedIncome);
+              const grossDrawNeeded = getGrossPensionNeededForNet(netToDraw, pensionPot);
               const draw = Math.min(pensionPot, grossDrawNeeded);
               executeDeduct('pension', draw);
-              const netDraw = approximateNetFromGross(draw, guaranteedIncome);
+              const netDraw = approximateNetFromGross(draw);
               remainingNeeded = Math.max(0, remainingNeeded - netDraw);
               netDrawdownAchieved += netDraw;
             }
@@ -875,6 +869,7 @@ export function runHistoricModelingSimulation(
 
         // Reinvest surplus income when net achieved exceeds living expenses spending target
         const totalNetAchieved = guaranteedIncome + netDrawdownAchieved;
+        
         if (totalNetAchieved > requiredNetIncomeTarget) {
           const surplus = totalNetAchieved - requiredNetIncomeTarget;
           const reinvestOpt =
@@ -890,6 +885,9 @@ export function runHistoricModelingSimulation(
             addProRata('cashGia', surplus, false);
           }
         }
+
+        // 2. Apply growth to the remaining pot balances (fixing phantom growth)
+        growPots(pensionReturnRate, isaReturnRate, cashGiaReturnRate);
 
       }
 
@@ -957,8 +955,21 @@ export function runHistoricModelingSimulation(
   const successRate = Math.round((successfulRuns / runResults.length) * 100);
 
   // Sort runs by final real balance to find percentiles, best, worst
-  const sortedByRealWealth = [...runResults].sort((a, b) => a.finalRealBalance - b.finalRealBalance);
-  const sortedByNominalWealth = [...runResults].sort((a, b) => a.finalNominalBalance - b.finalNominalBalance);
+  const sortedByRealWealth = [...runResults].sort((a, b) => {
+    if (a.finalRealBalance !== b.finalRealBalance) return a.finalRealBalance - b.finalRealBalance;
+    if (a.depletedAtAge !== null && b.depletedAtAge !== null) return a.depletedAtAge - b.depletedAtAge;
+    if (a.depletedAtAge !== null) return -1;
+    if (b.depletedAtAge !== null) return 1;
+    return 0;
+  });
+  
+  const sortedByNominalWealth = [...runResults].sort((a, b) => {
+    if (a.finalNominalBalance !== b.finalNominalBalance) return a.finalNominalBalance - b.finalNominalBalance;
+    if (a.depletedAtAge !== null && b.depletedAtAge !== null) return a.depletedAtAge - b.depletedAtAge;
+    if (a.depletedAtAge !== null) return -1;
+    if (b.depletedAtAge !== null) return 1;
+    return 0;
+  });
 
   // Worst start year: earliest depletion age, or lowest final real balance
   const sortedByWorst = [...runResults].sort((a, b) => {
@@ -1020,7 +1031,7 @@ export function runHistoricModelingSimulation(
     p90FinalNominal,
     runResults,
     aggregateTrajectory,
-    allocation: customAllocation || (profile.assetAllocationSplit?.accumulation ?? { equityPercent: 80, bondPercent: 15, cashPercent: 5 }),
+    allocation: customAllocation || (profile.assetAllocationSplit?.accumulation as unknown as AssetAllocation) || { equityPercent: 80, bondPercent: 15, cashPercent: 5 },
     maxAge,
   };
 }

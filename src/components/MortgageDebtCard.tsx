@@ -103,7 +103,8 @@ export const MortgageDebtCard: React.FC<MortgageDebtCardProps> = ({ profile, onC
     const currentYear = new Date().getFullYear();
     const balance = Math.max(0, mortgage.currentBalance);
     const rateMonthly = (mortgage.interestRatePercent / 100) / 12;
-    const maxMonths = Math.max(12, (mortgage.remainingTermYears * 12) + (mortgage.remainingTermMonths || 0) + 120);
+    const totalTermMonths = (mortgage.remainingTermYears * 12) + (mortgage.remainingTermMonths || 0);
+    const maxMonths = Math.max(12, totalTermMonths + 120);
 
     // Standard run (no overpayments)
     let stdBal = balance;
@@ -133,7 +134,7 @@ export const MortgageDebtCard: React.FC<MortgageDebtCardProps> = ({ profile, onC
       stdSchedule.push({ month: m, year, age, startBal: stdBal, interest, capital, endBal });
       stdBal = endBal;
 
-      if (mortgage.repaymentType === 'interest_only' && m === mortgage.remainingTermYears * 12) {
+      if (mortgage.repaymentType === 'interest_only' && m >= totalTermMonths) {
         break; // Balloon repayment at term end
       }
     }
@@ -199,7 +200,7 @@ export const MortgageDebtCard: React.FC<MortgageDebtCardProps> = ({ profile, onC
       if (ovBal <= 0.01) break;
 
       // For Interest-Only, overpayments stop when the balloon payment is due at term end
-      if (mortgage.repaymentType === 'interest_only' && m === mortgage.remainingTermYears * 12) {
+      if (mortgage.repaymentType === 'interest_only' && m >= totalTermMonths) {
         break;
       }
     }

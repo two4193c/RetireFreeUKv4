@@ -79,7 +79,7 @@ import { PlanErrorBoundary } from './components/PlanErrorBoundary';
 const STORAGE_KEY = 'uk_retirement_planner_scenarios_v2';
 const THEME_STORAGE_KEY = 'retireready_theme_v1';
 
-export type DashboardTab = 'plan_management' | 'inputs' | 'accumulation_review' | 'strategy' | 'projections' | 'risk' | 'estate' | 'overview' | 'compare' | 'mortgage' | 'advanced_settings' | 'documentation';
+export type DashboardTab = 'plan_management' | 'inputs' | 'accumulation_review' | 'strategy' | 'strategy_analysis' | 'projections' | 'risk' | 'estate' | 'overview' | 'compare' | 'mortgage' | 'advanced_settings' | 'documentation';
 
 interface AppErrorBoundaryProps {
   children: ReactNode;
@@ -648,11 +648,11 @@ function App() {
     const targetProfile = target === 'partner' ? {
       gross: profile.partnerGrossAnnualSalary || 0,
       method: profile.partnerPensionContributionMethod || profile.pensionContributionMethod,
-      pots: profile.partnerPots || DEFAULT_PARTNER_POTS,
+      pots: sanitizePots(profile.partnerPots, DEFAULT_PARTNER_POTS),
     } : {
       gross: profile.grossAnnualSalary || 0,
       method: profile.pensionContributionMethod,
-      pots: pots,
+      pots: sanitizePots(pots, DEFAULT_POTS),
     };
 
     if (targetProfile.method === 'salary_sacrifice') {

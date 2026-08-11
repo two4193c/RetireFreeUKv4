@@ -1,5 +1,5 @@
 import React from 'react';
-import { UserProfile, PotReturnOverrides, AssetAllocationSplit } from '../types';
+import { UserProfile, PerPersonPotAllocations, PotReturnOverrides, AssetAllocationSplit } from '../types';
 import { DEFAULT_POT_RETURN_OVERRIDES, DEFAULT_ASSET_ALLOCATION_SPLIT } from '../utils/defaultData';
 import { calculateWeightedAssetReturn } from '../utils/assetAllocation';
 import { InvestmentFeesCard } from './InvestmentFeesCard';

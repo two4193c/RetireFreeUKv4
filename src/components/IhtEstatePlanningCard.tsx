@@ -91,7 +91,7 @@ export const IhtEstatePlanningCard: React.FC<IhtEstatePlanningCardProps> = ({
 
     // Property compounding: PrimaryResidence * (1 + rate)^years
     const propertyValue = Math.round(
-      (iht.primaryResidenceValue || 0) * Math.pow(1 + (iht.annualPropertyGrowthPercent || 3.0) / 100, yearsFromNow)
+      (iht.primaryResidenceValue || 0) * Math.pow(1 + (iht.annualPropertyGrowthPercent ?? 3.0) / 100, yearsFromNow)
     );
 
     // Non-pension financial assets (ISA, Cash Savings, GIA) at target age
