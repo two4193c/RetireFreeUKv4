@@ -1871,10 +1871,23 @@ export async function generateFormulaExcelWorkbook(
 
     // PCLS Tax-Free Drawdown (Column J): Upfront lump sum from Tax Free Lump Sums sheet + 25% tax-free PCLS until lifetime LSA cap ('Settings'!$B$8)
     const calYear = (new Date().getFullYear()) + idx;
-    const pclsUpfrontIn = `SUMIFS('Tax Free Lump Sums'!$I$4:$I$15, 'Tax Free Lump Sums'!$D$4:$D$15, A${rowNum}, 'Tax Free Lump Sums'!$F$4:$F$15, "*Upfront*")`;
+    const pclsUpfrontIn = `SUMIFS('Tax Free Lump Sums'!$I$4:$I$15, 'Tax Free Lump Sums'!$D$4:$D$15, A${rowNum})`;
+    const pclsDbIn = `SUMIFS('Tax Free Lump Sums'!$I$4:$I$15, 'Tax Free Lump Sums'!$D$4:$D$15, A${rowNum}, 'Tax Free Lump Sums'!$B$4:$B$15, "*DB*")`;
     const pclsFormula = `IF(D${rowNum}="Accumulation", ${pclsUpfrontIn}, ${pclsUpfrontIn} + IF(SUM(J$3:J${prevRowNum}) >= 'Settings'!$B$8, 0, MIN('Settings'!$B$8 - SUM(J$3:J${prevRowNum}), MAX(0, K${rowNum} * (25 / 75)))))`;
 
-    const upfrontPclsThisYear = (calYear === primaryPclsYear && primaryTakeUpfront ? primaryEstPcls : 0) + (isCouple && calYear === partnerPclsYear && partnerTakeUpfront ? partnerEstPcls : 0);
+    const dbLumpSumThisYear = (profile.dbPensions || []).reduce((acc, db) => {
+      if (db.enabled !== false && db.taxFreeLumpSum && db.taxFreeLumpSum > 0) {
+        const isPartnerDb = db.owner === 'partner';
+        if (isPartnerDb && !isCouple) return acc;
+        const dbOwnerCurrentAge = isPartnerDb ? (profile.partnerCurrentAge || profile.currentAge || 50) : (profile.currentAge || 50);
+        const dbAge = db.startAge || 60;
+        const dbYear = (new Date().getFullYear()) + Math.max(0, dbAge - dbOwnerCurrentAge);
+        if (dbYear === calYear) return acc + db.taxFreeLumpSum;
+      }
+      return acc;
+    }, 0);
+
+    const upfrontPclsThisYear = (calYear === primaryPclsYear && primaryTakeUpfront ? primaryEstPcls : 0) + (isCouple && calYear === partnerPclsYear && partnerTakeUpfront ? partnerEstPcls : 0) + dbLumpSumThisYear;
     const pclsVal = (projections[idx]?.pensionDrawdownTaxFree || 0) + upfrontPclsThisYear;
 
     // Total Taxable Income
@@ -1906,9 +1919,9 @@ export async function generateFormulaExcelWorkbook(
     // DC Pension Balance with growth drag on withdrawals: (Opening Balance - Drawdowns) * (1 + Growth)
     let pensionBalFormula: string;
     if (idx === 0) {
-      pensionBalFormula = `MAX(0, ('Inputs & Setup'!$B$21 - J${rowNum} - K${rowNum}) * (1 + 'Settings'!$B$12) + 'Contributions'!G${contribRowNum} + 'Contributions'!R${contribRowNum} + (${pIn}) + (${pTrIn}) - (${pTrOut}))`;
+      pensionBalFormula = `MAX(0, ('Inputs & Setup'!$B$21 - (J${rowNum} - (${pclsDbIn})) - K${rowNum}) * (1 + 'Settings'!$B$12) + 'Contributions'!G${contribRowNum} + 'Contributions'!R${contribRowNum} + (${pIn}) + (${pTrIn}) - (${pTrOut}))`;
     } else {
-      pensionBalFormula = `MAX(0, (O${prevRowNum} - J${rowNum} - K${rowNum}) * (1 + 'Settings'!$B$12) + 'Contributions'!G${contribRowNum} + 'Contributions'!R${contribRowNum} + (${pIn}) + (${pTrIn}) - (${pTrOut}))`;
+      pensionBalFormula = `MAX(0, (O${prevRowNum} - (J${rowNum} - (${pclsDbIn})) - K${rowNum}) * (1 + 'Settings'!$B$12) + 'Contributions'!G${contribRowNum} + 'Contributions'!R${contribRowNum} + (${pIn}) + (${pTrIn}) - (${pTrOut}))`;
     }
 
     // ISA Balance (referencing Settings Growth B13 & Household ISA Total B22 in Inputs & Setup)
