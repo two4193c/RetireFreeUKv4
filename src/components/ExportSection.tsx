@@ -3,12 +3,13 @@ import { motion } from 'motion/react';
 import { UserProfile, InvestmentPots, YearProjection, UKTaxResult, PlannerScenario } from '../types';
 import { DEFAULT_PARTNER_POTS, DEFAULT_POTS, DEFAULT_MORTGAGE, sanitizePots } from '../utils/defaultData';
 import { jsPDF } from 'jspdf';
-import { FileText, Download, Printer, CheckCircle2, Sparkles, ShieldCheck, ArrowUpRight, Table, PieChart, Image as ImageIcon, BarChart3, Upload, FileJson } from 'lucide-react';
+import { FileText, Download, Printer, CheckCircle2, Sparkles, ShieldCheck, ArrowUpRight, Table, PieChart, Image as ImageIcon, BarChart3, Upload, FileJson, FileSpreadsheet } from 'lucide-react';
 import { getProjectedPensionAtTakeAge, getPensionAccessAge, getPartnerPensionAccessAge, calculateUKTax, calculatePartnerUKTax, calculateMaxPcls, calculatePartnerMaxPcls, getLumpSumTakeAge, getPartnerLumpSumTakeAge } from '../utils/ukTaxEngine';
 import { runMonteCarloSimulation } from '../utils/monteCarloEngine';
 import { runHistoricSimulation } from '../utils/historicModelingEngine';
 import { getTargetIncomeForAge } from '../utils/projectionEngine';
 import { generatePlanNarrative } from '../utils/pdfNarrativeGenerator';
+import { generateFormulaExcelWorkbook } from '../utils/excelFormulaExporter';
 
 interface ExportSectionProps {
   profile: UserProfile;
@@ -105,6 +106,29 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
     } catch (err) {
       console.error('CSV Export Error:', err);
       alert('Error exporting CSV data.');
+    }
+  };
+
+  // Formula Excel (.xlsx) Export Handler
+  const handleExportFormulaExcel = async () => {
+    try {
+      setExportSuccessMsg('Generating Formula Spreadsheet (.xlsx)...');
+      const blob = await generateFormulaExcelWorkbook(profile, pots, projections || [], effectivePlanName);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `RetireFree_UK_Formula_Model_${fileNameSlug}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      setExportSuccessMsg('Formula Spreadsheet (.xlsx) exported successfully!');
+      setTimeout(() => setExportSuccessMsg(null), 4000);
+    } catch (err) {
+      console.error('Excel Formula Export Error:', err);
+      alert('Failed to generate Excel formula spreadsheet.');
+      setExportSuccessMsg(null);
     }
   };
 
@@ -4462,9 +4486,33 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
           )}
         </div>
 
-        {/* Export Options Grid (CSV Export, JSON Backup & Restore) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Option 1: CSV Spreadsheet Export */}
+        {/* Export Options Grid (Formula Excel, CSV Export, JSON Backup & Restore) */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Option 1: Formula Spreadsheet Export (.xlsx) */}
+          <div className="bg-slate-50 dark:bg-slate-800/90 p-4.5 rounded-2xl border-2 border-blue-500/60 space-y-3 flex flex-col justify-between shadow-md relative overflow-hidden">
+            <div className="absolute top-2 right-2 bg-blue-500 text-white font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider">
+              Live Formulas
+            </div>
+            <div className="space-y-1.5 pt-1">
+              <div className="flex items-center gap-2">
+                <FileSpreadsheet className="w-4.5 h-4.5 text-blue-600 dark:text-blue-400" />
+                <h4 className="font-extrabold text-sm text-slate-900 dark:text-white">Formula Excel (.xlsx)</h4>
+              </div>
+              <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+                Native LibreOffice / Excel spreadsheet with multi-tab layout, assumptions, and <strong>live dynamic formulas</strong> (SUM, IF, Tax bands).
+              </p>
+            </div>
+
+            <button
+              onClick={handleExportFormulaExcel}
+              className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs px-4 py-2.5 rounded-xl transition-all shadow-sm active:scale-95 cursor-pointer"
+            >
+              <Download className="w-4 h-4" />
+              <span>Export Formula Excel</span>
+            </button>
+          </div>
+
+          {/* Option 2: CSV Spreadsheet Export */}
           <div className="bg-slate-50 dark:bg-slate-800/80 p-4.5 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3 flex flex-col justify-between">
             <div className="space-y-1.5 pt-1">
               <div className="flex items-center gap-2">
@@ -4599,8 +4647,8 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
         )}
       </div>
 
-      {/* Export Options Grid (PDF Report, CSV Export, JSON Backup & Restore) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* Export Options Grid (PDF Report, Formula Excel, CSV Export, JSON Backup & Restore) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Option 1: PDF Report (with Diagram Illustrations & Full Analysis) */}
         <div className="bg-slate-50 dark:bg-slate-800/90 p-4.5 rounded-2xl border-2 border-emerald-500/60 space-y-3 flex flex-col justify-between shadow-md relative overflow-hidden">
           <div className="absolute top-2 right-2 bg-emerald-500 text-slate-950 font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider">
@@ -4626,7 +4674,31 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
           </button>
         </div>
 
-        {/* Option 2: CSV Spreadsheet Export */}
+        {/* Option 2: Formula Spreadsheet Export (.xlsx) */}
+        <div className="bg-slate-50 dark:bg-slate-800/90 p-4.5 rounded-2xl border-2 border-blue-500/60 space-y-3 flex flex-col justify-between shadow-md relative overflow-hidden">
+          <div className="absolute top-2 right-2 bg-blue-500 text-white font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider">
+            Live Formulas
+          </div>
+          <div className="space-y-1.5 pt-1">
+            <div className="flex items-center gap-2">
+              <FileSpreadsheet className="w-4.5 h-4.5 text-blue-600 dark:text-blue-400" />
+              <h4 className="font-extrabold text-sm text-slate-900 dark:text-white">Formula Excel (.xlsx)</h4>
+            </div>
+            <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+              Native LibreOffice / Excel spreadsheet with multi-tab layout, assumptions, and <strong>live dynamic formulas</strong> (SUM, IF, Tax bands).
+            </p>
+          </div>
+
+          <button
+            onClick={handleExportFormulaExcel}
+            className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs px-4 py-2.5 rounded-xl transition-all shadow-sm active:scale-95 cursor-pointer"
+          >
+            <Download className="w-4 h-4" />
+            <span>Export Formula Excel</span>
+          </button>
+        </div>
+
+        {/* Option 3: CSV Spreadsheet Export */}
         <div className="bg-slate-50 dark:bg-slate-800/80 p-4.5 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3 flex flex-col justify-between">
           <div className="space-y-1.5 pt-1">
             <div className="flex items-center gap-2">

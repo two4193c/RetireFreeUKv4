@@ -156,6 +156,7 @@ class AppErrorBoundary extends Component<AppErrorBoundaryProps, AppErrorBoundary
   }
 }
 
+
 export default function AppWrapper() {
   return (
     <AppErrorBoundary>
