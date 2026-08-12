@@ -284,12 +284,90 @@ export async function generateFormulaExcelWorkbook(
     right: { style: 'thin', color: { argb: 'CBD5E1' } },
   };
 
+
+
   // ==========================================
-  // SHEET 1: Inputs & Setup (Master Configuration)
+  // SHEET 1: Settings (Macro Assumptions & Tax Parameters)
+  // ==========================================
+  const wsSettings = workbook.addWorksheet('Settings');
+  wsSettings.columns = [
+    { header: 'Parameter / Macro Rate', key: 'a', width: 42 },
+    { header: 'Value / Rate', key: 'b', width: 22 },
+    { header: 'Unit / Format', key: 'c', width: 20 },
+    { header: 'Notes & Policy Reference', key: 'd', width: 45 },
+  ];
+
+  // Title Banner
+  const settingsTitle = wsSettings.getRow(1);
+  settingsTitle.height = 32;
+  settingsTitle.getCell(1).value = `RETIREFREE UK - MACRO ASSUMPTIONS & TAX SETTINGS (${planName || 'Current Plan'})`;
+  settingsTitle.getCell(1).font = { name: 'Calibri', size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
+  settingsTitle.getCell(1).fill = darkSlateFill;
+  settingsTitle.getCell(1).alignment = { vertical: 'middle', horizontal: 'left' };
+  wsSettings.mergeCells('A1:D1');
+
+  wsSettings.addRow([]); // Row 2 Blank
+
+  // --- SECTION 1: UK TAX BANDS & MACRO PARAMETERS ---
+  wsSettings.addRow(['1. UK TAX BANDS & MACRO PARAMETERS', '', '', 'Standard UK Tax Rules']);
+  const setS1 = wsSettings.getRow(3);
+  setS1.height = 24;
+  setS1.eachCell((cell) => {
+    cell.fill = sectionHeaderFill;
+    cell.font = fontSectionHeader;
+    cell.alignment = { vertical: 'middle' };
+  });
+
+  const currentYear = new Date().getFullYear();
+  wsSettings.addRow(['Current Tax Year', currentYear, 'Year', 'Benchmark start year (Cell B4)']); // Row 4
+  wsSettings.addRow(['Personal Tax Allowance (£)', 12570, '£ / year', 'Tax-free income allowance (Cell B5)']); // Row 5
+  wsSettings.addRow(['Basic Rate Tax Band Threshold (£)', 50270, '£ / year', '20% Tax Band Ceiling (Cell B6)']); // Row 6
+  wsSettings.addRow(['Higher Rate Tax Band Threshold (£)', 125140, '£ / year', '40% Tax Band Ceiling (Cell B7)']); // Row 7
+  wsSettings.addRow(['Lump Sum Allowance LSA Cap (£)', 268275, '£ Lifetime', '25% Tax-free PCLS limit (Cell B8)']); // Row 8
+
+  wsSettings.getCell('B4').numFmt = '0';
+  wsSettings.getCell('B5').numFmt = '£#,##0';
+  wsSettings.getCell('B6').numFmt = '£#,##0';
+  wsSettings.getCell('B7').numFmt = '£#,##0';
+  wsSettings.getCell('B8').numFmt = '£#,##0';
+
+  wsSettings.addRow([]); // Row 9 Blank
+
+  // --- SECTION 2: ASSET GROWTH & MACRO RATES (%) ---
+  wsSettings.addRow(['2. ASSET GROWTH & MACRO RATES (%)', '', '', 'Annual Nominal Growth Assumptions']);
+  const setS2 = wsSettings.getRow(10);
+  setS2.height = 24;
+  setS2.eachCell((cell) => {
+    cell.fill = sectionHeaderFill;
+    cell.font = fontSectionHeader;
+    cell.alignment = { vertical: 'middle' };
+  });
+
+  wsSettings.addRow(['Inflation Growth Rate (%)', (profile.expectedInflationRate || 2.5) / 100, '% / year', 'CPI Annual Inflation Index (Cell B11)']); // Row 11
+  wsSettings.addRow(['DC Pension Asset Growth Rate (%)', (profile.expectedInvestmentReturn || 5.0) / 100, '% / year', 'Net Annual Growth Rate (Cell B12)']); // Row 12
+  wsSettings.addRow(['ISA Investment Growth Rate (%)', (profile.expectedInvestmentReturn || 5.0) / 100, '% / year', 'Net Annual Growth Rate (Cell B13)']); // Row 13
+  wsSettings.addRow(['Cash & Savings Growth Rate (%)', 0.030, '% / year', 'Net Cash Interest Rate (Cell B14)']); // Row 14
+  wsSettings.addRow(['State Pension Triple Lock Growth (%)', 0.025, '% / year', 'Annual State Pension Index (Cell B15)']); // Row 15
+
+  for (let r = 11; r <= 15; r++) {
+    wsSettings.getCell(`B${r}`).numFmt = '0.00%';
+  }
+
+  wsSettings.eachRow((row, rowNumber) => {
+    if (rowNumber >= 4 && rowNumber !== 9) {
+      row.eachCell((cell) => {
+        cell.border = borderThin;
+      });
+    }
+  });
+
+
+  // ==========================================
+  // SHEET 2: Inputs & Setup (Master Inputs & Current Pot Balances)
   // ==========================================
   const wsInputs = workbook.addWorksheet('Inputs & Setup');
   wsInputs.columns = [
-    { header: 'Parameter / Asset Holding', key: 'a', width: 36 },
+    { header: 'Parameter / Asset Holding', key: 'a', width: 38 },
     { header: 'YOU Value (£)', key: 'b', width: 22 },
     { header: 'YOU Contrib (£/yr)', key: 'c', width: 22 },
     { header: 'PARTNER Value (£)', key: 'd', width: 22 },
@@ -300,7 +378,7 @@ export async function generateFormulaExcelWorkbook(
   // Row 1: Title Banner
   const titleRow = wsInputs.getRow(1);
   titleRow.height = 32;
-  titleRow.getCell(1).value = `RETIREFREE UK - MASTER FORMULA MODEL (${planName || 'Current Plan'})`;
+  titleRow.getCell(1).value = `RETIREFREE UK - MASTER INPUTS & SETUP (${planName || 'Current Plan'})`;
   titleRow.getCell(1).font = { name: 'Calibri', size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
   titleRow.getCell(1).fill = darkSlateFill;
   titleRow.getCell(1).alignment = { vertical: 'middle', horizontal: 'left' };
@@ -308,59 +386,11 @@ export async function generateFormulaExcelWorkbook(
 
   wsInputs.addRow([]); // Row 2 Blank
 
-  // --- SECTION 1: GLOBAL CONTROL & TAX PARAMETERS ---
-  wsInputs.addRow(['1. UK TAX BANDS & MACRO PARAMETERS', '', '', '', '', 'Standard UK April Tax Rules']);
+  // --- SECTION 1: PERSONAL PROFILE & AGES ---
+  wsInputs.addRow(['1. PERSONAL PROFILE & AGES', 'YOU', '', 'PARTNER', '', 'Age Benchmark Targets']);
   const s1Row = wsInputs.getRow(3);
   s1Row.height = 24;
   s1Row.eachCell((cell) => {
-    cell.fill = sectionHeaderFill;
-    cell.font = fontSectionHeader;
-    cell.alignment = { vertical: 'middle' };
-  });
-
-  const currentYear = new Date().getFullYear();
-  wsInputs.addRow(['Current Tax Year', currentYear, '', '', '', 'Benchmark start year (Cell B4)']); // Row 4
-  wsInputs.addRow(['Personal Tax Allowance (£)', 12570, '', '', '', 'Tax-free income allowance (Cell B5)']); // Row 5
-  wsInputs.addRow(['Basic Rate Tax Band Threshold (£)', 50270, '', '', '', '20% Tax Band Ceiling (Cell B6)']); // Row 6
-  wsInputs.addRow(['Higher Rate Tax Band Threshold (£)', 125140, '', '', '', '40% Tax Band Ceiling (Cell B7)']); // Row 7
-  wsInputs.addRow(['Lump Sum Allowance LSA Cap (£)', 268275, '', '', '', '25% Tax-free PCLS limit (Cell B8)']); // Row 8
-
-  // Apply explicit formats for Section 1
-  wsInputs.getCell('B4').numFmt = '0'; // Year formatted as plain integer
-  wsInputs.getCell('B5').numFmt = '£#,##0';
-  wsInputs.getCell('B6').numFmt = '£#,##0';
-  wsInputs.getCell('B7').numFmt = '£#,##0';
-  wsInputs.getCell('B8').numFmt = '£#,##0';
-
-  wsInputs.addRow([]); // Row 9 Blank
-
-  // --- SECTION 2: MACRO & ASSET GROWTH ASSUMPTIONS ---
-  wsInputs.addRow(['2. ASSET GROWTH & MACRO RATES (%)', '', '', '', '', 'Annual Nominal Growth Rates']);
-  const s2Row = wsInputs.getRow(10);
-  s2Row.height = 24;
-  s2Row.eachCell((cell) => {
-    cell.fill = sectionHeaderFill;
-    cell.font = fontSectionHeader;
-    cell.alignment = { vertical: 'middle' };
-  });
-
-  wsInputs.addRow(['Inflation Growth Rate (%)', (profile.expectedInflationRate || 2.5) / 100, '', '', '', 'CPI Annual Inflation Index (Cell B11)']); // Row 11
-  wsInputs.addRow(['DC Pension Asset Growth Rate (%)', (profile.expectedInvestmentReturn || 5.0) / 100, '', '', '', 'Net Annual Growth Rate (Cell B12)']); // Row 12
-  wsInputs.addRow(['ISA Investment Growth Rate (%)', (profile.expectedInvestmentReturn || 5.0) / 100, '', '', '', 'Net Annual Growth Rate (Cell B13)']); // Row 13
-  wsInputs.addRow(['Cash & Savings Growth Rate (%)', 0.030, '', '', '', 'Net Cash Interest Rate (Cell B14)']); // Row 14
-  wsInputs.addRow(['State Pension Triple Lock Growth (%)', 0.025, '', '', '', 'Annual State Pension Index (Cell B15)']); // Row 15
-
-  for (let r = 11; r <= 15; r++) {
-    wsInputs.getCell(`B${r}`).numFmt = '0.00%';
-  }
-
-  wsInputs.addRow([]); // Row 16 Blank
-
-  // --- SECTION 3: PERSONAL PROFILE & AGES ---
-  wsInputs.addRow(['3. PERSONAL PROFILE & AGES', 'YOU', '', 'PARTNER', '', 'Age Benchmark Targets']);
-  const s3Row = wsInputs.getRow(17);
-  s3Row.height = 24;
-  s3Row.eachCell((cell) => {
     cell.fill = purpleFill;
     cell.font = fontWhiteBold;
     cell.alignment = { vertical: 'middle', horizontal: 'center' };
@@ -369,26 +399,26 @@ export async function generateFormulaExcelWorkbook(
   const primaryNmpa = profile.protectedPensionAccessAge || profile.pensionAccessAge || 57;
   const partnerNmpa = profile.partnerProtectedPensionAccessAge || profile.partnerPensionAccessAge || 57;
 
-  wsInputs.addRow(['Current Age', profile.currentAge || 50, '', isCouple ? (profile.partnerCurrentAge || 50) : 0, '', 'Cells B18 & D18']); // Row 18
-  wsInputs.addRow(['Normal Minimum Pension Access Age (NMPA)', primaryNmpa, '', isCouple ? partnerNmpa : 0, '', 'Cells B19 & D19']); // Row 19
-  wsInputs.addRow(['Target Retirement Age', profile.targetRetirementAge || 55, '', isCouple ? (profile.partnerTargetRetirementAge || 57) : 0, '', 'Cells B20 & D20']); // Row 20
-  wsInputs.addRow(['State Pension Start Age (SPA)', profile.statePensionAge || 67, '', isCouple ? (profile.partnerStatePensionAge || 67) : 67, '', 'Cells B21 & D21']); // Row 21
-  wsInputs.addRow(['State Pension Today (£/yr)', profile.statePensionAmountAnnual || 12548, '', isCouple ? (profile.partnerStatePensionAmountAnnual || 12548) : 0, '', 'Cells B22 & D22']); // Row 22
+  wsInputs.addRow(['Current Age', profile.currentAge || 50, '', isCouple ? (profile.partnerCurrentAge || 50) : 0, '', 'Cells B4 & D4']); // Row 4
+  wsInputs.addRow(['Normal Minimum Pension Access Age (NMPA)', primaryNmpa, '', isCouple ? partnerNmpa : 0, '', 'Cells B5 & D5']); // Row 5
+  wsInputs.addRow(['Target Retirement Age', profile.targetRetirementAge || 55, '', isCouple ? (profile.partnerTargetRetirementAge || 57) : 0, '', 'Cells B6 & D6']); // Row 6
+  wsInputs.addRow(['State Pension Start Age (SPA)', profile.statePensionAge || 67, '', isCouple ? (profile.partnerStatePensionAge || 67) : 67, '', 'Cells B7 & D7']); // Row 7
+  wsInputs.addRow(['State Pension Today (£/yr)', profile.statePensionAmountAnnual || 12548, '', isCouple ? (profile.partnerStatePensionAmountAnnual || 12548) : 0, '', 'Cells B8 & D8']); // Row 8
 
-  for (let r = 18; r <= 21; r++) {
+  for (let r = 4; r <= 7; r++) {
     wsInputs.getCell(`B${r}`).numFmt = '0';
     wsInputs.getCell(`D${r}`).numFmt = '0';
   }
-  wsInputs.getCell('B22').numFmt = '£#,##0';
-  wsInputs.getCell('D22').numFmt = '£#,##0';
+  wsInputs.getCell('B8').numFmt = '£#,##0';
+  wsInputs.getCell('D8').numFmt = '£#,##0';
 
-  wsInputs.addRow([]); // Row 23 Blank
+  wsInputs.addRow([]); // Row 9 Blank
 
-  // --- SECTION 4: INDIVIDUAL LIQUID ASSETS & ANNUAL TOP-UPS ---
-  wsInputs.addRow(['4. LIQUID ASSET POTS & TOP-UPS', 'YOU Value (£)', 'YOU Contrib (£/yr)', 'PARTNER Value (£)', 'PARTNER Contrib (£/yr)', 'Household Total']);
-  const s4Row = wsInputs.getRow(24);
-  s4Row.height = 26;
-  s4Row.eachCell((cell) => {
+  // --- SECTION 2: INDIVIDUAL LIQUID ASSETS & ANNUAL TOP-UPS ---
+  wsInputs.addRow(['2. LIQUID ASSET POTS & TOP-UPS', 'YOU Value (£)', 'YOU Contrib (£/yr)', 'PARTNER Value (£)', 'PARTNER Contrib (£/yr)', 'Household Total']);
+  const s2Row = wsInputs.getRow(10);
+  s2Row.height = 26;
+  s2Row.eachCell((cell) => {
     cell.fill = cyanFill;
     cell.font = fontWhiteBold;
     cell.alignment = { vertical: 'middle', horizontal: 'center' };
@@ -418,7 +448,7 @@ export async function generateFormulaExcelWorkbook(
   const partnerTotalBal = isCouple ? ((partnerPots.workplacePensionBalance || 0) + (partnerPots.sippBalance || 0) + (partnerPots.stocksAndSharesIsaBalance || 0) + (partnerPots.cashIsaBalance || 0) + (partnerPots.lisaBalance || 0) + (partnerPots.giaBalance || 0) + (partnerPots.cashSavingsBalance || 0)) : 0;
   const partnerTotalAnnual = partnerWorkplaceAnnual + partnerSippAnnual + partnerSnsIsaAnnual + partnerCashIsaAnnual + partnerLisaAnnual + partnerGiaAnnual + partnerCashSavingsAnnual;
 
-  // Row 25: Workplace Pension
+  // Row 11: Workplace Pension
   wsInputs.addRow([
     'Workplace Pension (Employer / Workplace)',
     pots.workplacePensionBalance || 0,
@@ -427,9 +457,9 @@ export async function generateFormulaExcelWorkbook(
     partnerWorkplaceAnnual,
     '',
   ]);
-  wsInputs.getCell('F25').value = { formula: 'B25+D25', result: (pots.workplacePensionBalance || 0) + (isCouple ? (partnerPots.workplacePensionBalance || 0) : 0) };
+  wsInputs.getCell('F11').value = { formula: 'B11+D11', result: (pots.workplacePensionBalance || 0) + (isCouple ? (partnerPots.workplacePensionBalance || 0) : 0) };
 
-  // Row 26: SIPP Pension (DC 1)
+  // Row 12: SIPP Pension (DC 1)
   wsInputs.addRow([
     'Pension DC 1 (SIPP / Private Pension)',
     pots.sippBalance || 0,
@@ -438,9 +468,9 @@ export async function generateFormulaExcelWorkbook(
     partnerSippAnnual,
     '',
   ]);
-  wsInputs.getCell('F26').value = { formula: 'B26+D26', result: (pots.sippBalance || 0) + (isCouple ? (partnerPots.sippBalance || 0) : 0) };
+  wsInputs.getCell('F12').value = { formula: 'B12+D12', result: (pots.sippBalance || 0) + (isCouple ? (partnerPots.sippBalance || 0) : 0) };
 
-  // Row 27: Stocks & Shares ISA
+  // Row 13: Stocks & Shares ISA
   wsInputs.addRow([
     'Stocks & Shares ISA (Investment Platforms)',
     pots.stocksAndSharesIsaBalance || 0,
@@ -449,9 +479,9 @@ export async function generateFormulaExcelWorkbook(
     partnerSnsIsaAnnual,
     '',
   ]);
-  wsInputs.getCell('F27').value = { formula: 'B27+D27', result: (pots.stocksAndSharesIsaBalance || 0) + (isCouple ? (partnerPots.stocksAndSharesIsaBalance || 0) : 0) };
+  wsInputs.getCell('F13').value = { formula: 'B13+D13', result: (pots.stocksAndSharesIsaBalance || 0) + (isCouple ? (partnerPots.stocksAndSharesIsaBalance || 0) : 0) };
 
-  // Row 28: Cash ISA
+  // Row 14: Cash ISA
   wsInputs.addRow([
     'Cash ISA',
     pots.cashIsaBalance || 0,
@@ -460,9 +490,9 @@ export async function generateFormulaExcelWorkbook(
     partnerCashIsaAnnual,
     '',
   ]);
-  wsInputs.getCell('F28').value = { formula: 'B28+D28', result: (pots.cashIsaBalance || 0) + (isCouple ? (partnerPots.cashIsaBalance || 0) : 0) };
+  wsInputs.getCell('F14').value = { formula: 'B14+D14', result: (pots.cashIsaBalance || 0) + (isCouple ? (partnerPots.cashIsaBalance || 0) : 0) };
 
-  // Row 29: Lifetime ISA (LISA)
+  // Row 15: Lifetime ISA (LISA)
   wsInputs.addRow([
     'Lifetime ISA (LISA)',
     pots.lisaBalance || 0,
@@ -471,9 +501,9 @@ export async function generateFormulaExcelWorkbook(
     partnerLisaAnnual,
     '',
   ]);
-  wsInputs.getCell('F29').value = { formula: 'B29+D29', result: (pots.lisaBalance || 0) + (isCouple ? (partnerPots.lisaBalance || 0) : 0) };
+  wsInputs.getCell('F15').value = { formula: 'B15+D15', result: (pots.lisaBalance || 0) + (isCouple ? (partnerPots.lisaBalance || 0) : 0) };
 
-  // Row 30: General Investment Account (GIA)
+  // Row 16: General Investment Account (GIA)
   wsInputs.addRow([
     'General Investment Account (GIA)',
     pots.giaBalance || 0,
@@ -482,9 +512,9 @@ export async function generateFormulaExcelWorkbook(
     partnerGiaAnnual,
     '',
   ]);
-  wsInputs.getCell('F30').value = { formula: 'B30+D30', result: (pots.giaBalance || 0) + (isCouple ? (partnerPots.giaBalance || 0) : 0) };
+  wsInputs.getCell('F16').value = { formula: 'B16+D16', result: (pots.giaBalance || 0) + (isCouple ? (partnerPots.giaBalance || 0) : 0) };
 
-  // Row 31: Cash Savings & Premium Bonds
+  // Row 17: Cash Savings & Premium Bonds
   wsInputs.addRow([
     'Cash Savings & Premium Bonds',
     pots.cashSavingsBalance || 0,
@@ -493,39 +523,36 @@ export async function generateFormulaExcelWorkbook(
     partnerCashSavingsAnnual,
     '',
   ]);
-  wsInputs.getCell('F31').value = { formula: 'B31+D31', result: (pots.cashSavingsBalance || 0) + (isCouple ? (partnerPots.cashSavingsBalance || 0) : 0) };
+  wsInputs.getCell('F17').value = { formula: 'B17+D17', result: (pots.cashSavingsBalance || 0) + (isCouple ? (partnerPots.cashSavingsBalance || 0) : 0) };
 
-  // Row 32: TOTAL LIQUID ASSETS ROW
+  // Row 18: TOTAL LIQUID ASSETS ROW
   wsInputs.addRow(['TOTAL ASSETS & ANNUAL TOP-UPS', '', '', '', '', '']);
-  const totAssetsRow = wsInputs.getRow(32);
+  const totAssetsRow = wsInputs.getRow(18);
   totAssetsRow.height = 24;
   totAssetsRow.font = fontBold;
-  wsInputs.getCell('B32').value = { formula: 'SUM(B25:B31)', result: primaryTotalBal };
-  wsInputs.getCell('C32').value = { formula: 'SUM(C25:C31)', result: primaryTotalAnnual };
-  wsInputs.getCell('D32').value = { formula: 'SUM(D25:D31)', result: partnerTotalBal };
-  wsInputs.getCell('E32').value = { formula: 'SUM(E25:E31)', result: partnerTotalAnnual };
-  wsInputs.getCell('F32').value = { formula: 'B32+D32', result: primaryTotalBal + partnerTotalBal };
+  wsInputs.getCell('B18').value = { formula: 'SUM(B11:B17)', result: primaryTotalBal };
+  wsInputs.getCell('C18').value = { formula: 'SUM(C11:C17)', result: primaryTotalAnnual };
+  wsInputs.getCell('D18').value = { formula: 'SUM(D11:D17)', result: partnerTotalBal };
+  wsInputs.getCell('E18').value = { formula: 'SUM(E11:E17)', result: partnerTotalAnnual };
+  wsInputs.getCell('F18').value = { formula: 'B18+D18', result: primaryTotalBal + partnerTotalBal };
 
-  for (let r = 25; r <= 32; r++) {
+  for (let r = 11; r <= 18; r++) {
     for (const col of ['B', 'C', 'D', 'E', 'F']) {
       wsInputs.getCell(`${col}${r}`).numFmt = '£#,##0';
     }
   }
 
-  wsInputs.addRow([]); // Row 33 Blank
+  wsInputs.addRow([]); // Row 19 Blank
 
-  // --- SECTION 5: COMBINED POT CATEGORY TOTALS ---
-  wsInputs.addRow(['5. COMBINED POT CATEGORY TOTALS', 'Household Total (£)', 'YOU (£)', 'PARTNER (£)', '', 'Formula Summary Mapping']);
-  const s5Row = wsInputs.getRow(34);
-  s5Row.height = 24;
-  s5Row.eachCell((cell) => {
+  // --- SECTION 3: CURRENT POT CATEGORY TOTALS ---
+  wsInputs.addRow(['3. CURRENT POT CATEGORY TOTALS', 'Household Total (£)', 'YOU (£)', 'PARTNER (£)', '', 'Formula Summary Mapping']);
+  const s3Row = wsInputs.getRow(20);
+  s3Row.height = 24;
+  s3Row.eachCell((cell) => {
     cell.fill = sectionHeaderFill;
     cell.font = fontSectionHeader;
     cell.alignment = { vertical: 'middle' };
   });
-
-  // Row 35: Category Header Row
-  wsInputs.addRow(['Category Name', 'Household Sum', 'YOU Subtotal', 'PARTNER Subtotal', '', 'Schedule Mapping']);
 
   const primaryPensionBal = (pots.workplacePensionBalance || 0) + (pots.sippBalance || 0);
   const partnerPensionBal = isCouple ? ((partnerPots.workplacePensionBalance || 0) + (partnerPots.sippBalance || 0)) : 0;
@@ -542,55 +569,103 @@ export async function generateFormulaExcelWorkbook(
   const primaryCashAnnual = primaryGiaAnnual + primaryCashSavingsAnnual;
   const partnerCashAnnual = partnerGiaAnnual + partnerCashSavingsAnnual;
 
-  // Row 36: DC Pensions Total (Workplace + SIPP)
+  // Row 21: DC Pensions Total (Workplace + SIPP)
   wsInputs.addRow(['DC Pensions Balance Total', '', '', '', '', 'Mapped to Schedule Pension Balances']);
-  wsInputs.getCell('C36').value = { formula: 'B25+B26', result: primaryPensionBal };
-  wsInputs.getCell('D36').value = { formula: 'D25+D26', result: partnerPensionBal };
-  wsInputs.getCell('B36').value = { formula: 'C36+D36', result: primaryPensionBal + partnerPensionBal };
+  wsInputs.getCell('C21').value = { formula: 'B11+B12', result: primaryPensionBal };
+  wsInputs.getCell('D21').value = { formula: 'D11+D12', result: partnerPensionBal };
+  wsInputs.getCell('B21').value = { formula: 'C21+D21', result: primaryPensionBal + partnerPensionBal };
 
-  // Row 37: Annual DC Pension Contributions
+  // Row 22: Annual DC Pension Contributions
   wsInputs.addRow(['Annual DC Pension Contributions', '', '', '', '', 'Mapped to Accumulation Phase Top-ups']);
-  wsInputs.getCell('C37').value = { formula: 'C25+C26', result: primaryPensionAnnual };
-  wsInputs.getCell('D37').value = { formula: 'E25+E26', result: partnerPensionAnnual };
-  wsInputs.getCell('B37').value = { formula: 'C37+D37', result: primaryPensionAnnual + partnerPensionAnnual };
+  wsInputs.getCell('C22').value = { formula: 'C11+C12', result: primaryPensionAnnual };
+  wsInputs.getCell('D22').value = { formula: 'E11+E12', result: partnerPensionAnnual };
+  wsInputs.getCell('B22').value = { formula: 'C22+D22', result: primaryPensionAnnual + partnerPensionAnnual };
 
-  // Row 38: ISA Investments Total (S&S ISA + Cash ISA + LISA)
+  // Row 23: ISA Investments Total (S&S ISA + Cash ISA + LISA)
   wsInputs.addRow(['ISA Investments Balance Total', '', '', '', '', 'Mapped to Schedule ISA Balances']);
-  wsInputs.getCell('C38').value = { formula: 'B27+B28+B29', result: primaryIsaBal };
-  wsInputs.getCell('D38').value = { formula: 'D27+D28+D29', result: partnerIsaBal };
-  wsInputs.getCell('B38').value = { formula: 'C38+D38', result: primaryIsaBal + partnerIsaBal };
+  wsInputs.getCell('C23').value = { formula: 'B13+B14+B15', result: primaryIsaBal };
+  wsInputs.getCell('D23').value = { formula: 'D13+D14+D15', result: partnerIsaBal };
+  wsInputs.getCell('B23').value = { formula: 'C23+D23', result: primaryIsaBal + partnerIsaBal };
 
-  // Row 39: Annual ISA Contributions
+  // Row 24: Annual ISA Contributions
   wsInputs.addRow(['Annual ISA Contributions', '', '', '', '', 'Mapped to Accumulation Phase Top-ups']);
-  wsInputs.getCell('C39').value = { formula: 'C27+C28+C29', result: primaryIsaAnnual };
-  wsInputs.getCell('D39').value = { formula: 'E27+E28+E29', result: partnerIsaAnnual };
-  wsInputs.getCell('B39').value = { formula: 'C39+D39', result: primaryIsaAnnual + partnerIsaAnnual };
+  wsInputs.getCell('C24').value = { formula: 'C13+C14+C15', result: primaryIsaAnnual };
+  wsInputs.getCell('D24').value = { formula: 'E13+E14+E15', result: partnerIsaAnnual };
+  wsInputs.getCell('B24').value = { formula: 'C24+D24', result: primaryIsaAnnual + partnerIsaAnnual };
 
-  // Row 40: Cash & GIA Total (GIA + Cash Savings)
+  // Row 25: Cash & GIA Total (GIA + Cash Savings)
   wsInputs.addRow(['Cash & GIA Balance Total', '', '', '', '', 'Mapped to Cash Buffer Balances']);
-  wsInputs.getCell('C40').value = { formula: 'B30+B31', result: primaryCashBal };
-  wsInputs.getCell('D40').value = { formula: 'D30+D31', result: partnerCashBal };
-  wsInputs.getCell('B40').value = { formula: 'C40+D40', result: primaryCashBal + partnerCashBal };
+  wsInputs.getCell('C25').value = { formula: 'B16+B17', result: primaryCashBal };
+  wsInputs.getCell('D25').value = { formula: 'D16+D17', result: partnerCashBal };
+  wsInputs.getCell('B25').value = { formula: 'C25+D25', result: primaryCashBal + partnerCashBal };
 
-  // Row 41: Annual Cash & GIA Contributions
+  // Row 26: Annual Cash & GIA Contributions
   wsInputs.addRow(['Annual Cash & GIA Contributions', '', '', '', '', 'Mapped to Accumulation Phase Top-ups']);
-  wsInputs.getCell('C41').value = { formula: 'C30+C31', result: primaryCashAnnual };
-  wsInputs.getCell('D41').value = { formula: 'E30+E31', result: partnerCashAnnual };
-  wsInputs.getCell('B41').value = { formula: 'C41+D41', result: primaryCashAnnual + partnerCashAnnual };
+  wsInputs.getCell('C26').value = { formula: 'C16+C17', result: primaryCashAnnual };
+  wsInputs.getCell('D26').value = { formula: 'E16+E17', result: partnerCashAnnual };
+  wsInputs.getCell('B26').value = { formula: 'C26+D26', result: primaryCashAnnual + partnerCashAnnual };
 
-  for (let r = 36; r <= 41; r++) {
+  // Row 27: TOTAL CURRENT POT BALANCES
+  wsInputs.addRow(['TOTAL CURRENT POT BALANCES', '', '', '', '', 'Sum of DC Pensions, ISAs, Cash & GIA']);
+  wsInputs.getCell('C27').value = { formula: 'C21+C23+C25', result: primaryTotalBal };
+  wsInputs.getCell('D27').value = { formula: 'D21+D23+D25', result: partnerTotalBal };
+  wsInputs.getCell('B27').value = { formula: 'B21+B23+B25', result: primaryTotalBal + partnerTotalBal };
+
+  // Row 28: TOTAL ANNUAL CONTRIBUTIONS
+  wsInputs.addRow(['TOTAL ANNUAL REGULAR TOP-UPS', '', '', '', '', 'Sum of DC, ISA, and Cash Annual Contributions']);
+  wsInputs.getCell('C28').value = { formula: 'C22+C24+C26', result: primaryTotalAnnual };
+  wsInputs.getCell('D28').value = { formula: 'D22+D24+D26', result: partnerTotalAnnual };
+  wsInputs.getCell('B28').value = { formula: 'B22+B24+B26', result: primaryTotalAnnual + partnerTotalAnnual };
+
+  const totBalsRow = wsInputs.getRow(27);
+  totBalsRow.font = fontBold;
+  const totContribsRow = wsInputs.getRow(28);
+  totContribsRow.font = fontBold;
+
+  for (let r = 21; r <= 28; r++) {
     for (const col of ['B', 'C', 'D']) {
       wsInputs.getCell(`${col}${r}`).numFmt = '£#,##0';
     }
   }
 
-  wsInputs.addRow([]); // Row 42 Blank
+  // Format borders on wsInputs
+  wsInputs.eachRow((row, rowNumber) => {
+    if (rowNumber >= 4) {
+      row.eachCell((cell) => {
+        cell.border = borderThin;
+      });
+    }
+  });
 
-  // --- SECTION 6: PHASED RETIREMENT DRAWDOWN TARGETS ---
-  wsInputs.addRow(['6. PHASED INCOME SPENDING TARGETS', 'Start Age', 'End Age', 'Net Target (£/yr)', '', 'Phased Spending Requirements']);
-  const s6Row = wsInputs.getRow(43);
-  s6Row.height = 24;
-  s6Row.eachCell((cell) => {
+
+  // ==========================================
+  // SHEET 3: Phased Income (Spending Targets)
+  // ==========================================
+  const wsPhased = workbook.addWorksheet('Phased Income');
+  wsPhased.columns = [
+    { header: 'Phase Name / Description', key: 'a', width: 38 },
+    { header: 'Start Age', key: 'b', width: 16 },
+    { header: 'End Age', key: 'c', width: 16 },
+    { header: 'Net Target (£/yr)', key: 'd', width: 22 },
+    { header: 'Description / Lifestyle Notes', key: 'e', width: 45 },
+  ];
+
+  // Title Banner
+  const phasedTitle = wsPhased.getRow(1);
+  phasedTitle.height = 32;
+  phasedTitle.getCell(1).value = `RETIREFREE UK - PHASED INCOME SPENDING TARGETS`;
+  phasedTitle.getCell(1).font = { name: 'Calibri', size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
+  phasedTitle.getCell(1).fill = blueFill;
+  phasedTitle.getCell(1).alignment = { vertical: 'middle', horizontal: 'left' };
+  wsPhased.mergeCells('A1:E1');
+
+  wsPhased.addRow([]); // Row 2 Blank
+
+  // Table Header
+  wsPhased.addRow(['Phase Name / Description', 'Start Age', 'End Age', 'Net Target (£/yr)', 'Description / Lifestyle Notes']); // Row 3
+  const pHeadRow = wsPhased.getRow(3);
+  pHeadRow.height = 26;
+  pHeadRow.eachCell((cell) => {
     cell.fill = blueFill;
     cell.font = fontWhiteBold;
     cell.alignment = { vertical: 'middle', horizontal: 'center' };
@@ -612,71 +687,152 @@ export async function generateFormulaExcelWorkbook(
   const noGoEndAge = 120;
   const noGoIncome = isPhasesEnabled && spendingPhases?.noGoIncomeAnnual ? spendingPhases.noGoIncomeAnnual : Math.round(baseTargetNet * 0.75);
 
-  // Row 44: GO GO Phase
-  wsInputs.addRow(['GO-GO Phase (Active Lifestyle)', goGoStartAge, goGoEndAge, goGoIncome, '', 'Cell D44']);
-  // Row 45: Slow GO Phase
-  wsInputs.addRow(['Slow-GO Phase (Moderate Lifestyle)', slowGoStartAge, slowGoEndAge, slowGoIncome, '', 'Cell D45']);
-  // Row 46: No GO Phase
-  wsInputs.addRow(['No-GO Phase (Passive / Care)', noGoStartAge, noGoEndAge, noGoIncome, '', 'Cell D46']);
+  // Default active phases
+  wsPhased.addRow(['GO-GO Phase (Active Lifestyle)', goGoStartAge, goGoEndAge, goGoIncome, 'Primary Active Retirement Spending']); // Row 4
+  wsPhased.addRow(['Slow-GO Phase (Moderate Lifestyle)', slowGoStartAge, slowGoEndAge, slowGoIncome, 'Mid-Retirement Travel & Leisure']); // Row 5
+  wsPhased.addRow(['No-GO Phase (Passive / Care)', noGoStartAge, noGoEndAge, noGoIncome, 'Late Retirement / Essential Care']); // Row 6
 
-  for (let r = 44; r <= 46; r++) {
-    wsInputs.getCell(`B${r}`).numFmt = '0';
-    wsInputs.getCell(`C${r}`).numFmt = '0';
-    wsInputs.getCell(`D${r}`).numFmt = '£#,##0';
+  // Add extra template rows for user additions
+  for (let r = 7; r <= 20; r++) {
+    wsPhased.addRow([`Additional Phase ${r - 6} (Optional)`, 999, 999, 0, 'User Added Custom Phase']);
   }
 
-  wsInputs.addRow([]); // Row 47 Blank
+  for (let r = 4; r <= 20; r++) {
+    const row = wsPhased.getRow(r);
+    row.getCell(2).numFmt = '0';
+    row.getCell(3).numFmt = '0';
+    row.getCell(4).numFmt = '£#,##0';
+    row.eachCell((cell) => { cell.border = borderThin; });
+  }
 
-  // --- SECTION 7: FIXED INCOME (DB PENSIONS) ---
-  wsInputs.addRow(['7. FIXED INCOME (DB PENSIONS)', 'Start Age', 'End Age', 'YOU Annual (£)', 'PARTNER Annual (£)', 'Indexation & Notes']);
-  const s7Row = wsInputs.getRow(48);
-  s7Row.height = 24;
-  s7Row.eachCell((cell) => {
+
+  // ==========================================
+  // SHEET 4: Fixed Income (DB Pensions & Annuities)
+  // ==========================================
+  const wsFixed = workbook.addWorksheet('Fixed Income');
+  wsFixed.columns = [
+    { header: 'Description / Income Source', key: 'a', width: 38 },
+    { header: 'Owner', key: 'b', width: 16 },
+    { header: 'Start Age', key: 'c', width: 14 },
+    { header: 'End Age', key: 'd', width: 14 },
+    { header: 'Annual Amount (£/yr)', key: 'e', width: 22 },
+    { header: 'Indexation & Notes', key: 'f', width: 38 },
+  ];
+
+  // Title Banner
+  const fixedTitle = wsFixed.getRow(1);
+  fixedTitle.height = 32;
+  fixedTitle.getCell(1).value = `RETIREFREE UK - FIXED INCOME & DEFINED BENEFIT PENSIONS`;
+  fixedTitle.getCell(1).font = { name: 'Calibri', size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
+  fixedTitle.getCell(1).fill = sectionHeaderFill;
+  fixedTitle.getCell(1).alignment = { vertical: 'middle', horizontal: 'left' };
+  wsFixed.mergeCells('A1:F1');
+
+  wsFixed.addRow([]); // Row 2 Blank
+
+  // Table Header
+  wsFixed.addRow(['Description / Income Source', 'Owner', 'Start Age', 'End Age', 'Annual Amount (£/yr)', 'Indexation & Notes']); // Row 3
+  const fHeadRow = wsFixed.getRow(3);
+  fHeadRow.height = 26;
+  fHeadRow.eachCell((cell) => {
     cell.fill = sectionHeaderFill;
     cell.font = fontSectionHeader;
-    cell.alignment = { vertical: 'middle' };
+    cell.alignment = { vertical: 'middle', horizontal: 'center' };
   });
 
   const primaryDbList = (profile.dbPensions || []).filter((db) => db.enabled && db.owner !== 'partner');
   const partnerDbList = (profile.dbPensions || []).filter((db) => db.enabled && db.owner === 'partner');
 
-  const primaryDb1 = primaryDbList[0];
-  const partnerDb1 = partnerDbList[0];
-
-  const primaryDbStartAge = primaryDb1 ? primaryDb1.startAge : 60;
-  const primaryDbAmount = primaryDb1 ? primaryDb1.annualIncome : 0;
-
-  const partnerDbStartAge = partnerDb1 ? partnerDb1.startAge : 60;
-  const partnerDbAmount = partnerDb1 ? partnerDb1.annualIncome : 0;
-
-  // Row 49: DB Pension 1
-  wsInputs.addRow(['Defined Benefit Pension (DB 1)', primaryDbStartAge, 120, primaryDbAmount, partnerDbAmount, 'Cell D49 & E49']);
-  // Row 50: Additional Fixed Income / Rental
-  wsInputs.addRow(['Part-Time Work / Rental / Fixed Income', 50, 60, 0, 0, 'Cell D50 & E50']);
-
-  for (let r = 49; r <= 50; r++) {
-    wsInputs.getCell(`B${r}`).numFmt = '0';
-    wsInputs.getCell(`C${r}`).numFmt = '0';
-    wsInputs.getCell(`D${r}`).numFmt = '£#,##0';
-    wsInputs.getCell(`E${r}`).numFmt = '£#,##0';
+  if (primaryDbList.length > 0 || partnerDbList.length > 0) {
+    primaryDbList.forEach((db) => {
+      wsFixed.addRow([
+        db.name || 'Defined Benefit Pension (YOU)',
+        'YOU',
+        db.startAge || 60,
+        120,
+        db.annualIncome || 0,
+        db.inflationLinked ? 'CPI Indexed' : 'Level Pension Income'
+      ]);
+    });
+    partnerDbList.forEach((db) => {
+      wsFixed.addRow([
+        db.name || 'Defined Benefit Pension (PARTNER)',
+        'PARTNER',
+        db.startAge || 60,
+        120,
+        db.annualIncome || 0,
+        db.inflationLinked ? 'CPI Indexed' : 'Level Pension Income'
+      ]);
+    });
+  } else {
+    wsFixed.addRow(['Defined Benefit Pension 1', 'YOU', 60, 120, 0, 'No active DB pension recorded']);
+    wsFixed.addRow(['Defined Benefit Pension 2', 'PARTNER', 60, 120, 0, 'No active partner DB pension']);
   }
 
-  // --- SECTION 8: ONE-OFF LUMP SUM CONTRIBUTIONS ---
-  wsInputs.addRow([]); // Row 51 Blank
-  wsInputs.addRow(['8. ONE-OFF LUMP SUM CONTRIBUTIONS', 'Owner', 'Target Category', 'Execution Year', 'Out-of-Pocket (£)', 'SIPP Relief (£)', 'Gross Inflow (£)']);
-  const s8Row = wsInputs.getRow(52);
-  s8Row.height = 24;
-  s8Row.eachCell((cell) => {
+  // Pre-fill extra empty template rows up to Row 25
+  const currentFixedRows = wsFixed.lastRow!.number;
+  for (let r = currentFixedRows + 1; r <= 25; r++) {
+    wsFixed.addRow(['Extra Fixed Income / Rental (Optional)', 'YOU', 99, 120, 0, 'User Added Custom Stream']);
+  }
+
+  // Summary total row
+  wsFixed.addRow(['TOTAL FIXED ANNUAL INCOME', '', '', '', { formula: 'SUM(E4:E25)', result: 0 }, 'All Active Fixed Streams']);
+  const fixedTotRow = wsFixed.lastRow!;
+  fixedTotRow.font = fontBold;
+
+  for (let r = 4; r <= 26; r++) {
+    const row = wsFixed.getRow(r);
+    row.getCell(3).numFmt = '0';
+    row.getCell(4).numFmt = '0';
+    row.getCell(5).numFmt = '£#,##0';
+    row.eachCell((cell) => { cell.border = borderThin; });
+  }
+
+
+  // ==========================================
+  // SHEET 5: One-Off Contributions
+  // ==========================================
+  const wsOneOff = workbook.addWorksheet('One-Off Contributions');
+  wsOneOff.columns = [
+    { header: 'Description / Contribution Name', key: 'a', width: 38 },
+    { header: 'Owner', key: 'b', width: 14 },
+    { header: 'Target Category', key: 'c', width: 22 },
+    { header: 'Execution Year', key: 'd', width: 16 },
+    { header: 'Out-of-Pocket (£)', key: 'e', width: 20 },
+    { header: 'SIPP Relief (£)', key: 'f', width: 18 },
+    { header: 'Gross Inflow (£)', key: 'g', width: 20 },
+    { header: 'Target Pot Key', key: 'h', width: 24 },
+  ];
+
+  // Title Banner
+  const oneOffTitle = wsOneOff.getRow(1);
+  oneOffTitle.height = 32;
+  oneOffTitle.getCell(1).value = `RETIREFREE UK - ONE-OFF LUMP SUM CONTRIBUTIONS`;
+  oneOffTitle.getCell(1).font = { name: 'Calibri', size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
+  oneOffTitle.getCell(1).fill = sectionHeaderFill;
+  oneOffTitle.getCell(1).alignment = { vertical: 'middle', horizontal: 'left' };
+  wsOneOff.mergeCells('A1:H1');
+
+  wsOneOff.addRow([]); // Row 2 Blank
+
+  // Table Header
+  wsOneOff.addRow(['Description / Contribution Name', 'Owner', 'Target Category', 'Execution Year', 'Out-of-Pocket (£)', 'SIPP Relief (£)', 'Gross Inflow (£)', 'Target Pot Key']); // Row 3
+  const oHeadRow = wsOneOff.getRow(3);
+  oHeadRow.height = 26;
+  oHeadRow.eachCell((cell) => {
     cell.fill = sectionHeaderFill;
     cell.font = fontSectionHeader;
-    cell.alignment = { vertical: 'middle' };
+    cell.alignment = { vertical: 'middle', horizontal: 'center' };
   });
 
   const activeOneOffs = (profile.oneOffContributions || []).filter(
     (c) => c.enabled !== false && c.frequency !== 'regular_monthly'
   );
 
-  const oneOffStartRow = 54;
+  let sumOneOffE = 0;
+  let sumOneOffF = 0;
+  let sumOneOffG = 0;
+
   if (activeOneOffs.length > 0) {
     activeOneOffs.forEach((c) => {
       const cOwner = c.owner === 'partner' ? 'PARTNER' : 'YOU';
@@ -694,63 +850,118 @@ export async function generateFormulaExcelWorkbook(
           relief = Math.round(rawAmt * 0.25);
         }
       }
-      const nextR = wsInputs.lastRow!.number + 1;
-      wsInputs.addRow([
+      const grossInf = outOfPocket + relief;
+      sumOneOffE += outOfPocket;
+      sumOneOffF += relief;
+      sumOneOffG += grossInf;
+
+      const nextR = wsOneOff.lastRow!.number + 1;
+      wsOneOff.addRow([
         c.name || 'One-Off Contribution',
         cOwner,
         cat,
         cYear,
         outOfPocket,
         relief,
-        { formula: `E${nextR}+F${nextR}`, result: outOfPocket + relief }
+        { formula: `E${nextR}+F${nextR}`, result: grossInf },
+        c.targetPot
       ]);
-      const currRow = wsInputs.lastRow!;
-      currRow.getCell(4).numFmt = '0';
-      currRow.getCell(5).numFmt = '£#,##0';
-      currRow.getCell(6).numFmt = '£#,##0';
-      currRow.getCell(7).numFmt = '£#,##0';
     });
   } else {
-    wsInputs.addRow(['No active one-off contributions', 'N/A', 'N/A', 2099, 0, 0, 0]);
-    const currRow = wsInputs.lastRow!;
-    currRow.getCell(4).numFmt = '0';
-    currRow.getCell(5).numFmt = '£#,##0';
-    currRow.getCell(6).numFmt = '£#,##0';
-    currRow.getCell(7).numFmt = '£#,##0';
+    wsOneOff.addRow(['No active one-off contributions', 'YOU', 'DC Pensions', 2099, 0, 0, 0, 'none']);
   }
-  const oneOffEndRow = wsInputs.lastRow!.number;
 
-  // Row total for One-Off Contributions
-  wsInputs.addRow([
+  // Pre-fill extra empty template rows up to Row 50
+  const currentOneOffRows = wsOneOff.lastRow!.number;
+  for (let r = currentOneOffRows + 1; r <= 50; r++) {
+    const nextR = r;
+    wsOneOff.addRow(['Extra Lump Sum Item (Optional)', 'YOU', 'DC Pensions', 2099, 0, 0, { formula: `E${nextR}+F${nextR}`, result: 0 }, 'none']);
+  }
+
+  // Row 51: Summary Total Row
+  wsOneOff.addRow([
     'TOTAL ONE-OFF CONTRIBUTIONS',
     '',
     '',
     '',
-    { formula: `SUM(E${oneOffStartRow}:E${oneOffEndRow})`, result: 0 },
-    { formula: `SUM(F${oneOffStartRow}:F${oneOffEndRow})`, result: 0 },
-    { formula: `SUM(G${oneOffStartRow}:G${oneOffEndRow})`, result: 0 }
+    { formula: 'SUM(E4:E50)', result: sumOneOffE },
+    { formula: 'SUM(F4:F50)', result: sumOneOffF },
+    { formula: 'SUM(G4:G50)', result: sumOneOffG },
+    ''
   ]);
-  const oneOffTotRow = wsInputs.lastRow!;
+  const oneOffTotRow = wsOneOff.lastRow!;
   oneOffTotRow.font = fontBold;
-  oneOffTotRow.getCell(5).numFmt = '£#,##0';
-  oneOffTotRow.getCell(6).numFmt = '£#,##0';
-  oneOffTotRow.getCell(7).numFmt = '£#,##0';
 
-  wsInputs.addRow([]); // Blank row
+  for (let r = 4; r <= 51; r++) {
+    const row = wsOneOff.getRow(r);
+    row.getCell(4).numFmt = '0';
+    row.getCell(5).numFmt = '£#,##0';
+    row.getCell(6).numFmt = '£#,##0';
+    row.getCell(7).numFmt = '£#,##0';
+    row.eachCell((cell) => { cell.border = borderThin; });
+  }
 
-  // --- SECTION 9: POT TRANSFERS & CROSS-POT MOVEMENTS ---
-  const transfersHeaderRow = wsInputs.lastRow!.number + 1;
-  wsInputs.addRow(['9. POT TRANSFERS & CROSS-POT MOVEMENTS', 'Source Pot', 'Destination Pot', 'Execution Year', 'Source Category', 'Dest Category', 'Outflow (£)', 'SIPP Relief (£)', 'Inflow (£)']);
-  const s9Row = wsInputs.getRow(transfersHeaderRow);
-  s9Row.height = 24;
-  s9Row.eachCell((cell) => {
+
+  // ==========================================
+  // SHEET 6: Pot Transfers
+  // ==========================================
+  const wsTransfers = workbook.addWorksheet('Pot Transfers');
+  wsTransfers.columns = [
+    { header: 'Transfer Name', key: 'a', width: 32 },
+    { header: 'Source Description', key: 'b', width: 32 },
+    { header: 'Dest Description', key: 'c', width: 32 },
+    { header: 'Execution Year', key: 'd', width: 16 },
+    { header: 'Source Category', key: 'e', width: 22 },
+    { header: 'Dest Category', key: 'f', width: 22 },
+    { header: 'Outflow (£)', key: 'g', width: 18 },
+    { header: 'SIPP Relief (£)', key: 'h', width: 18 },
+    { header: 'Inflow (£)', key: 'i', width: 18 },
+    { header: 'Source Owner', key: 'j', width: 16 },
+    { header: 'Source Pot Key', key: 'k', width: 22 },
+    { header: 'Dest Owner', key: 'l', width: 16 },
+    { header: 'Dest Pot Key', key: 'm', width: 22 },
+  ];
+
+  // Title Banner
+  const transfersTitle = wsTransfers.getRow(1);
+  transfersTitle.height = 32;
+  transfersTitle.getCell(1).value = `RETIREFREE UK - POT TRANSFERS & CROSS-POT MOVEMENTS`;
+  transfersTitle.getCell(1).font = { name: 'Calibri', size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
+  transfersTitle.getCell(1).fill = sectionHeaderFill;
+  transfersTitle.getCell(1).alignment = { vertical: 'middle', horizontal: 'left' };
+  wsTransfers.mergeCells('A1:M1');
+
+  wsTransfers.addRow([]); // Row 2 Blank
+
+  // Table Header
+  wsTransfers.addRow([
+    'Transfer Name',
+    'Source Description',
+    'Dest Description',
+    'Execution Year',
+    'Source Category',
+    'Dest Category',
+    'Outflow (£)',
+    'SIPP Relief (£)',
+    'Inflow (£)',
+    'Source Owner',
+    'Source Pot Key',
+    'Dest Owner',
+    'Dest Pot Key'
+  ]); // Row 3
+  const tHeadRow = wsTransfers.getRow(3);
+  tHeadRow.height = 26;
+  tHeadRow.eachCell((cell) => {
     cell.fill = sectionHeaderFill;
     cell.font = fontSectionHeader;
-    cell.alignment = { vertical: 'middle' };
+    cell.alignment = { vertical: 'middle', horizontal: 'center' };
   });
 
   const activeTransfers = (profile.potTransfers || []).filter((t) => t.enabled !== false);
-  const transfersStartRow = transfersHeaderRow + 1;
+
+  let sumTrG = 0;
+  let sumTrH = 0;
+  let sumTrI = 0;
 
   if (activeTransfers.length > 0) {
     activeTransfers.forEach((t) => {
@@ -763,9 +974,15 @@ export async function generateFormulaExcelWorkbook(
       const dstCat = getPotCategoryName(t.destinationPot);
       const amt = t.amount || 0;
       const relief = (t.destinationPot === 'sipp' && t.sourcePot !== 'sipp' && t.sourcePot !== 'workplace_pension') ? Math.round(amt * 0.25) : 0;
-      const targetRowNum = wsInputs.lastRow!.number + 1;
+      const inf = amt + relief;
 
-      wsInputs.addRow([
+      sumTrG += amt;
+      sumTrH += relief;
+      sumTrI += inf;
+
+      const targetRowNum = wsTransfers.lastRow!.number + 1;
+
+      wsTransfers.addRow([
         t.name || 'Pot Transfer',
         srcStr,
         dstStr,
@@ -774,50 +991,51 @@ export async function generateFormulaExcelWorkbook(
         dstCat,
         amt,
         relief,
-        { formula: `G${targetRowNum}+H${targetRowNum}`, result: amt + relief }
+        { formula: `G${targetRowNum}+H${targetRowNum}`, result: inf },
+        srcOwnerStr,
+        t.sourcePot,
+        dstOwnerStr,
+        t.destinationPot
       ]);
-      const currRow = wsInputs.lastRow!;
-      currRow.getCell(4).numFmt = '0';
-      currRow.getCell(7).numFmt = '£#,##0';
-      currRow.getCell(8).numFmt = '£#,##0';
-      currRow.getCell(9).numFmt = '£#,##0';
     });
   } else {
-    wsInputs.addRow(['No active pot transfers', 'N/A', 'N/A', 2099, 'N/A', 'N/A', 0, 0, 0]);
-    const currRow = wsInputs.lastRow!;
-    currRow.getCell(4).numFmt = '0';
-    currRow.getCell(7).numFmt = '£#,##0';
-    currRow.getCell(8).numFmt = '£#,##0';
-    currRow.getCell(9).numFmt = '£#,##0';
+    wsTransfers.addRow(['No active pot transfers', 'N/A', 'N/A', 2099, 'N/A', 'N/A', 0, 0, 0, 'YOU', 'none', 'YOU', 'none']);
   }
-  const transfersEndRow = wsInputs.lastRow!.number;
 
-  // Row total for Transfers
-  wsInputs.addRow([
+  // Pre-fill extra empty template rows up to Row 50
+  const currentTransferRows = wsTransfers.lastRow!.number;
+  for (let r = currentTransferRows + 1; r <= 50; r++) {
+    const nextR = r;
+    wsTransfers.addRow(['Extra Transfer Item (Optional)', 'YOU - Cash Savings', 'YOU - SIPP', 2099, 'Cash & GIA', 'DC Pensions', 0, 0, { formula: `G${nextR}+H${nextR}`, result: 0 }, 'YOU', 'cash_savings', 'YOU', 'sipp']);
+  }
+
+  // Row 51: Summary Total Row
+  wsTransfers.addRow([
     'TOTAL POT TRANSFERS',
     '',
     '',
     '',
     '',
     '',
-    { formula: `SUM(G${transfersStartRow}:G${transfersEndRow})`, result: 0 },
-    { formula: `SUM(H${transfersStartRow}:H${transfersEndRow})`, result: 0 },
-    { formula: `SUM(I${transfersStartRow}:I${transfersEndRow})`, result: 0 }
+    { formula: 'SUM(G4:G50)', result: sumTrG },
+    { formula: 'SUM(H4:H50)', result: sumTrH },
+    { formula: 'SUM(I4:I50)', result: sumTrI },
+    '',
+    '',
+    '',
+    ''
   ]);
-  const transfersTotRow = wsInputs.lastRow!;
+  const transfersTotRow = wsTransfers.lastRow!;
   transfersTotRow.font = fontBold;
-  transfersTotRow.getCell(7).numFmt = '£#,##0';
-  transfersTotRow.getCell(8).numFmt = '£#,##0';
-  transfersTotRow.getCell(9).numFmt = '£#,##0';
 
-  // Format borders on wsInputs
-  wsInputs.eachRow((row, rowNumber) => {
-    if (rowNumber >= 4) {
-      row.eachCell((cell) => {
-        cell.border = borderThin;
-      });
-    }
-  });
+  for (let r = 4; r <= 51; r++) {
+    const row = wsTransfers.getRow(r);
+    row.getCell(4).numFmt = '0';
+    row.getCell(7).numFmt = '£#,##0';
+    row.getCell(8).numFmt = '£#,##0';
+    row.getCell(9).numFmt = '£#,##0';
+    row.eachCell((cell) => { cell.border = borderThin; });
+  }
 
 
   // ==========================================
@@ -847,13 +1065,13 @@ export async function generateFormulaExcelWorkbook(
   });
 
   // Rows 4 - 10: Individual Pot Contribution Breakdown
-  wsContrib.addRow(['Workplace Pension', { formula: "='Inputs & Setup'!C25/12", result: primaryWorkplaceAnnual / 12 }, { formula: "='Inputs & Setup'!C25", result: primaryWorkplaceAnnual }, { formula: "='Inputs & Setup'!E25/12", result: partnerWorkplaceAnnual / 12 }, { formula: "='Inputs & Setup'!E25", result: partnerWorkplaceAnnual }, { formula: '=B4+D4', result: (primaryWorkplaceAnnual + partnerWorkplaceAnnual) / 12 }, { formula: '=C4+E4', result: primaryWorkplaceAnnual + partnerWorkplaceAnnual }]);
-  wsContrib.addRow(['Private Pension / SIPP', { formula: "='Inputs & Setup'!C26/12", result: primarySippAnnual / 12 }, { formula: "='Inputs & Setup'!C26", result: primarySippAnnual }, { formula: "='Inputs & Setup'!E26/12", result: partnerSippAnnual / 12 }, { formula: "='Inputs & Setup'!E26", result: partnerSippAnnual }, { formula: '=B5+D5', result: (primarySippAnnual + partnerSippAnnual) / 12 }, { formula: '=C5+E5', result: primarySippAnnual + partnerSippAnnual }]);
-  wsContrib.addRow(['Stocks & Shares ISA', { formula: "='Inputs & Setup'!C27/12", result: primarySnsIsaAnnual / 12 }, { formula: "='Inputs & Setup'!C27", result: primarySnsIsaAnnual }, { formula: "='Inputs & Setup'!E27/12", result: partnerSnsIsaAnnual / 12 }, { formula: "='Inputs & Setup'!E27", result: partnerSnsIsaAnnual }, { formula: '=B6+D6', result: (primarySnsIsaAnnual + partnerSnsIsaAnnual) / 12 }, { formula: '=C6+E6', result: primarySnsIsaAnnual + partnerSnsIsaAnnual }]);
-  wsContrib.addRow(['Cash ISA', { formula: "='Inputs & Setup'!C28/12", result: primaryCashIsaAnnual / 12 }, { formula: "='Inputs & Setup'!C28", result: primaryCashIsaAnnual }, { formula: "='Inputs & Setup'!E28/12", result: partnerCashIsaAnnual / 12 }, { formula: "='Inputs & Setup'!E28", result: partnerCashIsaAnnual }, { formula: '=B7+D7', result: (primaryCashIsaAnnual + partnerCashIsaAnnual) / 12 }, { formula: '=C7+E7', result: primaryCashIsaAnnual + partnerCashIsaAnnual }]);
-  wsContrib.addRow(['Lifetime ISA (LISA)', { formula: "='Inputs & Setup'!C29/12", result: primaryLisaAnnual / 12 }, { formula: "='Inputs & Setup'!C29", result: primaryLisaAnnual }, { formula: "='Inputs & Setup'!E29/12", result: partnerLisaAnnual / 12 }, { formula: "='Inputs & Setup'!E29", result: partnerLisaAnnual }, { formula: '=B8+D8', result: (primaryLisaAnnual + partnerLisaAnnual) / 12 }, { formula: '=C8+E8', result: primaryLisaAnnual + partnerLisaAnnual }]);
-  wsContrib.addRow(['General Investment Account (GIA)', { formula: "='Inputs & Setup'!C30/12", result: primaryGiaAnnual / 12 }, { formula: "='Inputs & Setup'!C30", result: primaryGiaAnnual }, { formula: "='Inputs & Setup'!E30/12", result: partnerGiaAnnual / 12 }, { formula: "='Inputs & Setup'!E30", result: partnerGiaAnnual }, { formula: '=B9+D9', result: (primaryGiaAnnual + partnerGiaAnnual) / 12 }, { formula: '=C9+E9', result: primaryGiaAnnual + partnerGiaAnnual }]);
-  wsContrib.addRow(['Cash Savings & Premium Bonds', { formula: "='Inputs & Setup'!C31/12", result: primaryCashSavingsAnnual / 12 }, { formula: "='Inputs & Setup'!C31", result: primaryCashSavingsAnnual }, { formula: "='Inputs & Setup'!E31/12", result: partnerCashSavingsAnnual / 12 }, { formula: "='Inputs & Setup'!E31", result: partnerCashSavingsAnnual }, { formula: '=B10+D10', result: (primaryCashSavingsAnnual + partnerCashSavingsAnnual) / 12 }, { formula: '=C10+E10', result: primaryCashSavingsAnnual + partnerCashSavingsAnnual }]);
+  wsContrib.addRow(['Workplace Pension', { formula: "='Inputs & Setup'!C13/12", result: primaryWorkplaceAnnual / 12 }, { formula: "='Inputs & Setup'!C13", result: primaryWorkplaceAnnual }, { formula: "='Inputs & Setup'!E13/12", result: partnerWorkplaceAnnual / 12 }, { formula: "='Inputs & Setup'!E13", result: partnerWorkplaceAnnual }, { formula: '=B4+D4', result: (primaryWorkplaceAnnual + partnerWorkplaceAnnual) / 12 }, { formula: '=C4+E4', result: primaryWorkplaceAnnual + partnerWorkplaceAnnual }]);
+  wsContrib.addRow(['Private Pension / SIPP', { formula: "='Inputs & Setup'!C14/12", result: primarySippAnnual / 12 }, { formula: "='Inputs & Setup'!C14", result: primarySippAnnual }, { formula: "='Inputs & Setup'!E14/12", result: partnerSippAnnual / 12 }, { formula: "='Inputs & Setup'!E14", result: partnerSippAnnual }, { formula: '=B5+D5', result: (primarySippAnnual + partnerSippAnnual) / 12 }, { formula: '=C5+E5', result: primarySippAnnual + partnerSippAnnual }]);
+  wsContrib.addRow(['Stocks & Shares ISA', { formula: "='Inputs & Setup'!C15/12", result: primarySnsIsaAnnual / 12 }, { formula: "='Inputs & Setup'!C15", result: primarySnsIsaAnnual }, { formula: "='Inputs & Setup'!E15/12", result: partnerSnsIsaAnnual / 12 }, { formula: "='Inputs & Setup'!E15", result: partnerSnsIsaAnnual }, { formula: '=B6+D6', result: (primarySnsIsaAnnual + partnerSnsIsaAnnual) / 12 }, { formula: '=C6+E6', result: primarySnsIsaAnnual + partnerSnsIsaAnnual }]);
+  wsContrib.addRow(['Cash ISA', { formula: "='Inputs & Setup'!C16/12", result: primaryCashIsaAnnual / 12 }, { formula: "='Inputs & Setup'!C16", result: primaryCashIsaAnnual }, { formula: "='Inputs & Setup'!E16/12", result: partnerCashIsaAnnual / 12 }, { formula: "='Inputs & Setup'!E16", result: partnerCashIsaAnnual }, { formula: '=B7+D7', result: (primaryCashIsaAnnual + partnerCashIsaAnnual) / 12 }, { formula: '=C7+E7', result: primaryCashIsaAnnual + partnerCashIsaAnnual }]);
+  wsContrib.addRow(['Lifetime ISA (LISA)', { formula: "='Inputs & Setup'!C17/12", result: primaryLisaAnnual / 12 }, { formula: "='Inputs & Setup'!C17", result: primaryLisaAnnual }, { formula: "='Inputs & Setup'!E17/12", result: partnerLisaAnnual / 12 }, { formula: "='Inputs & Setup'!E17", result: partnerLisaAnnual }, { formula: '=B8+D8', result: (primaryLisaAnnual + partnerLisaAnnual) / 12 }, { formula: '=C8+E8', result: primaryLisaAnnual + partnerLisaAnnual }]);
+  wsContrib.addRow(['General Investment Account (GIA)', { formula: "='Inputs & Setup'!C18/12", result: primaryGiaAnnual / 12 }, { formula: "='Inputs & Setup'!C18", result: primaryGiaAnnual }, { formula: "='Inputs & Setup'!E18/12", result: partnerGiaAnnual / 12 }, { formula: "='Inputs & Setup'!E18", result: partnerGiaAnnual }, { formula: '=B9+D9', result: (primaryGiaAnnual + partnerGiaAnnual) / 12 }, { formula: '=C9+E9', result: primaryGiaAnnual + partnerGiaAnnual }]);
+  wsContrib.addRow(['Cash Savings & Premium Bonds', { formula: "='Inputs & Setup'!C19/12", result: primaryCashSavingsAnnual / 12 }, { formula: "='Inputs & Setup'!C19", result: primaryCashSavingsAnnual }, { formula: "='Inputs & Setup'!E19/12", result: partnerCashSavingsAnnual / 12 }, { formula: "='Inputs & Setup'!E19", result: partnerCashSavingsAnnual }, { formula: '=B10+D10', result: (primaryCashSavingsAnnual + partnerCashSavingsAnnual) / 12 }, { formula: '=C10+E10', result: primaryCashSavingsAnnual + partnerCashSavingsAnnual }]);
 
   // Row 11: Total Base Contributions
   wsContrib.addRow(['TOTAL BASELINE TOP-UPS', '', '', '', '', '', '']);
@@ -958,80 +1176,216 @@ export async function generateFormulaExcelWorkbook(
 
   const projectYears = Math.max(projections.length, 36);
 
+  // Helper to compute exact pot inflows/outflows for pre-calculated result values
+  const computePotFlows = (owner: 'primary' | 'partner', potKey: InvestmentPotType, yearVal: number, isRetired: boolean) => {
+    let base = 0;
+    if (!isRetired) {
+      if (owner === 'primary') {
+        switch (potKey) {
+          case 'workplace_pension': base = primaryWorkplaceAnnual; break;
+          case 'sipp': base = primarySippAnnual; break;
+          case 'stocks_and_shares_isa': base = primarySnsIsaAnnual; break;
+          case 'cash_isa': base = primaryCashIsaAnnual; break;
+          case 'lisa': base = primaryLisaAnnual; break;
+          case 'gia': base = primaryGiaAnnual; break;
+          case 'cash_savings': base = primaryCashSavingsAnnual; break;
+        }
+      } else {
+        switch (potKey) {
+          case 'workplace_pension': base = partnerWorkplaceAnnual; break;
+          case 'sipp': base = partnerSippAnnual; break;
+          case 'stocks_and_shares_isa':
+          case 'cash_isa':
+          case 'lisa': base = partnerIsaAnnual; break;
+          case 'gia':
+          case 'cash_savings': base = partnerCashAnnual; break;
+        }
+      }
+    }
+
+    let oneOff = 0;
+    activeOneOffs.forEach((c) => {
+      const cOwner = c.owner === 'partner' ? 'partner' : 'primary';
+      if (cOwner === owner && c.targetPot === potKey) {
+        const cYear = getContributionYear(c, profile.currentAge || 50);
+        if (cYear === yearVal) {
+          const rawAmt = c.grossAmount || 0;
+          if (c.targetPot === 'sipp') {
+            oneOff += c.sippContributionType === 'gross' ? rawAmt : Math.round(rawAmt * 1.25);
+          } else {
+            oneOff += rawAmt;
+          }
+        }
+      }
+    });
+
+    let transferIn = 0;
+    activeTransfers.forEach((t) => {
+      const dstOwner = (t.destinationOwner || t.owner) === 'partner' ? 'partner' : 'primary';
+      if (dstOwner === owner && t.destinationPot === potKey) {
+        const tYear = getTransferYear(t, profile.currentAge || 50);
+        if (tYear === yearVal) {
+          const amt = t.amount || 0;
+          const relief = (t.destinationPot === 'sipp' && t.sourcePot !== 'sipp' && t.sourcePot !== 'workplace_pension') ? Math.round(amt * 0.25) : 0;
+          transferIn += amt + relief;
+        }
+      }
+    });
+
+    let transferOut = 0;
+    activeTransfers.forEach((t) => {
+      const srcOwner = t.owner === 'partner' ? 'partner' : 'primary';
+      if (srcOwner === owner && t.sourcePot === potKey) {
+        const tYear = getTransferYear(t, profile.currentAge || 50);
+        if (tYear === yearVal) {
+          transferOut += t.amount || 0;
+        }
+      }
+    });
+
+    return { base, oneOff, transferIn, transferOut, net: base + oneOff + transferIn - transferOut };
+  };
+
   for (let idx = 0; idx < projectYears; idx++) {
     const rowNum = idx + 15; // Row 15 is year 0
+    const evalYearVal = currentYear + idx;
 
     const yearFormula = `'Inputs & Setup'!$B$4 + ${idx}`;
-    const ageYouFormula = `'Inputs & Setup'!$B$18 + ${idx}`;
-    const agePartnerFormula = `'Inputs & Setup'!$D$18 + ${idx}`;
-    const statusFormula = `IF(B${rowNum}<'Inputs & Setup'!$B$20, "Accumulation", "Retirement")`;
+    const ageYouFormula = `'Inputs & Setup'!$B$5 + ${idx}`;
+    const agePartnerFormula = `'Inputs & Setup'!$D$5 + ${idx}`;
+    const statusFormula = `IF(B${rowNum}<'Inputs & Setup'!$B$9, "Accumulation", "Retirement")`;
 
-    // YOU Pot Contributions (0 if in Retirement phase)
-    const wpYouFormula = `IF(D${rowNum}="Accumulation", 'Inputs & Setup'!$C$25, 0)`;
-    const sippYouFormula = `IF(D${rowNum}="Accumulation", 'Inputs & Setup'!$C$26, 0)`;
+    const proj = projections[idx];
+    const isRetiredYou = proj ? proj.isRetired : ((profile.currentAge || 50) + idx >= (profile.targetRetirementAge || 55));
+    const isRetiredPartner = proj ? ((profile.partnerCurrentAge || 50) + idx >= (profile.partnerTargetRetirementAge || 57)) : ((profile.partnerCurrentAge || 50) + idx >= (profile.partnerTargetRetirementAge || 57));
+
+    // YOU Pot Contribution Formulas (Base Regular + One-Off Inflow + Transfer Inflow - Transfer Outflow)
+    const wpYouFormula = `IF(D${rowNum}="Accumulation", 'Inputs & Setup'!$C$13, 0) + SUMIFS('One-Off Contributions'!$G$4:$G$50, 'One-Off Contributions'!$B$4:$B$50, "YOU", 'One-Off Contributions'!$H$4:$H$50, "workplace_pension", 'One-Off Contributions'!$D$4:$D$50, A${rowNum}) + SUMIFS('Pot Transfers'!$I$4:$I$50, 'Pot Transfers'!$L$4:$L$50, "YOU", 'Pot Transfers'!$M$4:$M$50, "workplace_pension", 'Pot Transfers'!$D$4:$D$50, A${rowNum}) - SUMIFS('Pot Transfers'!$G$4:$G$50, 'Pot Transfers'!$J$4:$J$50, "YOU", 'Pot Transfers'!$K$4:$K$50, "workplace_pension", 'Pot Transfers'!$D$4:$D$50, A${rowNum})`;
+
+    const sippYouFormula = `IF(D${rowNum}="Accumulation", 'Inputs & Setup'!$C$14, 0) + SUMIFS('One-Off Contributions'!$G$4:$G$50, 'One-Off Contributions'!$B$4:$B$50, "YOU", 'One-Off Contributions'!$H$4:$H$50, "sipp", 'One-Off Contributions'!$D$4:$D$50, A${rowNum}) + SUMIFS('Pot Transfers'!$I$4:$I$50, 'Pot Transfers'!$L$4:$L$50, "YOU", 'Pot Transfers'!$M$4:$M$50, "sipp", 'Pot Transfers'!$D$4:$D$50, A${rowNum}) - SUMIFS('Pot Transfers'!$G$4:$G$50, 'Pot Transfers'!$J$4:$J$50, "YOU", 'Pot Transfers'!$K$4:$K$50, "sipp", 'Pot Transfers'!$D$4:$D$50, A${rowNum})`;
+
     const totalDcYouFormula = `E${rowNum}+F${rowNum}`;
 
-    const snsIsaYouFormula = `IF(D${rowNum}="Accumulation", 'Inputs & Setup'!$C$27, 0)`;
-    const cashIsaYouFormula = `IF(D${rowNum}="Accumulation", 'Inputs & Setup'!$C$28, 0)`;
-    const lisaYouFormula = `IF(D${rowNum}="Accumulation", 'Inputs & Setup'!$C$29, 0)`;
+    const snsIsaYouFormula = `IF(D${rowNum}="Accumulation", 'Inputs & Setup'!$C$15, 0) + SUMIFS('One-Off Contributions'!$G$4:$G$50, 'One-Off Contributions'!$B$4:$B$50, "YOU", 'One-Off Contributions'!$H$4:$H$50, "stocks_and_shares_isa", 'One-Off Contributions'!$D$4:$D$50, A${rowNum}) + SUMIFS('Pot Transfers'!$I$4:$I$50, 'Pot Transfers'!$L$4:$L$50, "YOU", 'Pot Transfers'!$M$4:$M$50, "stocks_and_shares_isa", 'Pot Transfers'!$D$4:$D$50, A${rowNum}) - SUMIFS('Pot Transfers'!$G$4:$G$50, 'Pot Transfers'!$J$4:$J$50, "YOU", 'Pot Transfers'!$K$4:$K$50, "stocks_and_shares_isa", 'Pot Transfers'!$D$4:$D$50, A${rowNum})`;
+
+    const cashIsaYouFormula = `IF(D${rowNum}="Accumulation", 'Inputs & Setup'!$C$16, 0) + SUMIFS('One-Off Contributions'!$G$4:$G$50, 'One-Off Contributions'!$B$4:$B$50, "YOU", 'One-Off Contributions'!$H$4:$H$50, "cash_isa", 'One-Off Contributions'!$D$4:$D$50, A${rowNum}) + SUMIFS('Pot Transfers'!$I$4:$I$50, 'Pot Transfers'!$L$4:$L$50, "YOU", 'Pot Transfers'!$M$4:$M$50, "cash_isa", 'Pot Transfers'!$D$4:$D$50, A${rowNum}) - SUMIFS('Pot Transfers'!$G$4:$G$50, 'Pot Transfers'!$J$4:$J$50, "YOU", 'Pot Transfers'!$K$4:$K$50, "cash_isa", 'Pot Transfers'!$D$4:$D$50, A${rowNum})`;
+
+    const lisaYouFormula = `IF(D${rowNum}="Accumulation", 'Inputs & Setup'!$C$17, 0) + SUMIFS('One-Off Contributions'!$G$4:$G$50, 'One-Off Contributions'!$B$4:$B$50, "YOU", 'One-Off Contributions'!$H$4:$H$50, "lisa", 'One-Off Contributions'!$D$4:$D$50, A${rowNum}) + SUMIFS('Pot Transfers'!$I$4:$I$50, 'Pot Transfers'!$L$4:$L$50, "YOU", 'Pot Transfers'!$M$4:$M$50, "lisa", 'Pot Transfers'!$D$4:$D$50, A${rowNum}) - SUMIFS('Pot Transfers'!$G$4:$G$50, 'Pot Transfers'!$J$4:$J$50, "YOU", 'Pot Transfers'!$K$4:$K$50, "lisa", 'Pot Transfers'!$D$4:$D$50, A${rowNum})`;
+
     const totalIsaYouFormula = `H${rowNum}+I${rowNum}+J${rowNum}`;
 
-    const giaYouFormula = `IF(D${rowNum}="Accumulation", 'Inputs & Setup'!$C$30, 0)`;
-    const cashSavYouFormula = `IF(D${rowNum}="Accumulation", 'Inputs & Setup'!$C$31, 0)`;
+    const giaYouFormula = `IF(D${rowNum}="Accumulation", 'Inputs & Setup'!$C$18, 0) + SUMIFS('One-Off Contributions'!$G$4:$G$50, 'One-Off Contributions'!$B$4:$B$50, "YOU", 'One-Off Contributions'!$H$4:$H$50, "gia", 'One-Off Contributions'!$D$4:$D$50, A${rowNum}) + SUMIFS('Pot Transfers'!$I$4:$I$50, 'Pot Transfers'!$L$4:$L$50, "YOU", 'Pot Transfers'!$M$4:$M$50, "gia", 'Pot Transfers'!$D$4:$D$50, A${rowNum}) - SUMIFS('Pot Transfers'!$G$4:$G$50, 'Pot Transfers'!$J$4:$J$50, "YOU", 'Pot Transfers'!$K$4:$K$50, "gia", 'Pot Transfers'!$D$4:$D$50, A${rowNum})`;
+
+    const cashSavYouFormula = `IF(D${rowNum}="Accumulation", 'Inputs & Setup'!$C$19, 0) + SUMIFS('One-Off Contributions'!$G$4:$G$50, 'One-Off Contributions'!$B$4:$B$50, "YOU", 'One-Off Contributions'!$H$4:$H$50, "cash_savings", 'One-Off Contributions'!$D$4:$D$50, A${rowNum}) + SUMIFS('Pot Transfers'!$I$4:$I$50, 'Pot Transfers'!$L$4:$L$50, "YOU", 'Pot Transfers'!$M$4:$M$50, "cash_savings", 'Pot Transfers'!$D$4:$D$50, A${rowNum}) - SUMIFS('Pot Transfers'!$G$4:$G$50, 'Pot Transfers'!$J$4:$J$50, "YOU", 'Pot Transfers'!$K$4:$K$50, "cash_savings", 'Pot Transfers'!$D$4:$D$50, A${rowNum})`;
+
     const totalCashGiaYouFormula = `L${rowNum}+M${rowNum}`;
 
     const totalYouAnnualFormula = `G${rowNum}+K${rowNum}+N${rowNum}`;
 
-    // PARTNER Pot Contributions
-    const wpPartnerFormula = `IF(D${rowNum}="Accumulation", 'Inputs & Setup'!$E$25, 0)`;
-    const sippPartnerFormula = `IF(D${rowNum}="Accumulation", 'Inputs & Setup'!$E$26, 0)`;
+    // PARTNER Pot Contribution Formulas
+    const wpPartnerFormula = `IF(D${rowNum}="Accumulation", 'Inputs & Setup'!$E$13, 0) + SUMIFS('One-Off Contributions'!$G$4:$G$50, 'One-Off Contributions'!$B$4:$B$50, "PARTNER", 'One-Off Contributions'!$H$4:$H$50, "workplace_pension", 'One-Off Contributions'!$D$4:$D$50, A${rowNum}) + SUMIFS('Pot Transfers'!$I$4:$I$50, 'Pot Transfers'!$L$4:$L$50, "PARTNER", 'Pot Transfers'!$M$4:$M$50, "workplace_pension", 'Pot Transfers'!$D$4:$D$50, A${rowNum}) - SUMIFS('Pot Transfers'!$G$4:$G$50, 'Pot Transfers'!$J$4:$J$50, "PARTNER", 'Pot Transfers'!$K$4:$K$50, "workplace_pension", 'Pot Transfers'!$D$4:$D$50, A${rowNum})`;
+
+    const sippPartnerFormula = `IF(D${rowNum}="Accumulation", 'Inputs & Setup'!$E$14, 0) + SUMIFS('One-Off Contributions'!$G$4:$G$50, 'One-Off Contributions'!$B$4:$B$50, "PARTNER", 'One-Off Contributions'!$H$4:$H$50, "sipp", 'One-Off Contributions'!$D$4:$D$50, A${rowNum}) + SUMIFS('Pot Transfers'!$I$4:$I$50, 'Pot Transfers'!$L$4:$L$50, "PARTNER", 'Pot Transfers'!$M$4:$M$50, "sipp", 'Pot Transfers'!$D$4:$D$50, A${rowNum}) - SUMIFS('Pot Transfers'!$G$4:$G$50, 'Pot Transfers'!$J$4:$J$50, "PARTNER", 'Pot Transfers'!$K$4:$K$50, "sipp", 'Pot Transfers'!$D$4:$D$50, A${rowNum})`;
+
     const totalDcPartnerFormula = `P${rowNum}+Q${rowNum}`;
 
-    const totalIsaPartnerFormula = `IF(D${rowNum}="Accumulation", 'Inputs & Setup'!$E$27+'Inputs & Setup'!$E$28+'Inputs & Setup'!$E$29, 0)`;
-    const totalCashGiaPartnerFormula = `IF(D${rowNum}="Accumulation", 'Inputs & Setup'!$E$30+'Inputs & Setup'!$E$31, 0)`;
+    const totalIsaPartnerFormula = `IF(D${rowNum}="Accumulation", 'Inputs & Setup'!$E$15+'Inputs & Setup'!$E$16+'Inputs & Setup'!$E$17, 0) + SUMIFS('One-Off Contributions'!$G$4:$G$50, 'One-Off Contributions'!$B$4:$B$50, "PARTNER", 'One-Off Contributions'!$C$4:$C$50, "ISAs", 'One-Off Contributions'!$D$4:$D$50, A${rowNum}) + SUMIFS('Pot Transfers'!$I$4:$I$50, 'Pot Transfers'!$L$4:$L$50, "PARTNER", 'Pot Transfers'!$F$4:$F$50, "ISAs", 'Pot Transfers'!$D$4:$D$50, A${rowNum}) - SUMIFS('Pot Transfers'!$G$4:$G$50, 'Pot Transfers'!$J$4:$J$50, "PARTNER", 'Pot Transfers'!$E$4:$E$50, "ISAs", 'Pot Transfers'!$D$4:$D$50, A${rowNum})`;
+
+    const totalCashGiaPartnerFormula = `IF(D${rowNum}="Accumulation", 'Inputs & Setup'!$E$18+'Inputs & Setup'!$E$19, 0) + SUMIFS('One-Off Contributions'!$G$4:$G$50, 'One-Off Contributions'!$B$4:$B$50, "PARTNER", 'One-Off Contributions'!$C$4:$C$50, "Cash & GIA", 'One-Off Contributions'!$D$4:$D$50, A${rowNum}) + SUMIFS('Pot Transfers'!$I$4:$I$50, 'Pot Transfers'!$L$4:$L$50, "PARTNER", 'Pot Transfers'!$F$4:$F$50, "Cash & GIA", 'Pot Transfers'!$D$4:$D$50, A${rowNum}) - SUMIFS('Pot Transfers'!$G$4:$G$50, 'Pot Transfers'!$J$4:$J$50, "PARTNER", 'Pot Transfers'!$E$4:$E$50, "Cash & GIA", 'Pot Transfers'!$D$4:$D$50, A${rowNum})`;
 
     const totalPartnerAnnualFormula = `R${rowNum}+S${rowNum}+T${rowNum}`;
-    const totalHouseholdAnnualFormula = `O${rowNum}+U${rowNum}`;
 
-    const oneOffFormula = `SUMIFS('Inputs & Setup'!$G$${oneOffStartRow}:$G$${oneOffEndRow}, 'Inputs & Setup'!$D$${oneOffStartRow}:$D$${oneOffEndRow}, A${rowNum})`;
-    const transferOutFormula = `SUMIFS('Inputs & Setup'!$G$${transfersStartRow}:$G$${transfersEndRow}, 'Inputs & Setup'!$D$${transfersStartRow}:$D$${transfersEndRow}, A${rowNum})`;
-    const transferInFormula = `SUMIFS('Inputs & Setup'!$I$${transfersStartRow}:$I$${transfersEndRow}, 'Inputs & Setup'!$D$${transfersStartRow}:$D$${transfersEndRow}, A${rowNum})`;
-    const netCapitalInflowFormula = `V${rowNum}+W${rowNum}+Y${rowNum}-X${rowNum}`;
+    const totalHouseholdRegularFormula = `IF(D${rowNum}="Accumulation", 'Inputs & Setup'!$C$28+'Inputs & Setup'!$D$28, 0)`;
 
-    const proj = projections[idx];
-    const isRetired = proj ? proj.isRetired : ((profile.currentAge || 50) + idx >= (profile.targetRetirementAge || 55));
+    const oneOffFormula = `SUMIFS('One-Off Contributions'!$G$4:$G$50, 'One-Off Contributions'!$D$4:$D$50, A${rowNum})`;
+    const transferOutFormula = `SUMIFS('Pot Transfers'!$G$4:$G$50, 'Pot Transfers'!$D$4:$D$50, A${rowNum})`;
+    const transferInFormula = `SUMIFS('Pot Transfers'!$I$4:$I$50, 'Pot Transfers'!$D$4:$D$50, A${rowNum})`;
+    const netCapitalInflowFormula = `O${rowNum}+U${rowNum}`;
 
-    const householdAnnualContribResult = proj
-      ? proj.annualContributionTotal
-      : (isRetired ? 0 : (primaryTotalAnnual + partnerTotalAnnual));
+    // Compute exact numerical pre-calculated result values for row cells
+    const wpYouRes = computePotFlows('primary', 'workplace_pension', evalYearVal, isRetiredYou).net;
+    const sippYouRes = computePotFlows('primary', 'sipp', evalYearVal, isRetiredYou).net;
+    const dcYouRes = wpYouRes + sippYouRes;
+
+    const snsIsaYouRes = computePotFlows('primary', 'stocks_and_shares_isa', evalYearVal, isRetiredYou).net;
+    const cashIsaYouRes = computePotFlows('primary', 'cash_isa', evalYearVal, isRetiredYou).net;
+    const lisaYouRes = computePotFlows('primary', 'lisa', evalYearVal, isRetiredYou).net;
+    const isaYouRes = snsIsaYouRes + cashIsaYouRes + lisaYouRes;
+
+    const giaYouRes = computePotFlows('primary', 'gia', evalYearVal, isRetiredYou).net;
+    const cashSavYouRes = computePotFlows('primary', 'cash_savings', evalYearVal, isRetiredYou).net;
+    const cashGiaYouRes = giaYouRes + cashSavYouRes;
+
+    const youTotalRes = dcYouRes + isaYouRes + cashGiaYouRes;
+
+    const wpPartnerRes = computePotFlows('partner', 'workplace_pension', evalYearVal, isRetiredPartner).net;
+    const sippPartnerRes = computePotFlows('partner', 'sipp', evalYearVal, isRetiredPartner).net;
+    const dcPartnerRes = wpPartnerRes + sippPartnerRes;
+
+    const snsIsaPartnerRes = computePotFlows('partner', 'stocks_and_shares_isa', evalYearVal, isRetiredPartner).net;
+    const cashIsaPartnerRes = computePotFlows('partner', 'cash_isa', evalYearVal, isRetiredPartner).net;
+    const lisaPartnerRes = computePotFlows('partner', 'lisa', evalYearVal, isRetiredPartner).net;
+    const isaPartnerRes = snsIsaPartnerRes + cashIsaPartnerRes + lisaPartnerRes;
+
+    const giaPartnerRes = computePotFlows('partner', 'gia', evalYearVal, isRetiredPartner).net;
+    const cashSavPartnerRes = computePotFlows('partner', 'cash_savings', evalYearVal, isRetiredPartner).net;
+    const cashGiaPartnerRes = giaPartnerRes + cashSavPartnerRes;
+
+    const partnerTotalRes = dcPartnerRes + isaPartnerRes + cashGiaPartnerRes;
+
+    const householdRegularRes = (isRetiredYou ? 0 : primaryTotalAnnual) + (isRetiredPartner ? 0 : partnerTotalAnnual);
+
+    // Sum total one-offs and transfers for the year
+    let oneOffYearRes = 0;
+    activeOneOffs.forEach((c) => {
+      const cYear = getContributionYear(c, profile.currentAge || 50);
+      if (cYear === evalYearVal) {
+        const rawAmt = c.grossAmount || 0;
+        oneOffYearRes += c.targetPot === 'sipp' ? (c.sippContributionType === 'gross' ? rawAmt : Math.round(rawAmt * 1.25)) : rawAmt;
+      }
+    });
+
+    let transferOutYearRes = 0;
+    let transferInYearRes = 0;
+    activeTransfers.forEach((t) => {
+      const tYear = getTransferYear(t, profile.currentAge || 50);
+      if (tYear === evalYearVal) {
+        const amt = t.amount || 0;
+        const relief = (t.destinationPot === 'sipp' && t.sourcePot !== 'sipp' && t.sourcePot !== 'workplace_pension') ? Math.round(amt * 0.25) : 0;
+        transferOutYearRes += amt;
+        transferInYearRes += amt + relief;
+      }
+    });
+
+    const netCapitalInflowRes = youTotalRes + partnerTotalRes;
 
     const addedRow = wsContrib.addRow([
-      { formula: yearFormula, result: proj ? proj.year : currentYear + idx },
+      { formula: yearFormula, result: proj ? proj.year : evalYearVal },
       { formula: ageYouFormula, result: proj ? proj.age : (profile.currentAge || 50) + idx },
       { formula: agePartnerFormula, result: proj ? ((profile.partnerCurrentAge || 50) + idx) : ((profile.partnerCurrentAge || 50) + idx) },
-      { formula: statusFormula, result: isRetired ? 'Retirement' : 'Accumulation' },
-      { formula: wpYouFormula, result: isRetired ? 0 : primaryWorkplaceAnnual },
-      { formula: sippYouFormula, result: isRetired ? 0 : primarySippAnnual },
-      { formula: totalDcYouFormula, result: isRetired ? 0 : (primaryWorkplaceAnnual + primarySippAnnual) },
-      { formula: snsIsaYouFormula, result: isRetired ? 0 : primarySnsIsaAnnual },
-      { formula: cashIsaYouFormula, result: isRetired ? 0 : primaryCashIsaAnnual },
-      { formula: lisaYouFormula, result: isRetired ? 0 : primaryLisaAnnual },
-      { formula: totalIsaYouFormula, result: isRetired ? 0 : (primarySnsIsaAnnual + primaryCashIsaAnnual + primaryLisaAnnual) },
-      { formula: giaYouFormula, result: isRetired ? 0 : primaryGiaAnnual },
-      { formula: cashSavYouFormula, result: isRetired ? 0 : primaryCashSavingsAnnual },
-      { formula: totalCashGiaYouFormula, result: isRetired ? 0 : (primaryGiaAnnual + primaryCashSavingsAnnual) },
-      { formula: totalYouAnnualFormula, result: isRetired ? 0 : primaryTotalAnnual },
-      { formula: wpPartnerFormula, result: isRetired ? 0 : partnerWorkplaceAnnual },
-      { formula: sippPartnerFormula, result: isRetired ? 0 : partnerSippAnnual },
-      { formula: totalDcPartnerFormula, result: isRetired ? 0 : (partnerWorkplaceAnnual + partnerSippAnnual) },
-      { formula: totalIsaPartnerFormula, result: isRetired ? 0 : partnerIsaAnnual },
-      { formula: totalCashGiaPartnerFormula, result: isRetired ? 0 : partnerCashAnnual },
-      { formula: totalPartnerAnnualFormula, result: isRetired ? 0 : partnerTotalAnnual },
-      { formula: totalHouseholdAnnualFormula, result: householdAnnualContribResult },
-      { formula: oneOffFormula, result: 0 },
-      { formula: transferOutFormula, result: 0 },
-      { formula: transferInFormula, result: 0 },
-      { formula: netCapitalInflowFormula, result: householdAnnualContribResult },
+      { formula: statusFormula, result: isRetiredYou ? 'Retirement' : 'Accumulation' },
+      { formula: wpYouFormula, result: wpYouRes },
+      { formula: sippYouFormula, result: sippYouRes },
+      { formula: totalDcYouFormula, result: dcYouRes },
+      { formula: snsIsaYouFormula, result: snsIsaYouRes },
+      { formula: cashIsaYouFormula, result: cashIsaYouRes },
+      { formula: lisaYouFormula, result: lisaYouRes },
+      { formula: totalIsaYouFormula, result: isaYouRes },
+      { formula: giaYouFormula, result: giaYouRes },
+      { formula: cashSavYouFormula, result: cashSavYouRes },
+      { formula: totalCashGiaYouFormula, result: cashGiaYouRes },
+      { formula: totalYouAnnualFormula, result: youTotalRes },
+      { formula: wpPartnerFormula, result: wpPartnerRes },
+      { formula: sippPartnerFormula, result: sippPartnerRes },
+      { formula: totalDcPartnerFormula, result: dcPartnerRes },
+      { formula: totalIsaPartnerFormula, result: isaPartnerRes },
+      { formula: totalCashGiaPartnerFormula, result: cashGiaPartnerRes },
+      { formula: totalPartnerAnnualFormula, result: partnerTotalRes },
+      { formula: totalHouseholdRegularFormula, result: householdRegularRes },
+      { formula: oneOffFormula, result: oneOffYearRes },
+      { formula: transferOutFormula, result: transferOutYearRes },
+      { formula: transferInFormula, result: transferInYearRes },
+      { formula: netCapitalInflowFormula, result: netCapitalInflowRes },
     ]);
 
     addedRow.height = 20;
@@ -1112,31 +1466,31 @@ export async function generateFormulaExcelWorkbook(
     // Year
     const yearFormula = `'Inputs & Setup'!$B$4 + ${idx}`;
 
-    // Age YOU (B18)
-    const ageYouFormula = `'Inputs & Setup'!$B$18 + ${idx}`;
+    // Age YOU (B5 in Inputs & Setup)
+    const ageYouFormula = `'Inputs & Setup'!$B$5 + ${idx}`;
 
-    // Age PARTNER (D18)
-    const agePartnerFormula = `'Inputs & Setup'!$D$18 + ${idx}`;
+    // Age PARTNER (D5 in Inputs & Setup)
+    const agePartnerFormula = `'Inputs & Setup'!$D$5 + ${idx}`;
 
-    // Status (B20 is Target Retirement Age)
-    const statusFormula = `IF(B${rowNum}<'Inputs & Setup'!$B$20, "Accumulation", "Retirement")`;
+    // Status (B9 in Inputs & Setup is Target Retirement Age)
+    const statusFormula = `IF(B${rowNum}<'Inputs & Setup'!$B$9, "Accumulation", "Retirement")`;
 
     // Annual Contributions (referenced from Contributions Sheet Column Z)
     const annualContribFormula = `'Contributions'!Z${contribRowNum}`;
 
     // Target Requirement (0 during Accumulation, indexed for inflation during Retirement)
-    const targetReqFormula = `IF(D${rowNum}="Accumulation", 0, IF(AND(B${rowNum}>='Inputs & Setup'!$B$44, B${rowNum}<='Inputs & Setup'!$C$44), 'Inputs & Setup'!$D$44, IF(AND(B${rowNum}>='Inputs & Setup'!$B$45, B${rowNum}<='Inputs & Setup'!$C$45), 'Inputs & Setup'!$D$45, IF(AND(B${rowNum}>='Inputs & Setup'!$B$46, B${rowNum}<='Inputs & Setup'!$C$46), 'Inputs & Setup'!$D$46, 0))) * ((1 + 'Inputs & Setup'!$B$11)^(${idx})))`;
+    const targetReqFormula = `IF(D${rowNum}="Accumulation", 0, IF(AND(B${rowNum}>='Phased Income'!$B$4, B${rowNum}<='Phased Income'!$C$4), 'Phased Income'!$D$4, IF(AND(B${rowNum}>='Phased Income'!$B$5, B${rowNum}<='Phased Income'!$C$5), 'Phased Income'!$D$5, IF(AND(B${rowNum}>='Phased Income'!$B$6, B${rowNum}<='Phased Income'!$C$6), 'Phased Income'!$D$6, 0))) * ((1 + 'Settings'!$B$6)^(${idx})))`;
 
-    // State Pension YOU (SPA is B21, State Pension Today is B22, Triple Lock is B15)
-    const stateYouFormula = `IF(B${rowNum}>='Inputs & Setup'!$B$21, 'Inputs & Setup'!$B$22 * ((1 + 'Inputs & Setup'!$B$15)^(${idx})), 0)`;
+    // State Pension YOU (SPA is B10, State Pension Today is B11 in Inputs & Setup, Triple Lock is B7 in Settings)
+    const stateYouFormula = `IF(B${rowNum}>='Inputs & Setup'!$B$10, 'Inputs & Setup'!$B$11 * ((1 + 'Settings'!$B$7)^(${idx})), 0)`;
 
     // State Pension PARTNER
     const statePartnerFormula = isCouple
-      ? `IF(C${rowNum}>='Inputs & Setup'!$D$21, 'Inputs & Setup'!$D$22 * ((1 + 'Inputs & Setup'!$B$15)^(${idx})), 0)`
+      ? `IF(C${rowNum}>='Inputs & Setup'!$D$10, 'Inputs & Setup'!$D$11 * ((1 + 'Settings'!$B$7)^(${idx})), 0)`
       : '0';
 
-    // DB Fixed Income
-    const dbFormula = `IF(AND(B${rowNum}>='Inputs & Setup'!$B$49, B${rowNum}<='Inputs & Setup'!$C$49), 'Inputs & Setup'!$D$49, 0) + IF(AND(C${rowNum}>='Inputs & Setup'!$B$49, C${rowNum}<='Inputs & Setup'!$C$49), 'Inputs & Setup'!$E$49, 0) + IF(AND(B${rowNum}>='Inputs & Setup'!$B$50, B${rowNum}<='Inputs & Setup'!$C$50), 'Inputs & Setup'!$D$50, 0) + IF(AND(C${rowNum}>='Inputs & Setup'!$B$50, C${rowNum}<='Inputs & Setup'!$C$50), 'Inputs & Setup'!$E$50, 0)`;
+    // DB Fixed Income (referencing Fixed Income worksheet)
+    const dbFormula = `IF(AND(B${rowNum}>='Fixed Income'!$B$4, B${rowNum}<='Fixed Income'!$C$4), 'Fixed Income'!$D$4, 0) + IF(AND(C${rowNum}>='Fixed Income'!$B$4, C${rowNum}<='Fixed Income'!$C$4), 'Fixed Income'!$E$4, 0) + IF(AND(B${rowNum}>='Fixed Income'!$B$5, B${rowNum}<='Fixed Income'!$C$5), 'Fixed Income'!$D$5, 0) + IF(AND(C${rowNum}>='Fixed Income'!$B$5, C${rowNum}<='Fixed Income'!$C$5), 'Fixed Income'!$E$5, 0)`;
 
     // PCLS Tax-Free Drawdown
     const pclsVal = projections[idx]?.pensionDrawdownTaxFree || 0;
@@ -1147,46 +1501,46 @@ export async function generateFormulaExcelWorkbook(
     // Total Taxable Income
     const totalTaxableFormula = `G${rowNum}+H${rowNum}+I${rowNum}+K${rowNum}`;
 
-    // UK Income Tax Paid (referencing Personal Allowance B5 and Basic Threshold B6)
-    const taxPaidFormula = `IF(L${rowNum}>'Inputs & Setup'!$B$5, MAX(0, MIN(L${rowNum}-'Inputs & Setup'!$B$5, 'Inputs & Setup'!$B$6-'Inputs & Setup'!$B$5)*0.20) + MAX(0, L${rowNum}-'Inputs & Setup'!$B$6)*0.40, 0)`;
+    // UK Income Tax Paid (referencing Settings Personal Allowance B3 and Basic Threshold B4, tax rates B10 & B11)
+    const taxPaidFormula = `IF(L${rowNum}>'Settings'!$B$3, MAX(0, MIN(L${rowNum}-'Settings'!$B$3, 'Settings'!$B$4-'Settings'!$B$3)*'Settings'!$B$10) + MAX(0, L${rowNum}-'Settings'!$B$4)*'Settings'!$B$11, 0)`;
 
     // Net Income Received
     const netIncomeFormula = `IF(D${rowNum}="Accumulation", 0, L${rowNum}-M${rowNum}+J${rowNum})`;
 
-    const pIn = `SUMIFS('Inputs & Setup'!$G$${oneOffStartRow}:$G$${oneOffEndRow}, 'Inputs & Setup'!$C$${oneOffStartRow}:$C$${oneOffEndRow}, "DC Pensions", 'Inputs & Setup'!$D$${oneOffStartRow}:$D$${oneOffEndRow}, A${rowNum})`;
-    const pTrIn = `SUMIFS('Inputs & Setup'!$I$${transfersStartRow}:$I$${transfersEndRow}, 'Inputs & Setup'!$F$${transfersStartRow}:$F$${transfersEndRow}, "DC Pensions", 'Inputs & Setup'!$D$${transfersStartRow}:$D$${transfersEndRow}, A${rowNum})`;
-    const pTrOut = `SUMIFS('Inputs & Setup'!$G$${transfersStartRow}:$G$${transfersEndRow}, 'Inputs & Setup'!$E$${transfersStartRow}:$E$${transfersEndRow}, "DC Pensions", 'Inputs & Setup'!$D$${transfersStartRow}:$D$${transfersEndRow}, A${rowNum})`;
+    const pIn = `SUMIFS('One-Off Contributions'!$G$4:$G$50, 'One-Off Contributions'!$C$4:$C$50, "DC Pensions", 'One-Off Contributions'!$D$4:$D$50, A${rowNum})`;
+    const pTrIn = `SUMIFS('Pot Transfers'!$I$4:$I$50, 'Pot Transfers'!$F$4:$F$50, "DC Pensions", 'Pot Transfers'!$D$4:$D$50, A${rowNum})`;
+    const pTrOut = `SUMIFS('Pot Transfers'!$G$4:$G$50, 'Pot Transfers'!$E$4:$E$50, "DC Pensions", 'Pot Transfers'!$D$4:$D$50, A${rowNum})`;
 
-    const isaIn = `SUMIFS('Inputs & Setup'!$G$${oneOffStartRow}:$G$${oneOffEndRow}, 'Inputs & Setup'!$C$${oneOffStartRow}:$C$${oneOffEndRow}, "ISAs", 'Inputs & Setup'!$D$${oneOffStartRow}:$D$${oneOffEndRow}, A${rowNum})`;
-    const isaTrIn = `SUMIFS('Inputs & Setup'!$I$${transfersStartRow}:$I$${transfersEndRow}, 'Inputs & Setup'!$F$${transfersStartRow}:$F$${transfersEndRow}, "ISAs", 'Inputs & Setup'!$D$${transfersStartRow}:$D$${transfersEndRow}, A${rowNum})`;
-    const isaTrOut = `SUMIFS('Inputs & Setup'!$G$${transfersStartRow}:$G$${transfersEndRow}, 'Inputs & Setup'!$E$${transfersStartRow}:$E$${transfersEndRow}, "ISAs", 'Inputs & Setup'!$D$${transfersStartRow}:$D$${transfersEndRow}, A${rowNum})`;
+    const isaIn = `SUMIFS('One-Off Contributions'!$G$4:$G$50, 'One-Off Contributions'!$C$4:$C$50, "ISAs", 'One-Off Contributions'!$D$4:$D$50, A${rowNum})`;
+    const isaTrIn = `SUMIFS('Pot Transfers'!$I$4:$I$50, 'Pot Transfers'!$F$4:$F$50, "ISAs", 'Pot Transfers'!$D$4:$D$50, A${rowNum})`;
+    const isaTrOut = `SUMIFS('Pot Transfers'!$G$4:$G$50, 'Pot Transfers'!$E$4:$E$50, "ISAs", 'Pot Transfers'!$D$4:$D$50, A${rowNum})`;
 
-    const cashIn = `SUMIFS('Inputs & Setup'!$G$${oneOffStartRow}:$G$${oneOffEndRow}, 'Inputs & Setup'!$C$${oneOffStartRow}:$C$${oneOffEndRow}, "Cash & GIA", 'Inputs & Setup'!$D$${oneOffStartRow}:$D$${oneOffEndRow}, A${rowNum})`;
-    const cashTrIn = `SUMIFS('Inputs & Setup'!$I$${transfersStartRow}:$I$${transfersEndRow}, 'Inputs & Setup'!$F$${transfersStartRow}:$F$${transfersEndRow}, "Cash & GIA", 'Inputs & Setup'!$D$${transfersStartRow}:$D$${transfersEndRow}, A${rowNum})`;
-    const cashTrOut = `SUMIFS('Inputs & Setup'!$G$${transfersStartRow}:$G$${transfersEndRow}, 'Inputs & Setup'!$E$${transfersStartRow}:$E$${transfersEndRow}, "Cash & GIA", 'Inputs & Setup'!$D$${transfersStartRow}:$D$${transfersEndRow}, A${rowNum})`;
+    const cashIn = `SUMIFS('One-Off Contributions'!$G$4:$G$50, 'One-Off Contributions'!$C$4:$C$50, "Cash & GIA", 'One-Off Contributions'!$D$4:$D$50, A${rowNum})`;
+    const cashTrIn = `SUMIFS('Pot Transfers'!$I$4:$I$50, 'Pot Transfers'!$F$4:$F$50, "Cash & GIA", 'Pot Transfers'!$D$4:$D$50, A${rowNum})`;
+    const cashTrOut = `SUMIFS('Pot Transfers'!$G$4:$G$50, 'Pot Transfers'!$E$4:$E$50, "Cash & GIA", 'Pot Transfers'!$D$4:$D$50, A${rowNum})`;
 
-    // DC Pension Balance (referencing Growth B12 & Contributions from 'Contributions' sheet)
+    // DC Pension Balance (referencing Settings Growth B12 & Contributions from 'Contributions' sheet)
     let pensionBalFormula: string;
     if (idx === 0) {
-      pensionBalFormula = `MAX(0, 'Inputs & Setup'!$B$36 * (1 + 'Inputs & Setup'!$B$12) + 'Contributions'!G${contribRowNum} + 'Contributions'!R${contribRowNum} + (${pIn}) + (${pTrIn}) - (${pTrOut}) - J${rowNum} - K${rowNum})`;
+      pensionBalFormula = `MAX(0, 'Inputs & Setup'!$B$21 * (1 + 'Settings'!$B$12) + 'Contributions'!G${contribRowNum} + 'Contributions'!R${contribRowNum} + (${pIn}) + (${pTrIn}) - (${pTrOut}) - J${rowNum} - K${rowNum})`;
     } else {
-      pensionBalFormula = `MAX(0, O${prevRowNum} * (1 + 'Inputs & Setup'!$B$12) + 'Contributions'!G${contribRowNum} + 'Contributions'!R${contribRowNum} + (${pIn}) + (${pTrIn}) - (${pTrOut}) - J${rowNum} - K${rowNum})`;
+      pensionBalFormula = `MAX(0, O${prevRowNum} * (1 + 'Settings'!$B$12) + 'Contributions'!G${contribRowNum} + 'Contributions'!R${contribRowNum} + (${pIn}) + (${pTrIn}) - (${pTrOut}) - J${rowNum} - K${rowNum})`;
     }
 
-    // ISA Balance (referencing Growth B13 & Contributions from 'Contributions' sheet)
+    // ISA Balance (referencing Settings Growth B13 & Contributions from 'Contributions' sheet)
     let isaBalFormula: string;
     if (idx === 0) {
-      isaBalFormula = `MAX(0, 'Inputs & Setup'!$B$38 * (1 + 'Inputs & Setup'!$B$13) + 'Contributions'!K${contribRowNum} + 'Contributions'!S${contribRowNum} + (${isaIn}) + (${isaTrIn}) - (${isaTrOut}))`;
+      isaBalFormula = `MAX(0, 'Inputs & Setup'!$B$23 * (1 + 'Settings'!$B$13) + 'Contributions'!K${contribRowNum} + 'Contributions'!S${contribRowNum} + (${isaIn}) + (${isaTrIn}) - (${isaTrOut}))`;
     } else {
-      isaBalFormula = `MAX(0, P${prevRowNum} * (1 + 'Inputs & Setup'!$B$13) + 'Contributions'!K${contribRowNum} + 'Contributions'!S${contribRowNum} + (${isaIn}) + (${isaTrIn}) - (${isaTrOut}))`;
+      isaBalFormula = `MAX(0, P${prevRowNum} * (1 + 'Settings'!$B$13) + 'Contributions'!K${contribRowNum} + 'Contributions'!S${contribRowNum} + (${isaIn}) + (${isaTrIn}) - (${isaTrOut}))`;
     }
 
-    // Cash & GIA Balance (referencing Interest B14 & Contributions from 'Contributions' sheet)
+    // Cash & GIA Balance (referencing Settings Interest B14 & Contributions from 'Contributions' sheet)
     let cashBalFormula: string;
     if (idx === 0) {
-      cashBalFormula = `MAX(0, 'Inputs & Setup'!$B$40 * (1 + 'Inputs & Setup'!$B$14) + 'Contributions'!N${contribRowNum} + 'Contributions'!T${contribRowNum} + (${cashIn}) + (${cashTrIn}) - (${cashTrOut}))`;
+      cashBalFormula = `MAX(0, 'Inputs & Setup'!$B$25 * (1 + 'Settings'!$B$14) + 'Contributions'!N${contribRowNum} + 'Contributions'!T${contribRowNum} + (${cashIn}) + (${cashTrIn}) - (${cashTrOut}))`;
     } else {
-      cashBalFormula = `MAX(0, Q${prevRowNum} * (1 + 'Inputs & Setup'!$B$14) + 'Contributions'!N${contribRowNum} + 'Contributions'!T${contribRowNum} + (${cashIn}) + (${cashTrIn}) - (${cashTrOut}))`;
+      cashBalFormula = `MAX(0, Q${prevRowNum} * (1 + 'Settings'!$B$14) + 'Contributions'!N${contribRowNum} + 'Contributions'!T${contribRowNum} + (${cashIn}) + (${cashTrIn}) - (${cashTrOut}))`;
     }
 
     // Total Portfolio Wealth
