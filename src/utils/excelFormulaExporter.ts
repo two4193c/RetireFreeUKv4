@@ -219,6 +219,20 @@ function getStrategyLabel(strategy?: string): string {
   }
 }
 
+function getAnnuityTypeLabel(type?: string): string {
+  switch (type) {
+    case 'level_single': return 'Level Single Life';
+    case 'inflation_linked_single': return 'Inflation-Linked Single Life (CPI)';
+    case 'fixed_escalation_single_3': return 'Fixed 3% Escalating Single Life';
+    case 'fixed_escalation_single_5': return 'Fixed 5% Escalating Single Life';
+    case 'level_joint_50': return 'Level Joint Life (50% Spouse Benefit)';
+    case 'level_joint_100': return 'Level Joint Life (100% Spouse Benefit)';
+    case 'inflation_linked_joint_50': return 'Inflation-Linked Joint (50% Spouse Benefit)';
+    case 'inflation_linked_joint_100': return 'Inflation-Linked Joint (100% Spouse Benefit)';
+    default: return type ? String(type) : 'Inflation-Linked Single Life (CPI)';
+  }
+}
+
 export async function generateFormulaExcelWorkbook(
   profile: UserProfile,
   pots: InvestmentPots,
@@ -234,6 +248,9 @@ export async function generateFormulaExcelWorkbook(
 
   const isCouple = profile.isCouplePlanning || false;
   const partnerPots = sanitizePots(profile.partnerPots, DEFAULT_PARTNER_POTS);
+  const projectYears = Math.max(projections.length, 36);
+  const primaryPensionBal = (pots.workplacePensionBalance || 0) + (pots.sippBalance || 0);
+  const partnerPensionBal = isCouple ? ((partnerPots.workplacePensionBalance || 0) + (partnerPots.sippBalance || 0)) : 0;
 
   // ==========================================
   // STYLING & COLORS
@@ -454,9 +471,6 @@ export async function generateFormulaExcelWorkbook(
     cell.font = fontSectionHeader;
     cell.alignment = { vertical: 'middle' };
   });
-
-  const primaryPensionBal = (pots.workplacePensionBalance || 0) + (pots.sippBalance || 0);
-  const partnerPensionBal = isCouple ? ((partnerPots.workplacePensionBalance || 0) + (partnerPots.sippBalance || 0)) : 0;
 
   const primaryIsaBal = (pots.stocksAndSharesIsaBalance || 0) + (pots.cashIsaBalance || 0) + (pots.lisaBalance || 0);
   const partnerIsaBal = isCouple ? ((partnerPots.stocksAndSharesIsaBalance || 0) + (partnerPots.cashIsaBalance || 0) + (partnerPots.lisaBalance || 0)) : 0;
@@ -1368,7 +1382,295 @@ export async function generateFormulaExcelWorkbook(
 
 
   // ==========================================
-  // SHEET 7: Income Requirements (Spending Targets)
+  // SHEET 7: Annuity (Guaranteed Annuity Details)
+  // ==========================================
+  const wsAnnuity = workbook.addWorksheet('Annuity');
+  wsAnnuity.columns = [
+    { header: 'Owner', key: 'a', width: 14 },
+    { header: 'Annuity Contract / Source', key: 'b', width: 34 },
+    { header: 'Income Strategy Mode', key: 'c', width: 28 },
+    { header: 'Target Purchase Age', key: 'd', width: 20 },
+    { header: 'Execution Tax Year', key: 'e', width: 18 },
+    { header: 'Allocation (%)', key: 'f', width: 18 },
+    { header: 'Capital Allocated / Price (£)', key: 'g', width: 26 },
+    { header: 'Annuity Rate (%)', key: 'h', width: 18 },
+    { header: 'Initial Annual Income (£/yr)', key: 'i', width: 24 },
+    { header: 'Annuity Type & Indexing', key: 'j', width: 34 },
+    { header: 'Payment Term / Duration', key: 'k', width: 24 },
+    { header: 'Excess Reinvestment', key: 'l', width: 22 },
+    { header: 'Purchase Status', key: 'm', width: 28 },
+  ];
+
+  // Title Banner
+  const annuityTitle = wsAnnuity.getRow(1);
+  annuityTitle.height = 32;
+  annuityTitle.getCell(1).value = `RETIREFREE UK - GUARANTEED ANNUITY PURCHASE & INCOME DETAILS`;
+  annuityTitle.getCell(1).font = { name: 'Calibri', size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
+  annuityTitle.getCell(1).fill = blueFill;
+  annuityTitle.getCell(1).alignment = { vertical: 'middle', horizontal: 'left' };
+  wsAnnuity.mergeCells('A1:M1');
+
+  wsAnnuity.addRow([]); // Row 2 Blank
+
+  // Section 1 Header: Configured Annuity Contracts
+  wsAnnuity.addRow([
+    'Owner',
+    'Annuity Contract / Source',
+    'Income Strategy Mode',
+    'Target Purchase Age',
+    'Execution Tax Year',
+    'Allocation (%)',
+    'Capital Allocated / Price (£)',
+    'Annuity Rate (%)',
+    'Initial Annual Income (£/yr)',
+    'Annuity Type & Indexing',
+    'Payment Term / Duration',
+    'Excess Reinvestment',
+    'Purchase Status',
+  ]); // Row 3
+  const annHeadRow = wsAnnuity.getRow(3);
+  annHeadRow.height = 26;
+  annHeadRow.eachCell((cell) => {
+    cell.fill = blueFill;
+    cell.font = fontWhiteBold;
+    cell.alignment = { vertical: 'middle', horizontal: 'center' };
+  });
+
+  // Calculate Primary Annuity Parameters
+  const primAnnuityAge = profile.annuityPurchaseAge || profile.targetRetirementAge || 65;
+  const primExecYear = new Date().getFullYear() + Math.max(0, primAnnuityAge - profile.currentAge);
+  const primOpt = profile.incomeProductOption || 'flexi_drawdown';
+  const primIsAnnuity = primOpt === 'annuity' || primOpt === 'hybrid';
+  const primAllocPct = primIsAnnuity ? (profile.annuityAllocationPercent || 50) / 100 : 0;
+  const primRatePct = (profile.annuityRatePercent || 4.2) / 100;
+
+  // Look for primary annuity purchase in projections
+  const primPurchaseProj = projections.find(p => p.annuityPurchasedThisYear || (p.annuityCapitalAllocated && p.annuityCapitalAllocated > 0))
+    || projections.find(p => (p.primaryAnnuityIncomeReceived || 0) > 0 || (p.annuityIncomeReceived || 0) > 0);
+  const primCapAllocated = primPurchaseProj?.annuityCapitalAllocated
+    || (primAllocPct > 0 ? Math.round(primaryPensionBal * primAllocPct) : 0);
+  const primInitialIncome = Math.round(primCapAllocated * primRatePct);
+
+  // Add Primary Annuity Row (Row 4)
+  wsAnnuity.addRow([
+    'YOU',
+    'Primary Pension Guaranteed Annuity',
+    primOpt === 'annuity' ? 'Full Guaranteed Annuity' : primOpt === 'hybrid' ? 'Hybrid Drawdown & Annuity' : 'Flexi-Drawdown (No Annuity)',
+    primAnnuityAge,
+    primExecYear,
+    primAllocPct,
+    primCapAllocated,
+    primRatePct,
+    { formula: 'G4*H4', result: primInitialIncome },
+    getAnnuityTypeLabel(profile.annuityType),
+    profile.annuityDurationOption === 'until_age' ? `Fixed Term (Until Age ${profile.annuityDurationUntilAge || 75})` : 'Lifetime Guaranteed',
+    profile.annuityExcessReinvestOption === 'cash' ? 'Cash & Savings' : profile.annuityExcessReinvestOption === 'none' ? 'Spend / General Income' : 'ISA Pot',
+    primIsAnnuity ? 'Purchased / Active' : 'Not Purchased (Flexi-Drawdown)',
+  ]);
+
+  let lastSummaryRow = 4;
+
+  // Add Partner Annuity Row if couple (Row 5)
+  if (isCouple) {
+    const partOpt = profile.partnerIncomeProductOption || profile.incomeProductOption || 'flexi_drawdown';
+    const partAnnuityAge = profile.partnerAnnuityPurchaseAge || profile.partnerTargetRetirementAge || profile.targetRetirementAge || 65;
+    const partExecYear = new Date().getFullYear() + Math.max(0, partAnnuityAge - (profile.partnerCurrentAge || profile.currentAge));
+    const partIsAnnuity = partOpt === 'annuity' || partOpt === 'hybrid';
+    const partAllocPct = partIsAnnuity ? (profile.partnerAnnuityAllocationPercent || profile.annuityAllocationPercent || 50) / 100 : 0;
+    const partRatePct = (profile.partnerAnnuityRatePercent || profile.annuityRatePercent || 4.2) / 100;
+    const partCapAllocated = partAllocPct > 0 && partnerPensionBal > 0 ? Math.round(partnerPensionBal * partAllocPct) : 0;
+    const partInitialIncome = Math.round(partCapAllocated * partRatePct);
+
+    lastSummaryRow++;
+    wsAnnuity.addRow([
+      'PARTNER',
+      'Partner Pension Guaranteed Annuity',
+      partOpt === 'annuity' ? 'Full Guaranteed Annuity' : partOpt === 'hybrid' ? 'Hybrid Drawdown & Annuity' : 'Flexi-Drawdown (No Annuity)',
+      partAnnuityAge,
+      partExecYear,
+      partAllocPct,
+      partCapAllocated,
+      partRatePct,
+      { formula: `G${lastSummaryRow}*H${lastSummaryRow}`, result: partInitialIncome },
+      getAnnuityTypeLabel(profile.partnerAnnuityType || profile.annuityType),
+      profile.partnerAnnuityDurationOption === 'until_age' ? `Fixed Term (Until Age ${profile.partnerAnnuityDurationUntilAge || 75})` : 'Lifetime Guaranteed',
+      'ISA Pot',
+      partIsAnnuity ? 'Purchased / Active' : 'Not Purchased (Flexi-Drawdown)',
+    ]);
+  }
+
+  // Add Custom Tranches if defined
+  const activeTranches = (profile.annuityTranches || []).filter(t => t.enabled !== false);
+  activeTranches.forEach((t) => {
+    lastSummaryRow++;
+    const tOwner = t.owner === 'partner' ? 'PARTNER' : 'YOU';
+    const tAge = t.purchaseAge || 65;
+    const tYear = new Date().getFullYear() + Math.max(0, tAge - (t.owner === 'partner' ? (profile.partnerCurrentAge || profile.currentAge) : profile.currentAge));
+    const tAllocPct = (t.allocationPercent || 50) / 100;
+    const tOwnerPot = t.owner === 'partner' ? partnerPensionBal : primaryPensionBal;
+    const tAmount = Math.round(tOwnerPot * tAllocPct);
+    const tRatePct = (t.annuityRatePercent || 4.2) / 100;
+    const tIncome = Math.round(tAmount * tRatePct);
+
+    wsAnnuity.addRow([
+      tOwner,
+      t.name || `Custom Annuity Tranche (${tOwner})`,
+      'Hybrid Tranche Purchase',
+      tAge,
+      tYear,
+      tAllocPct,
+      tAmount,
+      tRatePct,
+      { formula: `G${lastSummaryRow}*H${lastSummaryRow}`, result: tIncome },
+      getAnnuityTypeLabel(t.annuityType || profile.annuityType),
+      'Lifetime Guaranteed',
+      'ISA Pot',
+      'Purchased / Active',
+    ]);
+  });
+
+  // Check if any annuity was purchased or active
+  const hasAnnuityPurchased = primIsAnnuity || (isCouple && (profile.partnerIncomeProductOption === 'annuity' || profile.partnerIncomeProductOption === 'hybrid')) || activeTranches.length > 0 || projections.some(p => (p.annuityIncomeReceived || 0) > 0 || (p.annuityCapitalAllocated || 0) > 0);
+
+  if (!hasAnnuityPurchased) {
+    lastSummaryRow++;
+    wsAnnuity.addRow([
+      'NOTICE:',
+      'No guaranteed annuity purchase has been selected for this retirement plan. 100% of pension funds are managed via flexible drawdown.',
+      '', '', '', '', '', '', '', '', '', '', ''
+    ]);
+    const noticeRow = wsAnnuity.getRow(lastSummaryRow);
+    noticeRow.font = { name: 'Calibri', size: 11, italic: true, bold: true, color: { argb: 'FF475569' } };
+    wsAnnuity.mergeCells(`B${lastSummaryRow}:M${lastSummaryRow}`);
+  }
+
+  // Format Section 1 rows
+  for (let r = 4; r <= lastSummaryRow; r++) {
+    const row = wsAnnuity.getRow(r);
+    row.getCell(4).numFmt = '0';
+    row.getCell(5).numFmt = '0';
+    row.getCell(6).numFmt = '0.00%';
+    row.getCell(7).numFmt = '£#,##0';
+    row.getCell(8).numFmt = '0.00%';
+    row.getCell(9).numFmt = '£#,##0';
+    row.eachCell((cell) => { cell.border = borderThin; });
+  }
+
+  lastSummaryRow += 2; // Spacing before Section 2
+
+  // Section 2: Year-by-Year Annuity Income & Capital Allocation Timeline
+  wsAnnuity.addRow([
+    'ANNUAL ANNUITY INCOME & CAPITAL ALLOCATION TIMELINE',
+    '', '', '', '', '', '', '', '', '', '', '', ''
+  ]); // Header row
+  const section2TitleRow = wsAnnuity.getRow(lastSummaryRow);
+  section2TitleRow.height = 26;
+  section2TitleRow.eachCell((cell) => {
+    cell.fill = sectionHeaderFill;
+    cell.font = fontSectionHeader;
+    cell.alignment = { vertical: 'middle', horizontal: 'left' };
+  });
+  wsAnnuity.mergeCells(`A${lastSummaryRow}:M${lastSummaryRow}`);
+
+  lastSummaryRow++;
+  wsAnnuity.addRow([
+    'Tax Year',
+    'Age YOU',
+    'Age PARTNER',
+    'Annuity Event / Status',
+    'Primary Annuity Income (£/yr)',
+    'Partner Annuity Income (£/yr)',
+    'Total Annual Annuity Income (£/yr)',
+    'Capital Allocated in Year (£)',
+    'Cumulative Capital Converted (£)',
+    'Reinvestment Notes',
+    '', '', ''
+  ]); // Section 2 Table Header
+  const s2HeadRow = wsAnnuity.getRow(lastSummaryRow);
+  s2HeadRow.height = 24;
+  s2HeadRow.eachCell((cell) => {
+    cell.fill = sectionHeaderFill;
+    cell.font = fontSectionHeader;
+    cell.alignment = { vertical: 'middle', horizontal: 'center' };
+  });
+
+  const timelineStartRow = lastSummaryRow + 1;
+  let currentTimelineRow = timelineStartRow;
+
+  for (let idx = 0; idx < projectYears; idx++) {
+    const p = projections[idx];
+    const yearVal = new Date().getFullYear() + idx;
+    const ageYouVal = profile.currentAge + idx;
+    const agePartnerVal = isCouple ? ((profile.partnerCurrentAge || profile.currentAge) + idx) : 'N/A';
+
+    const capAllocated = p?.annuityCapitalAllocated || 0;
+    const primInc = p?.primaryAnnuityIncomeReceived || (!isCouple ? (p?.annuityIncomeReceived || 0) : 0);
+    const partInc = p?.partnerAnnuityIncomeReceived || 0;
+    const totalInc = p?.annuityIncomeReceived || (primInc + partInc);
+
+    let eventStatusStr = 'No Annuity Income';
+    if (capAllocated > 0) {
+      eventStatusStr = `Annuity Purchased (£${capAllocated.toLocaleString()})`;
+    } else if (totalInc > 0) {
+      eventStatusStr = 'Active Guaranteed Income';
+    }
+
+    let notesStr = 'N/A';
+    if (totalInc > 0) {
+      notesStr = profile.annuityExcessReinvestOption === 'cash' ? 'Reinvested to Cash' : profile.annuityExcessReinvestOption === 'none' ? 'General Lifestyle Income' : 'Reinvested to ISA';
+    }
+
+    const rowNum = currentTimelineRow;
+    wsAnnuity.addRow([
+      yearVal,
+      ageYouVal,
+      agePartnerVal,
+      eventStatusStr,
+      primInc,
+      partInc,
+      { formula: `E${rowNum}+F${rowNum}`, result: totalInc },
+      capAllocated,
+      { formula: `SUM(H$${timelineStartRow}:H${rowNum})`, result: capAllocated },
+      notesStr,
+      '', '', ''
+    ]);
+
+    const row = wsAnnuity.getRow(rowNum);
+    row.getCell(1).numFmt = '0';
+    row.getCell(2).numFmt = '0';
+    if (isCouple) row.getCell(3).numFmt = '0';
+    row.getCell(5).numFmt = '£#,##0';
+    row.getCell(6).numFmt = '£#,##0';
+    row.getCell(7).numFmt = '£#,##0';
+    row.getCell(8).numFmt = '£#,##0';
+    row.getCell(9).numFmt = '£#,##0';
+    row.eachCell((cell) => { cell.border = borderThin; });
+
+    currentTimelineRow++;
+  }
+
+  // Total Summary Row for Timeline
+  const timelineEndRow = currentTimelineRow - 1;
+  wsAnnuity.addRow([
+    'TOTAL CUMULATIVE ANNUITY INCOME',
+    '', '', '',
+    { formula: `SUM(E${timelineStartRow}:E${timelineEndRow})` },
+    { formula: `SUM(F${timelineStartRow}:F${timelineEndRow})` },
+    { formula: `SUM(G${timelineStartRow}:G${timelineEndRow})` },
+    { formula: `SUM(H${timelineStartRow}:H${timelineEndRow})` },
+    '', '', '', '', ''
+  ]);
+  const totTimelineRow = wsAnnuity.getRow(currentTimelineRow);
+  totTimelineRow.font = fontBold;
+  totTimelineRow.getCell(5).numFmt = '£#,##0';
+  totTimelineRow.getCell(6).numFmt = '£#,##0';
+  totTimelineRow.getCell(7).numFmt = '£#,##0';
+  totTimelineRow.getCell(8).numFmt = '£#,##0';
+  totTimelineRow.eachCell((cell) => { cell.border = borderThin; });
+
+
+  // ==========================================
+  // SHEET 8: Income Requirements (Spending Targets)
   // ==========================================
   const wsPhased = workbook.addWorksheet('Income Requirements');
   wsPhased.columns = [
@@ -1625,7 +1927,6 @@ export async function generateFormulaExcelWorkbook(
     { width: 30 }, // Net Total Annual Capital Inflow
   ];
 
-  const projectYears = Math.max(projections.length, 36);
   const netCapitalInflowsList: number[] = [];
 
   for (let idx = 0; idx < projectYears; idx++) {
