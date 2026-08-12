@@ -197,6 +197,7 @@ export const NAV_STRUCTURE: TabGroup[] = [
     cards: [
       // 1. Getting Started & Foundations
       { id: 'card-doc-userguide', label: 'Quick Start Guide', category: '1. Foundations' },
+      { id: 'card-doc-cashbufferguide', label: 'Emergency Fund & Cash Buffer Guide', category: '1. Foundations' },
       { id: 'card-doc-livingstandards', label: 'Retirement Living Standards', category: '1. Foundations' },
       { id: 'card-doc-healthylife', label: 'Healthy Life Expectancy', category: '1. Foundations' },
       { id: 'card-doc-benchmarkguide', label: 'Scenario Benchmark & Scorecard Guide', category: '1. Foundations' },
@@ -251,6 +252,7 @@ export function getFilteredNavStructure(mode: AppMode = 'basic'): TabGroup[] {
     'card-risk-macro',
     'card-risk-historic',
     // Documentation cards hidden in basic mode (only card-doc-userguide is shown)
+    'card-doc-cashbufferguide',
     'card-doc-livingstandards',
     'card-doc-healthylife',
     'card-doc-taxrules',

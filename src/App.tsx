@@ -61,6 +61,7 @@ import { PensionRecyclingGuideCard } from './components/PensionRecyclingGuideCar
 import { FourPercentRuleGuideCard } from './components/FourPercentRuleGuideCard';
 import { SpendingSmileGuideCard } from './components/SpendingSmileGuideCard';
 import { SayeBayeGuideCard } from './components/SayeBayeGuideCard';
+import { EmergencyFundGuideCard } from './components/EmergencyFundGuideCard';
 import { SwrMatrixCard } from './components/SwrMatrixCard';
 import { WithdrawalGuardrailGaugeCard } from './components/WithdrawalGuardrailGaugeCard';
 import { EssentialFloorSplitCard } from './components/EssentialFloorSplitCard';
@@ -229,7 +230,7 @@ function App() {
   }, [scenarios, activeScenarioId]);
 
   const [activeTab, setActiveTab] = useState<DashboardTab>('inputs');
-  const [docSubTab, setDocSubTab] = useState<'user_guide' | 'living_standards' | 'healthy_life' | 'tax_rules' | 'mortgage_guide' | 'risk_guide' | 'iht_guide' | 'floor_guide' | 'couple_guide' | 'benchmark_guide' | 'sipp_guide' | 'wrapper_guide' | 'self_employed_guide' | 'db_guide' | 'dynamic_guide' | 'care_guide' | 'fire_bridge_guide' | 'cgt_harvesting_guide' | 'recycling_guide' | 'four_percent_guide' | 'spending_smile_guide' | 'saye_baye_guide'>('user_guide');
+  const [docSubTab, setDocSubTab] = useState<'user_guide' | 'cash_buffer_guide' | 'living_standards' | 'healthy_life' | 'tax_rules' | 'mortgage_guide' | 'risk_guide' | 'iht_guide' | 'floor_guide' | 'couple_guide' | 'benchmark_guide' | 'sipp_guide' | 'wrapper_guide' | 'self_employed_guide' | 'db_guide' | 'dynamic_guide' | 'care_guide' | 'fire_bridge_guide' | 'cgt_harvesting_guide' | 'recycling_guide' | 'four_percent_guide' | 'spending_smile_guide' | 'saye_baye_guide'>('user_guide');
   const [appMode, setAppMode] = useState<AppMode>(() => {
     try {
       const saved = localStorage.getItem('retireready_mode_v1');
@@ -729,6 +730,8 @@ function App() {
           setActiveCardId(cardId);
           if (cardId === 'card-doc-userguide' || cardId === 'card-other-userguide') {
             setDocSubTab('user_guide');
+          } else if (cardId === 'card-doc-cashbufferguide') {
+            setDocSubTab('cash_buffer_guide');
           } else if (cardId === 'card-doc-livingstandards') {
             setDocSubTab('living_standards');
           } else if (cardId === 'card-doc-taxrules' || cardId === 'card-other-taxrules') {
@@ -1180,6 +1183,11 @@ function App() {
                 {/* Page 1: User Guide Page */}
                 {docSubTab === 'user_guide' && (
                   <UserGuideCard />
+                )}
+
+                {/* Page 1b: Emergency Fund & Cash Buffer Strategy Guide */}
+                {docSubTab === 'cash_buffer_guide' && (
+                  <EmergencyFundGuideCard />
                 )}
 
                 {/* Page 2: Healthy Life Expectancy vs Total Life Expectancy */}
