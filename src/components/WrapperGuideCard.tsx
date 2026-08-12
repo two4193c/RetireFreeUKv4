@@ -73,6 +73,13 @@ export const WrapperGuideCard: React.FC = () => {
               <td className="p-3.5 font-bold text-emerald-600 dark:text-emerald-400">100% Tax-Free</td>
               <td className="p-3.5 font-bold text-emerald-600 dark:text-emerald-400">100% Tax-Free after age 60</td>
             </tr>
+            <tr className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+              <td className="p-3.5 font-bold text-slate-900 dark:text-white">Same-Year Flexibility</td>
+              <td className="p-3.5 text-slate-400">No (Locked in pension)</td>
+              <td className="p-3.5 text-slate-400">No (Locked in pension)</td>
+              <td className="p-3.5 text-cyan-600 dark:text-cyan-400 font-bold">Yes (Flexible ISA: Replace in same tax year)</td>
+              <td className="p-3.5 text-slate-400">No (25% penalty on early replacement)</td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -198,6 +205,40 @@ export const WrapperGuideCard: React.FC = () => {
                 <li><strong>Retiring before age 60</strong>: Locked until 60; early access triggers 25% penalty. Use standard ISA for pre-57 bridge.</li>
               </ul>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Flexible ISA Rules & Strategic Liquidity Deep Dive */}
+      <div className="p-6 rounded-2xl bg-cyan-50/70 dark:bg-cyan-950/30 border border-cyan-200/80 dark:border-cyan-800/80 space-y-4">
+        <div className="flex items-center gap-2.5 text-cyan-900 dark:text-cyan-300 font-bold text-sm">
+          <ShieldCheck className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
+          <span>Flexible ISA Rules: Same-Tax-Year Cash Replacements & Liquidity Buffer</span>
+        </div>
+        <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+          Introduced by HMRC in April 2016, <strong>Flexible ISAs</strong> allow investors to withdraw cash from their ISA and replace it within the <strong>same tax year (6 April – 5 April)</strong> without the replacement counting towards their £20,000 annual ISA allowance.
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+          <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-cyan-200/60 dark:border-cyan-900/60 space-y-2">
+            <h4 className="font-bold text-cyan-900 dark:text-cyan-300">How Same-Year Replacement Works</h4>
+            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+              If you contribute £20,000 into a Flexible ISA in May, withdraw £8,000 in August for a short-term cash need, you can repay the £8,000 back into your ISA prior to <strong>5 April</strong> of the same tax year without exceeding your annual limit.
+            </p>
+          </div>
+
+          <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-cyan-200/60 dark:border-cyan-900/60 space-y-2">
+            <h4 className="font-bold text-cyan-900 dark:text-cyan-300">Provider & Wrapper Eligibility</h4>
+            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+              Flexibility is optional for providers. Supported by major platforms for <strong>Cash ISAs and Stocks & Shares ISAs</strong>. <strong>NOT allowed for Lifetime ISAs (LISA) or Junior ISAs (JISA)</strong>. Always verify if your platform offers Flexible ISA rules.
+            </p>
+          </div>
+
+          <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-cyan-200/60 dark:border-cyan-900/60 space-y-2">
+            <h4 className="font-bold text-cyan-900 dark:text-cyan-300">FIRE & Retirement Strategy</h4>
+            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+              Serves as a <strong>tactical emergency cash reserve</strong>. You can fund unexpected major life expenses (e.g. house repairs, car purchase, bridge income) from ISA cash without permanently destroying tax-free allowance capacity.
+            </p>
           </div>
         </div>
       </div>
