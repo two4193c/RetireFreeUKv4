@@ -1529,6 +1529,8 @@ export async function generateFormulaExcelWorkbook(
     ]);
   });
 
+  let sec1LastDataRow = lastSummaryRow;
+
   // Check if any annuity was purchased or active
   const hasAnnuityPurchased = primIsAnnuity || (isCouple && (profile.partnerIncomeProductOption === 'annuity' || profile.partnerIncomeProductOption === 'hybrid')) || activeTranches.length > 0 || projections.some(p => (p.annuityIncomeReceived || 0) > 0 || (p.annuityCapitalAllocated || 0) > 0);
 
@@ -1542,6 +1544,7 @@ export async function generateFormulaExcelWorkbook(
     const noticeRow = wsAnnuity.getRow(lastSummaryRow);
     noticeRow.font = { name: 'Calibri', size: 11, italic: true, bold: true, color: { argb: 'FF475569' } };
     wsAnnuity.mergeCells(`B${lastSummaryRow}:M${lastSummaryRow}`);
+    sec1LastDataRow = lastSummaryRow;
   }
 
   // Format Section 1 rows
@@ -1596,6 +1599,7 @@ export async function generateFormulaExcelWorkbook(
 
   const timelineStartRow = lastSummaryRow + 1;
   let currentTimelineRow = timelineStartRow;
+  let cumCapAllocated = 0;
 
   for (let idx = 0; idx < projectYears; idx++) {
     const p = projections[idx];
@@ -1603,34 +1607,40 @@ export async function generateFormulaExcelWorkbook(
     const ageYouVal = profile.currentAge + idx;
     const agePartnerVal = isCouple ? ((profile.partnerCurrentAge || profile.currentAge) + idx) : 'N/A';
 
-    const capAllocated = p?.annuityCapitalAllocated || 0;
-    const primInc = p?.primaryAnnuityIncomeReceived || (!isCouple ? (p?.annuityIncomeReceived || 0) : 0);
-    const partInc = p?.partnerAnnuityIncomeReceived || 0;
-    const totalInc = p?.annuityIncomeReceived || (primInc + partInc);
+    const capAllocatedVal = p?.annuityCapitalAllocated || 0;
+    const primIncVal = p?.primaryAnnuityIncomeReceived || (!isCouple ? (p?.annuityIncomeReceived || 0) : 0);
+    const partIncVal = p?.partnerAnnuityIncomeReceived || 0;
+    const totalIncVal = p?.annuityIncomeReceived || (primIncVal + partIncVal);
+    
+    cumCapAllocated += capAllocatedVal;
 
     let eventStatusStr = 'No Annuity Income';
-    if (capAllocated > 0) {
-      eventStatusStr = `Annuity Purchased (£${capAllocated.toLocaleString()})`;
-    } else if (totalInc > 0) {
+    if (capAllocatedVal > 0) {
+      eventStatusStr = `Annuity Purchased (£${capAllocatedVal.toLocaleString()})`;
+    } else if (totalIncVal > 0) {
       eventStatusStr = 'Active Guaranteed Income';
     }
 
     let notesStr = 'N/A';
-    if (totalInc > 0) {
+    if (totalIncVal > 0) {
       notesStr = profile.annuityExcessReinvestOption === 'cash' ? 'Reinvested to Cash' : profile.annuityExcessReinvestOption === 'none' ? 'General Lifestyle Income' : 'Reinvested to ISA';
     }
 
     const rowNum = currentTimelineRow;
+    const primIncFormula = `SUMIFS(I$4:I$${sec1LastDataRow}, A$4:A$${sec1LastDataRow}, "YOU", D$4:D$${sec1LastDataRow}, "<="&B${rowNum})`;
+    const partIncFormula = isCouple ? `SUMIFS(I$4:I$${sec1LastDataRow}, A$4:A$${sec1LastDataRow}, "PARTNER", D$4:D$${sec1LastDataRow}, "<="&C${rowNum})` : '0';
+    const capAllocatedFormula = `SUMIFS(G$4:G$${sec1LastDataRow}, E$4:E$${sec1LastDataRow}, A${rowNum})`;
+
     wsAnnuity.addRow([
       yearVal,
       ageYouVal,
       agePartnerVal,
       eventStatusStr,
-      primInc,
-      partInc,
-      { formula: `E${rowNum}+F${rowNum}`, result: totalInc },
-      capAllocated,
-      { formula: `SUM(H$${timelineStartRow}:H${rowNum})`, result: capAllocated },
+      { formula: primIncFormula, result: primIncVal },
+      { formula: partIncFormula, result: partIncVal },
+      { formula: `E${rowNum}+F${rowNum}`, result: totalIncVal },
+      { formula: capAllocatedFormula, result: capAllocatedVal },
+      { formula: `SUM(H$${timelineStartRow}:H${rowNum})`, result: cumCapAllocated },
       notesStr,
       '', '', ''
     ]);
