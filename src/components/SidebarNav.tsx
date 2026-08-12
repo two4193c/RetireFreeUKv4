@@ -205,6 +205,7 @@ export const NAV_STRUCTURE: TabGroup[] = [
       // 2. Tax Wrappers, Pensions & Workplace Schemes
       { id: 'card-doc-taxrules', label: 'UK Tax Guide', category: '2. Tax Wrappers & Pensions' },
       { id: 'card-doc-wrapperguide', label: 'Workplace Pension / SIPP / ISA Guide', category: '2. Tax Wrappers & Pensions' },
+      { id: 'card-doc-lifestylingguide', label: 'Pension Lifestyling & Default Funds Guide', category: '2. Tax Wrappers & Pensions' },
       { id: 'card-doc-sayebayeguide', label: 'Workplace SAYE & BAYE Scheme Guide', category: '2. Tax Wrappers & Pensions' },
       { id: 'card-doc-sippguide', label: 'SIPP Consolidation Guide', category: '2. Tax Wrappers & Pensions' },
       { id: 'card-doc-dbguide', label: 'Defined Benefit (DB) Pension Guide', category: '2. Tax Wrappers & Pensions' },
@@ -253,6 +254,7 @@ export function getFilteredNavStructure(mode: AppMode = 'basic'): TabGroup[] {
     'card-risk-historic',
     // Documentation cards hidden in basic mode (only card-doc-userguide is shown)
     'card-doc-cashbufferguide',
+    'card-doc-lifestylingguide',
     'card-doc-livingstandards',
     'card-doc-healthylife',
     'card-doc-taxrules',
