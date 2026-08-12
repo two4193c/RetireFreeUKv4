@@ -198,6 +198,7 @@ export const NAV_STRUCTURE: TabGroup[] = [
       // 1. Getting Started & Foundations
       { id: 'card-doc-userguide', label: 'Quick Start Guide', category: '1. Foundations' },
       { id: 'card-doc-cashbufferguide', label: 'Emergency Fund & Cash Buffer Guide', category: '1. Foundations' },
+      { id: 'card-doc-statepensionniguide', label: 'State Pension & Voluntary NI Guide', category: '1. Foundations' },
       { id: 'card-doc-livingstandards', label: 'Retirement Living Standards', category: '1. Foundations' },
       { id: 'card-doc-healthylife', label: 'Healthy Life Expectancy', category: '1. Foundations' },
       { id: 'card-doc-benchmarkguide', label: 'Scenario Benchmark & Scorecard Guide', category: '1. Foundations' },
@@ -206,6 +207,9 @@ export const NAV_STRUCTURE: TabGroup[] = [
       { id: 'card-doc-taxrules', label: 'UK Tax Guide', category: '2. Tax Wrappers & Pensions' },
       { id: 'card-doc-wrapperguide', label: 'Workplace Pension / SIPP / ISA Guide', category: '2. Tax Wrappers & Pensions' },
       { id: 'card-doc-lifestylingguide', label: 'Pension Lifestyling & Default Funds Guide', category: '2. Tax Wrappers & Pensions' },
+      { id: 'card-doc-ufplssmallpotsguide', label: 'UFPLS vs PCLS & Small Pots Guide', category: '2. Tax Wrappers & Pensions' },
+      { id: 'card-doc-phasedretirementguide', label: 'Phased Retirement & Tax Cliff Guide', category: '2. Tax Wrappers & Pensions' },
+      { id: 'card-doc-taperedallowanceguide', label: 'Tapered Annual Allowance (TAA) Guide', category: '2. Tax Wrappers & Pensions' },
       { id: 'card-doc-sayebayeguide', label: 'Workplace SAYE & BAYE Scheme Guide', category: '2. Tax Wrappers & Pensions' },
       { id: 'card-doc-sippguide', label: 'SIPP Consolidation Guide', category: '2. Tax Wrappers & Pensions' },
       { id: 'card-doc-dbguide', label: 'Defined Benefit (DB) Pension Guide', category: '2. Tax Wrappers & Pensions' },
@@ -228,6 +232,7 @@ export const NAV_STRUCTURE: TabGroup[] = [
       { id: 'card-doc-riskguide', label: 'Sequence Risk & Stress Test Guide', category: '5. Estate & Care Planning' },
       { id: 'card-doc-ihtguide', label: 'April 2027 IHT & Estate Guide', category: '5. Estate & Care Planning' },
       { id: 'card-doc-careguide', label: 'Care Costs & Equity Release Guide', category: '5. Estate & Care Planning' },
+      { id: 'card-doc-expatqropsguide', label: 'Expat, Overseas & QROPS Pension Guide', category: '5. Estate & Care Planning' },
     ],
   },
 ];
@@ -255,6 +260,11 @@ export function getFilteredNavStructure(mode: AppMode = 'basic'): TabGroup[] {
     // Documentation cards hidden in basic mode (only card-doc-userguide is shown)
     'card-doc-cashbufferguide',
     'card-doc-lifestylingguide',
+    'card-doc-statepensionniguide',
+    'card-doc-ufplssmallpotsguide',
+    'card-doc-phasedretirementguide',
+    'card-doc-taperedallowanceguide',
+    'card-doc-expatqropsguide',
     'card-doc-livingstandards',
     'card-doc-healthylife',
     'card-doc-taxrules',

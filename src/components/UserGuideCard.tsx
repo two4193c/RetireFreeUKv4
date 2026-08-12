@@ -31,8 +31,27 @@ interface GuideSection {
   content: React.ReactNode;
 }
 
-export const UserGuideCard: React.FC = () => {
+interface UserGuideCardProps {
+  appMode?: 'basic' | 'advanced';
+  onToggleAppMode?: (mode: 'basic' | 'advanced') => void;
+}
+
+export const UserGuideCard: React.FC<UserGuideCardProps> = ({
+  appMode: externalAppMode,
+  onToggleAppMode
+}) => {
   const [openSectionId, setOpenSectionId] = useState<string | null>('getting-started');
+  const [internalMode, setInternalMode] = useState<'basic' | 'advanced'>('basic');
+
+  const currentMode = externalAppMode ?? internalMode;
+
+  const handleModeToggle = (mode: 'basic' | 'advanced') => {
+    if (onToggleAppMode) {
+      onToggleAppMode(mode);
+    } else {
+      setInternalMode(mode);
+    }
+  };
 
   const toggleSection = (id: string) => {
     setOpenSectionId(prev => prev === id ? null : id);
@@ -83,10 +102,23 @@ export const UserGuideCard: React.FC = () => {
             </div>
           </div>
 
-          <div className="p-3 bg-blue-50 dark:bg-blue-950/40 rounded-xl border border-blue-200 dark:border-blue-800/60 flex items-start gap-2 text-xs text-blue-900 dark:text-blue-200">
-            <Lightbulb className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
-            <div>
-              <strong>Basic vs. Advanced Mode:</strong> You can toggle between <strong>Basic</strong> and <strong>Advanced Mode</strong> in the top header. Basic mode streamlines navigation to core planning cards, while Advanced mode unlocks full depth including Accumulation reviews, Mortgage modeling, Custom fee drags, and Scenario comparisons.
+          <div className="p-4 bg-blue-50/80 dark:bg-blue-950/40 rounded-2xl border border-blue-200 dark:border-blue-800/60 space-y-2 text-xs text-blue-950 dark:text-blue-200">
+            <div className="flex items-center gap-2 font-extrabold text-blue-900 dark:text-blue-300">
+              <Lightbulb className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+              <span>Basic Mode vs. Advanced Mode</span>
+            </div>
+            <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
+              You can toggle between <strong>Basic Mode</strong> and <strong>Advanced Mode</strong> at any time using the mode selector in the top header:
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 pt-1 text-[11px]">
+              <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-blue-200/80 dark:border-blue-900/80">
+                <span className="font-bold text-blue-800 dark:text-blue-300 block mb-0.5">⚡ Basic Mode</span>
+                <span className="text-slate-600 dark:text-slate-400">Streamlines navigation by hiding advanced secondary modules. Ideal for quick baseline forecasts and straightforward decumulation planning.</span>
+              </div>
+              <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-blue-200/80 dark:border-blue-900/80">
+                <span className="font-bold text-indigo-800 dark:text-indigo-300 block mb-0.5">✨ Advanced Mode</span>
+                <span className="text-slate-600 dark:text-slate-400">Unlocks all 30+ planning modules including Accumulation Phase, Mortgage payoff, Fee Drag analysis, Multi-plan comparisons, and the full 25-guide documentation library.</span>
+              </div>
             </div>
           </div>
         </div>
@@ -300,6 +332,161 @@ export const UserGuideCard: React.FC = () => {
               Yes! All target income requirements, state pensions, DB pensions, and tax bands are adjusted annually for inflation based on your chosen inflation rate setting (default 2.5%).
             </p>
           </details>
+        </div>
+      )
+    },
+    {
+      id: 'app-modes',
+      title: '7. Application Modes: Basic Mode vs. Advanced Mode',
+      icon: Sliders,
+      badge: 'Mode Switcher',
+      summary: 'Detailed breakdown of Basic Mode vs Advanced Mode features and card visibility with interactive mode toggle.',
+      content: (
+        <div className="space-y-4 text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+          <p>
+            RetireFree UK v4 includes a dual-interface mode switcher (located in the top header and sidebar navigation) allowing you to adjust application complexity to match your current planning phase.
+          </p>
+
+          {/* Interactive Mode Toggle Box */}
+          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4 my-2">
+            <div className="space-y-1 text-center sm:text-left">
+              <div className="font-extrabold text-slate-900 dark:text-white text-xs sm:text-sm flex items-center justify-center sm:justify-start gap-2">
+                <Sliders className="w-4 h-4 text-indigo-500 shrink-0" />
+                <span>Interactive App Mode Selector</span>
+                <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
+                  currentMode === 'basic'
+                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-950/80 dark:text-blue-300 border-blue-300 dark:border-blue-700'
+                    : 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/80 dark:text-indigo-300 border-indigo-300 dark:border-indigo-700'
+                }`}>
+                  Active: {currentMode === 'basic' ? 'Basic Mode ⚡' : 'Advanced Mode ✨'}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                Click a button to switch the entire application interface mode live right now:
+              </p>
+            </div>
+
+            <div className="flex items-center p-1 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shrink-0 shadow-xs">
+              <button
+                type="button"
+                onClick={() => handleModeToggle('basic')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  currentMode === 'basic'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <Zap className="w-3.5 h-3.5" />
+                <span>Basic Mode</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleModeToggle('advanced')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  currentMode === 'advanced'
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Advanced Mode</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            
+            {/* Basic Mode */}
+            <div className={`p-4 rounded-2xl transition-all border ${
+              currentMode === 'basic'
+                ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-400 dark:border-blue-600 ring-2 ring-blue-500/20'
+                : 'bg-blue-50/50 dark:bg-blue-950/20 border-blue-200/80 dark:border-blue-800/80 opacity-80'
+            } space-y-3`}>
+              <div className="flex items-center justify-between">
+                <span className="font-extrabold text-blue-900 dark:text-blue-300 text-sm flex items-center gap-2">
+                  <Zap className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  Basic Mode
+                </span>
+                <span className="text-[10px] font-bold uppercase bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded">
+                  Streamlined View
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                Designed for quick, noise-free retirement modeling. Streamlines the sidebar by hiding secondary modules and technical guides, allowing you to focus purely on core assets and decumulation projections.
+              </p>
+              <div className="space-y-1.5 text-xs">
+                <span className="font-bold text-slate-900 dark:text-white">Included Cards in Basic Mode:</span>
+                <ul className="space-y-1 text-slate-600 dark:text-slate-400 text-[11px]">
+                  <li className="flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                    <span>Profile Inputs (Ages, Retirement Target, Income Needs)</span>
+                  </li>
+                  <li className="flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                    <span>Defined Contribution (DC) Pensions & SIPPs</span>
+                  </li>
+                  <li className="flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                    <span>Defined Benefit (DB) Pensions & State Pension</span>
+                  </li>
+                  <li className="flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                    <span>ISAs, Cash Savings & Tax-efficient Drawdown Strategy</span>
+                  </li>
+                  <li className="flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                    <span>Annual Projections cashflow chart & remaining wealth</span>
+                  </li>
+                  <li className="flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                    <span>Quick Start User Guide</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Advanced Mode */}
+            <div className={`p-4 rounded-2xl transition-all border ${
+              currentMode === 'advanced'
+                ? 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-400 dark:border-indigo-600 ring-2 ring-indigo-500/20'
+                : 'bg-indigo-50/50 dark:bg-indigo-950/20 border-indigo-200/80 dark:border-indigo-800/80 opacity-80'
+            } space-y-3`}>
+              <div className="flex items-center justify-between">
+                <span className="font-extrabold text-indigo-900 dark:text-indigo-300 text-sm flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                  Advanced Mode
+                </span>
+                <span className="text-[10px] font-bold uppercase bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded">
+                  Full Power & Depth
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                Unlocks the full architectural power of RetireFree UK v4 with 30+ planning modules, granular tax tables, and specialized documentation.
+              </p>
+              <div className="space-y-1.5 text-xs">
+                <span className="font-bold text-slate-900 dark:text-white">Additional Unlocked Modules:</span>
+                <ul className="space-y-1 text-slate-600 dark:text-slate-400 text-[11px]">
+                  <li className="flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                    <span>Accumulation Phase review & Workplace SAYE/BAYE modeling</span>
+                  </li>
+                  <li className="flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                    <span>Mortgage & Debt amortization schedules and stress tests</span>
+                  </li>
+                  <li className="flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                    <span>Fee Drag analyzer, Custom asset allocation & Tax tables</span>
+                  </li>
+                  <li className="flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                    <span>Multi-plan side-by-side comparison & 25 specialized guides</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+          </div>
         </div>
       )
     }
