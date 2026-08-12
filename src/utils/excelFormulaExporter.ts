@@ -538,19 +538,30 @@ export async function generateFormulaExcelWorkbook(
   const primaryTotalAnnual = primaryWorkplaceAnnual + primarySippAnnual + primarySnsIsaAnnual + primaryCashIsaAnnual + primaryLisaAnnual + primaryGiaAnnual + primaryCashSavingsAnnual;
   const partnerTotalAnnual = partnerWorkplaceAnnual + partnerSippAnnual + partnerSnsIsaAnnual + partnerCashIsaAnnual + partnerLisaAnnual + partnerGiaAnnual + partnerCashSavingsAnnual;
 
-  // Rows 4-10: Baseline Pot Top-Ups
-  wsRegContrib.addRow(['Workplace Pension (Employer & Employee)', Math.round(primaryWorkplaceAnnual / 12), primaryWorkplaceAnnual, Math.round(partnerWorkplaceAnnual / 12), partnerWorkplaceAnnual, '', '']); // Row 4
-  wsRegContrib.addRow(['SIPP / Private Pension', Math.round(primarySippAnnual / 12), primarySippAnnual, Math.round(partnerSippAnnual / 12), partnerSippAnnual, '', '']); // Row 5
-  wsRegContrib.addRow(['Stocks & Shares ISA', Math.round(primarySnsIsaAnnual / 12), primarySnsIsaAnnual, Math.round(partnerSnsIsaAnnual / 12), partnerSnsIsaAnnual, '', '']); // Row 6
-  wsRegContrib.addRow(['Cash ISA', Math.round(primaryCashIsaAnnual / 12), primaryCashIsaAnnual, Math.round(partnerCashIsaAnnual / 12), partnerCashIsaAnnual, '', '']); // Row 7
-  wsRegContrib.addRow(['Lifetime ISA (LISA)', Math.round(primaryLisaAnnual / 12), primaryLisaAnnual, Math.round(partnerLisaAnnual / 12), partnerLisaAnnual, '', '']); // Row 8
-  wsRegContrib.addRow(['General Investment Account (GIA)', Math.round(primaryGiaAnnual / 12), primaryGiaAnnual, Math.round(partnerGiaAnnual / 12), partnerGiaAnnual, '', '']); // Row 9
-  wsRegContrib.addRow(['Cash Savings', Math.round(primaryCashSavingsAnnual / 12), primaryCashSavingsAnnual, Math.round(partnerCashSavingsAnnual / 12), partnerCashSavingsAnnual, '', '']); // Row 10
+  // Rows 4-10: Baseline Pot Top-Ups with dynamic SUMIFS formulas linked to Section 2
+  const potRowConfigs = [
+    { label: 'Workplace Pension (Employer & Employee)', pVal: primaryWorkplaceAnnual, ptVal: partnerWorkplaceAnnual },
+    { label: 'SIPP / Private Pension', pVal: primarySippAnnual, ptVal: partnerSippAnnual },
+    { label: 'Stocks & Shares ISA', pVal: primarySnsIsaAnnual, ptVal: partnerSnsIsaAnnual },
+    { label: 'Cash ISA', pVal: primaryCashIsaAnnual, ptVal: partnerCashIsaAnnual },
+    { label: 'Lifetime ISA (LISA)', pVal: primaryLisaAnnual, ptVal: partnerLisaAnnual },
+    { label: 'General Investment Account (GIA)', pVal: primaryGiaAnnual, ptVal: partnerGiaAnnual },
+    { label: 'Cash Savings', pVal: primaryCashSavingsAnnual, ptVal: partnerCashSavingsAnnual },
+  ];
 
-  for (let r = 4; r <= 10; r++) {
-    wsRegContrib.getCell(`F${r}`).value = { formula: `B${r}+D${r}` };
-    wsRegContrib.getCell(`G${r}`).value = { formula: `C${r}+E${r}` };
-  }
+  potRowConfigs.forEach(({ label, pVal, ptVal }, idx) => {
+    const r = idx + 4;
+    const catSearch = label.split(' ')[0] === 'Workplace' ? 'Workplace Pension' : label.split(' ')[0] === 'SIPP' ? 'SIPP / Private Pension' : label.split(' ')[0] === 'Stocks' ? 'Stocks & Shares ISA' : label.split(' ')[0] === 'Cash' && label.includes('ISA') ? 'Cash ISA' : label.split(' ')[0] === 'Lifetime' ? 'Lifetime ISA (LISA)' : label.split(' ')[0] === 'General' ? 'General Investment Account (GIA)' : 'Cash Savings';
+    wsRegContrib.addRow([
+      label,
+      { formula: `SUMIFS(F$14:F$30, B$14:B$30, "YOU", C$14:C$30, "${catSearch}")`, result: Math.round(pVal / 12) },
+      { formula: `SUMIFS(G$14:G$30, B$14:B$30, "YOU", C$14:C$30, "${catSearch}")`, result: pVal },
+      { formula: `SUMIFS(F$14:F$30, B$14:B$30, "PARTNER", C$14:C$30, "${catSearch}")`, result: Math.round(ptVal / 12) },
+      { formula: `SUMIFS(G$14:G$30, B$14:B$30, "PARTNER", C$14:C$30, "${catSearch}")`, result: ptVal },
+      { formula: `B${r}+D${r}`, result: Math.round((pVal + ptVal) / 12) },
+      { formula: `C${r}+E${r}`, result: pVal + ptVal }
+    ]);
+  });
 
   // Row 11: Total Summary Row
   wsRegContrib.addRow(['TOTAL BASELINE REGULAR TOP-UPS', '', '', '', '', '', '']); // Row 11
@@ -585,36 +596,147 @@ export async function generateFormulaExcelWorkbook(
     cell.alignment = { vertical: 'middle', horizontal: 'center' };
   });
 
+  const primaryCurrentAge = profile.currentAge || 50;
+  const primaryRetireAge = profile.targetRetirementAge || 55;
+  const partnerCurrentAge = profile.partnerCurrentAge || 50;
+  const partnerRetireAge = profile.partnerTargetRetirementAge || 57;
+
+  const potTypesList: { key: InvestmentPotType; label: string }[] = [
+    { key: 'workplace_pension', label: 'Workplace Pension' },
+    { key: 'sipp', label: 'SIPP / Private Pension' },
+    { key: 'stocks_and_shares_isa', label: 'Stocks & Shares ISA' },
+    { key: 'cash_isa', label: 'Cash ISA' },
+    { key: 'lisa', label: 'Lifetime ISA (LISA)' },
+    { key: 'gia', label: 'General Investment Account (GIA)' },
+    { key: 'cash_savings', label: 'Cash Savings' },
+  ];
+
   const activeRegularItems = (profile.oneOffContributions || []).filter(
     (c) => c.enabled !== false && c.frequency === 'regular_monthly'
   );
 
-  if (activeRegularItems.length > 0) {
-    activeRegularItems.forEach((c) => {
-      const cOwner = c.owner === 'partner' ? 'PARTNER' : 'YOU';
-      const cat = getPotDisplayName(c.targetPot);
-      const mAmt = c.grossAmount || 0;
-      const aAmt = mAmt * 12;
-      const nextR = wsRegContrib.lastRow!.number + 1;
-      wsRegContrib.addRow([
-        c.name || 'Regular Contribution',
-        cOwner,
-        cat,
-        c.startAge || (cOwner === 'PARTNER' ? (profile.partnerCurrentAge || 50) : (profile.currentAge || 50)),
-        c.endAge || (cOwner === 'PARTNER' ? (profile.partnerTargetRetirementAge || 57) : (profile.targetRetirementAge || 55)),
-        mAmt,
-        { formula: `F${nextR}*12`, result: aAmt }
-      ]);
-    });
-  } else {
-    wsRegContrib.addRow(['Workplace Pension Top-Up', 'YOU', 'Workplace Pension', profile.currentAge || 50, profile.targetRetirementAge || 55, Math.round(primaryWorkplaceAnnual / 12), primaryWorkplaceAnnual]);
+  interface RegContribRecord {
+    name: string;
+    ownerStr: 'YOU' | 'PARTNER';
+    potLabel: string;
+    startAge: number;
+    endAge: number;
+    monthlyAmt: number;
+    annualAmt: number;
   }
 
+  const regRows: RegContribRecord[] = [];
+
+  potTypesList.forEach(({ key, label }) => {
+    const items = activeRegularItems.filter((c) => (c.owner || 'primary') === 'primary' && c.targetPot === key);
+    if (items.length > 0) {
+      items.forEach((c) => {
+        let mAmt = c.grossAmount || 0;
+        if (key === 'workplace_pension') {
+          if (c.workplaceContributionType === 'fixed') {
+            mAmt = (c.employeeMonthlyAmount ?? c.grossAmount ?? 0) + (c.employerMonthlyAmount ?? 0);
+          } else {
+            const grossSalary = profile.grossAnnualSalary || 0;
+            const empPct = c.employeePercent ?? 5;
+            const emprPct = c.employerPercent ?? 3;
+            mAmt = Math.round((grossSalary * ((empPct + emprPct) / 100)) / 12);
+          }
+        } else if (key === 'sipp') {
+          const rawM = c.grossAmount || 0;
+          mAmt = c.sippContributionType === 'gross' ? rawM : Math.round(rawM * 1.25);
+        }
+        regRows.push({
+          name: c.name || `${label} Item`,
+          ownerStr: 'YOU',
+          potLabel: label,
+          startAge: c.startAge ?? primaryCurrentAge,
+          endAge: c.endAge ?? primaryRetireAge,
+          monthlyAmt: mAmt,
+          annualAmt: mAmt * 12,
+        });
+      });
+    } else {
+      const baseAnnual = computeAnnualContributionForPot(key, 'primary', profile, pots);
+      if (baseAnnual > 0) {
+        regRows.push({
+          name: `${label} Top-Up`,
+          ownerStr: 'YOU',
+          potLabel: label,
+          startAge: primaryCurrentAge,
+          endAge: primaryRetireAge,
+          monthlyAmt: Math.round(baseAnnual / 12),
+          annualAmt: baseAnnual,
+        });
+      }
+    }
+  });
+
+  if (isCouple) {
+    potTypesList.forEach(({ key, label }) => {
+      const items = activeRegularItems.filter((c) => c.owner === 'partner' && c.targetPot === key);
+      if (items.length > 0) {
+        items.forEach((c) => {
+          let mAmt = c.grossAmount || 0;
+          if (key === 'workplace_pension') {
+            if (c.workplaceContributionType === 'fixed') {
+              mAmt = (c.employeeMonthlyAmount ?? c.grossAmount ?? 0) + (c.employerMonthlyAmount ?? 0);
+            } else {
+              const grossSalary = profile.partnerGrossAnnualSalary || 0;
+              const empPct = c.employeePercent ?? 5;
+              const emprPct = c.employerPercent ?? 3;
+              mAmt = Math.round((grossSalary * ((empPct + emprPct) / 100)) / 12);
+            }
+          } else if (key === 'sipp') {
+            const rawM = c.grossAmount || 0;
+            mAmt = c.sippContributionType === 'gross' ? rawM : Math.round(rawM * 1.25);
+          }
+          regRows.push({
+            name: c.name || `${label} Item (Partner)`,
+            ownerStr: 'PARTNER',
+            potLabel: label,
+            startAge: c.startAge ?? partnerCurrentAge,
+            endAge: c.endAge ?? partnerRetireAge,
+            monthlyAmt: mAmt,
+            annualAmt: mAmt * 12,
+          });
+        });
+      } else {
+        const baseAnnual = computeAnnualContributionForPot(key, 'partner', profile, pots);
+        if (baseAnnual > 0) {
+          regRows.push({
+            name: `${label} Top-Up (Partner)`,
+            ownerStr: 'PARTNER',
+            potLabel: label,
+            startAge: partnerCurrentAge,
+            endAge: partnerRetireAge,
+            monthlyAmt: Math.round(baseAnnual / 12),
+            annualAmt: baseAnnual,
+          });
+        }
+      }
+    });
+  }
+
+  let sec2RowIdx = 14;
+  regRows.forEach((r) => {
+    const nextR = sec2RowIdx;
+    wsRegContrib.addRow([
+      r.name,
+      r.ownerStr,
+      r.potLabel,
+      r.startAge,
+      r.endAge,
+      r.monthlyAmt,
+      { formula: `F${nextR}*12`, result: r.annualAmt },
+    ]);
+    sec2RowIdx++;
+  });
+
   // Pre-fill template rows up to Row 30
-  const curRegRows = wsRegContrib.lastRow!.number;
-  for (let r = curRegRows + 1; r <= 30; r++) {
-    const nextR = r;
+  while (sec2RowIdx <= 30) {
+    const nextR = sec2RowIdx;
     wsRegContrib.addRow(['Custom Regular Item (Optional)', 'YOU', 'SIPP / Private Pension', 50, 55, 0, { formula: `F${nextR}*12`, result: 0 }]);
+    sec2RowIdx++;
   }
 
   for (let r = 14; r <= 30; r++) {
@@ -660,30 +782,84 @@ export async function generateFormulaExcelWorkbook(
     cell.alignment = { vertical: 'middle', horizontal: 'center' };
   });
 
-  const spendingPhases = profile.spendingPhases;
-  const isPhasesEnabled = spendingPhases?.enabled;
-  const baseTargetNet = profile.targetRetirementIncomeAnnual || 35000;
+  // Helper to extract active phased income spending targets
+  const phasedRanges = (() => {
+    const retAge = profile.targetRetirementAge || 60;
+    const baseTarget = profile.targetRetirementIncomeAnnual || 35000;
 
-  const goGoStartAge = profile.targetRetirementAge || 52;
-  const goGoEndAge = isPhasesEnabled && spendingPhases?.goGoEndAge ? spendingPhases.goGoEndAge : 66;
-  const goGoIncome = isPhasesEnabled && spendingPhases?.goGoIncomeAnnual ? spendingPhases.goGoIncomeAnnual : Math.round(baseTargetNet * 1.15);
+    if (profile.maximizedSpendConfig?.enabled) {
+      const maxConfig = profile.maximizedSpendConfig;
+      const phases = maxConfig.spendingPhases;
+      if (phases?.enabled) {
+        if (phases.customRanges && phases.customRanges.length > 0) {
+          return phases.customRanges.map((r, i) => ({
+            name: r.name || `Phase ${i + 1}`,
+            startAge: r.startAge ?? retAge,
+            endAge: r.endAge ?? 120,
+            incomeAnnual: r.annualTargetIncome ?? baseTarget,
+            notes: r.description || 'Maximized Spend Custom Phase',
+          }));
+        }
+        if (phases.goGoEndAge !== undefined && phases.goGoIncomeAnnual !== undefined) {
+          const goGoEnd = phases.goGoEndAge || 74;
+          const slowGoEnd = phases.slowGoEndAge || 84;
+          return [
+            { name: 'GO-GO Phase (Active Lifestyle)', startAge: retAge, endAge: goGoEnd, incomeAnnual: phases.goGoIncomeAnnual ?? baseTarget, notes: 'Primary Active Retirement Spending' },
+            { name: 'Slow-GO Phase (Moderate Lifestyle)', startAge: goGoEnd + 1, endAge: slowGoEnd, incomeAnnual: phases.slowGoIncomeAnnual ?? baseTarget, notes: 'Mid-Retirement Travel & Leisure' },
+            { name: 'No-GO Phase (Passive / Care)', startAge: slowGoEnd + 1, endAge: 120, incomeAnnual: phases.noGoIncomeAnnual ?? baseTarget, notes: 'Late Retirement / Essential Care' },
+          ];
+        }
+      }
+      const maxTarget = maxConfig.targetAnnualIncome || baseTarget;
+      return [
+        { name: 'Maximized Target Income', startAge: retAge, endAge: 120, incomeAnnual: maxTarget, notes: 'Flat Target Income Requirement' },
+      ];
+    }
 
-  const slowGoStartAge = goGoEndAge + 1;
-  const slowGoEndAge = isPhasesEnabled && spendingPhases?.slowGoEndAge ? spendingPhases.slowGoEndAge : 75;
-  const slowGoIncome = isPhasesEnabled && spendingPhases?.slowGoIncomeAnnual ? spendingPhases.slowGoIncomeAnnual : baseTargetNet;
+    const sp = profile.spendingPhases;
+    if (sp?.enabled) {
+      if (sp.customRanges && sp.customRanges.length > 0) {
+        return sp.customRanges.map((r, i) => ({
+          name: r.name || `Phase ${i + 1}`,
+          startAge: r.startAge ?? retAge,
+          endAge: r.endAge ?? 120,
+          incomeAnnual: r.annualTargetIncome ?? baseTarget,
+          notes: r.description || 'Custom Spending Phase',
+        }));
+      }
+      if (sp.goGoEndAge !== undefined && sp.goGoIncomeAnnual !== undefined) {
+        const goGoEnd = sp.goGoEndAge || 74;
+        const slowGoEnd = sp.slowGoEndAge || 84;
+        return [
+          { name: 'GO-GO Phase (Active Lifestyle)', startAge: retAge, endAge: goGoEnd, incomeAnnual: sp.goGoIncomeAnnual, notes: 'Primary Active Retirement Spending' },
+          { name: 'Slow-GO Phase (Moderate Lifestyle)', startAge: goGoEnd + 1, endAge: slowGoEnd, incomeAnnual: sp.slowGoIncomeAnnual ?? baseTarget, notes: 'Mid-Retirement Travel & Leisure' },
+          { name: 'No-GO Phase (Passive / Care)', startAge: slowGoEnd + 1, endAge: 120, incomeAnnual: sp.noGoIncomeAnnual ?? baseTarget, notes: 'Late Retirement / Essential Care' },
+        ];
+      }
+    }
 
-  const noGoStartAge = slowGoEndAge + 1;
-  const noGoEndAge = 120;
-  const noGoIncome = isPhasesEnabled && spendingPhases?.noGoIncomeAnnual ? spendingPhases.noGoIncomeAnnual : Math.round(baseTargetNet * 0.75);
+    if (sp?.customRanges && sp.customRanges.length > 0) {
+      return sp.customRanges.map((r, i) => ({
+        name: r.name || `Phase ${i + 1}`,
+        startAge: r.startAge ?? retAge,
+        endAge: r.endAge ?? 120,
+        incomeAnnual: r.annualTargetIncome ?? baseTarget,
+        notes: r.description || 'Custom Spending Phase',
+      }));
+    }
 
-  // Default active phases
-  wsPhased.addRow(['GO-GO Phase (Active Lifestyle)', goGoStartAge, goGoEndAge, goGoIncome, 'Primary Active Retirement Spending']); // Row 4
-  wsPhased.addRow(['Slow-GO Phase (Moderate Lifestyle)', slowGoStartAge, slowGoEndAge, slowGoIncome, 'Mid-Retirement Travel & Leisure']); // Row 5
-  wsPhased.addRow(['No-GO Phase (Passive / Care)', noGoStartAge, noGoEndAge, noGoIncome, 'Late Retirement / Essential Care']); // Row 6
+    return [
+      { name: 'Target Retirement Income', startAge: retAge, endAge: 120, incomeAnnual: baseTarget, notes: 'Flat Net Annual Target Income' },
+    ];
+  })();
 
-  // Add extra template rows for user additions
-  for (let r = 7; r <= 20; r++) {
-    wsPhased.addRow([`Additional Phase ${r - 6} (Optional)`, 999, 999, 0, 'User Added Custom Phase']);
+  phasedRanges.forEach((r) => {
+    wsPhased.addRow([r.name, r.startAge, r.endAge, r.incomeAnnual, r.notes]);
+  });
+
+  const curPhasedRows = wsPhased.lastRow!.number;
+  for (let r = curPhasedRows + 1; r <= 20; r++) {
+    wsPhased.addRow([`Additional Phase ${r - 3} (Optional)`, 999, 999, 0, 'User Added Custom Phase']);
   }
 
   for (let r = 4; r <= 20; r++) {
@@ -1169,35 +1345,47 @@ export async function generateFormulaExcelWorkbook(
 
   for (let idx = 0; idx < projectYears; idx++) {
     const contribRowNum = idx + 15;
-    const schedRowNum = idx + 2;
+    const schedRowNum = idx + 3;
 
-    const cYear = `='Schedule'!A${schedRowNum}`;
-    const cAgeYou = `='Schedule'!B${schedRowNum}`;
-    const cAgePartner = `='Schedule'!C${schedRowNum}`;
-    const cStatus = `='Schedule'!D${schedRowNum}`;
+    const cYear = `='Ledger'!A${schedRowNum}`;
+    const cAgeYou = `='Ledger'!B${schedRowNum}`;
+    const cAgePartner = `='Ledger'!C${schedRowNum}`;
+    const cStatus = `='Ledger'!D${schedRowNum}`;
 
-    // Contributions formulas during Accumulation
-    const cWorkplaceYou = `IF(B${contribRowNum}<'Inputs & Setup'!$B$6, 'Regular Contributions'!$C$4, 0)`;
-    const cSippYou = `IF(B${contribRowNum}<'Inputs & Setup'!$B$6, 'Regular Contributions'!$C$5, 0)`;
+    const calYear = (new Date().getFullYear()) + idx;
+    const curAgeYouVal = primaryCurrentAge + idx;
+    const curAgePartnerVal = partnerCurrentAge + idx;
+
+    // Contributions formulas checking Start Age & End Age from Regular Contributions Sheet
+    const cWorkplaceYou = `SUMPRODUCT(('Regular Contributions'!$G$14:$G$30) * ('Regular Contributions'!$B$14:$B$30="YOU") * ('Regular Contributions'!$C$14:$C$30="Workplace Pension") * (B${contribRowNum}>='Regular Contributions'!$D$14:$D$30) * (B${contribRowNum}<='Regular Contributions'!$E$14:$E$30))`;
+    const cSippYou = `SUMPRODUCT(('Regular Contributions'!$G$14:$G$30) * ('Regular Contributions'!$B$14:$B$30="YOU") * ('Regular Contributions'!$C$14:$C$30="SIPP / Private Pension") * (B${contribRowNum}>='Regular Contributions'!$D$14:$D$30) * (B${contribRowNum}<='Regular Contributions'!$E$14:$E$30))`;
     const cDcPensionYou = `E${contribRowNum}+F${contribRowNum}`;
 
-    const cSnsIsaYou = `IF(B${contribRowNum}<'Inputs & Setup'!$B$6, 'Regular Contributions'!$C$6, 0)`;
-    const cCashIsaYou = `IF(B${contribRowNum}<'Inputs & Setup'!$B$6, 'Regular Contributions'!$C$7, 0)`;
-    const cLisaYou = `IF(AND(B${contribRowNum}<'Inputs & Setup'!$B$6, B${contribRowNum}<50), 'Regular Contributions'!$C$8, 0)`;
+    const cSnsIsaYou = `SUMPRODUCT(('Regular Contributions'!$G$14:$G$30) * ('Regular Contributions'!$B$14:$B$30="YOU") * ('Regular Contributions'!$C$14:$C$30="Stocks & Shares ISA") * (B${contribRowNum}>='Regular Contributions'!$D$14:$D$30) * (B${contribRowNum}<='Regular Contributions'!$E$14:$E$30))`;
+    const cCashIsaYou = `SUMPRODUCT(('Regular Contributions'!$G$14:$G$30) * ('Regular Contributions'!$B$14:$B$30="YOU") * ('Regular Contributions'!$C$14:$C$30="Cash ISA") * (B${contribRowNum}>='Regular Contributions'!$D$14:$D$30) * (B${contribRowNum}<='Regular Contributions'!$E$14:$E$30))`;
+    const cLisaYou = `SUMPRODUCT(('Regular Contributions'!$G$14:$G$30) * ('Regular Contributions'!$B$14:$B$30="YOU") * ('Regular Contributions'!$C$14:$C$30="Lifetime ISA (LISA)") * (B${contribRowNum}>='Regular Contributions'!$D$14:$D$30) * (B${contribRowNum}<='Regular Contributions'!$E$14:$E$30) * (B${contribRowNum}<50))`;
     const cTotalIsaYou = `H${contribRowNum}+I${contribRowNum}+J${contribRowNum}`;
 
-    const cGiaYou = `IF(B${contribRowNum}<'Inputs & Setup'!$B$6, 'Regular Contributions'!$C$9, 0)`;
-    const cCashSavingsYou = `IF(B${contribRowNum}<'Inputs & Setup'!$B$6, 'Regular Contributions'!$C$10, 0)`;
+    const cGiaYou = `SUMPRODUCT(('Regular Contributions'!$G$14:$G$30) * ('Regular Contributions'!$B$14:$B$30="YOU") * ('Regular Contributions'!$C$14:$C$30="General Investment Account (GIA)") * (B${contribRowNum}>='Regular Contributions'!$D$14:$D$30) * (B${contribRowNum}<='Regular Contributions'!$E$14:$E$30))`;
+    const cCashSavingsYou = `SUMPRODUCT(('Regular Contributions'!$G$14:$G$30) * ('Regular Contributions'!$B$14:$B$30="YOU") * ('Regular Contributions'!$C$14:$C$30="Cash Savings") * (B${contribRowNum}>='Regular Contributions'!$D$14:$D$30) * (B${contribRowNum}<='Regular Contributions'!$E$14:$E$30))`;
     const cTotalCashGiaYou = `L${contribRowNum}+M${contribRowNum}`;
 
     const cTotalYouAnnual = `G${contribRowNum}+K${contribRowNum}+N${contribRowNum}`;
 
     // Partner Contributions
-    const cWorkplacePartner = isCouple ? `IF(C${contribRowNum}<'Inputs & Setup'!$D$6, 'Regular Contributions'!$E$4, 0)` : '0';
-    const cSippPartner = isCouple ? `IF(C${contribRowNum}<'Inputs & Setup'!$D$6, 'Regular Contributions'!$E$5, 0)` : '0';
+    const cWorkplacePartner = isCouple
+      ? `SUMPRODUCT(('Regular Contributions'!$G$14:$G$30) * ('Regular Contributions'!$B$14:$B$30="PARTNER") * ('Regular Contributions'!$C$14:$C$30="Workplace Pension") * (C${contribRowNum}>='Regular Contributions'!$D$14:$D$30) * (C${contribRowNum}<='Regular Contributions'!$E$14:$E$30))`
+      : '0';
+    const cSippPartner = isCouple
+      ? `SUMPRODUCT(('Regular Contributions'!$G$14:$G$30) * ('Regular Contributions'!$B$14:$B$30="PARTNER") * ('Regular Contributions'!$C$14:$C$30="SIPP / Private Pension") * (C${contribRowNum}>='Regular Contributions'!$D$14:$D$30) * (C${contribRowNum}<='Regular Contributions'!$E$14:$E$30))`
+      : '0';
     const cDcPensionPartner = `P${contribRowNum}+Q${contribRowNum}`;
-    const cTotalIsaPartner = isCouple ? `IF(C${contribRowNum}<'Inputs & Setup'!$D$6, 'Regular Contributions'!$E$6+'Regular Contributions'!$E$7+'Regular Contributions'!$E$8, 0)` : '0';
-    const cTotalCashGiaPartner = isCouple ? `IF(C${contribRowNum}<'Inputs & Setup'!$D$6, 'Regular Contributions'!$E$9+'Regular Contributions'!$E$10, 0)` : '0';
+    const cTotalIsaPartner = isCouple
+      ? `SUMPRODUCT(('Regular Contributions'!$G$14:$G$30) * ('Regular Contributions'!$B$14:$B$30="PARTNER") * (('Regular Contributions'!$C$14:$C$30="Stocks & Shares ISA") + ('Regular Contributions'!$C$14:$C$30="Cash ISA") + ('Regular Contributions'!$C$14:$C$30="Lifetime ISA (LISA)")) * (C${contribRowNum}>='Regular Contributions'!$D$14:$D$30) * (C${contribRowNum}<='Regular Contributions'!$E$14:$E$30))`
+      : '0';
+    const cTotalCashGiaPartner = isCouple
+      ? `SUMPRODUCT(('Regular Contributions'!$G$14:$G$30) * ('Regular Contributions'!$B$14:$B$30="PARTNER") * (('Regular Contributions'!$C$14:$C$30="General Investment Account (GIA)") + ('Regular Contributions'!$C$14:$C$30="Cash Savings")) * (C${contribRowNum}>='Regular Contributions'!$D$14:$D$30) * (C${contribRowNum}<='Regular Contributions'!$E$14:$E$30))`
+      : '0';
     const cTotalPartnerAnnual = `R${contribRowNum}+S${contribRowNum}+T${contribRowNum}`;
 
     const cHouseholdRegular = `O${contribRowNum}+U${contribRowNum}`;
@@ -1208,33 +1396,86 @@ export async function generateFormulaExcelWorkbook(
     const cTransferInflow = `SUMIFS('Pot Transfers'!$I$4:$I$50, 'Pot Transfers'!$D$4:$D$50, A${contribRowNum})`;
     const cNetCapitalInflow = `V${contribRowNum}+W${contribRowNum}-X${contribRowNum}+Y${contribRowNum}`;
 
+    // Compute exact dynamic results for this year:
+    const resWorkplaceYou = regRows.filter((r) => r.ownerStr === 'YOU' && r.potLabel === 'Workplace Pension' && curAgeYouVal >= r.startAge && curAgeYouVal <= r.endAge).reduce((s, r) => s + r.annualAmt, 0);
+    const resSippYou = regRows.filter((r) => r.ownerStr === 'YOU' && r.potLabel === 'SIPP / Private Pension' && curAgeYouVal >= r.startAge && curAgeYouVal <= r.endAge).reduce((s, r) => s + r.annualAmt, 0);
+    const resDcPensionYou = resWorkplaceYou + resSippYou;
+
+    const resSnsIsaYou = regRows.filter((r) => r.ownerStr === 'YOU' && r.potLabel === 'Stocks & Shares ISA' && curAgeYouVal >= r.startAge && curAgeYouVal <= r.endAge).reduce((s, r) => s + r.annualAmt, 0);
+    const resCashIsaYou = regRows.filter((r) => r.ownerStr === 'YOU' && r.potLabel === 'Cash ISA' && curAgeYouVal >= r.startAge && curAgeYouVal <= r.endAge).reduce((s, r) => s + r.annualAmt, 0);
+    const resLisaYou = curAgeYouVal < 50 ? regRows.filter((r) => r.ownerStr === 'YOU' && r.potLabel === 'Lifetime ISA (LISA)' && curAgeYouVal >= r.startAge && curAgeYouVal <= r.endAge).reduce((s, r) => s + r.annualAmt, 0) : 0;
+    const resTotalIsaYou = resSnsIsaYou + resCashIsaYou + resLisaYou;
+
+    const resGiaYou = regRows.filter((r) => r.ownerStr === 'YOU' && r.potLabel === 'General Investment Account (GIA)' && curAgeYouVal >= r.startAge && curAgeYouVal <= r.endAge).reduce((s, r) => s + r.annualAmt, 0);
+    const resCashSavingsYou = regRows.filter((r) => r.ownerStr === 'YOU' && r.potLabel === 'Cash Savings' && curAgeYouVal >= r.startAge && curAgeYouVal <= r.endAge).reduce((s, r) => s + r.annualAmt, 0);
+    const resTotalCashGiaYou = resGiaYou + resCashSavingsYou;
+
+    const resTotalYouAnnual = resDcPensionYou + resTotalIsaYou + resTotalCashGiaYou;
+
+    const resWorkplacePartner = isCouple ? regRows.filter((r) => r.ownerStr === 'PARTNER' && r.potLabel === 'Workplace Pension' && curAgePartnerVal >= r.startAge && curAgePartnerVal <= r.endAge).reduce((s, r) => s + r.annualAmt, 0) : 0;
+    const resSippPartner = isCouple ? regRows.filter((r) => r.ownerStr === 'PARTNER' && r.potLabel === 'SIPP / Private Pension' && curAgePartnerVal >= r.startAge && curAgePartnerVal <= r.endAge).reduce((s, r) => s + r.annualAmt, 0) : 0;
+    const resDcPensionPartner = resWorkplacePartner + resSippPartner;
+
+    const resTotalIsaPartner = isCouple ? regRows.filter((r) => r.ownerStr === 'PARTNER' && ['Stocks & Shares ISA', 'Cash ISA', 'Lifetime ISA (LISA)'].includes(r.potLabel) && curAgePartnerVal >= r.startAge && curAgePartnerVal <= r.endAge).reduce((s, r) => s + r.annualAmt, 0) : 0;
+    const resTotalCashGiaPartner = isCouple ? regRows.filter((r) => r.ownerStr === 'PARTNER' && ['General Investment Account (GIA)', 'Cash Savings'].includes(r.potLabel) && curAgePartnerVal >= r.startAge && curAgePartnerVal <= r.endAge).reduce((s, r) => s + r.annualAmt, 0) : 0;
+    const resTotalPartnerAnnual = resDcPensionPartner + resTotalIsaPartner + resTotalCashGiaPartner;
+
+    const resHouseholdRegular = resTotalYouAnnual + resTotalPartnerAnnual;
+
+    const yearOneOffs = activeOneOffs.filter((c) => getContributionYear(c, primaryCurrentAge) === calYear);
+    const resOneOffInflow = yearOneOffs.reduce((sum, c) => {
+      const rawAmt = c.grossAmount || 0;
+      let outOfPocket = rawAmt;
+      let relief = 0;
+      if (c.targetPot === 'sipp') {
+        if (c.sippContributionType === 'gross') {
+          outOfPocket = Math.round(rawAmt * 0.8);
+          relief = Math.round(rawAmt * 0.2);
+        } else {
+          outOfPocket = rawAmt;
+          relief = Math.round(rawAmt * 0.25);
+        }
+      }
+      return sum + outOfPocket + relief;
+    }, 0);
+
+    const yearTransfers = activeTransfers.filter((t) => getTransferYear(t, primaryCurrentAge) === calYear);
+    const resTransferOutflow = yearTransfers.reduce((sum, t) => sum + (t.amount || 0), 0);
+    const resTransferInflow = yearTransfers.reduce((sum, t) => {
+      const amt = t.amount || 0;
+      const relief = (t.destinationPot === 'sipp' && t.sourcePot !== 'sipp' && t.sourcePot !== 'workplace_pension') ? Math.round(amt * 0.25) : 0;
+      return sum + amt + relief;
+    }, 0);
+
+    const resNetCapitalInflow = resHouseholdRegular + resOneOffInflow - resTransferOutflow + resTransferInflow;
+
     wsContrib.addRow([
-      { formula: cYear, result: (profile.currentAge || 50) + idx },
-      { formula: cAgeYou, result: (profile.currentAge || 50) + idx },
-      { formula: cAgePartner, result: isCouple ? ((profile.partnerCurrentAge || 50) + idx) : 0 },
-      { formula: cStatus, result: ((profile.currentAge || 50) + idx) < (profile.targetRetirementAge || 55) ? 'Accumulation' : 'Retirement' },
-      { formula: cWorkplaceYou, result: primaryWorkplaceAnnual },
-      { formula: cSippYou, result: primarySippAnnual },
-      { formula: cDcPensionYou, result: primaryWorkplaceAnnual + primarySippAnnual },
-      { formula: cSnsIsaYou, result: primarySnsIsaAnnual },
-      { formula: cCashIsaYou, result: primaryCashIsaAnnual },
-      { formula: cLisaYou, result: primaryLisaAnnual },
-      { formula: cTotalIsaYou, result: primarySnsIsaAnnual + primaryCashIsaAnnual + primaryLisaAnnual },
-      { formula: cGiaYou, result: primaryGiaAnnual },
-      { formula: cCashSavingsYou, result: primaryCashSavingsAnnual },
-      { formula: cTotalCashGiaYou, result: primaryGiaAnnual + primaryCashSavingsAnnual },
-      { formula: cTotalYouAnnual, result: primaryTotalAnnual },
-      { formula: cWorkplacePartner, result: partnerWorkplaceAnnual },
-      { formula: cSippPartner, result: partnerSippAnnual },
-      { formula: cDcPensionPartner, result: partnerWorkplaceAnnual + partnerSippAnnual },
-      { formula: cTotalIsaPartner, result: partnerSnsIsaAnnual + partnerCashIsaAnnual + partnerLisaAnnual },
-      { formula: cTotalCashGiaPartner, result: partnerGiaAnnual + partnerCashSavingsAnnual },
-      { formula: cTotalPartnerAnnual, result: partnerTotalAnnual },
-      { formula: cHouseholdRegular, result: primaryTotalAnnual + partnerTotalAnnual },
-      { formula: cOneOffInflow, result: 0 },
-      { formula: cTransferOutflow, result: 0 },
-      { formula: cTransferInflow, result: 0 },
-      { formula: cNetCapitalInflow, result: primaryTotalAnnual + partnerTotalAnnual },
+      { formula: cYear, result: calYear },
+      { formula: cAgeYou, result: curAgeYouVal },
+      { formula: cAgePartner, result: isCouple ? curAgePartnerVal : 0 },
+      { formula: cStatus, result: curAgeYouVal < (profile.targetRetirementAge || 55) ? 'Accumulation' : 'Retirement' },
+      { formula: cWorkplaceYou, result: resWorkplaceYou },
+      { formula: cSippYou, result: resSippYou },
+      { formula: cDcPensionYou, result: resDcPensionYou },
+      { formula: cSnsIsaYou, result: resSnsIsaYou },
+      { formula: cCashIsaYou, result: resCashIsaYou },
+      { formula: cLisaYou, result: resLisaYou },
+      { formula: cTotalIsaYou, result: resTotalIsaYou },
+      { formula: cGiaYou, result: resGiaYou },
+      { formula: cCashSavingsYou, result: resCashSavingsYou },
+      { formula: cTotalCashGiaYou, result: resTotalCashGiaYou },
+      { formula: cTotalYouAnnual, result: resTotalYouAnnual },
+      { formula: cWorkplacePartner, result: resWorkplacePartner },
+      { formula: cSippPartner, result: resSippPartner },
+      { formula: cDcPensionPartner, result: resDcPensionPartner },
+      { formula: cTotalIsaPartner, result: resTotalIsaPartner },
+      { formula: cTotalCashGiaPartner, result: resTotalCashGiaPartner },
+      { formula: cTotalPartnerAnnual, result: resTotalPartnerAnnual },
+      { formula: cHouseholdRegular, result: resHouseholdRegular },
+      { formula: cOneOffInflow, result: resOneOffInflow },
+      { formula: cTransferOutflow, result: resTransferOutflow },
+      { formula: cTransferInflow, result: resTransferInflow },
+      { formula: cNetCapitalInflow, result: resNetCapitalInflow },
     ]);
 
     const row = wsContrib.getRow(contribRowNum);
@@ -1251,14 +1492,14 @@ export async function generateFormulaExcelWorkbook(
 
 
   // ==========================================
-  // SHEET 8: Schedule (Master Projections Table)
+  // SHEET 8: Ledger (Master Projections Table)
   // ==========================================
-  const wsSched = workbook.addWorksheet('Schedule');
+  const wsSched = workbook.addWorksheet('Ledger');
 
   // Title Banner
   const schedTitle = wsSched.getRow(1);
   schedTitle.height = 32;
-  schedTitle.getCell(1).value = `RETIREFREE UK - MASTER PROJECTION SCHEDULE`;
+  schedTitle.getCell(1).value = `RETIREFREE UK - MASTER PROJECTION LEDGER`;
   schedTitle.getCell(1).font = { name: 'Calibri', size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
   schedTitle.getCell(1).fill = darkSlateFill;
   schedTitle.getCell(1).alignment = { vertical: 'middle', horizontal: 'left' };
@@ -1329,14 +1570,16 @@ export async function generateFormulaExcelWorkbook(
     // Age PARTNER (C4 in Inputs & Setup)
     const agePartnerFormula = `'Inputs & Setup'!$C$4 + ${idx}`;
 
-    // Status (B6 in Inputs & Setup is Target Retirement Age YOU)
-    const statusFormula = `IF(B${rowNum}<'Inputs & Setup'!$B$6, "Accumulation", "Retirement")`;
+    // Status (B6 in Inputs & Setup is Target Retirement Age YOU, C6 is PARTNER)
+    const statusFormula = isCouple
+      ? `IF(AND(B${rowNum}>='Inputs & Setup'!$B$6, C${rowNum}>='Inputs & Setup'!$C$6), "Retirement", IF(OR(B${rowNum}>='Inputs & Setup'!$B$6, C${rowNum}>='Inputs & Setup'!$C$6), "Partial Retirement", "Accumulation"))`
+      : `IF(B${rowNum}<'Inputs & Setup'!$B$6, "Accumulation", "Retirement")`;
 
     // Annual Contributions (referenced from Contributions Sheet Column Z)
     const annualContribFormula = `'Contributions'!Z${contribRowNum}`;
 
     // Target Requirement (0 during Accumulation, indexed for inflation during Retirement)
-    const targetReqFormula = `IF(D${rowNum}="Accumulation", 0, IF(AND(B${rowNum}>='Phased Income'!$B$4, B${rowNum}<='Phased Income'!$C$4), 'Phased Income'!$D$4, IF(AND(B${rowNum}>='Phased Income'!$B$5, B${rowNum}<='Phased Income'!$C$5), 'Phased Income'!$D$5, IF(AND(B${rowNum}>='Phased Income'!$B$6, B${rowNum}<='Phased Income'!$C$6), 'Phased Income'!$D$6, 0))) * ((1 + 'Settings'!$B$11)^(${idx})))`;
+    const targetReqFormula = `IF(D${rowNum}="Accumulation", 0, IF(SUMPRODUCT(('Phased Income'!$D$4:$D$20) * (B${rowNum}>='Phased Income'!$B$4:$B$20) * (B${rowNum}<='Phased Income'!$C$4:$C$20)) > 0, SUMPRODUCT(('Phased Income'!$D$4:$D$20) * (B${rowNum}>='Phased Income'!$B$4:$B$20) * (B${rowNum}<='Phased Income'!$C$4:$C$20)), 'Phased Income'!$D$4) * ((1 + 'Settings'!$B$11)^(${idx})))`;
 
     // State Pension YOU (SPA is B7, State Pension Today is B8 in Inputs & Setup, Triple Lock is B15 in Settings)
     const stateYouFormula = `IF(B${rowNum}>='Inputs & Setup'!$B$7, 'Inputs & Setup'!$B$8 * ((1 + 'Settings'!$B$15)^(${idx})), 0)`;
@@ -1349,17 +1592,23 @@ export async function generateFormulaExcelWorkbook(
     // DB & Fixed Income (dynamically sums active streams for YOU and PARTNER from Fixed Income sheet rows 4 to 25)
     const dbFormula = `SUMPRODUCT(('Fixed Income'!$E$4:$E$25) * ((('Fixed Income'!$B$4:$B$25="YOU") * (B${rowNum}>='Fixed Income'!$C$4:$C$25) * (B${rowNum}<='Fixed Income'!$D$4:$D$25)) + (('Fixed Income'!$B$4:$B$25="PARTNER") * (C${rowNum}>='Fixed Income'!$C$4:$C$25) * (C${rowNum}<='Fixed Income'!$D$4:$D$25))))`;
 
-    // PCLS Tax-Free Drawdown
-    const pclsVal = projections[idx]?.pensionDrawdownTaxFree || 0;
+    const prevPensionRef = idx === 0 ? `'Inputs & Setup'!$B$21` : `O${prevRowNum}`;
 
-    // Taxable Pension Drawdown
+    // Taxable Pension Drawdown (Column K): dynamic formula based on basic rate threshold minus fixed income / target requirement
     const taxableDrawdownVal = projections[idx]?.pensionDrawdown || 0;
+    const taxableDrawdownFormula = `IF(D${rowNum}="Accumulation", 0, MIN(MAX(0, ${prevPensionRef} * 0.75), MAX(0, MIN('Settings'!$B$6 - (G${rowNum}+H${rowNum}+I${rowNum}), F${rowNum} - (G${rowNum}+H${rowNum}+I${rowNum})))))`;
+
+    // PCLS Tax-Free Drawdown (Column J): 25% tax-free PCLS until lifetime LSA cap ('Settings'!$B$8) is reached
+    const pclsVal = projections[idx]?.pensionDrawdownTaxFree || 0;
+    const pclsFormula = `IF(D${rowNum}="Accumulation", 0, IF(SUM(J$3:J${prevRowNum}) >= 'Settings'!$B$8, 0, MIN('Settings'!$B$8 - SUM(J$3:J${prevRowNum}), MAX(0, K${rowNum} * (25 / 75)))))`;
 
     // Total Taxable Income
     const totalTaxableFormula = `G${rowNum}+H${rowNum}+I${rowNum}+K${rowNum}`;
 
     // UK Income Tax Paid (referencing Settings Personal Allowance B5 and Basic Threshold B6)
-    const taxPaidFormula = `IF(L${rowNum}>'Settings'!$B$5, MAX(0, MIN(L${rowNum}-'Settings'!$B$5, 'Settings'!$B$6-'Settings'!$B$5)*0.20) + MAX(0, L${rowNum}-'Settings'!$B$6)*0.40, 0)`;
+    const taxPaidFormula = isCouple
+      ? `2 * IF((L${rowNum}/2)>'Settings'!$B$5, MAX(0, MIN((L${rowNum}/2)-'Settings'!$B$5, 'Settings'!$B$6-'Settings'!$B$5)*0.20) + MAX(0, (L${rowNum}/2)-'Settings'!$B$6)*0.40, 0)`
+      : `IF(L${rowNum}>'Settings'!$B$5, MAX(0, MIN(L${rowNum}-'Settings'!$B$5, 'Settings'!$B$6-'Settings'!$B$5)*0.20) + MAX(0, L${rowNum}-'Settings'!$B$6)*0.40, 0)`;
 
     // Net Income Received
     const netIncomeFormula = `IF(D${rowNum}="Accumulation", 0, L${rowNum}-M${rowNum}+J${rowNum})`;
@@ -1376,12 +1625,12 @@ export async function generateFormulaExcelWorkbook(
     const cashTrIn = `SUMIFS('Pot Transfers'!$I$4:$I$50, 'Pot Transfers'!$F$4:$F$50, "Cash & GIA", 'Pot Transfers'!$D$4:$D$50, A${rowNum})`;
     const cashTrOut = `SUMIFS('Pot Transfers'!$G$4:$G$50, 'Pot Transfers'!$E$4:$E$50, "Cash & GIA", 'Pot Transfers'!$D$4:$D$50, A${rowNum})`;
 
-    // DC Pension Balance (referencing Settings Growth B12 & Household DC Pensions Total B21 in Inputs & Setup)
+    // DC Pension Balance with growth drag on withdrawals: (Opening Balance - Drawdowns) * (1 + Growth)
     let pensionBalFormula: string;
     if (idx === 0) {
-      pensionBalFormula = `MAX(0, 'Inputs & Setup'!$B$21 * (1 + 'Settings'!$B$12) + 'Contributions'!G${contribRowNum} + 'Contributions'!R${contribRowNum} + (${pIn}) + (${pTrIn}) - (${pTrOut}) - J${rowNum} - K${rowNum})`;
+      pensionBalFormula = `MAX(0, ('Inputs & Setup'!$B$21 - J${rowNum} - K${rowNum}) * (1 + 'Settings'!$B$12) + 'Contributions'!G${contribRowNum} + 'Contributions'!R${contribRowNum} + (${pIn}) + (${pTrIn}) - (${pTrOut}))`;
     } else {
-      pensionBalFormula = `MAX(0, O${prevRowNum} * (1 + 'Settings'!$B$12) + 'Contributions'!G${contribRowNum} + 'Contributions'!R${contribRowNum} + (${pIn}) + (${pTrIn}) - (${pTrOut}) - J${rowNum} - K${rowNum})`;
+      pensionBalFormula = `MAX(0, (O${prevRowNum} - J${rowNum} - K${rowNum}) * (1 + 'Settings'!$B$12) + 'Contributions'!G${contribRowNum} + 'Contributions'!R${contribRowNum} + (${pIn}) + (${pTrIn}) - (${pTrOut}))`;
     }
 
     // ISA Balance (referencing Settings Growth B13 & Household ISA Total B22 in Inputs & Setup)
@@ -1411,19 +1660,19 @@ export async function generateFormulaExcelWorkbook(
       { formula: agePartnerFormula, result: isCouple ? ((profile.partnerCurrentAge || 50) + idx) : 0 },
       { formula: statusFormula, result: ((profile.currentAge || 50) + idx) < (profile.targetRetirementAge || 55) ? 'Accumulation' : 'Retirement' },
       { formula: annualContribFormula, result: primaryTotalAnnual + partnerTotalAnnual },
-      { formula: targetReqFormula, result: proj?.targetIncome || baseTargetNet },
-      { formula: stateYouFormula, result: proj?.statePensionAnnual || 0 },
-      { formula: statePartnerFormula, result: proj?.partnerStatePensionAnnual || 0 },
-      { formula: dbFormula, result: proj?.dbPensionIncome || 0 },
-      pclsVal,
-      taxableDrawdownVal,
-      { formula: totalTaxableFormula, result: (proj?.statePensionAnnual || 0) + (proj?.partnerStatePensionAnnual || 0) + (proj?.dbPensionIncome || 0) + taxableDrawdownVal },
+      { formula: targetReqFormula, result: proj?.targetRetirementIncome ?? (profile.targetRetirementIncomeAnnual || 35000) },
+      { formula: stateYouFormula, result: proj?.primaryStatePensionReceived ?? proj?.statePensionReceived ?? 0 },
+      { formula: statePartnerFormula, result: proj?.partnerStatePensionReceived ?? 0 },
+      { formula: dbFormula, result: proj?.dbPensionIncomeReceived ?? 0 },
+      { formula: pclsFormula, result: pclsVal },
+      { formula: taxableDrawdownFormula, result: taxableDrawdownVal },
+      { formula: totalTaxableFormula, result: (proj?.statePensionReceived || 0) + (proj?.partnerStatePensionReceived || 0) + (proj?.dbPensionIncomeReceived || 0) + taxableDrawdownVal },
       { formula: taxPaidFormula, result: proj?.totalTaxPaid || 0 },
-      { formula: netIncomeFormula, result: proj?.netIncomeReceived || 0 },
-      { formula: pensionBalFormula, result: proj ? (proj.workplacePensionBalance + proj.sippBalance + proj.partnerWorkplacePensionBalance + proj.partnerSippBalance) : primaryPensionBal },
-      { formula: isaBalFormula, result: proj ? (proj.stocksAndSharesIsaBalance + proj.cashIsaBalance + proj.lisaBalance + proj.partnerStocksAndSharesIsaBalance + proj.partnerCashIsaBalance + proj.partnerLisaBalance) : primaryIsaBal },
-      { formula: cashBalFormula, result: proj ? (proj.giaBalance + proj.cashSavingsBalance + proj.partnerGiaBalance + proj.partnerCashSavingsBalance) : primaryCashBal },
-      { formula: totalWealthFormula, result: proj ? proj.totalWealth : primaryTotalBal + partnerTotalBal },
+      { formula: netIncomeFormula, result: proj?.netRetirementIncome || 0 },
+      { formula: pensionBalFormula, result: proj ? proj.pensionPot : primaryPensionBal },
+      { formula: isaBalFormula, result: proj ? proj.isaPot : primaryIsaBal },
+      { formula: cashBalFormula, result: proj ? proj.cashGiaPot : primaryCashBal },
+      { formula: totalWealthFormula, result: proj ? proj.totalPot : primaryTotalBal + partnerTotalBal },
     ]);
 
     const row = wsSched.getRow(rowNum);
