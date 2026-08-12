@@ -204,6 +204,21 @@ function computeAnnualContributionForPot(
   return Math.round(baselineFromPot + totalFromOneOffs);
 }
 
+function getStrategyLabel(strategy?: string): string {
+  switch (strategy) {
+    case 'isa_first': return 'ISA / Tax-Free Pots First';
+    case 'cash_first': return 'Cash / Savings First';
+    case 'pension_first': return 'Pension / Taxable First';
+    case 'pro_rata': return 'Pro-Rata Balanced';
+    case 'tax_free_bracket': return 'Tax-Free Personal Allowance First (£12,570)';
+    case 'basic_rate_bracket': return 'Basic Rate Tax Bracket First (£50,270)';
+    case 'higher_rate_bracket': return 'Higher Rate Tax Bracket First (£125,140)';
+    case 'annuity': return 'Guaranteed Annuity Purchase';
+    case 'hybrid_annuity': return 'Hybrid Annuity & Flexi-Drawdown';
+    default: return 'ISA / Tax-Free Pots First';
+  }
+}
+
 export async function generateFormulaExcelWorkbook(
   profile: UserProfile,
   pots: InvestmentPots,
@@ -1864,10 +1879,30 @@ export async function generateFormulaExcelWorkbook(
     const dbFormula = `SUMPRODUCT(('Fixed Income'!$E$4:$E$25) * ((('Fixed Income'!$B$4:$B$25="YOU") * (B${rowNum}>='Fixed Income'!$C$4:$C$25) * (B${rowNum}<='Fixed Income'!$D$4:$D$25)) + (('Fixed Income'!$B$4:$B$25="PARTNER") * (C${rowNum}>='Fixed Income'!$C$4:$C$25) * (C${rowNum}<='Fixed Income'!$D$4:$D$25))))`;
 
     const prevPensionRef = idx === 0 ? `'Inputs & Setup'!$B$21` : `O${prevRowNum}`;
+    const prevIsaRef = idx === 0 ? `'Inputs & Setup'!$B$22` : `P${prevRowNum}`;
+    const prevCashRef = idx === 0 ? `'Inputs & Setup'!$B$23` : `Q${prevRowNum}`;
 
-    // Taxable Pension Drawdown (Column K): dynamic formula based on basic rate threshold minus fixed income / target requirement
+    // Taxable Pension Drawdown (Column K): dynamic formula based on selected drawdown strategy
+    const strategy = profile.drawdownStrategy || 'isa_first';
     const taxableDrawdownVal = projections[idx]?.pensionDrawdown || 0;
-    const taxableDrawdownFormula = `IF(D${rowNum}="Accumulation", 0, MIN(MAX(0, ${prevPensionRef} * 0.75), MAX(0, MIN('Settings'!$B$6 - (G${rowNum}+H${rowNum}+I${rowNum}), F${rowNum} - (G${rowNum}+H${rowNum}+I${rowNum})))))`;
+
+    let taxableDrawdownFormula: string;
+    if (strategy === 'tax_free_bracket') {
+      taxableDrawdownFormula = `IF(D${rowNum}="Accumulation", 0, MIN(MAX(0, ${prevPensionRef} * 0.75), MAX(0, MIN('Settings'!$B$5 - (G${rowNum}+H${rowNum}+I${rowNum}), F${rowNum} - (G${rowNum}+H${rowNum}+I${rowNum})))))`;
+    } else if (strategy === 'higher_rate_bracket') {
+      taxableDrawdownFormula = `IF(D${rowNum}="Accumulation", 0, MIN(MAX(0, ${prevPensionRef} * 0.75), MAX(0, MIN('Settings'!$B$7 - (G${rowNum}+H${rowNum}+I${rowNum}), F${rowNum} - (G${rowNum}+H${rowNum}+I${rowNum})))))`;
+    } else if (strategy === 'pension_first') {
+      taxableDrawdownFormula = `IF(D${rowNum}="Accumulation", 0, MIN(MAX(0, ${prevPensionRef} * 0.75), MAX(0, F${rowNum} - (G${rowNum}+H${rowNum}+I${rowNum}))))`;
+    } else if (strategy === 'basic_rate_bracket') {
+      taxableDrawdownFormula = `IF(D${rowNum}="Accumulation", 0, MIN(MAX(0, ${prevPensionRef} * 0.75), MAX(0, MIN('Settings'!$B$6 - (G${rowNum}+H${rowNum}+I${rowNum}), F${rowNum} - (G${rowNum}+H${rowNum}+I${rowNum})))))`;
+    } else {
+      // For isa_first, cash_first, pro_rata, annuity, hybrid_annuity:
+      if (taxableDrawdownVal > 0) {
+        taxableDrawdownFormula = `IF(D${rowNum}="Accumulation", 0, MIN(MAX(0, ${prevPensionRef} * 0.75), ${taxableDrawdownVal}))`;
+      } else {
+        taxableDrawdownFormula = `IF(D${rowNum}="Accumulation", 0, 0)`;
+      }
+    }
 
     // PCLS Tax-Free Drawdown (Column J): Upfront lump sum from Tax Free Lump Sums sheet + 25% tax-free PCLS until lifetime LSA cap ('Settings'!$B$8)
     const calYear = (new Date().getFullYear()) + idx;
@@ -1916,6 +1951,20 @@ export async function generateFormulaExcelWorkbook(
     const pclsToIsa = `SUMIFS('Tax Free Lump Sums'!$J$4:$J$15, 'Tax Free Lump Sums'!$D$4:$D$15, A${rowNum})`;
     const pclsToCash = `SUMIFS('Tax Free Lump Sums'!$K$4:$K$15, 'Tax Free Lump Sums'!$D$4:$D$15, A${rowNum})`;
 
+    // Net income shortfall from target requirement for ISA & Cash decumulation
+    const shortfallFormula = `MAX(0, F${rowNum} - N${rowNum})`;
+
+    let isaDrawdownDeductionFormula: string;
+    let cashDrawdownDeductionFormula: string;
+
+    if (strategy === 'cash_first') {
+      cashDrawdownDeductionFormula = `IF(D${rowNum}="Accumulation", 0, MIN(MAX(0, ${prevCashRef}), ${shortfallFormula}))`;
+      isaDrawdownDeductionFormula = `IF(D${rowNum}="Accumulation", 0, MIN(MAX(0, ${prevIsaRef}), MAX(0, ${shortfallFormula} - MIN(MAX(0, ${prevCashRef}), ${shortfallFormula}))))`;
+    } else {
+      isaDrawdownDeductionFormula = `IF(D${rowNum}="Accumulation", 0, MIN(MAX(0, ${prevIsaRef}), ${shortfallFormula}))`;
+      cashDrawdownDeductionFormula = `IF(D${rowNum}="Accumulation", 0, MIN(MAX(0, ${prevCashRef}), MAX(0, ${shortfallFormula} - MIN(MAX(0, ${prevIsaRef}), ${shortfallFormula}))))`;
+    }
+
     // DC Pension Balance with growth drag on withdrawals: (Opening Balance - Drawdowns) * (1 + Growth)
     let pensionBalFormula: string;
     if (idx === 0) {
@@ -1927,17 +1976,17 @@ export async function generateFormulaExcelWorkbook(
     // ISA Balance (referencing Settings Growth B13 & Household ISA Total B22 in Inputs & Setup)
     let isaBalFormula: string;
     if (idx === 0) {
-      isaBalFormula = `MAX(0, 'Inputs & Setup'!$B$22 * (1 + 'Settings'!$B$13) + 'Contributions'!K${contribRowNum} + 'Contributions'!S${contribRowNum} + (${isaIn}) + (${isaTrIn}) - (${isaTrOut}) + (${pclsToIsa}))`;
+      isaBalFormula = `MAX(0, ('Inputs & Setup'!$B$22 - (${isaDrawdownDeductionFormula})) * (1 + 'Settings'!$B$13) + 'Contributions'!K${contribRowNum} + 'Contributions'!S${contribRowNum} + (${isaIn}) + (${isaTrIn}) - (${isaTrOut}) + (${pclsToIsa}))`;
     } else {
-      isaBalFormula = `MAX(0, P${prevRowNum} * (1 + 'Settings'!$B$13) + 'Contributions'!K${contribRowNum} + 'Contributions'!S${contribRowNum} + (${isaIn}) + (${isaTrIn}) - (${isaTrOut}) + (${pclsToIsa}))`;
+      isaBalFormula = `MAX(0, (P${prevRowNum} - (${isaDrawdownDeductionFormula})) * (1 + 'Settings'!$B$13) + 'Contributions'!K${contribRowNum} + 'Contributions'!S${contribRowNum} + (${isaIn}) + (${isaTrIn}) - (${isaTrOut}) + (${pclsToIsa}))`;
     }
 
     // Cash & GIA Balance (referencing Settings Interest B14 & Household Cash Total B23 in Inputs & Setup)
     let cashBalFormula: string;
     if (idx === 0) {
-      cashBalFormula = `MAX(0, 'Inputs & Setup'!$B$23 * (1 + 'Settings'!$B$14) + 'Contributions'!N${contribRowNum} + 'Contributions'!T${contribRowNum} + (${cashIn}) + (${cashTrIn}) - (${cashTrOut}) + (${pclsToCash}))`;
+      cashBalFormula = `MAX(0, ('Inputs & Setup'!$B$23 - (${cashDrawdownDeductionFormula})) * (1 + 'Settings'!$B$14) + 'Contributions'!N${contribRowNum} + 'Contributions'!T${contribRowNum} + (${cashIn}) + (${cashTrIn}) - (${cashTrOut}) + (${pclsToCash}))`;
     } else {
-      cashBalFormula = `MAX(0, Q${prevRowNum} * (1 + 'Settings'!$B$14) + 'Contributions'!N${contribRowNum} + 'Contributions'!T${contribRowNum} + (${cashIn}) + (${cashTrIn}) - (${cashTrOut}) + (${pclsToCash}))`;
+      cashBalFormula = `MAX(0, (Q${prevRowNum} - (${cashDrawdownDeductionFormula})) * (1 + 'Settings'!$B$14) + 'Contributions'!N${contribRowNum} + 'Contributions'!T${contribRowNum} + (${cashIn}) + (${cashTrIn}) - (${cashTrOut}) + (${pclsToCash}))`;
     }
 
     // Total Portfolio Wealth
@@ -2046,8 +2095,26 @@ export async function generateFormulaExcelWorkbook(
     wsSettings.getCell(`B${r}`).numFmt = '0.00%';
   }
 
+  wsSettings.addRow([]); // Row 16 Blank
+
+  // --- SECTION 3: DRAWDOWN STRATEGY & DECUMULATION CONFIGURATION ---
+  wsSettings.addRow(['3. DRAWDOWN STRATEGY & DECUMULATION CONFIGURATION', '', '', 'Active Decumulation Strategy']); // Row 17
+  const setS3 = wsSettings.getRow(17);
+  setS3.height = 24;
+  setS3.eachCell((cell) => {
+    cell.fill = sectionHeaderFill;
+    cell.font = fontSectionHeader;
+    cell.alignment = { vertical: 'middle' };
+  });
+
+  const primaryStratLabel = getStrategyLabel(profile.drawdownStrategy);
+  const partnerStratLabel = isCouple ? getStrategyLabel(profile.partnerDrawdownStrategy || profile.drawdownStrategy) : 'N/A';
+
+  wsSettings.addRow(['Primary Drawdown Strategy', primaryStratLabel, 'YOU', 'Selected Decumulation Mode']); // Row 18
+  wsSettings.addRow(['Partner Drawdown Strategy', partnerStratLabel, isCouple ? 'PARTNER' : 'N/A', 'Selected Decumulation Mode']); // Row 19
+
   wsSettings.eachRow((row, rowNumber) => {
-    if (rowNumber >= 4 && rowNumber !== 9) {
+    if (rowNumber >= 4 && rowNumber !== 9 && rowNumber !== 16) {
       row.eachCell((cell) => {
         cell.border = borderThin;
       });
