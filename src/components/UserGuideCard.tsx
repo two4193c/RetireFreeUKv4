@@ -140,21 +140,21 @@ export const UserGuideCard: React.FC<UserGuideCardProps> = ({
               <div className="w-7 h-7 rounded-xl bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-400 font-extrabold flex items-center justify-center text-xs">
                 4
               </div>
-              <h4 className="font-bold text-slate-900 dark:text-white">Summary & PDF Export</h4>
+              <h4 className="font-bold text-slate-900 dark:text-white">Summary, Excel & PDF Export</h4>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Review the Executive Summary in <strong>Summary</strong>, download a multi-page PDF report, or export CSV data for AI comparison.
+                Review the Executive Summary in <strong>Summary</strong>, download a multi-page PDF report, export a live Formula Excel (.xlsx) spreadsheet, or export CSV data for AI comparison.
               </p>
             </div>
           </div>
 
-          {/* AI PDF Export Callout Banner */}
+          {/* AI PDF & Excel Export Callout Banner */}
           <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-50 via-indigo-50 to-blue-50 dark:from-purple-950/40 dark:via-indigo-950/40 dark:to-blue-950/40 border border-purple-200 dark:border-purple-800/80 space-y-2">
             <div className="flex items-center gap-2 font-extrabold text-purple-900 dark:text-purple-200 text-xs sm:text-sm">
               <Bot className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" />
-              <span>💡 Pro Tip: Export Plan PDFs for AI Analysis & Second Opinions</span>
+              <span>💡 Pro Tip: Export Formula Excel Worksheets & PDF Reports for AI Analysis</span>
             </div>
             <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
-              Did you know you can export your retirement plan as an official multi-page PDF report or CSV spreadsheet from the <strong>Summary / Export</strong> tab? You can upload these exported PDFs directly into AI assistants like <strong>Google Gemini</strong>, <strong>ChatGPT</strong>, or <strong>Claude</strong> to ask for natural language plan critiques, tax efficiency second opinions, or side-by-side scenario comparisons!
+              Did you know you can export your retirement plan as a live <strong>Formula Excel (.xlsx) spreadsheet</strong> or an official multi-page PDF report from the <strong>Summary / Export</strong> tab? The exported Excel workbook features connected worksheets with live native Excel formulas (`SUM`, `IF`, `SUMPRODUCT`, UK tax bands, and drawdown strategy rules). You can upload these exported files directly into AI assistants like <strong>Google Gemini</strong>, <strong>ChatGPT</strong>, or <strong>Claude</strong> for automated strategy critiques and second opinions!
             </p>
           </div>
 
@@ -240,32 +240,67 @@ export const UserGuideCard: React.FC<UserGuideCardProps> = ({
 
           <h4 className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm">Available Drawdown Strategies:</h4>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             <div className="p-3 bg-emerald-50/70 dark:bg-emerald-950/40 rounded-xl border border-emerald-200 dark:border-emerald-800 space-y-1">
-              <span className="font-extrabold text-emerald-900 dark:text-emerald-200 text-xs">Tax-Efficient / Minimum Tax (Recommended)</span>
+              <span className="font-extrabold text-emerald-900 dark:text-emerald-200 text-xs">Tax-Free Personal Allowance First (£12,570)</span>
               <p className="text-xs text-slate-600 dark:text-slate-400">
-                Fills Personal Allowance with taxable pension drawdown first, then uses tax-free ISA or PCLS cash to top up remaining required spending without triggering higher tax bands.
+                Limits taxable pension withdrawals to the £12,570 Personal Allowance each year, topping up remaining required spending tax-free from ISAs or tax-free cash (PCLS).
+              </p>
+            </div>
+
+            <div className="p-3 bg-blue-50/70 dark:bg-blue-950/40 rounded-xl border border-blue-200 dark:border-blue-800 space-y-1">
+              <span className="font-extrabold text-blue-900 dark:text-blue-200 text-xs">Basic Rate Tax Bracket First (£50,270)</span>
+              <p className="text-xs text-slate-600 dark:text-slate-400">
+                Fills up to the 20% Basic Rate Tax Band ceiling (£50,270), avoiding 40% Higher Rate Tax while maximizing income from pensions before using tax-free ISAs.
+              </p>
+            </div>
+
+            <div className="p-3 bg-purple-50/70 dark:bg-purple-950/40 rounded-xl border border-purple-200 dark:border-purple-800 space-y-1">
+              <span className="font-extrabold text-purple-900 dark:text-purple-200 text-xs">Higher Rate Tax Bracket First (£125,140)</span>
+              <p className="text-xs text-slate-600 dark:text-slate-400">
+                Fills up to the Higher Rate threshold (£125,140), avoiding the 45% Additional Rate Tax band for high-wealth portfolios.
+              </p>
+            </div>
+
+            <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-1">
+              <span className="font-extrabold text-slate-900 dark:text-white text-xs">ISA / Tax-Free Pots First</span>
+              <p className="text-xs text-slate-600 dark:text-slate-400">
+                Exhausts ISAs first to defer pension access, allowing pensions to compound tax-free for longer.
+              </p>
+            </div>
+
+            <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-1">
+              <span className="font-extrabold text-slate-900 dark:text-white text-xs">Cash & Savings First</span>
+              <p className="text-xs text-slate-600 dark:text-slate-400">
+                Spends cash and yield-bearing savings first before tapping invested ISAs or pension pots.
+              </p>
+            </div>
+
+            <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-1">
+              <span className="font-extrabold text-slate-900 dark:text-white text-xs">Pension / Taxable First</span>
+              <p className="text-xs text-slate-600 dark:text-slate-400">
+                Draws from pensions first, preserving ISAs as tax-free reserves or for April 2027 Inheritance Tax (IHT) estate planning.
               </p>
             </div>
 
             <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-1">
               <span className="font-extrabold text-slate-900 dark:text-white text-xs">Pro-Rata Balancing</span>
               <p className="text-xs text-slate-600 dark:text-slate-400">
-                Withdraws proportionally from ISA, Pension, and Cash pots based on their relative size to maintain balanced asset allocation.
+                Withdraws proportionally from ISA, Pension, and Cash pots based on their relative size.
               </p>
             </div>
 
             <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-1">
-              <span className="font-extrabold text-slate-900 dark:text-white text-xs">Cash & ISA First</span>
+              <span className="font-extrabold text-slate-900 dark:text-white text-xs">Guaranteed Annuity Purchase</span>
               <p className="text-xs text-slate-600 dark:text-slate-400">
-                Exhausts cash reserves and tax-free ISAs first to defer pension access, allowing pensions to grow tax-free for as long as possible.
+                Converts pension wealth into a guaranteed lifetime annuity income at retirement age.
               </p>
             </div>
 
             <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-1">
-              <span className="font-extrabold text-slate-900 dark:text-white text-xs">Pension First</span>
+              <span className="font-extrabold text-slate-900 dark:text-white text-xs">Hybrid Annuity & Flexi-Drawdown</span>
               <p className="text-xs text-slate-600 dark:text-slate-400">
-                Withdraws from pension pots first, preserving ISAs as a tax-free reserve or for estate inheritance planning.
+                Combines a partial annuity purchase for baseline essential income with flexible drawdown for discretionary spending.
               </p>
             </div>
           </div>
@@ -702,32 +737,67 @@ export const UserGuideCard: React.FC<UserGuideCardProps> = ({
 
           <h4 className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm">Available Drawdown Strategies:</h4>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             <div className="p-3 bg-emerald-50/70 dark:bg-emerald-950/40 rounded-xl border border-emerald-200 dark:border-emerald-800 space-y-1">
-              <span className="font-extrabold text-emerald-900 dark:text-emerald-200 text-xs">Tax-Efficient / Minimum Tax (Recommended)</span>
+              <span className="font-extrabold text-emerald-900 dark:text-emerald-200 text-xs">Tax-Free Personal Allowance First (£12,570)</span>
               <p className="text-xs text-slate-600 dark:text-slate-400">
-                Fills Personal Allowance with taxable pension drawdown first, then uses tax-free ISA or PCLS cash to top up remaining required spending without triggering higher tax bands.
+                Limits taxable pension withdrawals to the £12,570 Personal Allowance each year, topping up remaining required spending tax-free from ISAs or tax-free cash (PCLS).
+              </p>
+            </div>
+
+            <div className="p-3 bg-blue-50/70 dark:bg-blue-950/40 rounded-xl border border-blue-200 dark:border-blue-800 space-y-1">
+              <span className="font-extrabold text-blue-900 dark:text-blue-200 text-xs">Basic Rate Tax Bracket First (£50,270)</span>
+              <p className="text-xs text-slate-600 dark:text-slate-400">
+                Fills up to the 20% Basic Rate Tax Band ceiling (£50,270), avoiding 40% Higher Rate Tax while maximizing income from pensions before using tax-free ISAs.
+              </p>
+            </div>
+
+            <div className="p-3 bg-purple-50/70 dark:bg-purple-950/40 rounded-xl border border-purple-200 dark:border-purple-800 space-y-1">
+              <span className="font-extrabold text-purple-900 dark:text-purple-200 text-xs">Higher Rate Tax Bracket First (£125,140)</span>
+              <p className="text-xs text-slate-600 dark:text-slate-400">
+                Fills up to the Higher Rate threshold (£125,140), avoiding the 45% Additional Rate Tax band for high-wealth portfolios.
+              </p>
+            </div>
+
+            <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-1">
+              <span className="font-extrabold text-slate-900 dark:text-white text-xs">ISA / Tax-Free Pots First</span>
+              <p className="text-xs text-slate-600 dark:text-slate-400">
+                Exhausts ISAs first to defer pension access, allowing pensions to compound tax-free for longer.
+              </p>
+            </div>
+
+            <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-1">
+              <span className="font-extrabold text-slate-900 dark:text-white text-xs">Cash & Savings First</span>
+              <p className="text-xs text-slate-600 dark:text-slate-400">
+                Spends cash and yield-bearing savings first before tapping invested ISAs or pension pots.
+              </p>
+            </div>
+
+            <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-1">
+              <span className="font-extrabold text-slate-900 dark:text-white text-xs">Pension / Taxable First</span>
+              <p className="text-xs text-slate-600 dark:text-slate-400">
+                Draws from pensions first, preserving ISAs as tax-free reserves or for April 2027 Inheritance Tax (IHT) estate planning.
               </p>
             </div>
 
             <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-1">
               <span className="font-extrabold text-slate-900 dark:text-white text-xs">Pro-Rata Balancing</span>
               <p className="text-xs text-slate-600 dark:text-slate-400">
-                Withdraws proportionally from ISA, Pension, and Cash pots based on their relative size to maintain balanced asset allocation.
+                Withdraws proportionally from ISA, Pension, and Cash pots based on their relative size.
               </p>
             </div>
 
             <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-1">
-              <span className="font-extrabold text-slate-900 dark:text-white text-xs">Cash & ISA First</span>
+              <span className="font-extrabold text-slate-900 dark:text-white text-xs">Guaranteed Annuity Purchase</span>
               <p className="text-xs text-slate-600 dark:text-slate-400">
-                Exhausts cash reserves and tax-free ISAs first to defer pension access, allowing pensions to grow tax-free for as long as possible.
+                Converts pension wealth into a guaranteed lifetime annuity income at retirement age.
               </p>
             </div>
 
             <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-1">
-              <span className="font-extrabold text-slate-900 dark:text-white text-xs">Pension First</span>
+              <span className="font-extrabold text-slate-900 dark:text-white text-xs">Hybrid Annuity & Flexi-Drawdown</span>
               <p className="text-xs text-slate-600 dark:text-slate-400">
-                Withdraws from pension pots first, preserving ISAs as a tax-free reserve or for estate inheritance planning.
+                Combines a partial annuity purchase for baseline essential income with flexible drawdown for discretionary spending.
               </p>
             </div>
           </div>
