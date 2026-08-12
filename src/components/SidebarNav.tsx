@@ -140,15 +140,23 @@ export const NAV_STRUCTURE: TabGroup[] = [
     id: 'overview',
     label: 'Summary',
     icon: LayoutDashboard,
-    description: 'Executive PDF export, summary overview, and data backup',
+    description: 'Executive summary dashboard, complete projections, stress testing, and comments',
     cards: [
-      { id: 'card-summary-pdf', label: 'Executive PDF Report Export' },
       { id: 'card-summary-strat', label: 'Strategy Summary Dashboard' },
       { id: 'card-summary-chart', label: 'Complete Projections Chart' },
       { id: 'card-summary-monte', label: 'Stress Testing Summary' },
       { id: 'card-summary-estate', label: 'Inheritance Tax Summary' },
       { id: 'card-summary-comments', label: 'Strategy Comments & Insights' },
-      { id: 'card-summary-csv', label: 'Data Export & Backup' },
+    ],
+  },
+  {
+    id: 'output',
+    label: 'Output',
+    icon: Download,
+    description: 'Full PDF report export, live formula Excel spreadsheet, and CSV/JSON data backup',
+    cards: [
+      { id: 'card-output-pdf', label: 'Full PDF Report Export' },
+      { id: 'card-output-csv', label: 'Data Export & Backup' },
     ],
   },
   {

@@ -86,7 +86,7 @@ import { PlanErrorBoundary } from './components/PlanErrorBoundary';
 const STORAGE_KEY = 'uk_retirement_planner_scenarios_v2';
 const THEME_STORAGE_KEY = 'retireready_theme_v1';
 
-export type DashboardTab = 'plan_management' | 'inputs' | 'accumulation_review' | 'strategy' | 'strategy_analysis' | 'projections' | 'risk' | 'estate' | 'overview' | 'compare' | 'mortgage' | 'advanced_settings' | 'documentation';
+export type DashboardTab = 'plan_management' | 'inputs' | 'accumulation_review' | 'strategy' | 'strategy_analysis' | 'projections' | 'risk' | 'estate' | 'overview' | 'output' | 'compare' | 'mortgage' | 'advanced_settings' | 'documentation';
 
 interface AppErrorBoundaryProps {
   children: ReactNode;
@@ -1110,17 +1110,6 @@ function App() {
             {/* Tab 7: Summary */}
             {activeTab === 'overview' && (
               <div className="space-y-6">
-                <div id="card-summary-pdf" className="scroll-mt-24 transition-all duration-300">
-                  <ExportSection
-                    variant="pdf_only"
-                    profile={profile}
-                    pots={pots}
-                    projections={projections}
-                    taxResult={taxResult}
-                    planName={activeScenario.name}
-                  />
-                </div>
-
                 <div id="card-summary-strat" className="scroll-mt-24 transition-all duration-300">
                   <StrategySummaryCard
                     profile={profile}
@@ -1143,8 +1132,24 @@ function App() {
                 <div id="card-summary-comments" className="scroll-mt-24 transition-all duration-300">
                   <SummaryCommentsCard profile={profile} taxResult={taxResult} />
                 </div>
+              </div>
+            )}
 
-                <div id="card-summary-csv" className="scroll-mt-24 transition-all duration-300">
+            {/* Tab: Output */}
+            {activeTab === 'output' && (
+              <div className="space-y-6">
+                <div id="card-output-pdf" className="scroll-mt-24 transition-all duration-300">
+                  <ExportSection
+                    variant="pdf_only"
+                    profile={profile}
+                    pots={pots}
+                    projections={projections}
+                    taxResult={taxResult}
+                    planName={activeScenario.name}
+                  />
+                </div>
+
+                <div id="card-output-csv" className="scroll-mt-24 transition-all duration-300">
                   <ExportSection
                     variant="data_only"
                     profile={profile}
