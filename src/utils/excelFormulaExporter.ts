@@ -1,6 +1,14 @@
 import ExcelJS from 'exceljs';
-import { UserProfile, InvestmentPots, YearProjection, InvestmentPotType, OneOffContribution, PotTransfer } from '../types';
+import { UserProfile, InvestmentPots, YearProjection, InvestmentPotType, OneOffContribution, PotTransfer, LumpSumTargetPot, LumpSumSplit } from '../types';
 import { sanitizePots, DEFAULT_PARTNER_POTS } from './defaultData';
+import {
+  getLsaLimit,
+  getPartnerLsaLimit,
+  getLumpSumTakeAge,
+  getPartnerLumpSumTakeAge,
+  getProjectedPensionAtTakeAge,
+  allocateLumpSumToPots,
+} from './ukTaxEngine';
 
 function getPotCategoryName(pot: InvestmentPotType): string {
   switch (pot) {
@@ -750,129 +758,7 @@ export async function generateFormulaExcelWorkbook(
 
 
   // ==========================================
-  // SHEET 3: Phased Income (Spending Targets)
-  // ==========================================
-  const wsPhased = workbook.addWorksheet('Phased Income');
-  wsPhased.columns = [
-    { header: 'Phase Name / Description', key: 'a', width: 38 },
-    { header: 'Start Age', key: 'b', width: 16 },
-    { header: 'End Age', key: 'c', width: 16 },
-    { header: 'Net Target (£/yr)', key: 'd', width: 22 },
-    { header: 'Description / Lifestyle Notes', key: 'e', width: 45 },
-  ];
-
-  // Title Banner
-  const phasedTitle = wsPhased.getRow(1);
-  phasedTitle.height = 32;
-  phasedTitle.getCell(1).value = `RETIREFREE UK - PHASED INCOME SPENDING TARGETS`;
-  phasedTitle.getCell(1).font = { name: 'Calibri', size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
-  phasedTitle.getCell(1).fill = blueFill;
-  phasedTitle.getCell(1).alignment = { vertical: 'middle', horizontal: 'left' };
-  wsPhased.mergeCells('A1:E1');
-
-  wsPhased.addRow([]); // Row 2 Blank
-
-  // Table Header
-  wsPhased.addRow(['Phase Name / Description', 'Start Age', 'End Age', 'Net Target (£/yr)', 'Description / Lifestyle Notes']); // Row 3
-  const pHeadRow = wsPhased.getRow(3);
-  pHeadRow.height = 26;
-  pHeadRow.eachCell((cell) => {
-    cell.fill = blueFill;
-    cell.font = fontWhiteBold;
-    cell.alignment = { vertical: 'middle', horizontal: 'center' };
-  });
-
-  // Helper to extract active phased income spending targets
-  const phasedRanges = (() => {
-    const retAge = profile.targetRetirementAge || 60;
-    const baseTarget = profile.targetRetirementIncomeAnnual || 35000;
-
-    if (profile.maximizedSpendConfig?.enabled) {
-      const maxConfig = profile.maximizedSpendConfig;
-      const phases = maxConfig.spendingPhases;
-      if (phases?.enabled) {
-        if (phases.customRanges && phases.customRanges.length > 0) {
-          return phases.customRanges.map((r, i) => ({
-            name: r.name || `Phase ${i + 1}`,
-            startAge: r.startAge ?? retAge,
-            endAge: r.endAge ?? 120,
-            incomeAnnual: r.annualTargetIncome ?? baseTarget,
-            notes: r.description || 'Maximized Spend Custom Phase',
-          }));
-        }
-        if (phases.goGoEndAge !== undefined && phases.goGoIncomeAnnual !== undefined) {
-          const goGoEnd = phases.goGoEndAge || 74;
-          const slowGoEnd = phases.slowGoEndAge || 84;
-          return [
-            { name: 'GO-GO Phase (Active Lifestyle)', startAge: retAge, endAge: goGoEnd, incomeAnnual: phases.goGoIncomeAnnual ?? baseTarget, notes: 'Primary Active Retirement Spending' },
-            { name: 'Slow-GO Phase (Moderate Lifestyle)', startAge: goGoEnd + 1, endAge: slowGoEnd, incomeAnnual: phases.slowGoIncomeAnnual ?? baseTarget, notes: 'Mid-Retirement Travel & Leisure' },
-            { name: 'No-GO Phase (Passive / Care)', startAge: slowGoEnd + 1, endAge: 120, incomeAnnual: phases.noGoIncomeAnnual ?? baseTarget, notes: 'Late Retirement / Essential Care' },
-          ];
-        }
-      }
-      const maxTarget = maxConfig.targetAnnualIncome || baseTarget;
-      return [
-        { name: 'Maximized Target Income', startAge: retAge, endAge: 120, incomeAnnual: maxTarget, notes: 'Flat Target Income Requirement' },
-      ];
-    }
-
-    const sp = profile.spendingPhases;
-    if (sp?.enabled) {
-      if (sp.customRanges && sp.customRanges.length > 0) {
-        return sp.customRanges.map((r, i) => ({
-          name: r.name || `Phase ${i + 1}`,
-          startAge: r.startAge ?? retAge,
-          endAge: r.endAge ?? 120,
-          incomeAnnual: r.annualTargetIncome ?? baseTarget,
-          notes: r.description || 'Custom Spending Phase',
-        }));
-      }
-      if (sp.goGoEndAge !== undefined && sp.goGoIncomeAnnual !== undefined) {
-        const goGoEnd = sp.goGoEndAge || 74;
-        const slowGoEnd = sp.slowGoEndAge || 84;
-        return [
-          { name: 'GO-GO Phase (Active Lifestyle)', startAge: retAge, endAge: goGoEnd, incomeAnnual: sp.goGoIncomeAnnual, notes: 'Primary Active Retirement Spending' },
-          { name: 'Slow-GO Phase (Moderate Lifestyle)', startAge: goGoEnd + 1, endAge: slowGoEnd, incomeAnnual: sp.slowGoIncomeAnnual ?? baseTarget, notes: 'Mid-Retirement Travel & Leisure' },
-          { name: 'No-GO Phase (Passive / Care)', startAge: slowGoEnd + 1, endAge: 120, incomeAnnual: sp.noGoIncomeAnnual ?? baseTarget, notes: 'Late Retirement / Essential Care' },
-        ];
-      }
-    }
-
-    if (sp?.customRanges && sp.customRanges.length > 0) {
-      return sp.customRanges.map((r, i) => ({
-        name: r.name || `Phase ${i + 1}`,
-        startAge: r.startAge ?? retAge,
-        endAge: r.endAge ?? 120,
-        incomeAnnual: r.annualTargetIncome ?? baseTarget,
-        notes: r.description || 'Custom Spending Phase',
-      }));
-    }
-
-    return [
-      { name: 'Target Retirement Income', startAge: retAge, endAge: 120, incomeAnnual: baseTarget, notes: 'Flat Net Annual Target Income' },
-    ];
-  })();
-
-  phasedRanges.forEach((r) => {
-    wsPhased.addRow([r.name, r.startAge, r.endAge, r.incomeAnnual, r.notes]);
-  });
-
-  const curPhasedRows = wsPhased.lastRow!.number;
-  for (let r = curPhasedRows + 1; r <= 20; r++) {
-    wsPhased.addRow([`Additional Phase ${r - 3} (Optional)`, 999, 999, 0, 'User Added Custom Phase']);
-  }
-
-  for (let r = 4; r <= 20; r++) {
-    const row = wsPhased.getRow(r);
-    row.getCell(2).numFmt = '0';
-    row.getCell(3).numFmt = '0';
-    row.getCell(4).numFmt = '£#,##0';
-    row.eachCell((cell) => { cell.border = borderThin; });
-  }
-
-
-  // ==========================================
-  // SHEET 4: Fixed Income (DB Pensions & Annuities)
+  // SHEET 3: Fixed Income (DB Pensions & Annuities)
   // ==========================================
   const wsFixed = workbook.addWorksheet('Fixed Income');
   wsFixed.columns = [
@@ -1206,6 +1092,389 @@ export async function generateFormulaExcelWorkbook(
 
 
   // ==========================================
+  // SHEET 6: Tax Free Lump Sums (PCLS & LSA Allowance)
+  // ==========================================
+  const wsPcls = workbook.addWorksheet('Tax Free Lump Sums');
+  wsPcls.columns = [
+    { header: 'Owner', key: 'a', width: 14 },
+    { header: 'Lump Sum Event / Description', key: 'b', width: 32 },
+    { header: 'Access / Lump Sum Age', key: 'c', width: 22 },
+    { header: 'Execution Year', key: 'd', width: 16 },
+    { header: 'PCLS Percentage (%)', key: 'e', width: 20 },
+    { header: 'Lump Sum Strategy', key: 'f', width: 28 },
+    { header: 'LSA Allowance Limit (£)', key: 'g', width: 24 },
+    { header: 'Destination Pot Description', key: 'h', width: 34 },
+    { header: 'Total Lump Sum (£)', key: 'i', width: 22 },
+    { header: 'Allocated to ISAs (£)', key: 'j', width: 22 },
+    { header: 'Allocated to Cash & GIA (£)', key: 'k', width: 24 },
+    { header: 'Spent / Clear Debt (£)', key: 'l', width: 22 },
+    { header: 'Notes / Scheme Protection', key: 'm', width: 38 },
+  ];
+
+  // Title Banner
+  const pclsTitle = wsPcls.getRow(1);
+  pclsTitle.height = 32;
+  pclsTitle.getCell(1).value = `RETIREFREE UK - TAX-FREE CASH (PCLS) & LUMP SUM ALLOWANCE (LSA) ALLOCATION BREAKDOWN`;
+  pclsTitle.getCell(1).font = { name: 'Calibri', size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
+  pclsTitle.getCell(1).fill = purpleFill;
+  pclsTitle.getCell(1).alignment = { vertical: 'middle', horizontal: 'left' };
+  wsPcls.mergeCells('A1:M1');
+
+  wsPcls.addRow([]); // Row 2 Blank
+
+  // Table Header
+  wsPcls.addRow([
+    'Owner',
+    'Lump Sum Event / Description',
+    'Access / Lump Sum Age',
+    'Execution Year',
+    'PCLS Percentage (%)',
+    'Lump Sum Strategy',
+    'LSA Allowance Limit (£)',
+    'Destination Pot Description',
+    'Total Lump Sum (£)',
+    'Allocated to ISAs (£)',
+    'Allocated to Cash & GIA (£)',
+    'Spent / Clear Debt (£)',
+    'Notes / Scheme Protection',
+  ]); // Row 3
+  const pclsHeadRow = wsPcls.getRow(3);
+  pclsHeadRow.height = 26;
+  pclsHeadRow.eachCell((cell) => {
+    cell.fill = purpleFill;
+    cell.font = fontWhiteBold;
+    cell.alignment = { vertical: 'middle', horizontal: 'center' };
+  });
+
+  const getPclsDestStr = (targetPot?: LumpSumTargetPot, splits?: LumpSumSplit[]) => {
+    if (targetPot === 'split' && splits && splits.length > 0) {
+      const parts = splits.map((s) => {
+        const valStr = s.mode === 'percentage' ? `${s.value}%` : `£${s.value.toLocaleString()}`;
+        const potLabel = (s.pot === 'stocks_and_shares_isa' || s.pot === 'cash_isa') ? 'ISA'
+          : s.pot === 'gia' ? 'GIA'
+          : s.pot === 'spend_clear_debt' ? 'Spend/Debt'
+          : 'Cash';
+        return `${potLabel} (${valStr})`;
+      });
+      return `Split: ${parts.join(', ')}`;
+    }
+    if (targetPot === 'stocks_and_shares_isa' || targetPot === 'cash_isa') return 'ISAs';
+    if (targetPot === 'gia') return 'General Investment Account';
+    if (targetPot === 'spend_clear_debt') return 'Spend / Clear Debt';
+    if (targetPot === 'split') return 'Split Across Pots';
+    return 'Cash Savings';
+  };
+
+  // Calculate Primary PCLS Details from exact App Settings
+  const primaryPclsAge = getLumpSumTakeAge(profile);
+  const primaryPclsYear = (new Date().getFullYear()) + Math.max(0, primaryPclsAge - primaryCurrentAge);
+  const primaryPclsPct = (profile.pclsLumpSumPercent ?? 25) / 100;
+  const primaryTakeUpfront = profile.takeLumpSumAtStart !== false;
+  const primaryPclsStrat = primaryTakeUpfront ? 'Take Upfront at Access Age' : 'Drip-Feed / UFPLS';
+  const primaryLsaLimit = getLsaLimit(profile);
+  const primaryPclsDestStr = getPclsDestStr(profile.lumpSumTargetPot, profile.lumpSumSplits);
+
+  const primaryProj = projections.find((p) => p.age === primaryPclsAge);
+  const primaryProjectedPension = primaryProj
+    ? (primaryProj.primaryPensionPotBeforePcls ?? (primaryProj.primaryPensionPotBeforeAnnuity ?? primaryProj.primaryPensionPot))
+    : getProjectedPensionAtTakeAge(profile, pots, primaryPclsAge, false);
+
+  const primaryMaxPcls = Math.min(primaryLsaLimit, Math.round(primaryProjectedPension * primaryPclsPct));
+  const primaryEstPcls = primaryTakeUpfront ? primaryMaxPcls : 0;
+  const primaryAlloc = allocateLumpSumToPots(primaryEstPcls, profile.lumpSumTargetPot, profile.lumpSumSplits);
+
+  const primaryProtAge = profile.protectedPensionAccessAge;
+  const primaryNote = profile.lsaProtectionType && profile.lsaProtectionType !== 'standard'
+    ? `LSA Protection: ${profile.lsaProtectionType} (£${primaryLsaLimit.toLocaleString()})`
+    : primaryProtAge
+    ? `Protected Access Age ${primaryProtAge} | Standard £268,275 LSA`
+    : 'Standard UK £268,275 LSA Cap';
+
+  wsPcls.addRow([
+    'YOU',
+    'Primary Tax-Free Cash (PCLS)',
+    primaryPclsAge,
+    primaryPclsYear,
+    primaryPclsPct,
+    primaryPclsStrat,
+    primaryLsaLimit,
+    primaryPclsDestStr,
+    primaryEstPcls,
+    primaryAlloc.toIsa,
+    primaryAlloc.toCashGia,
+    primaryAlloc.spentOrDebt,
+    primaryNote,
+  ]);
+
+  let partnerPclsYear = 2099;
+  let partnerEstPcls = 0;
+  let partnerTakeUpfront = false;
+  let partnerAlloc = { toIsa: 0, toGia: 0, toCashSavings: 0, toCashGia: 0, spentOrDebt: 0 };
+
+  if (isCouple) {
+    const partnerPclsAge = getPartnerLumpSumTakeAge(profile);
+    const partnerCurrentAge = profile.partnerCurrentAge || profile.currentAge || 50;
+    const partnerAgeOffset = partnerCurrentAge - (profile.currentAge || 50);
+    partnerPclsYear = (new Date().getFullYear()) + Math.max(0, partnerPclsAge - partnerCurrentAge);
+    const partnerPclsPct = (profile.partnerPclsLumpSumPercent ?? 25) / 100;
+    partnerTakeUpfront = profile.partnerTakeLumpSumAtStart !== false;
+    const partnerPclsStrat = partnerTakeUpfront ? 'Take Upfront at Access Age' : 'Drip-Feed / UFPLS';
+    const partnerLsaLimit = getPartnerLsaLimit(profile);
+    const partnerPclsDestStr = getPclsDestStr(profile.partnerLumpSumTargetPot, profile.partnerLumpSumSplits);
+
+    const partnerProj = projections.find((p) => (p.age + partnerAgeOffset) === partnerPclsAge);
+    const partnerProjectedPension = partnerProj
+      ? (partnerProj.partnerPensionPotBeforePcls ?? (partnerProj.partnerPensionPotBeforeAnnuity ?? partnerProj.partnerPensionPot))
+      : getProjectedPensionAtTakeAge(profile, partnerPots, partnerPclsAge, true);
+
+    const partnerMaxPcls = Math.min(partnerLsaLimit, Math.round(partnerProjectedPension * partnerPclsPct));
+    partnerEstPcls = partnerTakeUpfront ? partnerMaxPcls : 0;
+    partnerAlloc = allocateLumpSumToPots(partnerEstPcls, profile.partnerLumpSumTargetPot, profile.partnerLumpSumSplits);
+
+    const partnerProtAge = profile.partnerProtectedPensionAccessAge;
+    const partnerNote = profile.partnerLsaProtectionType && profile.partnerLsaProtectionType !== 'standard'
+      ? `LSA Protection: ${profile.partnerLsaProtectionType} (£${partnerLsaLimit.toLocaleString()})`
+      : partnerProtAge
+      ? `Protected Access Age ${partnerProtAge} | Standard £268,275 LSA`
+      : 'Standard UK £268,275 LSA Cap';
+
+    wsPcls.addRow([
+      'PARTNER',
+      'Partner Tax-Free Cash (PCLS)',
+      partnerPclsAge,
+      partnerPclsYear,
+      partnerPclsPct,
+      partnerPclsStrat,
+      partnerLsaLimit,
+      partnerPclsDestStr,
+      partnerEstPcls,
+      partnerAlloc.toIsa,
+      partnerAlloc.toCashGia,
+      partnerAlloc.spentOrDebt,
+      partnerNote,
+    ]);
+  }
+
+  // Defined Benefit Pension Lump Sums (if configured in App Settings)
+  let dbLumpSumTotal = 0;
+  let dbIsaTotal = 0;
+  let dbCashTotal = 0;
+  let dbDebtTotal = 0;
+
+  (profile.dbPensions || []).forEach((db) => {
+    if (db.enabled !== false && db.taxFreeLumpSum && db.taxFreeLumpSum > 0) {
+      const isPartnerDb = db.owner === 'partner';
+      if (isPartnerDb && !isCouple) return;
+
+      const dbOwner = isPartnerDb ? 'PARTNER' : 'YOU';
+      const dbOwnerCurrentAge = isPartnerDb ? (profile.partnerCurrentAge || profile.currentAge || 50) : (profile.currentAge || 50);
+      const dbAge = db.startAge || 60;
+      const dbYear = (new Date().getFullYear()) + Math.max(0, dbAge - dbOwnerCurrentAge);
+      const dbLsa = isPartnerDb ? getPartnerLsaLimit(profile) : primaryLsaLimit;
+      const dbDest = getPclsDestStr(db.targetPot as any);
+      const dbAlloc = allocateLumpSumToPots(db.taxFreeLumpSum, db.targetPot as any, undefined);
+
+      dbLumpSumTotal += db.taxFreeLumpSum;
+      dbIsaTotal += dbAlloc.toIsa;
+      dbCashTotal += dbAlloc.toCashGia;
+      dbDebtTotal += dbAlloc.spentOrDebt;
+
+      wsPcls.addRow([
+        dbOwner,
+        `${db.name || 'Defined Benefit Pension'} (DB Lump Sum)`,
+        dbAge,
+        dbYear,
+        'N/A',
+        'DB Scheme Lump Sum',
+        dbLsa,
+        dbDest,
+        db.taxFreeLumpSum,
+        dbAlloc.toIsa,
+        dbAlloc.toCashGia,
+        dbAlloc.spentOrDebt,
+        'Defined Benefit Commutation Tax-Free Lump Sum',
+      ]);
+    }
+  });
+
+  // Pre-fill extra empty template rows up to Row 15
+  const currentPclsRows = wsPcls.lastRow!.number;
+  for (let r = currentPclsRows + 1; r <= 15; r++) {
+    wsPcls.addRow([
+      'YOU',
+      'Extra Scheme PCLS (Optional)',
+      57,
+      2099,
+      0.25,
+      'Take Upfront at Access Age',
+      268275,
+      'Cash Savings',
+      0,
+      0,
+      0,
+      0,
+      'User Added Custom Scheme',
+    ]);
+  }
+
+  // Summary Total Row
+  wsPcls.addRow([
+    'TOTAL TAX-FREE LUMP SUMS',
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    { formula: 'SUM(I4:I15)', result: primaryEstPcls + partnerEstPcls + dbLumpSumTotal },
+    { formula: 'SUM(J4:J15)', result: primaryAlloc.toIsa + partnerAlloc.toIsa + dbIsaTotal },
+    { formula: 'SUM(K4:K15)', result: primaryAlloc.toCashGia + partnerAlloc.toCashGia + dbCashTotal },
+    { formula: 'SUM(L4:L15)', result: primaryAlloc.spentOrDebt + partnerAlloc.spentOrDebt + dbDebtTotal },
+    '',
+  ]);
+  const pclsTotRow = wsPcls.lastRow!;
+  pclsTotRow.font = fontBold;
+
+  for (let r = 4; r <= 16; r++) {
+    const row = wsPcls.getRow(r);
+    row.getCell(3).numFmt = '0';
+    row.getCell(4).numFmt = '0';
+    if (typeof row.getCell(5).value === 'number') {
+      row.getCell(5).numFmt = '0.00%';
+    }
+    row.getCell(7).numFmt = '£#,##0';
+    row.getCell(9).numFmt = '£#,##0';
+    row.getCell(10).numFmt = '£#,##0';
+    row.getCell(11).numFmt = '£#,##0';
+    row.getCell(12).numFmt = '£#,##0';
+    row.eachCell((cell) => { cell.border = borderThin; });
+  }
+
+
+  // ==========================================
+  // SHEET 7: Income Requirements (Spending Targets)
+  // ==========================================
+  const wsPhased = workbook.addWorksheet('Income Requirements');
+  wsPhased.columns = [
+    { header: 'Phase Name / Description', key: 'a', width: 38 },
+    { header: 'Start Age', key: 'b', width: 16 },
+    { header: 'End Age', key: 'c', width: 16 },
+    { header: 'Net Target (£/yr)', key: 'd', width: 22 },
+    { header: 'Description / Lifestyle Notes', key: 'e', width: 45 },
+  ];
+
+  // Title Banner
+  const phasedTitle = wsPhased.getRow(1);
+  phasedTitle.height = 32;
+  phasedTitle.getCell(1).value = `RETIREFREE UK - INCOME REQUIREMENTS & SPENDING TARGETS`;
+  phasedTitle.getCell(1).font = { name: 'Calibri', size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
+  phasedTitle.getCell(1).fill = blueFill;
+  phasedTitle.getCell(1).alignment = { vertical: 'middle', horizontal: 'left' };
+  wsPhased.mergeCells('A1:E1');
+
+  wsPhased.addRow([]); // Row 2 Blank
+
+  // Table Header
+  wsPhased.addRow(['Phase Name / Description', 'Start Age', 'End Age', 'Net Target (£/yr)', 'Description / Lifestyle Notes']); // Row 3
+  const pHeadRow = wsPhased.getRow(3);
+  pHeadRow.height = 26;
+  pHeadRow.eachCell((cell) => {
+    cell.fill = blueFill;
+    cell.font = fontWhiteBold;
+    cell.alignment = { vertical: 'middle', horizontal: 'center' };
+  });
+
+  // Helper to extract active phased income spending targets
+  const phasedRanges = (() => {
+    const retAge = profile.targetRetirementAge || 60;
+    const baseTarget = profile.targetRetirementIncomeAnnual || 35000;
+
+    if (profile.maximizedSpendConfig?.enabled) {
+      const maxConfig = profile.maximizedSpendConfig;
+      const phases = maxConfig.spendingPhases;
+      if (phases?.enabled) {
+        if (phases.customRanges && phases.customRanges.length > 0) {
+          return phases.customRanges.map((r, i) => ({
+            name: r.name || `Phase ${i + 1}`,
+            startAge: r.startAge ?? retAge,
+            endAge: r.endAge ?? 120,
+            incomeAnnual: r.annualTargetIncome ?? baseTarget,
+            notes: r.description || 'Maximized Spend Custom Phase',
+          }));
+        }
+        if (phases.goGoEndAge !== undefined && phases.goGoIncomeAnnual !== undefined) {
+          const goGoEnd = phases.goGoEndAge || 74;
+          const slowGoEnd = phases.slowGoEndAge || 84;
+          return [
+            { name: 'GO-GO Phase (Active Lifestyle)', startAge: retAge, endAge: goGoEnd, incomeAnnual: phases.goGoIncomeAnnual ?? baseTarget, notes: 'Primary Active Retirement Spending' },
+            { name: 'Slow-GO Phase (Moderate Lifestyle)', startAge: goGoEnd + 1, endAge: slowGoEnd, incomeAnnual: phases.slowGoIncomeAnnual ?? baseTarget, notes: 'Mid-Retirement Travel & Leisure' },
+            { name: 'No-GO Phase (Passive / Care)', startAge: slowGoEnd + 1, endAge: 120, incomeAnnual: phases.noGoIncomeAnnual ?? baseTarget, notes: 'Late Retirement / Essential Care' },
+          ];
+        }
+      }
+      const maxTarget = maxConfig.targetAnnualIncome || baseTarget;
+      return [
+        { name: 'Maximized Target Income', startAge: retAge, endAge: 120, incomeAnnual: maxTarget, notes: 'Flat Target Income Requirement' },
+      ];
+    }
+
+    const sp = profile.spendingPhases;
+    if (sp?.enabled) {
+      if (sp.customRanges && sp.customRanges.length > 0) {
+        return sp.customRanges.map((r, i) => ({
+          name: r.name || `Phase ${i + 1}`,
+          startAge: r.startAge ?? retAge,
+          endAge: r.endAge ?? 120,
+          incomeAnnual: r.annualTargetIncome ?? baseTarget,
+          notes: r.description || 'Custom Spending Phase',
+        }));
+      }
+      if (sp.goGoEndAge !== undefined && sp.goGoIncomeAnnual !== undefined) {
+        const goGoEnd = sp.goGoEndAge || 74;
+        const slowGoEnd = sp.slowGoEndAge || 84;
+        return [
+          { name: 'GO-GO Phase (Active Lifestyle)', startAge: retAge, endAge: goGoEnd, incomeAnnual: sp.goGoIncomeAnnual, notes: 'Primary Active Retirement Spending' },
+          { name: 'Slow-GO Phase (Moderate Lifestyle)', startAge: goGoEnd + 1, endAge: slowGoEnd, incomeAnnual: sp.slowGoIncomeAnnual ?? baseTarget, notes: 'Mid-Retirement Travel & Leisure' },
+          { name: 'No-GO Phase (Passive / Care)', startAge: slowGoEnd + 1, endAge: 120, incomeAnnual: sp.noGoIncomeAnnual ?? baseTarget, notes: 'Late Retirement / Essential Care' },
+        ];
+      }
+    }
+
+    if (sp?.customRanges && sp.customRanges.length > 0) {
+      return sp.customRanges.map((r, i) => ({
+        name: r.name || `Phase ${i + 1}`,
+        startAge: r.startAge ?? retAge,
+        endAge: r.endAge ?? 120,
+        incomeAnnual: r.annualTargetIncome ?? baseTarget,
+        notes: r.description || 'Custom Spending Phase',
+      }));
+    }
+
+    return [
+      { name: 'Target Retirement Income', startAge: retAge, endAge: 120, incomeAnnual: baseTarget, notes: 'Flat Net Annual Target Income' },
+    ];
+  })();
+
+  phasedRanges.forEach((r) => {
+    wsPhased.addRow([r.name, r.startAge, r.endAge, r.incomeAnnual, r.notes]);
+  });
+
+  const curPhasedRows = wsPhased.lastRow!.number;
+  for (let r = curPhasedRows + 1; r <= 20; r++) {
+    wsPhased.addRow([`Additional Phase ${r - 3} (Optional)`, 999, 999, 0, 'User Added Custom Phase']);
+  }
+
+  for (let r = 4; r <= 20; r++) {
+    const row = wsPhased.getRow(r);
+    row.getCell(2).numFmt = '0';
+    row.getCell(3).numFmt = '0';
+    row.getCell(4).numFmt = '£#,##0';
+    row.eachCell((cell) => { cell.border = borderThin; });
+  }
+
+
+  // ==========================================
   // SHEET 7: Contributions (Year-by-Year Schedule)
   // ==========================================
   const wsContrib = workbook.addWorksheet('Contributions');
@@ -1342,6 +1611,7 @@ export async function generateFormulaExcelWorkbook(
   ];
 
   const projectYears = Math.max(projections.length, 36);
+  const netCapitalInflowsList: number[] = [];
 
   for (let idx = 0; idx < projectYears; idx++) {
     const contribRowNum = idx + 15;
@@ -1448,6 +1718,7 @@ export async function generateFormulaExcelWorkbook(
     }, 0);
 
     const resNetCapitalInflow = resHouseholdRegular + resOneOffInflow - resTransferOutflow + resTransferInflow;
+    netCapitalInflowsList.push(resNetCapitalInflow);
 
     wsContrib.addRow([
       { formula: cYear, result: calYear },
@@ -1579,7 +1850,7 @@ export async function generateFormulaExcelWorkbook(
     const annualContribFormula = `'Contributions'!Z${contribRowNum}`;
 
     // Target Requirement (0 during Accumulation, indexed for inflation during Retirement)
-    const targetReqFormula = `IF(D${rowNum}="Accumulation", 0, IF(SUMPRODUCT(('Phased Income'!$D$4:$D$20) * (B${rowNum}>='Phased Income'!$B$4:$B$20) * (B${rowNum}<='Phased Income'!$C$4:$C$20)) > 0, SUMPRODUCT(('Phased Income'!$D$4:$D$20) * (B${rowNum}>='Phased Income'!$B$4:$B$20) * (B${rowNum}<='Phased Income'!$C$4:$C$20)), 'Phased Income'!$D$4) * ((1 + 'Settings'!$B$11)^(${idx})))`;
+    const targetReqFormula = `IF(D${rowNum}="Accumulation", 0, IF(SUMPRODUCT(('Income Requirements'!$D$4:$D$20) * (B${rowNum}>='Income Requirements'!$B$4:$B$20) * (B${rowNum}<='Income Requirements'!$C$4:$C$20)) > 0, SUMPRODUCT(('Income Requirements'!$D$4:$D$20) * (B${rowNum}>='Income Requirements'!$B$4:$B$20) * (B${rowNum}<='Income Requirements'!$C$4:$C$20)), 'Income Requirements'!$D$4) * ((1 + 'Settings'!$B$11)^(${idx})))`;
 
     // State Pension YOU (SPA is B7, State Pension Today is B8 in Inputs & Setup, Triple Lock is B15 in Settings)
     const stateYouFormula = `IF(B${rowNum}>='Inputs & Setup'!$B$7, 'Inputs & Setup'!$B$8 * ((1 + 'Settings'!$B$15)^(${idx})), 0)`;
@@ -1598,9 +1869,13 @@ export async function generateFormulaExcelWorkbook(
     const taxableDrawdownVal = projections[idx]?.pensionDrawdown || 0;
     const taxableDrawdownFormula = `IF(D${rowNum}="Accumulation", 0, MIN(MAX(0, ${prevPensionRef} * 0.75), MAX(0, MIN('Settings'!$B$6 - (G${rowNum}+H${rowNum}+I${rowNum}), F${rowNum} - (G${rowNum}+H${rowNum}+I${rowNum})))))`;
 
-    // PCLS Tax-Free Drawdown (Column J): 25% tax-free PCLS until lifetime LSA cap ('Settings'!$B$8) is reached
-    const pclsVal = projections[idx]?.pensionDrawdownTaxFree || 0;
-    const pclsFormula = `IF(D${rowNum}="Accumulation", 0, IF(SUM(J$3:J${prevRowNum}) >= 'Settings'!$B$8, 0, MIN('Settings'!$B$8 - SUM(J$3:J${prevRowNum}), MAX(0, K${rowNum} * (25 / 75)))))`;
+    // PCLS Tax-Free Drawdown (Column J): Upfront lump sum from Tax Free Lump Sums sheet + 25% tax-free PCLS until lifetime LSA cap ('Settings'!$B$8)
+    const calYear = (new Date().getFullYear()) + idx;
+    const pclsUpfrontIn = `SUMIFS('Tax Free Lump Sums'!$I$4:$I$15, 'Tax Free Lump Sums'!$D$4:$D$15, A${rowNum}, 'Tax Free Lump Sums'!$F$4:$F$15, "*Upfront*")`;
+    const pclsFormula = `IF(D${rowNum}="Accumulation", ${pclsUpfrontIn}, ${pclsUpfrontIn} + IF(SUM(J$3:J${prevRowNum}) >= 'Settings'!$B$8, 0, MIN('Settings'!$B$8 - SUM(J$3:J${prevRowNum}), MAX(0, K${rowNum} * (25 / 75)))))`;
+
+    const upfrontPclsThisYear = (calYear === primaryPclsYear && primaryTakeUpfront ? primaryEstPcls : 0) + (isCouple && calYear === partnerPclsYear && partnerTakeUpfront ? partnerEstPcls : 0);
+    const pclsVal = (projections[idx]?.pensionDrawdownTaxFree || 0) + upfrontPclsThisYear;
 
     // Total Taxable Income
     const totalTaxableFormula = `G${rowNum}+H${rowNum}+I${rowNum}+K${rowNum}`;
@@ -1625,6 +1900,9 @@ export async function generateFormulaExcelWorkbook(
     const cashTrIn = `SUMIFS('Pot Transfers'!$I$4:$I$50, 'Pot Transfers'!$F$4:$F$50, "Cash & GIA", 'Pot Transfers'!$D$4:$D$50, A${rowNum})`;
     const cashTrOut = `SUMIFS('Pot Transfers'!$G$4:$G$50, 'Pot Transfers'!$E$4:$E$50, "Cash & GIA", 'Pot Transfers'!$D$4:$D$50, A${rowNum})`;
 
+    const pclsToIsa = `SUMIFS('Tax Free Lump Sums'!$J$4:$J$15, 'Tax Free Lump Sums'!$D$4:$D$15, A${rowNum})`;
+    const pclsToCash = `SUMIFS('Tax Free Lump Sums'!$K$4:$K$15, 'Tax Free Lump Sums'!$D$4:$D$15, A${rowNum})`;
+
     // DC Pension Balance with growth drag on withdrawals: (Opening Balance - Drawdowns) * (1 + Growth)
     let pensionBalFormula: string;
     if (idx === 0) {
@@ -1636,17 +1914,17 @@ export async function generateFormulaExcelWorkbook(
     // ISA Balance (referencing Settings Growth B13 & Household ISA Total B22 in Inputs & Setup)
     let isaBalFormula: string;
     if (idx === 0) {
-      isaBalFormula = `MAX(0, 'Inputs & Setup'!$B$22 * (1 + 'Settings'!$B$13) + 'Contributions'!K${contribRowNum} + 'Contributions'!S${contribRowNum} + (${isaIn}) + (${isaTrIn}) - (${isaTrOut}))`;
+      isaBalFormula = `MAX(0, 'Inputs & Setup'!$B$22 * (1 + 'Settings'!$B$13) + 'Contributions'!K${contribRowNum} + 'Contributions'!S${contribRowNum} + (${isaIn}) + (${isaTrIn}) - (${isaTrOut}) + (${pclsToIsa}))`;
     } else {
-      isaBalFormula = `MAX(0, P${prevRowNum} * (1 + 'Settings'!$B$13) + 'Contributions'!K${contribRowNum} + 'Contributions'!S${contribRowNum} + (${isaIn}) + (${isaTrIn}) - (${isaTrOut}))`;
+      isaBalFormula = `MAX(0, P${prevRowNum} * (1 + 'Settings'!$B$13) + 'Contributions'!K${contribRowNum} + 'Contributions'!S${contribRowNum} + (${isaIn}) + (${isaTrIn}) - (${isaTrOut}) + (${pclsToIsa}))`;
     }
 
     // Cash & GIA Balance (referencing Settings Interest B14 & Household Cash Total B23 in Inputs & Setup)
     let cashBalFormula: string;
     if (idx === 0) {
-      cashBalFormula = `MAX(0, 'Inputs & Setup'!$B$23 * (1 + 'Settings'!$B$14) + 'Contributions'!N${contribRowNum} + 'Contributions'!T${contribRowNum} + (${cashIn}) + (${cashTrIn}) - (${cashTrOut}))`;
+      cashBalFormula = `MAX(0, 'Inputs & Setup'!$B$23 * (1 + 'Settings'!$B$14) + 'Contributions'!N${contribRowNum} + 'Contributions'!T${contribRowNum} + (${cashIn}) + (${cashTrIn}) - (${cashTrOut}) + (${pclsToCash}))`;
     } else {
-      cashBalFormula = `MAX(0, Q${prevRowNum} * (1 + 'Settings'!$B$14) + 'Contributions'!N${contribRowNum} + 'Contributions'!T${contribRowNum} + (${cashIn}) + (${cashTrIn}) - (${cashTrOut}))`;
+      cashBalFormula = `MAX(0, Q${prevRowNum} * (1 + 'Settings'!$B$14) + 'Contributions'!N${contribRowNum} + 'Contributions'!T${contribRowNum} + (${cashIn}) + (${cashTrIn}) - (${cashTrOut}) + (${pclsToCash}))`;
     }
 
     // Total Portfolio Wealth
@@ -1659,7 +1937,7 @@ export async function generateFormulaExcelWorkbook(
       { formula: ageYouFormula, result: (profile.currentAge || 50) + idx },
       { formula: agePartnerFormula, result: isCouple ? ((profile.partnerCurrentAge || 50) + idx) : 0 },
       { formula: statusFormula, result: ((profile.currentAge || 50) + idx) < (profile.targetRetirementAge || 55) ? 'Accumulation' : 'Retirement' },
-      { formula: annualContribFormula, result: primaryTotalAnnual + partnerTotalAnnual },
+      { formula: annualContribFormula, result: netCapitalInflowsList[idx] ?? (primaryTotalAnnual + partnerTotalAnnual) },
       { formula: targetReqFormula, result: proj?.targetRetirementIncome ?? (profile.targetRetirementIncomeAnnual || 35000) },
       { formula: stateYouFormula, result: proj?.primaryStatePensionReceived ?? proj?.statePensionReceived ?? 0 },
       { formula: statePartnerFormula, result: proj?.partnerStatePensionReceived ?? 0 },
