@@ -927,27 +927,30 @@ export function runHistoricModelingSimulation(
           }
         }
 
+        // 2. Apply growth to the remaining pot balances (fixing phantom growth)
+        growPots(pensionReturnRate, isaReturnRate, cashGiaReturnRate);
+
         // Reinvest surplus income when net achieved exceeds living expenses spending target
         const totalNetAchieved = guaranteedIncome + netDrawdownAchieved;
         
         if (totalNetAchieved > requiredNetIncomeTarget) {
           const surplus = totalNetAchieved - requiredNetIncomeTarget;
           const reinvestOpt =
-            profile.maximizedSpendConfig?.reinvestDestinationPot ||
             profile.annuityExcessReinvestOption ||
-            'isa';
+            profile.reinvestDestinationPot ||
+            profile.maximizedSpendConfig?.reinvestDestinationPot ||
+            'stocks_and_shares_isa';
 
           if (reinvestOpt === 'isa' || reinvestOpt === 'stocks_and_shares_isa' || reinvestOpt === 'cash_isa') {
-            addProRata('isa', surplus, false);
-          } else if (reinvestOpt === 'gia' || reinvestOpt === 'cash') {
-            addProRata('cashGia', surplus, false);
+            addProRata('isa', surplus * (1 + isaReturnRate / 2), false);
+          } else if (reinvestOpt === 'gia') {
+            addProRata('cashGia', surplus * (1 + (pensionReturnRate * 0.95) / 2), false);
+          } else if (reinvestOpt === 'cash' || reinvestOpt === 'cash_savings') {
+            addProRata('cashGia', surplus * (1 + cashGiaReturnRate / 2), false);
           } else if (reinvestOpt !== 'none') {
-            addProRata('cashGia', surplus, false);
+            addProRata('cashGia', surplus * (1 + cashGiaReturnRate / 2), false);
           }
         }
-
-        // 2. Apply growth to the remaining pot balances (fixing phantom growth)
-        growPots(pensionReturnRate, isaReturnRate, cashGiaReturnRate);
 
       }
 

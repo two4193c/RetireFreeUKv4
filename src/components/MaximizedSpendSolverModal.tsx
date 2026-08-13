@@ -108,8 +108,12 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
     25000
   );
   const [reinvestDestinationPot, setReinvestDestinationPot] = useState<'isa' | 'gia' | 'cash'>(
+    profile.annuityExcessReinvestOption === 'gia' ? 'gia' :
+    (profile.annuityExcessReinvestOption === 'cash' || profile.annuityExcessReinvestOption === 'cash_savings') ? 'cash' :
+    (profile.annuityExcessReinvestOption === 'stocks_and_shares_isa' || profile.annuityExcessReinvestOption === 'cash_isa' || profile.annuityExcessReinvestOption === 'isa') ? 'isa' :
+    profile.reinvestDestinationPot ||
     profile.maximizedSpendConfig?.reinvestDestinationPot ||
-    (profile.annuityExcessReinvestOption === 'gia' ? 'gia' : profile.annuityExcessReinvestOption === 'cash' ? 'cash' : 'isa')
+    'isa'
   );
 
   // State for user custom adjusted target income spend (£/yr)

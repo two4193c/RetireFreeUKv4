@@ -1549,7 +1549,7 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
                 { id: 'cash_savings', label: '💰 Cash Savings', desc: 'Interest & PSA Tax' },
                 { id: 'none', label: '💸 Spend Surplus', desc: 'Do Not Reinvest' },
               ].map((opt) => {
-                const currentOpt = profile.annuityExcessReinvestOption || 'cash';
+                const currentOpt = profile.annuityExcessReinvestOption || (profile.reinvestDestinationPot === 'cash' ? 'cash_savings' : profile.reinvestDestinationPot === 'gia' ? 'gia' : 'stocks_and_shares_isa');
                 const isSelected = currentOpt === opt.id || (opt.id === 'cash_savings' && currentOpt === 'cash') || (opt.id === 'stocks_and_shares_isa' && currentOpt === 'isa');
                 return (
                   <label
@@ -1565,7 +1565,18 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
                         type="radio"
                         name="excessReinvest"
                         checked={isSelected}
-                        onChange={() => updateField('annuityExcessReinvestOption', opt.id as any)}
+                        onChange={() => {
+                          const destPot: 'isa' | 'gia' | 'cash' = opt.id === 'gia' ? 'gia' : (opt.id === 'cash' || opt.id === 'cash_savings') ? 'cash' : 'isa';
+                          const updatedMaxConfig = profile.maximizedSpendConfig
+                            ? { ...profile.maximizedSpendConfig, reinvestDestinationPot: destPot }
+                            : undefined;
+                          onChange({
+                            ...profile,
+                            annuityExcessReinvestOption: opt.id as any,
+                            reinvestDestinationPot: destPot,
+                            ...(updatedMaxConfig ? { maximizedSpendConfig: updatedMaxConfig } : {}),
+                          });
+                        }}
                         className="accent-teal-600 w-3.5 h-3.5"
                       />
                       <span className="text-xs font-bold">{opt.label}</span>

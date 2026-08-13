@@ -1189,15 +1189,21 @@ function parseAnnuityTypeConfig(type?: string) {
         // Reinvest surplus guaranteed income if it exceeds the net required income
         if (netGuaranteedIncomeSecured > requiredNetIncomeTarget) {
           const surplus = netGuaranteedIncomeSecured - requiredNetIncomeTarget;
-          const reinvestOpt = profile.maximizedSpendConfig?.reinvestDestinationPot || profile.annuityExcessReinvestOption || 'isa';
+          const reinvestOpt = profile.annuityExcessReinvestOption || profile.reinvestDestinationPot || profile.maximizedSpendConfig?.reinvestDestinationPot || 'stocks_and_shares_isa';
           
           const applyReinvest = (opt: string, amt: number, isPartner: boolean) => {
-            if (opt === 'gia' || opt === 'cash') {
-              if (isPartner) partnerCashGiaPot += amt; else primaryCashGiaPot += amt;
+            if (opt === 'gia') {
+              const growth = amt * (decumCashGiaReturn * 0.5);
+              if (isPartner) partnerCashGiaPot += (amt + growth); else primaryCashGiaPot += (amt + growth);
+            } else if (opt === 'cash' || opt === 'cash_savings') {
+              const growth = amt * (cashYield * 0.5);
+              if (isPartner) partnerCashGiaPot += (amt + growth); else primaryCashGiaPot += (amt + growth);
             } else if (opt === 'isa' || opt === 'stocks_and_shares_isa' || opt === 'cash_isa') {
-              if (isPartner) partnerIsaPot += amt; else primaryIsaPot += amt;
+              const growth = amt * (randomReturn * 0.5);
+              if (isPartner) partnerIsaPot += (amt + growth); else primaryIsaPot += (amt + growth);
             } else if (opt !== 'none') {
-              if (isPartner) partnerCashGiaPot += amt; else primaryCashGiaPot += amt;
+              const growth = amt * (cashYield * 0.5);
+              if (isPartner) partnerCashGiaPot += (amt + growth); else primaryCashGiaPot += (amt + growth);
             }
           };
 
@@ -1371,11 +1377,13 @@ function parseAnnuityTypeConfig(type?: string) {
                 const actualNetSecured = netGuaranteedIncomeSecured + netPensionDraw;
                 if (actualNetSecured > requiredNetIncomeTarget) {
                   const surplus = actualNetSecured - requiredNetIncomeTarget;
-                  const reinvestOpt = profile.maximizedSpendConfig?.reinvestDestinationPot || profile.annuityExcessReinvestOption || 'isa';
+                  const reinvestOpt = profile.annuityExcessReinvestOption || profile.reinvestDestinationPot || profile.maximizedSpendConfig?.reinvestDestinationPot || 'stocks_and_shares_isa';
                   if (reinvestOpt === 'isa' || reinvestOpt === 'stocks_and_shares_isa' || reinvestOpt === 'cash_isa') {
-                    addProRata("isa", surplus, false);
+                    addProRata("isa", surplus * (1 + randomReturn * 0.5), false);
+                  } else if (reinvestOpt === 'gia') {
+                    addProRata("cashGia", surplus * (1 + decumCashGiaReturn * 0.5), false);
                   } else if (reinvestOpt !== 'none') {
-                    addProRata("cashGia", surplus, false);
+                    addProRata("cashGia", surplus * (1 + cashYield * 0.5), false);
                   }
                   remainingNeeded = 0;
                 } else {
@@ -1490,11 +1498,13 @@ function parseAnnuityTypeConfig(type?: string) {
 
           if (totalTargetNet > remainingNeeded && totalTargetNet > 0) {
             const surplus = totalTargetNet - remainingNeeded;
-            const reinvestOpt = profile.maximizedSpendConfig?.reinvestDestinationPot || profile.annuityExcessReinvestOption || 'isa';
+            const reinvestOpt = profile.annuityExcessReinvestOption || profile.reinvestDestinationPot || profile.maximizedSpendConfig?.reinvestDestinationPot || 'stocks_and_shares_isa';
             if (reinvestOpt === 'isa' || reinvestOpt === 'stocks_and_shares_isa' || reinvestOpt === 'cash_isa') {
-              addProRata("isa", surplus, false);
+              addProRata("isa", surplus * (1 + randomReturn * 0.5), false);
+            } else if (reinvestOpt === 'gia') {
+              addProRata("cashGia", surplus * (1 + decumCashGiaReturn * 0.5), false);
             } else if (reinvestOpt !== 'none') {
-              addProRata("cashGia", surplus, false);
+              addProRata("cashGia", surplus * (1 + cashYield * 0.5), false);
             }
             deductExactPension(priTargetGross, partTargetGross);
             if (primaryCumulativeTaxFreeDrawn < maxLsa && priTargetGross > 0) {

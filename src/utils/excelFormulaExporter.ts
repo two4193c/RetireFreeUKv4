@@ -1,6 +1,7 @@
 import ExcelJS from 'exceljs';
 import { UserProfile, InvestmentPots, YearProjection, InvestmentPotType, OneOffContribution, PotTransfer, LumpSumTargetPot, LumpSumSplit } from '../types';
 import { sanitizePots, DEFAULT_PARTNER_POTS } from './defaultData';
+import { getEffectiveDecumulationReturn } from './assetAllocation';
 import {
   getLsaLimit,
   getPartnerLsaLimit,
@@ -2368,16 +2369,38 @@ export async function generateFormulaExcelWorkbook(
     const crystPensionBalYouFormula = `MAX(0, (${prevCrystYouRef} + (K${rowNum} - M${rowNum}) - O${rowNum}) * (1 + 'Settings'!$B$12))`;
     const totalPensionBalYouFormula = `X${rowNum} + Y${rowNum}`;
 
-    const isaBalYouFormula = `MAX(0, (${prevIsaYouRef} - (${isaDrawdownYouFormula})) * (1 + 'Settings'!$B$13) + 'Contributions'!K${contribRowNum} + (${pclsToIsaYou}) + IF(U${rowNum}>F${rowNum}, U${rowNum}-F${rowNum}, 0))`;
-    const cashBalYouFormula = `MAX(0, (${prevCashYouRef} - (${cashDrawdownYouFormula})) * (1 + 'Settings'!$B$14) + 'Contributions'!N${contribRowNum} + (${pclsToCashYou}))`;
+    const reinvestDest = profile.annuityExcessReinvestOption || profile.reinvestDestinationPot || profile.maximizedSpendConfig?.reinvestDestinationPot || 'stocks_and_shares_isa';
+    const isReinvestIsa = reinvestDest === 'isa' || reinvestDest === 'stocks_and_shares_isa' || reinvestDest === 'cash_isa';
+    const isReinvestCashGia = reinvestDest === 'gia' || reinvestDest === 'cash' || reinvestDest === 'cash_savings';
+
+    const surplusToIsaYou = isReinvestIsa 
+      ? (isCouple 
+          ? `+ IF(W${rowNum}>F${rowNum}, ((W${rowNum}-F${rowNum})*0.5) * (1 + 'Settings'!$B$13 * 0.5), 0)`
+          : `+ IF(U${rowNum}>F${rowNum}, (U${rowNum}-F${rowNum}) * (1 + 'Settings'!$B$13 * 0.5), 0)`)
+      : '';
+    const surplusToCashYou = isReinvestCashGia 
+      ? (isCouple 
+          ? `+ IF(W${rowNum}>F${rowNum}, ((W${rowNum}-F${rowNum})*0.5) * (1 + 'Settings'!$B$14 * 0.5), 0)`
+          : `+ IF(U${rowNum}>F${rowNum}, (U${rowNum}-F${rowNum}) * (1 + 'Settings'!$B$14 * 0.5), 0)`)
+      : '';
+
+    const surplusToIsaPartner = (isCouple && isReinvestIsa) 
+      ? `+ IF(W${rowNum}>F${rowNum}, ((W${rowNum}-F${rowNum})*0.5) * (1 + 'Settings'!$B$13 * 0.5), 0)` 
+      : '';
+    const surplusToCashPartner = (isCouple && isReinvestCashGia) 
+      ? `+ IF(W${rowNum}>F${rowNum}, ((W${rowNum}-F${rowNum})*0.5) * (1 + 'Settings'!$B$14 * 0.5), 0)` 
+      : '';
+
+    const isaBalYouFormula = `MAX(0, (${prevIsaYouRef} - (${isaDrawdownYouFormula})) * (1 + 'Settings'!$B$13) + 'Contributions'!K${contribRowNum} + (${pclsToIsaYou}) ${surplusToIsaYou})`;
+    const cashBalYouFormula = `MAX(0, (${prevCashYouRef} - (${cashDrawdownYouFormula})) * (1 + 'Settings'!$B$14) + 'Contributions'!N${contribRowNum} + (${pclsToCashYou}) ${surplusToCashYou})`;
     const totalWealthYouFormula = `Z${rowNum} + AA${rowNum} + AB${rowNum}`;
 
     const uncrystPensionBalPartnerFormula = isCouple ? `MAX(0, (${prevUncrystPartnerRef} - L${rowNum}) * (1 + 'Settings'!$B$12) + 'Contributions'!R${contribRowNum} + (${pInPartner}) + (${pTrInPartner}) - (${pTrOutPartner}))` : '0';
     const crystPensionBalPartnerFormula = isCouple ? `MAX(0, (${prevCrystPartnerRef} + (L${rowNum} - N${rowNum}) - P${rowNum}) * (1 + 'Settings'!$B$12))` : '0';
     const totalPensionBalPartnerFormula = isCouple ? `AD${rowNum} + AE${rowNum}` : '0';
 
-    const isaBalPartnerFormula = isCouple ? `MAX(0, (${prevIsaPartnerRef} - (${isaDrawdownPartnerFormula})) * (1 + 'Settings'!$B$13) + 'Contributions'!S${contribRowNum} + (${pclsToIsaPartner}))` : '0';
-    const cashBalPartnerFormula = isCouple ? `MAX(0, (${prevCashPartnerRef} - (${cashDrawdownPartnerFormula})) * (1 + 'Settings'!$B$14) + 'Contributions'!T${contribRowNum} + (${pclsToCashPartner}))` : '0';
+    const isaBalPartnerFormula = isCouple ? `MAX(0, (${prevIsaPartnerRef} - (${isaDrawdownPartnerFormula})) * (1 + 'Settings'!$B$13) + 'Contributions'!S${contribRowNum} + (${pclsToIsaPartner}) ${surplusToIsaPartner})` : '0';
+    const cashBalPartnerFormula = isCouple ? `MAX(0, (${prevCashPartnerRef} - (${cashDrawdownPartnerFormula})) * (1 + 'Settings'!$B$14) + 'Contributions'!T${contribRowNum} + (${pclsToCashPartner}) ${surplusToCashPartner})` : '0';
     const totalWealthPartnerFormula = `AF${rowNum} + AG${rowNum} + AH${rowNum}`;
 
     const householdWealthFormula = `AC${rowNum} + AI${rowNum}`;
@@ -2493,10 +2516,14 @@ export async function generateFormulaExcelWorkbook(
     cell.alignment = { vertical: 'middle' };
   });
 
+  const netPensionDecumRate = getEffectiveDecumulationReturn(profile.postRetirementReturn ?? 4.5, profile.assetAllocationSplit, profile.investmentFees) / 100;
+  const netIsaDecumRate = netPensionDecumRate;
+  const netCashDecumRate = Math.min(0.035, Math.max(0.01, (profile.expectedInflationRate || 2.5) / 100 + 0.005));
+
   wsSettings.addRow(['Inflation Growth Rate (%)', (profile.expectedInflationRate || 2.5) / 100, '% / year', 'CPI Annual Inflation Index (Cell B11)']); // Row 11
-  wsSettings.addRow(['DC Pension Asset Growth Rate (%)', (profile.expectedInvestmentReturn || 5.0) / 100, '% / year', 'Net Annual Growth Rate (Cell B12)']); // Row 12
-  wsSettings.addRow(['ISA Investment Growth Rate (%)', (profile.expectedInvestmentReturn || 5.0) / 100, '% / year', 'Net Annual Growth Rate (Cell B13)']); // Row 13
-  wsSettings.addRow(['Cash & Savings Growth Rate (%)', 0.030, '% / year', 'Net Cash Interest Rate (Cell B14)']); // Row 14
+  wsSettings.addRow(['DC Pension Asset Growth Rate (%)', netPensionDecumRate, '% / year', 'Net Annual Decumulation Growth (Cell B12)']); // Row 12
+  wsSettings.addRow(['ISA Investment Growth Rate (%)', netIsaDecumRate, '% / year', 'Net Annual Decumulation Growth (Cell B13)']); // Row 13
+  wsSettings.addRow(['Cash & Savings Growth Rate (%)', netCashDecumRate, '% / year', 'Net Cash Interest Rate (Cell B14)']); // Row 14
   wsSettings.addRow(['State Pension Triple Lock Growth (%)', 0.025, '% / year', 'Annual State Pension Index (Cell B15)']); // Row 15
 
   for (let r = 11; r <= 15; r++) {

@@ -1800,7 +1800,7 @@ function parseAnnuityTypeConfig(type?: string) {
         (partnerGiaPot * partnerGiaFeeDecum)
       );
 
-      const estimatedPotGrowth = Math.round(
+      let estimatedPotGrowth = Math.round(
         primaryPensionGrowth + partnerPensionGrowth +
         primaryIsaGrowth + partnerIsaGrowth +
         primaryGiaGrowth + partnerGiaGrowth +
@@ -2760,19 +2760,42 @@ function parseAnnuityTypeConfig(type?: string) {
 
       // Reinvest excess income into designated non-pension pot if option is set
       if (annualIncomeExcess > 0) {
-        const primaryOption = profile.maximizedSpendConfig?.reinvestDestinationPot || profile.annuityExcessReinvestOption || 'isa';
-        const partnerOption = profile.isCouplePlanning ? (profile.partnerAnnuityExcessReinvestOption || primaryOption) : primaryOption;
+        const primaryOption = profile.annuityExcessReinvestOption || profile.reinvestDestinationPot || profile.maximizedSpendConfig?.reinvestDestinationPot || 'stocks_and_shares_isa';
+        const partnerOption = profile.isCouplePlanning ? (profile.partnerAnnuityExcessReinvestOption || profile.partnerReinvestDestinationPot || primaryOption) : primaryOption;
 
         const isIsaTarget = (opt: string) => opt === 'isa' || opt === 'stocks_and_shares_isa' || opt === 'cash_isa';
         const isGiaTarget = (opt: string) => opt === 'gia';
+        const isNoneTarget = (opt: string) => opt === 'none';
 
         const applyReinvest = (opt: string, amt: number, isPartner: boolean) => {
+          if (isNoneTarget(opt)) {
+            // Spend surplus on lifestyle (do not deposit into any pot)
+            return;
+          }
           if (isGiaTarget(opt)) {
-            if (isPartner) partnerGiaPot += amt; else primaryGiaPot += amt;
+            const growthRate = isPartner ? partnerGiaRateDecum : primaryGiaRateDecum;
+            const inYearGrowth = amt * (growthRate * 0.5);
+            if (isPartner) partnerGiaPot += (amt + inYearGrowth); else primaryGiaPot += (amt + inYearGrowth);
+            estimatedPotGrowth += Math.round(inYearGrowth);
           } else if (isIsaTarget(opt)) {
-            if (isPartner) { partnerIsaPot += amt; partnerSsIsaPot += amt; } else { primaryIsaPot += amt; primarySsIsaPot += amt; }
+            if (opt === 'cash_isa') {
+              const inYearGrowth = amt * (effectiveCashIsaRate * 0.5);
+              if (isPartner) { partnerIsaPot += (amt + inYearGrowth); partnerCashIsaPot += (amt + inYearGrowth); }
+              else { primaryIsaPot += (amt + inYearGrowth); primaryCashIsaPot += (amt + inYearGrowth); }
+              estimatedPotGrowth += Math.round(inYearGrowth);
+            } else {
+              // 'stocks_and_shares_isa' or 'isa' (Higher equity ISA compounding rate)
+              const growthRate = isPartner ? partnerIsaRateDecum : primaryIsaRateDecum;
+              const inYearGrowth = amt * (growthRate * 0.5);
+              if (isPartner) { partnerIsaPot += (amt + inYearGrowth); partnerSsIsaPot += (amt + inYearGrowth); }
+              else { primaryIsaPot += (amt + inYearGrowth); primarySsIsaPot += (amt + inYearGrowth); }
+              estimatedPotGrowth += Math.round(inYearGrowth);
+            }
           } else {
-            if (isPartner) partnerCashSavingsPot += amt; else primaryCashSavingsPot += amt;
+            // 'cash', 'cash_savings'
+            const inYearGrowth = amt * (effectiveCashSavingsRate * 0.5);
+            if (isPartner) partnerCashSavingsPot += (amt + inYearGrowth); else primaryCashSavingsPot += (amt + inYearGrowth);
+            estimatedPotGrowth += Math.round(inYearGrowth);
           }
         };
 

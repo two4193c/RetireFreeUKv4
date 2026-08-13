@@ -255,10 +255,11 @@ export function createCandidateProfile(
     30000;
   const rawDest =
     reinvestOpts?.reinvestDestinationPot ||
-    profile.maximizedSpendConfig?.reinvestDestinationPot ||
-    profile.annuityExcessReinvestOption;
+    profile.annuityExcessReinvestOption ||
+    profile.reinvestDestinationPot ||
+    profile.maximizedSpendConfig?.reinvestDestinationPot;
   const reinvestDestination: 'isa' | 'gia' | 'cash' =
-    (rawDest === 'gia' || rawDest === 'cash') ? rawDest : 'isa';
+    (rawDest === 'gia' || rawDest === 'cash' || rawDest === 'cash_savings') ? (rawDest === 'gia' ? 'gia' : 'cash') : 'isa';
 
   // Apply Annuity Floor configuration if enabled
   if (annuityFloorOpts && annuityFloorOpts.annuityFloorMode && annuityFloorOpts.annuityFloorMode !== 'none') {
@@ -355,7 +356,8 @@ export function createCandidateProfile(
 
   candidate.reinvestExcessDrawdown = isReinvestExcess;
   candidate.actualSpendingTargetAnnual = actualSpendingTarget;
-  candidate.annuityExcessReinvestOption = reinvestDestination;
+  candidate.annuityExcessReinvestOption = (rawDest === 'stocks_and_shares_isa' || rawDest === 'cash_isa' || rawDest === 'gia' || rawDest === 'cash' || rawDest === 'cash_savings' || rawDest === 'none') ? rawDest : (reinvestDestination === 'isa' ? 'stocks_and_shares_isa' : reinvestDestination);
+  candidate.reinvestDestinationPot = reinvestDestination;
   if (targetEndAge !== undefined) {
     candidate.lifeExpectancyAge = targetEndAge;
   }
@@ -668,7 +670,7 @@ export function solveMaximizedSpend(options: SolveMaximizedSpendOptions): SolveM
 
   // If reinvest surplus is active, re-evaluate projections with reinvestment enabled
   if (reinvestOpts?.reinvestExcessDrawdown) {
-    const finalResult = testFeasibility(bestCandidateProfile, pots, clampedEndAge, targetLegacyBuffer);
+    const finalResult = testFeasibility(bestCandidateProfile, evalPots, clampedEndAge, targetLegacyBuffer);
     bestProjections = finalResult.projections;
     bestFinalPot = finalResult.finalPot;
   }

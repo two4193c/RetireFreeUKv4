@@ -388,7 +388,8 @@ export interface UserProfile {
   annuityDurationOption?: AnnuityDurationOption; // 'lifetime' | 'until_age'
   annuityDurationUntilAge?: number; // e.g. 75
   annuityTranches?: AnnuityTranche[]; // Multiple annuity purchases at different ages
-  annuityExcessReinvestOption?: ExcessReinvestOption; // 'none' | 'cash' | 'isa'
+  annuityExcessReinvestOption?: ExcessReinvestOption; // 'none' | 'cash' | 'isa' | 'stocks_and_shares_isa' | 'cash_isa' | 'cash_savings' | 'gia'
+  reinvestDestinationPot?: 'isa' | 'gia' | 'cash';
 
   // Partner Income Product & Annuity Options
   partnerIncomeProductOption?: IncomeProductOption;
@@ -400,6 +401,7 @@ export interface UserProfile {
   partnerAnnuityDurationUntilAge?: number;
   partnerAnnuityTranches?: AnnuityTranche[];
   partnerAnnuityExcessReinvestOption?: ExcessReinvestOption;
+  partnerReinvestDestinationPot?: 'isa' | 'gia' | 'cash';
 
   // Inheritance Tax (IHT) & Estate Planning Module Settings
   ihtSettings?: IhtEstateSettings;
