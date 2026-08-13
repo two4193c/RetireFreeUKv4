@@ -423,7 +423,7 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
     const defaultAge = (activeIncomePerson === 'partner' ? partnerLumpSumTakeAge : primaryLumpSumTakeAge) + 5;
     const newTranche: AnnuityTranche = {
       id: Date.now().toString(),
-      name: `Annuity Purchase (Age ${defaultAge})`,
+      name: `Annuity Tranche ${activeTranches.length + 1}`,
       owner: activeIncomePerson,
       purchaseAge: defaultAge,
       allocationPercent: 25,
@@ -926,9 +926,9 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
       )}
 
       {/* SECTION 2: Drawdown Order & PCLS Maximum Tax-Free Cash */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2 border-t border-slate-100 dark:border-slate-800">
+      <div className="space-y-5 pt-2 border-t border-slate-100 dark:border-slate-800">
         
-        {/* 25% Tax-Free Pension Lump Sum (PCLS & LSA Protections) */}
+        {/* 25% Tax-Free Pension Lump Sum (PCLS & LSA Protections) - Full Width */}
         <div className="p-5 bg-slate-50/80 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1 border-b border-slate-200/60 dark:border-slate-700/60">
             <div className="flex flex-wrap items-center gap-2">
@@ -1220,9 +1220,33 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
                     } {profile.lumpSumTiming === 'access_age' || !profile.lumpSumTiming ? `(when private pension is first accessed at age ${primaryPensionAccessAge})` : `(age ${primaryLumpSumTakeAge})`}.
                   </span>
                 ) : profile.crystallisationMode === 'phased_tranches' ? (
-                  <span>
-                    <strong>Phased Crystallisation ({profile.name || 'Primary'}):</strong> Pension pot is split into <em>Uncrystallised</em> (retains 25% tax-free growth potential) and <em>Crystallised Drawdown</em> sub-pots. Each tranche extracts 25% tax-free cash to shelter while keeping 75% in drawdown for predictable income draws.
-                  </span>
+                  (() => {
+                    const activeTranches = (profile.crystallisationTranches || []).filter((t) => t.owner !== 'partner' && t.enabled);
+                    const totalCryst = activeTranches.reduce((sum, t) => sum + (t.amount || 0), 0);
+                    const totalPcls = activeTranches.reduce((sum, t) => sum + Math.round((t.amount || 0) * ((t.pclsPercent ?? 25) / 100)), 0);
+                    const totalDrawdown = totalCryst - totalPcls;
+                    const uncrystBal = Math.max(0, (primaryProjectedPot || primaryCurrentPot || 0) - totalCryst);
+                    const remLsa = Math.max(0, primaryLsaLimit - totalPcls);
+
+                    return (
+                      <div className="space-y-1">
+                        <span>
+                          <strong>Phased Crystallisation ({profile.name || 'Primary'}):</strong> Pension pot is split into <em>Uncrystallised</em> (retains 25% tax-free growth potential) and <em>Crystallised Drawdown</em> sub-pots.
+                        </span>
+                        <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px]">
+                          <span className="px-2 py-0.5 rounded-md bg-purple-100 dark:bg-purple-900/60 text-purple-900 dark:text-purple-200 font-bold">
+                            Uncrystallised: £{Math.round(uncrystBal).toLocaleString()}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-900/60 text-indigo-900 dark:text-indigo-200 font-bold">
+                            Crystallised Drawdown: £{Math.round(totalDrawdown).toLocaleString()}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-900/60 text-emerald-900 dark:text-emerald-200 font-bold">
+                            Remaining LSA: £{Math.round(remLsa).toLocaleString()} (of £{(primaryLsaLimit || 0).toLocaleString()})
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })()
                 ) : (
                   <span>
                     <strong>UFPLS Drip-Feed ({profile.name || 'Primary'}):</strong> 25% of each withdrawal is tax-free up to £{(primaryLsaLimit || 0).toLocaleString()} total, leaving 75% taxable. Keeps capital compounding tax-sheltered inside pension until drawn!
@@ -1463,9 +1487,33 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
                     } {profile.partnerLumpSumTiming === 'access_age' || !profile.partnerLumpSumTiming ? `(when partner's private pension is first accessed at age ${partnerPensionAccessAge})` : `(age ${partnerLumpSumTakeAge})`}.
                   </span>
                 ) : profile.partnerCrystallisationMode === 'phased_tranches' ? (
-                  <span>
-                    <strong>Partner Phased Crystallisation ({profile.partnerName || 'Partner'}):</strong> Pension pot is split into <em>Uncrystallised</em> and <em>Crystallised Drawdown</em> sub-pots.
-                  </span>
+                  (() => {
+                    const activeTranches = (profile.partnerCrystallisationTranches || profile.crystallisationTranches || []).filter((t) => t.owner === 'partner' && t.enabled);
+                    const totalCryst = activeTranches.reduce((sum, t) => sum + (t.amount || 0), 0);
+                    const totalPcls = activeTranches.reduce((sum, t) => sum + Math.round((t.amount || 0) * ((t.pclsPercent ?? 25) / 100)), 0);
+                    const totalDrawdown = totalCryst - totalPcls;
+                    const uncrystBal = Math.max(0, (partnerProjectedPot || partnerCurrentPot || 0) - totalCryst);
+                    const remLsa = Math.max(0, partnerLsaLimit - totalPcls);
+
+                    return (
+                      <div className="space-y-1">
+                        <span>
+                          <strong>Partner Phased Crystallisation ({profile.partnerName || 'Partner'}):</strong> Pension pot is split into <em>Uncrystallised</em> (retains 25% tax-free growth potential) and <em>Crystallised Drawdown</em> sub-pots.
+                        </span>
+                        <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px]">
+                          <span className="px-2 py-0.5 rounded-md bg-purple-100 dark:bg-purple-900/60 text-purple-900 dark:text-purple-200 font-bold">
+                            Uncrystallised: £{Math.round(uncrystBal).toLocaleString()}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-900/60 text-indigo-900 dark:text-indigo-200 font-bold">
+                            Crystallised Drawdown: £{Math.round(totalDrawdown).toLocaleString()}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-md bg-rose-100 dark:bg-rose-900/60 text-rose-900 dark:text-rose-200 font-bold">
+                            Remaining LSA: £{Math.round(remLsa).toLocaleString()} (of £{(partnerLsaLimit || 0).toLocaleString()})
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })()
                 ) : (
                   <span>
                     <strong>Partner UFPLS Drip-Feed ({profile.partnerName || 'Partner'}):</strong> 25% of each partner withdrawal is tax-free up to £{(partnerLsaLimit || 0).toLocaleString()} total, leaving 75% taxable.

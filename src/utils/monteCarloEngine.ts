@@ -410,8 +410,8 @@ function parseAnnuityTypeConfig(type?: string) {
       const age = safeCurrentAge + yr;
       const partnerAge = age + ((profile.partnerCurrentAge ?? profile.currentAge) - profile.currentAge);
       const isRetired = age >= profile.targetRetirementAge;
-      const canAccessPension = age >= pensionAccessAge;
-      const partnerCanAccessPension = profile.isCouplePlanning && !partnerDead && partnerAge >= partnerPensionAccessAge;
+      const canAccessPension = age >= pensionAccessAge || (profile.crystallisationTranches || []).some((t) => t.enabled && t.age <= age && (t.owner || 'primary') !== 'partner');
+      const partnerCanAccessPension = profile.isCouplePlanning && !partnerDead && (partnerAge >= partnerPensionAccessAge || (profile.partnerCrystallisationTranches || profile.crystallisationTranches || []).some((t) => t.enabled && t.age <= partnerAge && t.owner === 'partner'));
       const inflationFactor = Math.pow(1 + inflation, yr);
 
       const deductProRata = (potType, amount) => {
@@ -473,12 +473,16 @@ function parseAnnuityTypeConfig(type?: string) {
       const primaryActiveTranches = (profile.crystallisationTranches || []).filter(
         (t) => t.enabled && t.age === age && t.owner !== 'partner'
       );
-      if (canAccessPension && primaryPensionPot > 0 && primaryActiveTranches.length > 0) {
+      if (primaryPensionPot > 0 && primaryActiveTranches.length > 0) {
         for (const tranche of primaryActiveTranches) {
           if (primaryPensionPot <= 0) break;
-          const grossCrystallised = Math.min(primaryPensionPot, tranche.amount);
           const pclsPct = Math.min(100, Math.max(0, tranche.pclsPercent ?? 25)) / 100;
-          const pclsAmount = Math.min(grossCrystallised * pclsPct, Math.max(0, maxLsa - primaryCumulativeTaxFreeDrawn));
+          const remainingLsa = Math.max(0, maxLsa - primaryCumulativeTaxFreeDrawn);
+          const maxGrossForLsa = pclsPct > 0 ? Math.floor(remainingLsa / pclsPct) : primaryPensionPot;
+          const grossCrystallised = Math.min(primaryPensionPot, tranche.amount, maxGrossForLsa);
+          if (grossCrystallised <= 0) continue;
+
+          const pclsAmount = Math.min(grossCrystallised * pclsPct, remainingLsa);
           primaryPensionPot -= pclsAmount;
           primaryCumulativeTaxFreeDrawn += pclsAmount;
           const alloc = allocateLumpSumToPots(pclsAmount, tranche.targetPot || profile.lumpSumTargetPot, tranche.splits || profile.lumpSumSplits);
@@ -492,12 +496,16 @@ function parseAnnuityTypeConfig(type?: string) {
       const partnerActiveTranches = (profile.partnerCrystallisationTranches || profile.crystallisationTranches || []).filter(
         (t) => t.enabled && t.age === partnerAge && t.owner === 'partner'
       );
-      if (profile.isCouplePlanning && !partnerDead && partnerCanAccessPension && partnerPensionPot > 0 && partnerActiveTranches.length > 0) {
+      if (profile.isCouplePlanning && !partnerDead && partnerPensionPot > 0 && partnerActiveTranches.length > 0) {
         for (const tranche of partnerActiveTranches) {
           if (partnerPensionPot <= 0) break;
-          const grossCrystallised = Math.min(partnerPensionPot, tranche.amount);
           const pclsPct = Math.min(100, Math.max(0, tranche.pclsPercent ?? 25)) / 100;
-          const pclsAmount = Math.min(grossCrystallised * pclsPct, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn));
+          const remainingLsa = Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn);
+          const maxGrossForLsa = pclsPct > 0 ? Math.floor(remainingLsa / pclsPct) : partnerPensionPot;
+          const grossCrystallised = Math.min(partnerPensionPot, tranche.amount, maxGrossForLsa);
+          if (grossCrystallised <= 0) continue;
+
+          const pclsAmount = Math.min(grossCrystallised * pclsPct, remainingLsa);
           partnerPensionPot -= pclsAmount;
           partnerCumulativeTaxFreeDrawn += pclsAmount;
           const alloc = allocateLumpSumToPots(pclsAmount, tranche.targetPot || profile.partnerLumpSumTargetPot || profile.lumpSumTargetPot, tranche.splits || profile.partnerLumpSumSplits || profile.lumpSumSplits);

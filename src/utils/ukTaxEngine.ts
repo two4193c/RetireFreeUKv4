@@ -185,11 +185,15 @@ export function allocateLumpSumToPots(
   splits: LumpSumSplit[] | undefined
 ): {
   toIsa: number;
+  toSsIsa: number;
+  toCashIsa: number;
   toGia: number;
   toCashSavings: number;
   toCashGia: number;
   spentOrDebt: number;
 } {
+  let toSsIsa = 0;
+  let toCashIsa = 0;
   let toIsa = 0;
   let toGia = 0;
   let toCashSavings = 0;
@@ -207,7 +211,11 @@ export function allocateLumpSumToPots(
       allocated = Math.min(remaining, allocated);
       if (allocated <= 0) return;
 
-      if (s.pot === 'stocks_and_shares_isa' || s.pot === 'cash_isa') {
+      if (s.pot === 'stocks_and_shares_isa') {
+        toSsIsa += allocated;
+        toIsa += allocated;
+      } else if (s.pot === 'cash_isa') {
+        toCashIsa += allocated;
         toIsa += allocated;
       } else if (s.pot === 'gia') {
         toGia += allocated;
@@ -223,7 +231,11 @@ export function allocateLumpSumToPots(
     }
   } else {
     const pot = targetPot || 'stocks_and_shares_isa';
-    if (pot === 'stocks_and_shares_isa' || pot === 'cash_isa') {
+    if (pot === 'stocks_and_shares_isa') {
+      toSsIsa += lumpSumAmount;
+      toIsa += lumpSumAmount;
+    } else if (pot === 'cash_isa') {
+      toCashIsa += lumpSumAmount;
       toIsa += lumpSumAmount;
     } else if (pot === 'gia') {
       toGia += lumpSumAmount;
@@ -232,12 +244,13 @@ export function allocateLumpSumToPots(
     } else if (pot === 'spend_clear_debt') {
       spentOrDebt += lumpSumAmount;
     } else {
+      toSsIsa += lumpSumAmount;
       toIsa += lumpSumAmount;
     }
   }
 
   const toCashGia = toGia + toCashSavings;
-  return { toIsa, toGia, toCashSavings, toCashGia, spentOrDebt };
+  return { toIsa, toSsIsa, toCashIsa, toGia, toCashSavings, toCashGia, spentOrDebt };
 }
 
 export function calculateStandardNI(income: number): number {
