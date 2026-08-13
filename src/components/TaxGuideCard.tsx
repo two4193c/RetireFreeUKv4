@@ -91,11 +91,14 @@ export const TaxGuideCard: React.FC = () => {
       </div>
 
       {/* Section 2: Income Tax Bands Table */}
-      <div className="space-y-3">
-        <h3 className="font-extrabold text-slate-900 dark:text-white text-base flex items-center gap-2">
-          <Scale className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-          <span>UK Income Tax Bands (Rest of UK)</span>
-        </h3>
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <h3 className="font-extrabold text-slate-900 dark:text-white text-base flex items-center gap-2">
+            <Scale className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            <span>UK Income Tax Bands (England, Wales & NI)</span>
+          </h3>
+          <span className="text-xs text-slate-500 dark:text-slate-400">Frozen through 2027/28</span>
+        </div>
 
         <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800">
           <table className="w-full text-left text-xs">
@@ -134,6 +137,42 @@ export const TaxGuideCard: React.FC = () => {
               </tr>
             </tbody>
           </table>
+        </div>
+
+        {/* Scottish Tax Bands Sub-Table */}
+        <div className="p-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-700/80 space-y-2.5">
+          <div className="flex items-center justify-between">
+            <h4 className="font-bold text-slate-900 dark:text-white text-xs flex items-center gap-1.5">
+              <span>🏴󠁧󠁢󠁳󠁣󠁴󠁿 Scottish Tax Rates (2024/25 & 2025/26)</span>
+            </h4>
+            <span className="text-[10px] font-semibold text-slate-500">Applies to Scottish Taxpayers on Non-Savings Income</span>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-[11px]">
+            <div className="p-2.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
+              <span className="text-slate-500 block text-[10px]">Starter (19%)</span>
+              <span className="font-bold text-slate-900 dark:text-white">£12,571–£14,876</span>
+            </div>
+            <div className="p-2.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
+              <span className="text-slate-500 block text-[10px]">Basic (20%)</span>
+              <span className="font-bold text-slate-900 dark:text-white">£14,877–£26,561</span>
+            </div>
+            <div className="p-2.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
+              <span className="text-slate-500 block text-[10px]">Intermediate (21%)</span>
+              <span className="font-bold text-slate-900 dark:text-white">£26,562–£43,662</span>
+            </div>
+            <div className="p-2.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
+              <span className="text-slate-500 block text-[10px]">Higher (42%)</span>
+              <span className="font-bold text-slate-900 dark:text-white">£43,663–£75,000</span>
+            </div>
+            <div className="p-2.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
+              <span className="text-slate-500 block text-[10px]">Advanced (45%)</span>
+              <span className="font-bold text-slate-900 dark:text-white">£75,001–£125,140</span>
+            </div>
+            <div className="p-2.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
+              <span className="text-slate-500 block text-[10px]">Top (48%)</span>
+              <span className="font-bold text-slate-900 dark:text-white">Over £125,140</span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -229,27 +268,55 @@ export const TaxGuideCard: React.FC = () => {
         </div>
       </div>
 
-      {/* Section 5: PCLS & Decumulation Rules */}
-      <div className="p-5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700/80 space-y-3 text-xs text-slate-700 dark:text-slate-300">
-        <h3 className="font-extrabold text-slate-900 dark:text-white text-sm flex items-center gap-2">
-          <Calendar className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-          <span>Tax-Free Lump Sum (PCLS) & Money Purchase Annual Allowance (MPAA)</span>
-        </h3>
+      {/* Section 5: Post-LTA Allowances (LSA, LSDBA, OTA & TTFAC) */}
+      <div className="p-5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700/80 space-y-4 text-xs text-slate-700 dark:text-slate-300">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <h3 className="font-extrabold text-slate-900 dark:text-white text-sm flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <span>Post-LTA Regime: Allowances, Lump Sums & MPAA</span>
+          </h3>
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">
+            Abolition of LTA (April 2024+)
+          </span>
+        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div className="p-3.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 space-y-1.5">
-            <h4 className="font-bold text-slate-900 dark:text-white text-xs">PCLS (Pension Commencement Lump Sum)</h4>
-            <p className="leading-relaxed">
-              You can access up to <strong>25% of your total pension value tax-free</strong>, capped at the Lump Sum Allowance (LSA) of <strong>£268,275</strong>. The remaining 75% is placed into Flexi-Access Drawdown or used to buy an Annuity.
+            <h4 className="font-bold text-slate-900 dark:text-white text-xs flex items-center justify-between">
+              <span>Lump Sum Allowance (LSA)</span>
+              <span className="text-emerald-600 dark:text-emerald-400">£268,275</span>
+            </h4>
+            <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
+              Caps total tax-free cash (PCLS + tax-free element of UFPLS) taken during your lifetime across all pension schemes.
             </p>
           </div>
 
           <div className="p-3.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 space-y-1.5">
-            <h4 className="font-bold font-amber-900 text-amber-700 dark:text-amber-400 text-xs">⚠️ MPAA Trigger Warning</h4>
-            <p className="leading-relaxed">
-              Once you take your first taxable income payment flexibly from a defined contribution pension, you trigger the <strong>Money Purchase Annual Allowance (MPAA)</strong>. This reduces your future pension contribution cap from £60,000 down to <strong>£10,000/year</strong>.
+            <h4 className="font-bold text-slate-900 dark:text-white text-xs flex items-center justify-between">
+              <span>Death Benefit Allowance (LSDBA)</span>
+              <span className="text-purple-600 dark:text-purple-400">£1,073,100</span>
+            </h4>
+            <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
+              Limits tax-free lump sum death benefits paid before age 75 (or serious ill-health lump sums). Excess is taxed at beneficiary's marginal rate.
             </p>
           </div>
+
+          <div className="p-3.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 space-y-1.5">
+            <h4 className="font-bold text-slate-900 dark:text-white text-xs flex items-center justify-between">
+              <span>MPAA Trigger Restrictor</span>
+              <span className="text-amber-600 dark:text-amber-400">£10,000/yr</span>
+            </h4>
+            <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
+              Taking your first taxable flexible income payment reduces your annual pension contribution allowance from £60k down to £10k.
+            </p>
+          </div>
+        </div>
+
+        <div className="p-3.5 bg-indigo-50/70 dark:bg-indigo-950/40 rounded-xl border border-indigo-200 dark:border-indigo-800/80 space-y-1 text-xs text-indigo-950 dark:text-indigo-200">
+          <span className="font-bold block">Transitional Tax-Free Amount Certificates (TTFAC)</span>
+          <p className="text-slate-700 dark:text-slate-300 text-[11px] leading-relaxed">
+            If you took pension benefits before 6 April 2024 but took less than the assumed standard 25% tax-free cash (for example, in Defined Benefit schemes with low commutation factors), you can apply to a scheme administrator for a <strong>TTFAC</strong> before your first post-April 2024 Benefit Crystallisation Event (BCE) to reclaim unused Lump Sum Allowance.
+          </p>
         </div>
       </div>
       {/* Section 6: State Pension Framework & Age Rules */}
@@ -345,6 +412,63 @@ export const TaxGuideCard: React.FC = () => {
           <div>
             <strong>ISA Advantage:</strong> Interest earned within ISA wrappers (Cash ISA, Stocks & Shares ISA) does <strong>not</strong> count against your PSA. This is why holding cash savings inside a Cash ISA is always preferable to a standard bank savings account for higher-rate taxpayers.
           </div>
+        </div>
+      </div>
+
+      {/* Section 8: Capital Gains Tax (CGT) & Dividend Allowances */}
+      <div className="space-y-3">
+        <h3 className="font-extrabold text-slate-900 dark:text-white text-base flex items-center gap-2">
+          <Coins className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+          <span>Capital Gains Tax (CGT) & Dividend Allowances</span>
+        </h3>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+          <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
+            <div className="flex items-center justify-between font-bold text-slate-900 dark:text-white">
+              <span>Capital Gains Tax (CGT)</span>
+              <span className="text-emerald-600 dark:text-emerald-400">£3,000 Annual Exemption</span>
+            </div>
+            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+              Gains on taxable investments (GIAs, second homes, crypto) above £3,000/yr are taxed at:
+            </p>
+            <ul className="space-y-1 text-slate-600 dark:text-slate-400 list-disc list-inside">
+              <li><strong>Basic Rate:</strong> 18% (standard assets & residential property)</li>
+              <li><strong>Higher/Additional Rate:</strong> 24% (standard assets & residential property)</li>
+              <li><strong>Bed & ISA Strategy:</strong> Crystalise £3k gains each year and transfer cash into your tax-free ISA!</li>
+            </ul>
+          </div>
+
+          <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
+            <div className="flex items-center justify-between font-bold text-slate-900 dark:text-white">
+              <span>Dividend Allowance</span>
+              <span className="text-indigo-600 dark:text-indigo-400">£500 Annual Tax-Free</span>
+            </div>
+            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+              Dividends earned from non-ISA shares/GIAs above £500/year are taxed according to your income band:
+            </p>
+            <ul className="space-y-1 text-slate-600 dark:text-slate-400 list-disc list-inside">
+              <li><strong>Basic Rate:</strong> 8.75%</li>
+              <li><strong>Higher Rate:</strong> 33.75%</li>
+              <li><strong>Additional Rate:</strong> 39.35%</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      {/* Section 9: April 2027 Inheritance Tax (IHT) Reform */}
+      <div className="p-5 bg-purple-50/70 dark:bg-purple-950/40 rounded-2xl border border-purple-200 dark:border-purple-800/80 space-y-3 text-xs text-purple-950 dark:text-purple-200">
+        <div className="flex items-center gap-2 font-bold text-sm text-purple-900 dark:text-purple-100">
+          <Scale className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+          <span>April 2027 Inheritance Tax (IHT) Pension Inclusion Reform</span>
+        </div>
+        <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
+          From <strong>6 April 2027</strong>, unspent defined contribution pension pots and death benefits will be brought into the scope of UK Inheritance Tax (IHT) at 40% on estates exceeding the Nil-Rate Band (£325k standard + £175k residence).
+        </p>
+        <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-purple-200 dark:border-purple-800 text-[11px] text-slate-700 dark:text-slate-300 space-y-1">
+          <span className="font-bold text-purple-900 dark:text-purple-300 block">Planning Implication:</span>
+          <span>
+            The historical practice of hoarding pension pots until death and spending ISAs first is reversed under 2027 rules. The RetireFree UK <strong>Pension / Taxable First</strong> drawdown strategy models drawing pension wealth earlier to fund lifetime spending and reduce estate exposure.
+          </span>
         </div>
       </div>
 

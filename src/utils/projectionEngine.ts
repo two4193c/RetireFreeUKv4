@@ -331,9 +331,92 @@ function parseAnnuityTypeConfig(type?: string) {
     const primaryPensionPotBeforePcls = Math.round(primaryPensionPot);
     const partnerPensionPotBeforePcls = Math.round(partnerPensionPot);
 
-    // Upfront Tax-Free Lump Sum (PCLS) extraction for Primary
+    let primaryCrystallisedThisYear = 0;
+    let partnerCrystallisedThisYear = 0;
+    let primaryPclsDrawnThisYear = 0;
+    let partnerPclsDrawnThisYear = 0;
+
+    const isUpfrontPrimary = (profile.crystallisationMode === 'upfront') || (!profile.crystallisationMode && profile.takeLumpSumAtStart);
+    const isUpfrontPartner = (profile.partnerCrystallisationMode === 'upfront') || (!profile.partnerCrystallisationMode && (profile.partnerTakeLumpSumAtStart ?? profile.takeLumpSumAtStart));
+
+    // 1. Phased Crystallisation Tranches - Primary
+    const primaryActiveTranches = (profile.crystallisationTranches || []).filter(
+      (t) => t.enabled && t.age === age && t.owner !== 'partner'
+    );
+    if (canAccessPension && primaryUncrystallisedPot > 0 && primaryActiveTranches.length > 0) {
+      for (const tranche of primaryActiveTranches) {
+        if (primaryUncrystallisedPot <= 0) break;
+        const requestedGross = tranche.amount;
+        const grossCrystallised = Math.min(primaryUncrystallisedPot, requestedGross);
+        const pclsPct = Math.min(100, Math.max(0, tranche.pclsPercent ?? 25)) / 100;
+        const pclsAmount = Math.min(grossCrystallised * pclsPct, Math.max(0, primaryMaxLsa - primaryCumulativeTaxFreeDrawn));
+        const crystallisedDrawdownRemaining = Math.max(0, grossCrystallised - pclsAmount);
+
+        primaryCrystallisedPot += crystallisedDrawdownRemaining;
+        primaryUncrystallisedPot -= grossCrystallised;
+        primaryCumulativeTaxFreeDrawn += pclsAmount;
+        primaryCrystallisedThisYear += grossCrystallised;
+        primaryPclsDrawnThisYear += pclsAmount;
+
+        primaryPensionPot = primaryUncrystallisedPot + primaryCrystallisedPot;
+
+        // Route PCLS cash into chosen target pot / splits
+        if (pclsAmount > 0) {
+          const alloc = allocateLumpSumToPots(pclsAmount, tranche.targetPot || profile.lumpSumTargetPot, tranche.splits || profile.lumpSumSplits);
+          primaryIsaPot += alloc.toIsa;
+          primarySsIsaPot += alloc.toIsa;
+          primaryGiaPot += alloc.toGia;
+          primaryCashSavingsPot += alloc.toCashSavings;
+          primaryCashGiaPot = primaryGiaPot + primaryCashSavingsPot;
+        }
+      }
+      pensionPot = primaryPensionPot + partnerPensionPot;
+      isaPot = primaryIsaPot + partnerIsaPot;
+      giaPot = primaryGiaPot + partnerGiaPot;
+      cashSavingsPot = primaryCashSavingsPot + partnerCashSavingsPot;
+      cashGiaPot = giaPot + cashSavingsPot;
+    }
+
+    // 2. Phased Crystallisation Tranches - Partner
+    const partnerActiveTranches = (profile.partnerCrystallisationTranches || profile.crystallisationTranches || []).filter(
+      (t) => t.enabled && t.age === partnerAge && t.owner === 'partner'
+    );
+    if (profile.isCouplePlanning && !partnerDead && partnerCanAccessPension && partnerUncrystallisedPot > 0 && partnerActiveTranches.length > 0) {
+      for (const tranche of partnerActiveTranches) {
+        if (partnerUncrystallisedPot <= 0) break;
+        const requestedGross = tranche.amount;
+        const grossCrystallised = Math.min(partnerUncrystallisedPot, requestedGross);
+        const pclsPct = Math.min(100, Math.max(0, tranche.pclsPercent ?? 25)) / 100;
+        const pclsAmount = Math.min(grossCrystallised * pclsPct, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn));
+        const crystallisedDrawdownRemaining = Math.max(0, grossCrystallised - pclsAmount);
+
+        partnerCrystallisedPot += crystallisedDrawdownRemaining;
+        partnerUncrystallisedPot -= grossCrystallised;
+        partnerCumulativeTaxFreeDrawn += pclsAmount;
+        partnerCrystallisedThisYear += grossCrystallised;
+        partnerPclsDrawnThisYear += pclsAmount;
+
+        partnerPensionPot = partnerUncrystallisedPot + partnerCrystallisedPot;
+
+        if (pclsAmount > 0) {
+          const alloc = allocateLumpSumToPots(pclsAmount, tranche.targetPot || profile.partnerLumpSumTargetPot, tranche.splits || profile.partnerLumpSumSplits);
+          partnerIsaPot += alloc.toIsa;
+          partnerSsIsaPot += alloc.toIsa;
+          partnerGiaPot += alloc.toGia;
+          partnerCashSavingsPot += alloc.toCashSavings;
+          partnerCashGiaPot = partnerGiaPot + partnerCashSavingsPot;
+        }
+      }
+      pensionPot = primaryPensionPot + partnerPensionPot;
+      isaPot = primaryIsaPot + partnerIsaPot;
+      giaPot = primaryGiaPot + partnerGiaPot;
+      cashSavingsPot = primaryCashSavingsPot + partnerCashSavingsPot;
+      cashGiaPot = giaPot + cashSavingsPot;
+    }
+
+    // 3. Upfront Tax-Free Lump Sum (PCLS) extraction for Primary
     if (
-      profile.takeLumpSumAtStart &&
+      isUpfrontPrimary &&
       !pclsTaken &&
       age >= lumpSumTakeAge &&
       canAccessPension &&
@@ -350,6 +433,8 @@ function parseAnnuityTypeConfig(type?: string) {
       primaryCrystallisedPot += crystallisedDrawdownRemaining;
       primaryUncrystallisedPot = Math.max(0, primaryPensionPot - crystallisedTotal);
       primaryCumulativeTaxFreeDrawn += pclsAmount;
+      primaryCrystallisedThisYear += crystallisedTotal;
+      primaryPclsDrawnThisYear += pclsAmount;
 
       primaryPensionPot -= pclsAmount;
 
@@ -369,10 +454,10 @@ function parseAnnuityTypeConfig(type?: string) {
       pclsTaken = true;
     }
 
-    // Upfront Tax-Free Lump Sum (PCLS) extraction for Partner
+    // 4. Upfront Tax-Free Lump Sum (PCLS) extraction for Partner
     if (
       profile.isCouplePlanning &&
-      profile.partnerTakeLumpSumAtStart &&
+      isUpfrontPartner &&
       !partnerPclsTaken &&
       partnerAge >= partnerLumpSumTakeAge &&
       partnerCanAccessPension &&
@@ -389,6 +474,8 @@ function parseAnnuityTypeConfig(type?: string) {
       partnerCrystallisedPot += crystallisedDrawdownRemaining;
       partnerUncrystallisedPot = Math.max(0, partnerPensionPot - crystallisedTotal);
       partnerCumulativeTaxFreeDrawn += partnerPclsAmount;
+      partnerCrystallisedThisYear += crystallisedTotal;
+      partnerPclsDrawnThisYear += partnerPclsAmount;
 
       partnerPensionPot -= partnerPclsAmount;
 
@@ -1527,6 +1614,19 @@ function parseAnnuityTypeConfig(type?: string) {
         age,
         isRetired: false,
         pensionPot: Math.round(pensionPot),
+        uncrystallisedPot: Math.round(primaryUncrystallisedPot + partnerUncrystallisedPot),
+        crystallisedPot: Math.round(primaryCrystallisedPot + partnerCrystallisedPot),
+        primaryUncrystallisedPot: Math.round(primaryUncrystallisedPot),
+        primaryCrystallisedPot: Math.round(primaryCrystallisedPot),
+        partnerUncrystallisedPot: Math.round(partnerUncrystallisedPot),
+        partnerCrystallisedPot: Math.round(partnerCrystallisedPot),
+        crystallisedThisYear: Math.round(primaryCrystallisedThisYear + partnerCrystallisedThisYear),
+        primaryCrystallisedThisYear: Math.round(primaryCrystallisedThisYear),
+        partnerCrystallisedThisYear: Math.round(partnerCrystallisedThisYear),
+        pclsTaxFreeDrawnThisYear: Math.round(primaryPclsDrawnThisYear + partnerPclsDrawnThisYear),
+        primaryLsaRemaining: Math.round(Math.max(0, primaryMaxLsa - primaryCumulativeTaxFreeDrawn)),
+        partnerLsaRemaining: Math.round(Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn)),
+        totalLsaRemaining: Math.round(Math.max(0, primaryMaxLsa - primaryCumulativeTaxFreeDrawn) + (profile.isCouplePlanning ? Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn) : 0)),
         isaPot: Math.round(isaPot),
         stocksAndSharesIsaPot: Math.round(stocksAndSharesIsaPot),
         cashIsaPot: Math.round(cashIsaPot),
@@ -1582,6 +1682,10 @@ function parseAnnuityTypeConfig(type?: string) {
         totalWithdrawalAmount: 0,
         taxOnWithdrawal: 0,
         totalTaxPaid,
+        primaryTaxPaid: Math.round(primaryTaxThisYr.totalIncomeTax + primaryPsa.savingsInterestTax),
+        partnerTaxPaid: partnerTaxThisYr ? Math.round(partnerTaxThisYr.totalIncomeTax + partnerPsa.savingsInterestTax) : 0,
+        primaryNetIncome: 0,
+        partnerNetIncome: 0,
         savingsInterestTax: Math.round(accumSavingsTax),
         primarySavingsInterestTax: Math.round(primaryPsa.savingsInterestTax),
         partnerSavingsInterestTax: Math.round(partnerPsa.savingsInterestTax),
@@ -2653,6 +2757,19 @@ function parseAnnuityTypeConfig(type?: string) {
         age,
         isRetired: true,
         pensionPot: Math.round(pensionPot),
+        uncrystallisedPot: Math.round(primaryUncrystallisedPot + partnerUncrystallisedPot),
+        crystallisedPot: Math.round(primaryCrystallisedPot + partnerCrystallisedPot),
+        primaryUncrystallisedPot: Math.round(primaryUncrystallisedPot),
+        primaryCrystallisedPot: Math.round(primaryCrystallisedPot),
+        partnerUncrystallisedPot: Math.round(partnerUncrystallisedPot),
+        partnerCrystallisedPot: Math.round(partnerCrystallisedPot),
+        crystallisedThisYear: Math.round(primaryCrystallisedThisYear + partnerCrystallisedThisYear),
+        primaryCrystallisedThisYear: Math.round(primaryCrystallisedThisYear),
+        partnerCrystallisedThisYear: Math.round(partnerCrystallisedThisYear),
+        pclsTaxFreeDrawnThisYear: Math.round(primaryPclsDrawnThisYear + partnerPclsDrawnThisYear),
+        primaryLsaRemaining: Math.round(Math.max(0, primaryMaxLsa - primaryCumulativeTaxFreeDrawn)),
+        partnerLsaRemaining: Math.round(Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn)),
+        totalLsaRemaining: Math.round(Math.max(0, primaryMaxLsa - primaryCumulativeTaxFreeDrawn) + (profile.isCouplePlanning ? Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn) : 0)),
         isaPot: Math.round(isaPot),
         stocksAndSharesIsaPot: Math.round(primarySsIsaPot + partnerSsIsaPot),
         cashIsaPot: Math.round(primaryCashIsaPot + partnerCashIsaPot),
@@ -2733,6 +2850,10 @@ function parseAnnuityTypeConfig(type?: string) {
         totalWithdrawalAmount: Math.round(totalWithdrawal),
         taxOnWithdrawal: Math.round(taxOnWithdrawal),
         totalTaxPaid: Math.round(taxOnWithdrawal + decumSavingsTaxNominal),
+        primaryTaxPaid: Math.round(priTaxRetirement + (profile.isCouplePlanning ? priSavingsTaxNominal : decumSavingsTaxNominal)),
+        partnerTaxPaid: Math.round(profile.isCouplePlanning ? (partTaxRetirement + partSavingsTaxNominal) : 0),
+        primaryNetIncome: Math.round(Math.max(0, primaryGuaranteedTotal + priDrawGross + primaryIsaDrawdown + primaryCashDrawdown - priTaxRetirement - (profile.isCouplePlanning ? priSavingsTaxNominal : decumSavingsTaxNominal))),
+        partnerNetIncome: Math.round(profile.isCouplePlanning ? Math.max(0, partnerGuaranteedTotal + partDrawGross + partnerIsaDrawdown + partnerCashDrawdown - partTaxRetirement - partSavingsTaxNominal) : 0),
         savingsInterestTax: Math.round(decumSavingsTaxNominal),
         personalSavingsAllowanceUsed: Math.round(decumPsaUsedNominal),
         netRetirementIncome: netRetirementIncomeNominal,

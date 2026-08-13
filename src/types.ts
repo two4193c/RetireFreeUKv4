@@ -68,6 +68,20 @@ export type DbPensionTargetPot = 'cash_savings' | 'cash_isa' | 'stocks_and_share
 
 export type LumpSumTargetPot = 'stocks_and_shares_isa' | 'cash_isa' | 'cash_savings' | 'gia' | 'spend_clear_debt' | 'split';
 
+export type CrystallisationMode = 'upfront' | 'ufpls' | 'phased_tranches';
+
+export interface CrystallisationTranche {
+  id: string;
+  name?: string; // e.g. "Tranche 1 (Age 58)"
+  owner?: ItemOwner; // 'primary' | 'partner'
+  age: number; // Age when crystallisation occurs (e.g. 58)
+  amount: number; // Gross amount crystallised (£) e.g. 100,000
+  pclsPercent?: number; // % taken as tax-free cash (default 25%)
+  targetPot?: LumpSumTargetPot; // Where the 25% tax-free goes (e.g. 'stocks_and_shares_isa', 'cash_savings', 'spend_clear_debt')
+  splits?: LumpSumSplit[];
+  enabled: boolean;
+}
+
 export interface LumpSumSplit {
   id: string;
   pot: 'stocks_and_shares_isa' | 'cash_isa' | 'cash_savings' | 'gia' | 'spend_clear_debt';
@@ -337,6 +351,8 @@ export interface UserProfile {
   // Tax-Free Cash (PCLS) & Lump Sum Allowance (LSA)
   pclsLumpSumPercent: number; // Standard 25% or scheme protected %
   takeLumpSumAtStart: boolean; // Take tax-free lump sum upfront or drip feed via UFPLS
+  crystallisationMode?: CrystallisationMode; // 'upfront' | 'ufpls' | 'phased_tranches'
+  crystallisationTranches?: CrystallisationTranche[]; // Custom age-based partial crystallisation tranches
   lumpSumTiming?: 'access_age' | 'custom'; // Age timing option: age private pension is accessed vs custom
   lumpSumCustomAge?: number;
   lsaProtectionType: LsaProtectionType;
@@ -350,6 +366,8 @@ export interface UserProfile {
   // Partner Tax-Free Cash (PCLS) & Lump Sum Allowance (LSA)
   partnerPclsLumpSumPercent?: number;
   partnerTakeLumpSumAtStart?: boolean;
+  partnerCrystallisationMode?: CrystallisationMode;
+  partnerCrystallisationTranches?: CrystallisationTranche[];
   partnerLumpSumTiming?: 'access_age' | 'custom';
   partnerLumpSumCustomAge?: number;
   partnerLsaProtectionType?: LsaProtectionType;
@@ -663,6 +681,21 @@ export interface YearProjection {
   cashSavingsPot?: number;
   totalPot: number;
 
+  // Crystallised vs Uncrystallised Pension Sub-Pots & LSA Tracking
+  uncrystallisedPot?: number;
+  crystallisedPot?: number;
+  primaryUncrystallisedPot?: number;
+  primaryCrystallisedPot?: number;
+  partnerUncrystallisedPot?: number;
+  partnerCrystallisedPot?: number;
+  crystallisedThisYear?: number;
+  primaryCrystallisedThisYear?: number;
+  partnerCrystallisedThisYear?: number;
+  pclsTaxFreeDrawnThisYear?: number;
+  primaryLsaRemaining?: number;
+  partnerLsaRemaining?: number;
+  totalLsaRemaining?: number;
+
   // Primary vs Partner Pot Breakdown
   primaryPensionPot?: number;
   primaryPensionPotBeforeAnnuity?: number;
@@ -735,6 +768,10 @@ export interface YearProjection {
   totalWithdrawalAmount: number;
   taxOnWithdrawal: number;
   totalTaxPaid: number;
+  primaryTaxPaid?: number;
+  partnerTaxPaid?: number;
+  primaryNetIncome?: number;
+  partnerNetIncome?: number;
   savingsInterestTax?: number;
   primarySavingsInterestTax?: number;
   partnerSavingsInterestTax?: number;

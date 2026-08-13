@@ -19,6 +19,7 @@ import {
   ShieldAlert,
   AlertTriangle,
   CheckCircle2,
+  Coins,
 } from 'lucide-react';
 
 interface AnnualBreakdownTableProps {
@@ -691,6 +692,18 @@ export const AnnualBreakdownTable: React.FC<AnnualBreakdownTableProps> = ({
                       <div className="font-bold text-slate-800 dark:text-slate-200 mt-0.5">
                         £{(showTaxBreakdownModal.pensionPot || 0).toLocaleString()}
                       </div>
+                      {((showTaxBreakdownModal.uncrystallisedPot ?? 0) > 0 || (showTaxBreakdownModal.crystallisedPot ?? 0) > 0) && (
+                        <div className="text-[9px] text-slate-500 dark:text-slate-400 mt-1 pt-1 border-t border-slate-100 dark:border-slate-800 space-y-0.5">
+                          <div className="flex justify-between">
+                            <span>Uncryst:</span>
+                            <span className="font-semibold text-emerald-600 dark:text-emerald-400">£{(showTaxBreakdownModal.uncrystallisedPot || 0).toLocaleString()}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Cryst:</span>
+                            <span className="font-semibold text-indigo-600 dark:text-indigo-400">£{(showTaxBreakdownModal.crystallisedPot || 0).toLocaleString()}</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                     <div className="bg-white dark:bg-slate-900 p-2 rounded-xl border border-slate-200 dark:border-slate-800">
                       <div className="text-slate-400 font-bold">ISA</div>
@@ -706,6 +719,39 @@ export const AnnualBreakdownTable: React.FC<AnnualBreakdownTableProps> = ({
                     </div>
                   </div>
                 </div>
+
+                {/* Crystallisation Event Highlight Card */}
+                {((showTaxBreakdownModal.crystallisedThisYear || 0) > 0 || (showTaxBreakdownModal.pclsTaxFreeDrawnThisYear || 0) > 0) && (
+                  <div className="p-3 bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800/60 rounded-2xl text-amber-900 dark:text-amber-100 space-y-1.5 shadow-xs">
+                    <div className="font-extrabold text-xs flex items-center justify-between text-amber-800 dark:text-amber-200">
+                      <span className="flex items-center gap-1.5">
+                        <Coins className="w-3.5 h-3.5 text-amber-600" />
+                        <span>Pension Crystallisation Event</span>
+                      </span>
+                      <span className="text-[10px] font-bold bg-amber-200/80 dark:bg-amber-900 px-2 py-0.5 rounded-md">
+                        Tranche Processed
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
+                      <div className="bg-white/80 dark:bg-slate-900/80 p-2 rounded-xl border border-amber-200/60 dark:border-amber-800/40">
+                        <div className="text-slate-500 dark:text-slate-400">Gross Crystallised:</div>
+                        <div className="font-bold text-slate-900 dark:text-white mt-0.5">
+                          £{(showTaxBreakdownModal.crystallisedThisYear || 0).toLocaleString()}
+                        </div>
+                      </div>
+                      <div className="bg-white/80 dark:bg-slate-900/80 p-2 rounded-xl border border-amber-200/60 dark:border-amber-800/40">
+                        <div className="text-emerald-700 dark:text-emerald-400 font-semibold">25% PCLS Tax-Free:</div>
+                        <div className="font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                          +£{(showTaxBreakdownModal.pclsTaxFreeDrawnThisYear || 0).toLocaleString()}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-[10px] text-amber-800 dark:text-amber-300 flex justify-between pt-0.5 font-medium">
+                      <span>To Drawdown Pot: <strong>£{((showTaxBreakdownModal.crystallisedThisYear || 0) - (showTaxBreakdownModal.pclsTaxFreeDrawnThisYear || 0)).toLocaleString()}</strong></span>
+                      <span>Remaining LSA: <strong>£{(showTaxBreakdownModal.totalLsaRemaining ?? 268275).toLocaleString()}</strong></span>
+                    </div>
+                  </div>
+                )}
 
                 <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
                   <div className="py-2 flex justify-between items-center">

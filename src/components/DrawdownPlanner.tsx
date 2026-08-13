@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from 'react';
-import { UserProfile, LsaProtectionType, IncomeProductOption, AnnuityType, AnnuityDurationOption, AnnuityTranche, InvestmentPots, YearProjection, LumpSumSplit, PlannerScenario, DrawdownStrategy, AppMode } from '../types';
+import { UserProfile, LsaProtectionType, IncomeProductOption, AnnuityType, AnnuityDurationOption, AnnuityTranche, InvestmentPots, YearProjection, LumpSumSplit, PlannerScenario, DrawdownStrategy, AppMode, CrystallisationMode, CrystallisationTranche } from '../types';
 import { AnnuityPclsTaxAdviceCard } from './AnnuityPclsTaxAdviceCard';
 import { QuickDrawdownStrategyBar } from './QuickDrawdownStrategyBar';
+import { CrystallisationTrancheManager } from './CrystallisationTrancheManager';
 import { DEFAULT_PARTNER_POTS, DEFAULT_POTS, sanitizePots } from '../utils/defaultData';
 import {
   calculateMaxPcls,
@@ -1078,18 +1079,29 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
                 </div>
               </div>
 
-              <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-700 dark:text-slate-300 pt-1">
-                <input
-                  type="checkbox"
-                  checked={!!profile.takeLumpSumAtStart}
-                  onChange={(e) => updateField('takeLumpSumAtStart', e.target.checked)}
-                  className="w-4 h-4 text-emerald-600 rounded border-slate-300 dark:border-slate-700 focus:ring-emerald-500 cursor-pointer"
-                />
-                <span>Take Upfront Tax-Free Lump Sum (PCLS)</span>
-              </label>
+              {/* Crystallisation & PCLS Strategy Manager (Primary) */}
+              <CrystallisationTrancheManager
+                owner="primary"
+                personName={profile.name || 'Primary'}
+                pensionAccessAge={primaryPensionAccessAge}
+                projectedPotAtAccess={primaryProjectedPot || 0}
+                currentPotToday={primaryCurrentPot || 0}
+                lsaLimit={primaryLsaLimit}
+                mode={profile.crystallisationMode || (profile.takeLumpSumAtStart ? 'upfront' : 'ufpls')}
+                tranches={profile.crystallisationTranches || []}
+                onModeChange={(newMode) => {
+                  onChange({
+                    ...profile,
+                    crystallisationMode: newMode,
+                    takeLumpSumAtStart: newMode === 'upfront',
+                  });
+                }}
+                onTranchesChange={(newTranches) => updateField('crystallisationTranches', newTranches)}
+                accentColor="emerald"
+              />
 
               {/* HMRC PCLS Recycling Warning Banner */}
-              {profile.takeLumpSumAtStart && primaryTaxResult?.isPclsRecyclingRisk && (
+              {(profile.crystallisationMode === 'upfront' || profile.takeLumpSumAtStart) && primaryTaxResult?.isPclsRecyclingRisk && (
                 <div className="bg-rose-900/90 dark:bg-rose-950 text-white p-3.5 rounded-2xl border border-rose-700 space-y-1.5 shadow-sm my-2">
                   <div className="flex items-center gap-2 font-extrabold text-xs text-amber-300">
                     <ShieldAlert className="w-4 h-4 text-amber-300 shrink-0" />
@@ -1101,7 +1113,7 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
                 </div>
               )}
 
-              {profile.takeLumpSumAtStart && (
+              {(profile.crystallisationMode === 'upfront' || (!profile.crystallisationMode && profile.takeLumpSumAtStart)) && (
                 <div className="space-y-3 pl-6 pt-1 border-l-2 border-emerald-500/30 ml-1">
                   {/* Timing selector & Destination Pot for tax-free lump sum */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1194,7 +1206,7 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
               )}
 
               <div className="text-[11px] text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-700 leading-relaxed">
-                {profile.takeLumpSumAtStart ? (
+                {(profile.crystallisationMode === 'upfront' || (!profile.crystallisationMode && profile.takeLumpSumAtStart)) ? (
                   <span>
                     <strong>Upfront PCLS ({profile.name || 'Primary'}):</strong> Takes {primaryPclsPct}% tax-free cash (<strong>£{Math.round(primaryActualLumpSum || 0).toLocaleString()}</strong>) at <strong>Age {primaryLumpSumTakeAge}</strong> {
                       profile.lumpSumTargetPot === 'spend_clear_debt' ? 'used to Spend / Clear Debt' :
@@ -1206,6 +1218,10 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
                         'Stocks & Shares ISA'
                       }`
                     } {profile.lumpSumTiming === 'access_age' || !profile.lumpSumTiming ? `(when private pension is first accessed at age ${primaryPensionAccessAge})` : `(age ${primaryLumpSumTakeAge})`}.
+                  </span>
+                ) : profile.crystallisationMode === 'phased_tranches' ? (
+                  <span>
+                    <strong>Phased Crystallisation ({profile.name || 'Primary'}):</strong> Pension pot is split into <em>Uncrystallised</em> (retains 25% tax-free growth potential) and <em>Crystallised Drawdown</em> sub-pots. Each tranche extracts 25% tax-free cash to shelter while keeping 75% in drawdown for predictable income draws.
                   </span>
                 ) : (
                   <span>
@@ -1311,17 +1327,36 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
                 </div>
               </div>
 
-              <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-700 dark:text-slate-300 pt-1">
-                <input
-                  type="checkbox"
-                  checked={!!profile.partnerTakeLumpSumAtStart}
-                  onChange={(e) => updateField('partnerTakeLumpSumAtStart', e.target.checked)}
-                  className="w-4 h-4 text-rose-600 rounded border-slate-300 dark:border-slate-700 focus:ring-rose-500 cursor-pointer"
-                />
-                <span>Take Partner Upfront Tax-Free Lump Sum (PCLS)</span>
-              </label>
+              {/* Crystallisation & PCLS Strategy Manager (Partner) */}
+              <CrystallisationTrancheManager
+                owner="partner"
+                personName={profile.partnerName || 'Partner'}
+                pensionAccessAge={partnerPensionAccessAge}
+                projectedPotAtAccess={partnerProjectedPot || 0}
+                currentPotToday={partnerCurrentPot || 0}
+                lsaLimit={partnerLsaLimit}
+                mode={profile.partnerCrystallisationMode || (profile.partnerTakeLumpSumAtStart ? 'upfront' : 'ufpls')}
+                tranches={(profile.partnerCrystallisationTranches || profile.crystallisationTranches || []).filter((t) => t.owner === 'partner')}
+                onModeChange={(newMode) => {
+                  onChange({
+                    ...profile,
+                    partnerCrystallisationMode: newMode,
+                    partnerTakeLumpSumAtStart: newMode === 'upfront',
+                  });
+                }}
+                onTranchesChange={(newPartnerTranches) => {
+                  const nonPartnerTranches = (profile.crystallisationTranches || []).filter((t) => t.owner !== 'partner');
+                  const updatedAll = [...nonPartnerTranches, ...newPartnerTranches];
+                  onChange({
+                    ...profile,
+                    crystallisationTranches: updatedAll,
+                    partnerCrystallisationTranches: newPartnerTranches,
+                  });
+                }}
+                accentColor="rose"
+              />
 
-              {profile.partnerTakeLumpSumAtStart && (
+              {(profile.partnerCrystallisationMode === 'upfront' || (!profile.partnerCrystallisationMode && profile.partnerTakeLumpSumAtStart)) && (
                 <div className="space-y-3 pl-6 pt-1 border-l-2 border-rose-500/30 ml-1">
                   {/* Timing & Destination Pot selector for partner tax-free lump sum */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1414,7 +1449,7 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
               )}
 
               <div className="text-[11px] text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-700 leading-relaxed">
-                {profile.partnerTakeLumpSumAtStart ? (
+                {(profile.partnerCrystallisationMode === 'upfront' || (!profile.partnerCrystallisationMode && profile.partnerTakeLumpSumAtStart)) ? (
                   <span>
                     <strong>Partner Upfront PCLS ({profile.partnerName || 'Partner'}):</strong> Takes {partnerPclsPct}% tax-free cash (<strong>£{Math.round(partnerActualLumpSum || 0).toLocaleString()}</strong>) at <strong>Partner Age {partnerLumpSumTakeAge}</strong> {
                       profile.partnerLumpSumTargetPot === 'spend_clear_debt' ? 'used to Spend / Clear Debt' :
@@ -1426,6 +1461,10 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
                         'Stocks & Shares ISA'
                       }`
                     } {profile.partnerLumpSumTiming === 'access_age' || !profile.partnerLumpSumTiming ? `(when partner's private pension is first accessed at age ${partnerPensionAccessAge})` : `(age ${partnerLumpSumTakeAge})`}.
+                  </span>
+                ) : profile.partnerCrystallisationMode === 'phased_tranches' ? (
+                  <span>
+                    <strong>Partner Phased Crystallisation ({profile.partnerName || 'Partner'}):</strong> Pension pot is split into <em>Uncrystallised</em> and <em>Crystallised Drawdown</em> sub-pots.
                   </span>
                 ) : (
                   <span>

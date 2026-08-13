@@ -269,10 +269,55 @@ export function runHistoricModelingSimulation(
         retirementPotBalance = pensionPot + isaPot + cashGiaPot;
       }
 
+      const isUpfrontPrimary = (profile.crystallisationMode === 'upfront') || (!profile.crystallisationMode && profile.takeLumpSumAtStart);
+      const isUpfrontPartner = (profile.partnerCrystallisationMode === 'upfront') || (!profile.partnerCrystallisationMode && (profile.partnerTakeLumpSumAtStart ?? profile.takeLumpSumAtStart));
+
+      // Phased Crystallisation Tranches - Primary
+      const primaryActiveTranches = (profile.crystallisationTranches || []).filter(
+        (t) => t.enabled && t.age === age && t.owner !== 'partner'
+      );
+      if (canAccessPension && primaryPensionPot > 0 && primaryActiveTranches.length > 0) {
+        for (const tranche of primaryActiveTranches) {
+          if (primaryPensionPot <= 0) break;
+          const grossCrystallised = Math.min(primaryPensionPot, tranche.amount);
+          const pclsPct = Math.min(100, Math.max(0, tranche.pclsPercent ?? 25)) / 100;
+          const pclsAmount = Math.min(grossCrystallised * pclsPct, Math.max(0, maxLsa - primaryCumulativeTaxFreeDrawn));
+          primaryPensionPot -= pclsAmount;
+          primaryCumulativeTaxFreeDrawn += pclsAmount;
+          const alloc = allocateLumpSumToPots(pclsAmount, tranche.targetPot || profile.lumpSumTargetPot, tranche.splits || profile.lumpSumSplits);
+          primaryIsaPot += alloc.toIsa;
+          primaryCashGiaPot += alloc.toCashGia;
+        }
+        pensionPot = primaryPensionPot + partnerPensionPot;
+        isaPot = primaryIsaPot + partnerIsaPot;
+        cashGiaPot = primaryCashGiaPot + partnerCashGiaPot;
+      }
+
+      // Phased Crystallisation Tranches - Partner
+      const partnerActiveTranches = (profile.partnerCrystallisationTranches || profile.crystallisationTranches || []).filter(
+        (t) => t.enabled && t.age === partnerAge && t.owner === 'partner'
+      );
+      if (profile.isCouplePlanning && !partnerDead && partnerCanAccessPension && partnerPensionPot > 0 && partnerActiveTranches.length > 0) {
+        for (const tranche of partnerActiveTranches) {
+          if (partnerPensionPot <= 0) break;
+          const grossCrystallised = Math.min(partnerPensionPot, tranche.amount);
+          const pclsPct = Math.min(100, Math.max(0, tranche.pclsPercent ?? 25)) / 100;
+          const pclsAmount = Math.min(grossCrystallised * pclsPct, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn));
+          partnerPensionPot -= pclsAmount;
+          partnerCumulativeTaxFreeDrawn += pclsAmount;
+          const alloc = allocateLumpSumToPots(pclsAmount, tranche.targetPot || profile.partnerLumpSumTargetPot || profile.lumpSumTargetPot, tranche.splits || profile.partnerLumpSumSplits || profile.lumpSumSplits);
+          partnerIsaPot += alloc.toIsa;
+          partnerCashGiaPot += alloc.toCashGia;
+        }
+        pensionPot = primaryPensionPot + partnerPensionPot;
+        isaPot = primaryIsaPot + partnerIsaPot;
+        cashGiaPot = primaryCashGiaPot + partnerCashGiaPot;
+      }
+
       // Upfront PCLS - Primary
       if (
         isRetired &&
-        profile.takeLumpSumAtStart &&
+        isUpfrontPrimary &&
         !pclsTaken &&
         age >= lumpSumTakeAge &&
         canAccessPension &&
@@ -295,7 +340,7 @@ export function runHistoricModelingSimulation(
       // Upfront PCLS - Partner
       if (
         profile.isCouplePlanning &&
-        profile.partnerTakeLumpSumAtStart &&
+        isUpfrontPartner &&
         !partnerDead && !partnerPclsTaken &&
         partnerAge >= (profile.partnerTargetRetirementAge ?? profile.targetRetirementAge) &&
         partnerAge >= lumpSumTakeAge &&
