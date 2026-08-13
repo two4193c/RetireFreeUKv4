@@ -1121,33 +1121,34 @@ export async function generateFormulaExcelWorkbook(
 
 
   // ==========================================
-  // SHEET 6: Tax Free Lump Sums (PCLS & LSA Allowance)
+  // SHEET 6: Tax Free Lump Sums & Phased Crystallisation (Split Pots & LSA)
   // ==========================================
   const wsPcls = workbook.addWorksheet('Tax Free Lump Sums');
   wsPcls.columns = [
     { header: 'Owner', key: 'a', width: 14 },
-    { header: 'Lump Sum Event / Description', key: 'b', width: 32 },
+    { header: 'Lump Sum Event / Description', key: 'b', width: 34 },
     { header: 'Access / Lump Sum Age', key: 'c', width: 22 },
     { header: 'Execution Year', key: 'd', width: 16 },
     { header: 'PCLS Percentage (%)', key: 'e', width: 20 },
-    { header: 'Lump Sum Strategy', key: 'f', width: 28 },
+    { header: 'Lump Sum Strategy', key: 'f', width: 30 },
     { header: 'LSA Allowance Limit (£)', key: 'g', width: 24 },
     { header: 'Destination Pot Description', key: 'h', width: 34 },
-    { header: 'Total Lump Sum (£)', key: 'i', width: 22 },
-    { header: 'Allocated to ISAs (£)', key: 'j', width: 22 },
-    { header: 'Allocated to Cash & GIA (£)', key: 'k', width: 24 },
-    { header: 'Spent / Clear Debt (£)', key: 'l', width: 22 },
-    { header: 'Notes / Scheme Protection', key: 'm', width: 38 },
+    { header: 'Total Crystallised / Gross (£)', key: 'i', width: 26 },
+    { header: 'Tax-Free PCLS Cash (£)', key: 'j', width: 24 },
+    { header: 'Allocated to ISAs (£)', key: 'k', width: 22 },
+    { header: 'Allocated to Cash & GIA (£)', key: 'l', width: 24 },
+    { header: 'Spent / Clear Debt (£)', key: 'm', width: 22 },
+    { header: 'Notes / Scheme Protection', key: 'n', width: 44 },
   ];
 
   // Title Banner
   const pclsTitle = wsPcls.getRow(1);
   pclsTitle.height = 32;
-  pclsTitle.getCell(1).value = `RETIREFREE UK - TAX-FREE CASH (PCLS) & LUMP SUM ALLOWANCE (LSA) ALLOCATION BREAKDOWN`;
+  pclsTitle.getCell(1).value = `RETIREFREE UK - TAX-FREE CASH (PCLS), PHASED CRYSTALLISATION (SPLIT POTS) & LSA ALLOCATION`;
   pclsTitle.getCell(1).font = { name: 'Calibri', size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
   pclsTitle.getCell(1).fill = purpleFill;
   pclsTitle.getCell(1).alignment = { vertical: 'middle', horizontal: 'left' };
-  wsPcls.mergeCells('A1:M1');
+  wsPcls.mergeCells('A1:N1');
 
   wsPcls.addRow([]); // Row 2 Blank
 
@@ -1161,7 +1162,8 @@ export async function generateFormulaExcelWorkbook(
     'Lump Sum Strategy',
     'LSA Allowance Limit (£)',
     'Destination Pot Description',
-    'Total Lump Sum (£)',
+    'Total Crystallised / Gross (£)',
+    'Tax-Free PCLS Cash (£)',
     'Allocated to ISAs (£)',
     'Allocated to Cash & GIA (£)',
     'Spent / Clear Debt (£)',
@@ -1194,97 +1196,185 @@ export async function generateFormulaExcelWorkbook(
     return 'Cash Savings';
   };
 
-  // Calculate Primary PCLS Details from exact App Settings
+  const primaryLsaLimit = getLsaLimit(profile);
+  const partnerLsaLimit = getPartnerLsaLimit(profile);
   const primaryPclsAge = getLumpSumTakeAge(profile);
   const primaryPclsYear = (new Date().getFullYear()) + Math.max(0, primaryPclsAge - primaryCurrentAge);
-  const primaryPclsPct = (profile.pclsLumpSumPercent ?? 25) / 100;
-  const primaryTakeUpfront = profile.takeLumpSumAtStart !== false;
-  const primaryPclsStrat = primaryTakeUpfront ? 'Take Upfront at Access Age' : 'Drip-Feed / UFPLS';
-  const primaryLsaLimit = getLsaLimit(profile);
-  const primaryPclsDestStr = getPclsDestStr(profile.lumpSumTargetPot, profile.lumpSumSplits);
+  const isPhasedPrimary = profile.crystallisationMode === 'phased_tranches' || (profile.crystallisationTranches && profile.crystallisationTranches.length > 0);
 
-  const primaryProj = projections.find((p) => p.age === primaryPclsAge);
-  const primaryProjectedPension = primaryProj
-    ? (primaryProj.primaryPensionPotBeforePcls ?? (primaryProj.primaryPensionPotBeforeAnnuity ?? primaryProj.primaryPensionPot))
-    : getProjectedPensionAtTakeAge(profile, pots, primaryPclsAge, false);
+  let primaryEstPcls = 0;
+  let primaryEstGross = 0;
+  let primaryAlloc = { toIsa: 0, toGia: 0, toCashSavings: 0, toCashGia: 0, spentOrDebt: 0 };
 
-  const primaryMaxPcls = Math.min(primaryLsaLimit, Math.round(primaryProjectedPension * primaryPclsPct));
-  const primaryEstPcls = primaryTakeUpfront ? primaryMaxPcls : 0;
-  const primaryAlloc = allocateLumpSumToPots(primaryEstPcls, profile.lumpSumTargetPot, profile.lumpSumSplits);
+  // 1. Phased Crystallisation Tranches (Split Pot Tracking)
+  const activeTranchesPrimary = (profile.crystallisationTranches || []).filter(t => t.enabled !== false && t.owner !== 'partner');
+  activeTranchesPrimary.forEach((t) => {
+    const tAge = t.age || 57;
+    const tYear = (new Date().getFullYear()) + Math.max(0, tAge - primaryCurrentAge);
+    const tGross = t.amount || 0;
+    const tPct = (t.pclsPercent ?? 25) / 100;
+    const tPcls = Math.round(tGross * tPct);
+    const tCrystDrawdown = Math.max(0, tGross - tPcls);
+    const tDest = getPclsDestStr(t.targetPot as any, t.splits);
+    const tAlloc = allocateLumpSumToPots(tPcls, t.targetPot as any, t.splits);
 
-  const primaryProtAge = profile.protectedPensionAccessAge;
-  const primaryNote = profile.lsaProtectionType && profile.lsaProtectionType !== 'standard'
-    ? `LSA Protection: ${profile.lsaProtectionType} (£${primaryLsaLimit.toLocaleString()})`
-    : primaryProtAge
-    ? `Protected Access Age ${primaryProtAge} | Standard £268,275 LSA`
-    : 'Standard UK £268,275 LSA Cap';
+    primaryEstGross += tGross;
+    primaryEstPcls += tPcls;
+    primaryAlloc.toIsa += tAlloc.toIsa;
+    primaryAlloc.toCashGia += tAlloc.toCashGia;
+    primaryAlloc.spentOrDebt += tAlloc.spentOrDebt;
 
-  wsPcls.addRow([
-    'YOU',
-    'Primary Tax-Free Cash (PCLS)',
-    primaryPclsAge,
-    primaryPclsYear,
-    primaryPclsPct,
-    primaryPclsStrat,
-    primaryLsaLimit,
-    primaryPclsDestStr,
-    primaryEstPcls,
-    primaryAlloc.toIsa,
-    primaryAlloc.toCashGia,
-    primaryAlloc.spentOrDebt,
-    primaryNote,
-  ]);
+    wsPcls.addRow([
+      'YOU',
+      t.name || `Phased Crystallisation Tranche (Age ${tAge})`,
+      tAge,
+      tYear,
+      tPct,
+      'Phased Crystallisation (Split Pot)',
+      primaryLsaLimit,
+      tDest,
+      tGross,
+      tPcls,
+      tAlloc.toIsa,
+      tAlloc.toCashGia,
+      tAlloc.spentOrDebt,
+      `Split Pot: £${tPcls.toLocaleString()} PCLS + £${tCrystDrawdown.toLocaleString()} Crystallised Pot`,
+    ]);
+  });
 
-  let partnerPclsYear = 2099;
-  let partnerEstPcls = 0;
-  let partnerTakeUpfront = false;
-  let partnerAlloc = { toIsa: 0, toGia: 0, toCashSavings: 0, toCashGia: 0, spentOrDebt: 0 };
+  // If not phased, add Upfront PCLS if configured
+  if (!isPhasedPrimary) {
+    const primaryPclsPct = (profile.pclsLumpSumPercent ?? 25) / 100;
+    const primaryTakeUpfront = profile.takeLumpSumAtStart !== false;
+    const primaryPclsStrat = primaryTakeUpfront ? 'Take Upfront at Access Age' : 'Drip-Feed / UFPLS';
+    const primaryPclsDestStr = getPclsDestStr(profile.lumpSumTargetPot, profile.lumpSumSplits);
 
-  if (isCouple) {
-    const partnerPclsAge = getPartnerLumpSumTakeAge(profile);
-    const partnerCurrentAge = profile.partnerCurrentAge || profile.currentAge || 50;
-    const partnerAgeOffset = partnerCurrentAge - (profile.currentAge || 50);
-    partnerPclsYear = (new Date().getFullYear()) + Math.max(0, partnerPclsAge - partnerCurrentAge);
-    const partnerPclsPct = (profile.partnerPclsLumpSumPercent ?? 25) / 100;
-    partnerTakeUpfront = profile.partnerTakeLumpSumAtStart !== false;
-    const partnerPclsStrat = partnerTakeUpfront ? 'Take Upfront at Access Age' : 'Drip-Feed / UFPLS';
-    const partnerLsaLimit = getPartnerLsaLimit(profile);
-    const partnerPclsDestStr = getPclsDestStr(profile.partnerLumpSumTargetPot, profile.partnerLumpSumSplits);
+    const primaryProj = projections.find((p) => p.age === primaryPclsAge);
+    const primaryProjectedPension = primaryProj
+      ? (primaryProj.primaryPensionPotBeforePcls ?? (primaryProj.primaryPensionPotBeforeAnnuity ?? primaryProj.primaryPensionPot))
+      : getProjectedPensionAtTakeAge(profile, pots, primaryPclsAge, false);
 
-    const partnerProj = projections.find((p) => (p.age + partnerAgeOffset) === partnerPclsAge);
-    const partnerProjectedPension = partnerProj
-      ? (partnerProj.partnerPensionPotBeforePcls ?? (partnerProj.partnerPensionPotBeforeAnnuity ?? partnerProj.partnerPensionPot))
-      : getProjectedPensionAtTakeAge(profile, partnerPots, partnerPclsAge, true);
+    const maxPclsCalc = Math.min(primaryLsaLimit, Math.round(primaryProjectedPension * primaryPclsPct));
+    primaryEstPcls = primaryTakeUpfront ? maxPclsCalc : 0;
+    primaryEstGross = primaryTakeUpfront ? Math.min(primaryProjectedPension, maxPclsCalc / (primaryPclsPct || 0.25)) : 0;
+    primaryAlloc = allocateLumpSumToPots(primaryEstPcls, profile.lumpSumTargetPot, profile.lumpSumSplits);
 
-    const partnerMaxPcls = Math.min(partnerLsaLimit, Math.round(partnerProjectedPension * partnerPclsPct));
-    partnerEstPcls = partnerTakeUpfront ? partnerMaxPcls : 0;
-    partnerAlloc = allocateLumpSumToPots(partnerEstPcls, profile.partnerLumpSumTargetPot, profile.partnerLumpSumSplits);
-
-    const partnerProtAge = profile.partnerProtectedPensionAccessAge;
-    const partnerNote = profile.partnerLsaProtectionType && profile.partnerLsaProtectionType !== 'standard'
-      ? `LSA Protection: ${profile.partnerLsaProtectionType} (£${partnerLsaLimit.toLocaleString()})`
-      : partnerProtAge
-      ? `Protected Access Age ${partnerProtAge} | Standard £268,275 LSA`
+    const primaryProtAge = profile.protectedPensionAccessAge;
+    const primaryNote = profile.lsaProtectionType && profile.lsaProtectionType !== 'standard'
+      ? `LSA Protection: ${profile.lsaProtectionType} (£${primaryLsaLimit.toLocaleString()})`
+      : primaryProtAge
+      ? `Protected Access Age ${primaryProtAge} | Standard £268,275 LSA`
       : 'Standard UK £268,275 LSA Cap';
 
     wsPcls.addRow([
-      'PARTNER',
-      'Partner Tax-Free Cash (PCLS)',
-      partnerPclsAge,
-      partnerPclsYear,
-      partnerPclsPct,
-      partnerPclsStrat,
-      partnerLsaLimit,
-      partnerPclsDestStr,
-      partnerEstPcls,
-      partnerAlloc.toIsa,
-      partnerAlloc.toCashGia,
-      partnerAlloc.spentOrDebt,
-      partnerNote,
+      'YOU',
+      'Primary Tax-Free Cash (PCLS)',
+      primaryPclsAge,
+      primaryPclsYear,
+      primaryPclsPct,
+      primaryPclsStrat,
+      primaryLsaLimit,
+      primaryPclsDestStr,
+      primaryEstGross,
+      primaryEstPcls,
+      primaryAlloc.toIsa,
+      primaryAlloc.toCashGia,
+      primaryAlloc.spentOrDebt,
+      primaryNote,
     ]);
   }
 
+  // Partner Tranches / Upfront PCLS
+  let partnerEstGross = 0;
+  let partnerEstPcls = 0;
+  let partnerAlloc = { toIsa: 0, toGia: 0, toCashSavings: 0, toCashGia: 0, spentOrDebt: 0 };
+
+  if (isCouple) {
+    const partnerCurrentAge = profile.partnerCurrentAge || profile.currentAge || 50;
+    const partnerAgeOffset = partnerCurrentAge - (profile.currentAge || 50);
+    const partnerActiveTranches = (profile.partnerCrystallisationTranches || profile.crystallisationTranches || []).filter(t => t.enabled !== false && t.owner === 'partner');
+    const isPhasedPartner = profile.partnerCrystallisationMode === 'phased_tranches' || partnerActiveTranches.length > 0;
+
+    partnerActiveTranches.forEach((t) => {
+      const tAge = t.age || 57;
+      const tYear = (new Date().getFullYear()) + Math.max(0, tAge - partnerCurrentAge);
+      const tGross = t.amount || 0;
+      const tPct = (t.pclsPercent ?? 25) / 100;
+      const tPcls = Math.round(tGross * tPct);
+      const tCrystDrawdown = Math.max(0, tGross - tPcls);
+      const tDest = getPclsDestStr((t.targetPot || profile.partnerLumpSumTargetPot) as any, t.splits || profile.partnerLumpSumSplits);
+      const tAlloc = allocateLumpSumToPots(tPcls, (t.targetPot || profile.partnerLumpSumTargetPot) as any, t.splits || profile.partnerLumpSumSplits);
+
+      partnerEstGross += tGross;
+      partnerEstPcls += tPcls;
+      partnerAlloc.toIsa += tAlloc.toIsa;
+      partnerAlloc.toCashGia += tAlloc.toCashGia;
+      partnerAlloc.spentOrDebt += tAlloc.spentOrDebt;
+
+      wsPcls.addRow([
+        'PARTNER',
+        t.name || `Partner Phased Crystallisation Tranche (Age ${tAge})`,
+        tAge,
+        tYear,
+        tPct,
+        'Phased Crystallisation (Split Pot)',
+        partnerLsaLimit,
+        tDest,
+        tGross,
+        tPcls,
+        tAlloc.toIsa,
+        tAlloc.toCashGia,
+        tAlloc.spentOrDebt,
+        `Split Pot: £${tPcls.toLocaleString()} PCLS + £${tCrystDrawdown.toLocaleString()} Crystallised Pot`,
+      ]);
+    });
+
+    if (!isPhasedPartner) {
+      const partnerPclsAge = getPartnerLumpSumTakeAge(profile);
+      const partnerPclsYear = (new Date().getFullYear()) + Math.max(0, partnerPclsAge - partnerCurrentAge);
+      const partnerPclsPct = (profile.partnerPclsLumpSumPercent ?? 25) / 100;
+      const partnerTakeUpfront = profile.partnerTakeLumpSumAtStart !== false;
+      const partnerPclsStrat = partnerTakeUpfront ? 'Take Upfront at Access Age' : 'Drip-Feed / UFPLS';
+      const partnerPclsDestStr = getPclsDestStr(profile.partnerLumpSumTargetPot, profile.partnerLumpSumSplits);
+
+      const partnerProj = projections.find((p) => (p.age + partnerAgeOffset) === partnerPclsAge);
+      const partnerProjectedPension = partnerProj
+        ? (partnerProj.partnerPensionPotBeforePcls ?? (partnerProj.partnerPensionPotBeforeAnnuity ?? partnerProj.partnerPensionPot))
+        : getProjectedPensionAtTakeAge(profile, partnerPots, partnerPclsAge, true);
+
+      const partnerMaxPcls = Math.min(partnerLsaLimit, Math.round(partnerProjectedPension * partnerPclsPct));
+      partnerEstPcls = partnerTakeUpfront ? partnerMaxPcls : 0;
+      partnerEstGross = partnerTakeUpfront ? Math.min(partnerProjectedPension, partnerMaxPcls / (partnerPclsPct || 0.25)) : 0;
+      partnerAlloc = allocateLumpSumToPots(partnerEstPcls, profile.partnerLumpSumTargetPot, profile.partnerLumpSumSplits);
+
+      const partnerProtAge = profile.partnerProtectedPensionAccessAge;
+      const partnerNote = profile.partnerLsaProtectionType && profile.partnerLsaProtectionType !== 'standard'
+        ? `LSA Protection: ${profile.partnerLsaProtectionType} (£${partnerLsaLimit.toLocaleString()})`
+        : partnerProtAge
+        ? `Protected Access Age ${partnerProtAge} | Standard £268,275 LSA`
+        : 'Standard UK £268,275 LSA Cap';
+
+      wsPcls.addRow([
+        'PARTNER',
+        'Partner Tax-Free Cash (PCLS)',
+        partnerPclsAge,
+        partnerPclsYear,
+        partnerPclsPct,
+        partnerPclsStrat,
+        partnerLsaLimit,
+        partnerPclsDestStr,
+        partnerEstGross,
+        partnerEstPcls,
+        partnerAlloc.toIsa,
+        partnerAlloc.toCashGia,
+        partnerAlloc.spentOrDebt,
+        partnerNote,
+      ]);
+    }
+  }
+
   // Defined Benefit Pension Lump Sums (if configured in App Settings)
+  let dbGrossTotal = 0;
   let dbLumpSumTotal = 0;
   let dbIsaTotal = 0;
   let dbCashTotal = 0;
@@ -1303,6 +1393,7 @@ export async function generateFormulaExcelWorkbook(
       const dbDest = getPclsDestStr(db.targetPot as any);
       const dbAlloc = allocateLumpSumToPots(db.taxFreeLumpSum, db.targetPot as any, undefined);
 
+      dbGrossTotal += db.taxFreeLumpSum;
       dbLumpSumTotal += db.taxFreeLumpSum;
       dbIsaTotal += dbAlloc.toIsa;
       dbCashTotal += dbAlloc.toCashGia;
@@ -1318,6 +1409,7 @@ export async function generateFormulaExcelWorkbook(
         dbLsa,
         dbDest,
         db.taxFreeLumpSum,
+        db.taxFreeLumpSum,
         dbAlloc.toIsa,
         dbAlloc.toCashGia,
         dbAlloc.spentOrDebt,
@@ -1326,12 +1418,12 @@ export async function generateFormulaExcelWorkbook(
     }
   });
 
-  // Pre-fill extra empty template rows up to Row 15
+  // Pre-fill extra empty template rows up to Row 20
   const currentPclsRows = wsPcls.lastRow!.number;
-  for (let r = currentPclsRows + 1; r <= 15; r++) {
+  for (let r = currentPclsRows + 1; r <= 20; r++) {
     wsPcls.addRow([
       'YOU',
-      'Extra Scheme PCLS (Optional)',
+      'Extra Scheme PCLS / Tranche (Optional)',
       57,
       2099,
       0.25,
@@ -1342,13 +1434,14 @@ export async function generateFormulaExcelWorkbook(
       0,
       0,
       0,
+      0,
       'User Added Custom Scheme',
     ]);
   }
 
   // Summary Total Row
   wsPcls.addRow([
-    'TOTAL TAX-FREE LUMP SUMS',
+    'TOTAL TAX-FREE LUMP SUMS & TRANCHES',
     '',
     '',
     '',
@@ -1356,16 +1449,17 @@ export async function generateFormulaExcelWorkbook(
     '',
     '',
     '',
-    { formula: 'SUM(I4:I15)', result: primaryEstPcls + partnerEstPcls + dbLumpSumTotal },
-    { formula: 'SUM(J4:J15)', result: primaryAlloc.toIsa + partnerAlloc.toIsa + dbIsaTotal },
-    { formula: 'SUM(K4:K15)', result: primaryAlloc.toCashGia + partnerAlloc.toCashGia + dbCashTotal },
-    { formula: 'SUM(L4:L15)', result: primaryAlloc.spentOrDebt + partnerAlloc.spentOrDebt + dbDebtTotal },
+    { formula: 'SUM(I4:I20)', result: primaryEstGross + partnerEstGross + dbGrossTotal },
+    { formula: 'SUM(J4:J20)', result: primaryEstPcls + partnerEstPcls + dbLumpSumTotal },
+    { formula: 'SUM(K4:K20)', result: primaryAlloc.toIsa + partnerAlloc.toIsa + dbIsaTotal },
+    { formula: 'SUM(L4:L20)', result: primaryAlloc.toCashGia + partnerAlloc.toCashGia + dbCashTotal },
+    { formula: 'SUM(M4:M20)', result: primaryAlloc.spentOrDebt + partnerAlloc.spentOrDebt + dbDebtTotal },
     '',
   ]);
   const pclsTotRow = wsPcls.lastRow!;
   pclsTotRow.font = fontBold;
 
-  for (let r = 4; r <= 16; r++) {
+  for (let r = 4; r <= 21; r++) {
     const row = wsPcls.getRow(r);
     row.getCell(3).numFmt = '0';
     row.getCell(4).numFmt = '0';
@@ -1377,6 +1471,7 @@ export async function generateFormulaExcelWorkbook(
     row.getCell(10).numFmt = '£#,##0';
     row.getCell(11).numFmt = '£#,##0';
     row.getCell(12).numFmt = '£#,##0';
+    row.getCell(13).numFmt = '£#,##0';
     row.eachCell((cell) => { cell.border = borderThin; });
   }
 
@@ -2089,18 +2184,18 @@ export async function generateFormulaExcelWorkbook(
 
 
   // ==========================================
-  // SHEET 8: Ledger (Master Projections Table)
+  // SHEET 8: Ledger (Master Projections Table with Split Pot Tracking)
   // ==========================================
   const wsSched = workbook.addWorksheet('Ledger');
 
   // Title Banner
   const schedTitle = wsSched.getRow(1);
   schedTitle.height = 32;
-  schedTitle.getCell(1).value = `RETIREFREE UK - MASTER PROJECTION LEDGER`;
+  schedTitle.getCell(1).value = `RETIREFREE UK - MASTER PROJECTION LEDGER (SPLIT POT TRACKING)`;
   schedTitle.getCell(1).font = { name: 'Calibri', size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
   schedTitle.getCell(1).fill = darkSlateFill;
   schedTitle.getCell(1).alignment = { vertical: 'middle', horizontal: 'left' };
-  wsSched.mergeCells('A1:AD1');
+  wsSched.mergeCells('A1:AJ1');
 
   const headers = [
     'Year',
@@ -2113,8 +2208,10 @@ export async function generateFormulaExcelWorkbook(
     'State Pension PARTNER (£)',
     'DB & Fixed Income YOU (£)',
     'DB & Fixed Income PARTNER (£)',
-    'PCLS Tax-Free Drawdown YOU (£)',
-    'PCLS Tax-Free Drawdown PARTNER (£)',
+    'Crystallised Tranche YOU (£)',
+    'Crystallised Tranche PARTNER (£)',
+    'PCLS Tax-Free Cash YOU (£)',
+    'PCLS Tax-Free Cash PARTNER (£)',
     'Taxable Pension Drawdown YOU (£)',
     'Taxable Pension Drawdown PARTNER (£)',
     'Total Taxable Income YOU (£)',
@@ -2124,11 +2221,15 @@ export async function generateFormulaExcelWorkbook(
     'Net Income Received YOU (£)',
     'Net Income Received PARTNER (£)',
     'Household Net Income (£)',
-    'DC Pension Balance YOU (£)',
+    'DC Uncrystallised Pot YOU (£)',
+    'DC Crystallised Drawdown Pot YOU (£)',
+    'DC Total Pension Pot YOU (£)',
     'ISA Balance YOU (£)',
     'Cash & GIA Balance YOU (£)',
     'Total Portfolio Wealth YOU (£)',
-    'DC Pension Balance PARTNER (£)',
+    'DC Uncrystallised Pot PARTNER (£)',
+    'DC Crystallised Drawdown Pot PARTNER (£)',
+    'DC Total Pension Pot PARTNER (£)',
     'ISA Balance PARTNER (£)',
     'Cash & GIA Balance PARTNER (£)',
     'Total Portfolio Wealth PARTNER (£)',
@@ -2183,77 +2284,70 @@ export async function generateFormulaExcelWorkbook(
     const dbYouFormula = `SUMPRODUCT(('Fixed Income'!$E$4:$E$25) * ('Fixed Income'!$B$4:$B$25="YOU") * (B${rowNum}>='Fixed Income'!$C$4:$C$25) * (B${rowNum}<='Fixed Income'!$D$4:$D$25) * IF('Fixed Income'!$F$4:$F$25="CPI Indexed", (1+'Settings'!$B$11)^${idx}, 1))`;
     const dbPartnerFormula = isCouple ? `SUMPRODUCT(('Fixed Income'!$E$4:$E$25) * ('Fixed Income'!$B$4:$B$25="PARTNER") * (C${rowNum}>='Fixed Income'!$C$4:$C$25) * (C${rowNum}<='Fixed Income'!$D$4:$D$25) * IF('Fixed Income'!$F$4:$F$25="CPI Indexed", (1+'Settings'!$B$11)^${idx}, 1))` : '0';
 
-    const prevPensionYouRef = idx === 0 ? initPensionYou : `V${prevRowNum}`;
-    const prevIsaYouRef = idx === 0 ? initIsaYou : `W${prevRowNum}`;
-    const prevCashYouRef = idx === 0 ? initCashYou : `X${prevRowNum}`;
+    // Previous Pot Balances
+    const prevUncrystYouRef = idx === 0 ? initPensionYou : `X${prevRowNum}`;
+    const prevCrystYouRef = idx === 0 ? 0 : `Y${prevRowNum}`;
+    const prevIsaYouRef = idx === 0 ? initIsaYou : `AA${prevRowNum}`;
+    const prevCashYouRef = idx === 0 ? initCashYou : `AB${prevRowNum}`;
 
-    const prevPensionPartnerRef = idx === 0 ? initPensionPartner : `Z${prevRowNum}`;
-    const prevIsaPartnerRef = idx === 0 ? initIsaPartner : `AA${prevRowNum}`;
-    const prevCashPartnerRef = idx === 0 ? initCashPartner : `AB${prevRowNum}`;
+    const prevUncrystPartnerRef = idx === 0 ? initPensionPartner : `AD${prevRowNum}`;
+    const prevCrystPartnerRef = idx === 0 ? 0 : `AE${prevRowNum}`;
+    const prevIsaPartnerRef = idx === 0 ? initIsaPartner : `AG${prevRowNum}`;
+    const prevCashPartnerRef = idx === 0 ? initCashPartner : `AH${prevRowNum}`;
 
-    const shortfallHouseholdFormula = `MAX(0, F${rowNum} - (G${rowNum}+H${rowNum}+I${rowNum}+J${rowNum}))`;
-    const shortfallYouFormula = isCouple ? `(${shortfallHouseholdFormula})/2` : shortfallHouseholdFormula;
-    const shortfallPartnerFormula = isCouple ? `(${shortfallHouseholdFormula})/2` : '0';
+    // Crystallised Tranches & PCLS Cash (Looked up from Sheet 6)
+    const crystTrancheYouFormula = `SUMIFS('Tax Free Lump Sums'!$I$4:$I$25, 'Tax Free Lump Sums'!$A$4:$A$25, "YOU", 'Tax Free Lump Sums'!$D$4:$D$25, A${rowNum})`;
+    const crystTranchePartnerFormula = isCouple ? `SUMIFS('Tax Free Lump Sums'!$I$4:$I$25, 'Tax Free Lump Sums'!$A$4:$A$25, "PARTNER", 'Tax Free Lump Sums'!$D$4:$D$25, A${rowNum})` : '0';
+
+    const pclsCashYouFormula = `SUMIFS('Tax Free Lump Sums'!$J$4:$J$25, 'Tax Free Lump Sums'!$A$4:$A$25, "YOU", 'Tax Free Lump Sums'!$D$4:$D$25, A${rowNum})`;
+    const pclsCashPartnerFormula = isCouple ? `SUMIFS('Tax Free Lump Sums'!$J$4:$J$25, 'Tax Free Lump Sums'!$A$4:$A$25, "PARTNER", 'Tax Free Lump Sums'!$D$4:$D$25, A${rowNum})` : '0';
 
     const strategy = profile.drawdownStrategy || 'isa_first';
     
+    // Taxable Drawdown from Pension / Crystallised Drawdown Pot (Col O & P)
+    // When filling a tax band (tax-free, basic, higher), accesses up to the band ceiling ('Settings'!$B$5, $B$6, $B$7) minus taxable fixed income (State Pension & DB pensions)
     let taxableDrawdownYouFormula = '';
-    if (strategy === 'tax_free_bracket') {
-      taxableDrawdownYouFormula = `IF(D${rowNum}="Accumulation", 0, MIN(MAX(0, ${prevPensionYouRef} * 0.75), MAX(0, MIN('Settings'!$B$5 - (G${rowNum}+I${rowNum}), ${shortfallYouFormula} - (G${rowNum}+I${rowNum})))))`;
-    } else if (strategy === 'basic_rate_bracket') {
-      taxableDrawdownYouFormula = `IF(D${rowNum}="Accumulation", 0, MIN(MAX(0, ${prevPensionYouRef} * 0.75), MAX(0, MIN('Settings'!$B$6 - (G${rowNum}+I${rowNum}), ${shortfallYouFormula} - (G${rowNum}+I${rowNum})))))`;
+    if (strategy === 'basic_rate_bracket') {
+      taxableDrawdownYouFormula = `IF(D${rowNum}="Accumulation", 0, MIN(MAX(0, ${prevCrystYouRef} + (K${rowNum} - M${rowNum}) + (${prevUncrystYouRef} * 0.75)), MAX(0, 'Settings'!$B$6 - (G${rowNum} + I${rowNum}))))`;
+    } else if (strategy === 'tax_free_bracket') {
+      taxableDrawdownYouFormula = `IF(D${rowNum}="Accumulation", 0, MIN(MAX(0, ${prevCrystYouRef} + (K${rowNum} - M${rowNum}) + (${prevUncrystYouRef} * 0.75)), MAX(0, 'Settings'!$B$5 - (G${rowNum} + I${rowNum}))))`;
+    } else if (strategy === 'higher_rate_bracket') {
+      taxableDrawdownYouFormula = `IF(D${rowNum}="Accumulation", 0, MIN(MAX(0, ${prevCrystYouRef} + (K${rowNum} - M${rowNum}) + (${prevUncrystYouRef} * 0.75)), MAX(0, 'Settings'!$B$7 - (G${rowNum} + I${rowNum}))))`;
     } else {
-      taxableDrawdownYouFormula = `IF(D${rowNum}="Accumulation", 0, MIN(MAX(0, ${prevPensionYouRef} * 0.75), (${shortfallYouFormula})/0.8))`;
+      taxableDrawdownYouFormula = `IF(D${rowNum}="Accumulation", 0, MIN(MAX(0, ${prevCrystYouRef} + (K${rowNum} - M${rowNum}) + (${prevUncrystYouRef} * 0.75)), MAX(0, F${rowNum} - (G${rowNum} + I${rowNum} + M${rowNum})) / 0.8))`;
     }
 
     let taxableDrawdownPartnerFormula = '0';
     if (isCouple) {
-      if (strategy === 'tax_free_bracket') {
-        taxableDrawdownPartnerFormula = `IF(D${rowNum}="Accumulation", 0, MIN(MAX(0, ${prevPensionPartnerRef} * 0.75), MAX(0, MIN('Settings'!$B$5 - (H${rowNum}+J${rowNum}), ${shortfallPartnerFormula} - (H${rowNum}+J${rowNum})))))`;
-      } else if (strategy === 'basic_rate_bracket') {
-        taxableDrawdownPartnerFormula = `IF(D${rowNum}="Accumulation", 0, MIN(MAX(0, ${prevPensionPartnerRef} * 0.75), MAX(0, MIN('Settings'!$B$6 - (H${rowNum}+J${rowNum}), ${shortfallPartnerFormula} - (H${rowNum}+J${rowNum})))))`;
+      if (strategy === 'basic_rate_bracket') {
+        taxableDrawdownPartnerFormula = `IF(D${rowNum}="Accumulation", 0, MIN(MAX(0, ${prevCrystPartnerRef} + (L${rowNum} - N${rowNum}) + (${prevUncrystPartnerRef} * 0.75)), MAX(0, 'Settings'!$B$6 - (H${rowNum} + J${rowNum}))))`;
+      } else if (strategy === 'tax_free_bracket') {
+        taxableDrawdownPartnerFormula = `IF(D${rowNum}="Accumulation", 0, MIN(MAX(0, ${prevCrystPartnerRef} + (L${rowNum} - N${rowNum}) + (${prevUncrystPartnerRef} * 0.75)), MAX(0, 'Settings'!$B$5 - (H${rowNum} + J${rowNum}))))`;
+      } else if (strategy === 'higher_rate_bracket') {
+        taxableDrawdownPartnerFormula = `IF(D${rowNum}="Accumulation", 0, MIN(MAX(0, ${prevCrystPartnerRef} + (L${rowNum} - N${rowNum}) + (${prevUncrystPartnerRef} * 0.75)), MAX(0, 'Settings'!$B$7 - (H${rowNum} + J${rowNum}))))`;
       } else {
-        taxableDrawdownPartnerFormula = `IF(D${rowNum}="Accumulation", 0, MIN(MAX(0, ${prevPensionPartnerRef} * 0.75), (${shortfallPartnerFormula})/0.8))`;
+        taxableDrawdownPartnerFormula = `IF(D${rowNum}="Accumulation", 0, MIN(MAX(0, ${prevCrystPartnerRef} + (L${rowNum} - N${rowNum}) + (${prevUncrystPartnerRef} * 0.75)), MAX(0, (F${rowNum}/2) - (H${rowNum} + J${rowNum} + N${rowNum})) / 0.8))`;
       }
     }
 
-    const calYear = (new Date().getFullYear()) + idx;
-    const pclsUpfrontYouIn = `SUMIFS('Tax Free Lump Sums'!$I$4:$I$15, 'Tax Free Lump Sums'!$A$4:$A$15, "YOU", 'Tax Free Lump Sums'!$D$4:$D$15, A${rowNum})`;
-    const pclsDbYouIn = `SUMIFS('Tax Free Lump Sums'!$I$4:$I$15, 'Tax Free Lump Sums'!$A$4:$A$15, "YOU", 'Tax Free Lump Sums'!$D$4:$D$15, A${rowNum}, 'Tax Free Lump Sums'!$B$4:$B$15, "*DB*")`;
-    const pclsYouFormula = `IF(D${rowNum}="Accumulation", ${pclsUpfrontYouIn}, ${pclsUpfrontYouIn} + MIN(MAX(0, ${prevPensionYouRef} - M${rowNum}), IF(SUM(K$3:K${prevRowNum}) >= 'Settings'!$B$8, 0, MIN('Settings'!$B$8 - SUM(K$3:K${prevRowNum}), MAX(0, M${rowNum} * (25 / 75))))))`;
+    const totalTaxableYouFormula = `G${rowNum} + I${rowNum} + O${rowNum}`;
+    const totalTaxablePartnerFormula = `H${rowNum} + J${rowNum} + P${rowNum}`;
 
-    const pclsUpfrontPartnerIn = isCouple ? `SUMIFS('Tax Free Lump Sums'!$I$4:$I$15, 'Tax Free Lump Sums'!$A$4:$A$15, "PARTNER", 'Tax Free Lump Sums'!$D$4:$D$15, A${rowNum})` : '0';
-    const pclsDbPartnerIn = isCouple ? `SUMIFS('Tax Free Lump Sums'!$I$4:$I$15, 'Tax Free Lump Sums'!$A$4:$A$15, "PARTNER", 'Tax Free Lump Sums'!$D$4:$D$15, A${rowNum}, 'Tax Free Lump Sums'!$B$4:$B$15, "*DB*")` : '0';
-    const pclsPartnerFormula = isCouple ? `IF(D${rowNum}="Accumulation", ${pclsUpfrontPartnerIn}, ${pclsUpfrontPartnerIn} + MIN(MAX(0, ${prevPensionPartnerRef} - N${rowNum}), IF(SUM(L$3:L${prevRowNum}) >= 'Settings'!$B$8, 0, MIN('Settings'!$B$8 - SUM(L$3:L${prevRowNum}), MAX(0, N${rowNum} * (25 / 75))))))` : '0';
+    const taxPaidYouFormula = `IF(Q${rowNum}>'Settings'!$B$5, MAX(0, MIN(Q${rowNum}-'Settings'!$B$5, 'Settings'!$B$6-'Settings'!$B$5)*0.20) + MAX(0, MIN(Q${rowNum}-'Settings'!$B$6, 'Settings'!$B$7-'Settings'!$B$6))*0.40 + MAX(0, Q${rowNum}-'Settings'!$B$7)*0.45, 0)`;
+    const taxPaidPartnerFormula = isCouple ? `IF(R${rowNum}>'Settings'!$B$5, MAX(0, MIN(R${rowNum}-'Settings'!$B$5, 'Settings'!$B$6-'Settings'!$B$5)*0.20) + MAX(0, MIN(R${rowNum}-'Settings'!$B$6, 'Settings'!$B$7-'Settings'!$B$6))*0.40 + MAX(0, R${rowNum}-'Settings'!$B$7)*0.45, 0)` : '0';
 
-    const totalTaxableYouFormula = `G${rowNum}+I${rowNum}+M${rowNum}`;
-    const totalTaxablePartnerFormula = `H${rowNum}+J${rowNum}+N${rowNum}`;
+    const netIncomeYouFormula = `IF(D${rowNum}="Accumulation", 0, Q${rowNum} - S${rowNum} + M${rowNum})`;
+    const netIncomePartnerFormula = isCouple ? `IF(D${rowNum}="Accumulation", 0, R${rowNum} - T${rowNum} + N${rowNum})` : '0';
+    const householdNetIncomeFormula = `U${rowNum} + V${rowNum}`;
 
-    const taxPaidYouFormula = `IF(O${rowNum}>'Settings'!$B$5, MAX(0, MIN(O${rowNum}-'Settings'!$B$5, 'Settings'!$B$6-'Settings'!$B$5)*0.20) + MAX(0, MIN(O${rowNum}-'Settings'!$B$6, 'Settings'!$B$7-'Settings'!$B$6))*0.40 + MAX(0, O${rowNum}-'Settings'!$B$7)*0.45, 0)`;
-    const taxPaidPartnerFormula = isCouple ? `IF(P${rowNum}>'Settings'!$B$5, MAX(0, MIN(P${rowNum}-'Settings'!$B$5, 'Settings'!$B$6-'Settings'!$B$5)*0.20) + MAX(0, MIN(P${rowNum}-'Settings'!$B$6, 'Settings'!$B$7-'Settings'!$B$6))*0.40 + MAX(0, P${rowNum}-'Settings'!$B$7)*0.45, 0)` : '0';
-
-    const netIncomeYouFormula = `IF(D${rowNum}="Accumulation", 0, O${rowNum}-Q${rowNum}+K${rowNum})`;
-    const netIncomePartnerFormula = isCouple ? `IF(D${rowNum}="Accumulation", 0, P${rowNum}-R${rowNum}+L${rowNum})` : '0';
-    const householdNetIncomeFormula = `S${rowNum}+T${rowNum}`;
-
-    const remainingShortfallYouFormula = `MAX(0, ${shortfallYouFormula} - (S${rowNum}-(G${rowNum}+I${rowNum})))`;
-    const remainingShortfallPartnerFormula = isCouple ? `MAX(0, ${shortfallPartnerFormula} - (T${rowNum}-(H${rowNum}+J${rowNum})))` : '0';
+    const remainingShortfallYouFormula = `MAX(0, F${rowNum} - (U${rowNum}))`;
+    const remainingShortfallPartnerFormula = isCouple ? `MAX(0, (F${rowNum}/2) - (V${rowNum}))` : '0';
 
     let isaDrawdownYouFormula = `IF(D${rowNum}="Accumulation", 0, MIN(MAX(0, ${prevIsaYouRef}), ${remainingShortfallYouFormula}))`;
     let cashDrawdownYouFormula = `IF(D${rowNum}="Accumulation", 0, MIN(MAX(0, ${prevCashYouRef}), MAX(0, ${remainingShortfallYouFormula} - MIN(MAX(0, ${prevIsaYouRef}), ${remainingShortfallYouFormula}))))`;
 
-    if (strategy === 'cash_first') {
-      cashDrawdownYouFormula = `IF(D${rowNum}="Accumulation", 0, MIN(MAX(0, ${prevCashYouRef}), ${remainingShortfallYouFormula}))`;
-      isaDrawdownYouFormula = `IF(D${rowNum}="Accumulation", 0, MIN(MAX(0, ${prevIsaYouRef}), MAX(0, ${remainingShortfallYouFormula} - MIN(MAX(0, ${prevCashYouRef}), ${remainingShortfallYouFormula}))))`;
-    }
-
     let isaDrawdownPartnerFormula = isCouple ? `IF(D${rowNum}="Accumulation", 0, MIN(MAX(0, ${prevIsaPartnerRef}), ${remainingShortfallPartnerFormula}))` : '0';
     let cashDrawdownPartnerFormula = isCouple ? `IF(D${rowNum}="Accumulation", 0, MIN(MAX(0, ${prevCashPartnerRef}), MAX(0, ${remainingShortfallPartnerFormula} - MIN(MAX(0, ${prevIsaPartnerRef}), ${remainingShortfallPartnerFormula}))))` : '0';
-
-    if (strategy === 'cash_first') {
-      cashDrawdownPartnerFormula = isCouple ? `IF(D${rowNum}="Accumulation", 0, MIN(MAX(0, ${prevCashPartnerRef}), ${remainingShortfallPartnerFormula}))` : '0';
-      isaDrawdownPartnerFormula = isCouple ? `IF(D${rowNum}="Accumulation", 0, MIN(MAX(0, ${prevIsaPartnerRef}), MAX(0, ${remainingShortfallPartnerFormula} - MIN(MAX(0, ${prevCashPartnerRef}), ${remainingShortfallPartnerFormula}))))` : '0';
-    }
 
     const pInYou = `SUMIFS('One-Off Contributions'!$G$4:$G$50, 'One-Off Contributions'!$C$4:$C$50, "DC Pensions", 'One-Off Contributions'!$D$4:$D$50, A${rowNum}, 'One-Off Contributions'!$B$4:$B$50, "YOU")`;
     const pTrInYou = `SUMIFS('Pot Transfers'!$I$4:$I$50, 'Pot Transfers'!$F$4:$F$50, "DC Pensions", 'Pot Transfers'!$D$4:$D$50, A${rowNum}, 'Pot Transfers'!$L$4:$L$50, "YOU")`;
@@ -2263,23 +2357,30 @@ export async function generateFormulaExcelWorkbook(
     const pTrInPartner = isCouple ? `SUMIFS('Pot Transfers'!$I$4:$I$50, 'Pot Transfers'!$F$4:$F$50, "DC Pensions", 'Pot Transfers'!$D$4:$D$50, A${rowNum}, 'Pot Transfers'!$L$4:$L$50, "PARTNER")` : '0';
     const pTrOutPartner = isCouple ? `SUMIFS('Pot Transfers'!$G$4:$G$50, 'Pot Transfers'!$E$4:$E$50, "DC Pensions", 'Pot Transfers'!$D$4:$D$50, A${rowNum}, 'Pot Transfers'!$J$4:$J$50, "PARTNER")` : '0';
 
-    const pclsToIsaYou = `SUMIFS('Tax Free Lump Sums'!$J$4:$J$15, 'Tax Free Lump Sums'!$D$4:$D$15, A${rowNum}, 'Tax Free Lump Sums'!$A$4:$A$15, "YOU")`;
-    const pclsToCashYou = `SUMIFS('Tax Free Lump Sums'!$K$4:$K$15, 'Tax Free Lump Sums'!$D$4:$D$15, A${rowNum}, 'Tax Free Lump Sums'!$A$4:$A$15, "YOU")`;
+    const pclsToIsaYou = `SUMIFS('Tax Free Lump Sums'!$K$4:$K$25, 'Tax Free Lump Sums'!$D$4:$D$25, A${rowNum}, 'Tax Free Lump Sums'!$A$4:$A$25, "YOU")`;
+    const pclsToCashYou = `SUMIFS('Tax Free Lump Sums'!$L$4:$L$25, 'Tax Free Lump Sums'!$D$4:$D$25, A${rowNum}, 'Tax Free Lump Sums'!$A$4:$A$25, "YOU")`;
 
-    const pclsToIsaPartner = isCouple ? `SUMIFS('Tax Free Lump Sums'!$J$4:$J$15, 'Tax Free Lump Sums'!$D$4:$D$15, A${rowNum}, 'Tax Free Lump Sums'!$A$4:$A$15, "PARTNER")` : '0';
-    const pclsToCashPartner = isCouple ? `SUMIFS('Tax Free Lump Sums'!$K$4:$K$15, 'Tax Free Lump Sums'!$D$4:$D$15, A${rowNum}, 'Tax Free Lump Sums'!$A$4:$A$15, "PARTNER")` : '0';
+    const pclsToIsaPartner = isCouple ? `SUMIFS('Tax Free Lump Sums'!$K$4:$K$25, 'Tax Free Lump Sums'!$D$4:$D$25, A${rowNum}, 'Tax Free Lump Sums'!$A$4:$A$25, "PARTNER")` : '0';
+    const pclsToCashPartner = isCouple ? `SUMIFS('Tax Free Lump Sums'!$L$4:$L$25, 'Tax Free Lump Sums'!$D$4:$D$25, A${rowNum}, 'Tax Free Lump Sums'!$A$4:$A$25, "PARTNER")` : '0';
 
-    const pensionBalYouFormula = `MAX(0, (${prevPensionYouRef} - (K${rowNum} - (${pclsDbYouIn})) - M${rowNum}) * (1 + 'Settings'!$B$12) + 'Contributions'!G${contribRowNum} + (${pInYou}) + (${pTrInYou}) - (${pTrOutYou}))`;
-    const isaBalYouFormula = `MAX(0, (${prevIsaYouRef} - (${isaDrawdownYouFormula})) * (1 + 'Settings'!$B$13) + 'Contributions'!K${contribRowNum} + (${pclsToIsaYou}))`;
+    // Separate Uncrystallised Pot and Crystallised Drawdown Pot
+    const uncrystPensionBalYouFormula = `MAX(0, (${prevUncrystYouRef} - K${rowNum}) * (1 + 'Settings'!$B$12) + 'Contributions'!G${contribRowNum} + (${pInYou}) + (${pTrInYou}) - (${pTrOutYou}))`;
+    const crystPensionBalYouFormula = `MAX(0, (${prevCrystYouRef} + (K${rowNum} - M${rowNum}) - O${rowNum}) * (1 + 'Settings'!$B$12))`;
+    const totalPensionBalYouFormula = `X${rowNum} + Y${rowNum}`;
+
+    const isaBalYouFormula = `MAX(0, (${prevIsaYouRef} - (${isaDrawdownYouFormula})) * (1 + 'Settings'!$B$13) + 'Contributions'!K${contribRowNum} + (${pclsToIsaYou}) + IF(U${rowNum}>F${rowNum}, U${rowNum}-F${rowNum}, 0))`;
     const cashBalYouFormula = `MAX(0, (${prevCashYouRef} - (${cashDrawdownYouFormula})) * (1 + 'Settings'!$B$14) + 'Contributions'!N${contribRowNum} + (${pclsToCashYou}))`;
-    const totalWealthYouFormula = `V${rowNum}+W${rowNum}+X${rowNum}`;
+    const totalWealthYouFormula = `Z${rowNum} + AA${rowNum} + AB${rowNum}`;
 
-    const pensionBalPartnerFormula = isCouple ? `MAX(0, (${prevPensionPartnerRef} - (L${rowNum} - (${pclsDbPartnerIn})) - N${rowNum}) * (1 + 'Settings'!$B$12) + 'Contributions'!R${contribRowNum} + (${pInPartner}) + (${pTrInPartner}) - (${pTrOutPartner}))` : '0';
+    const uncrystPensionBalPartnerFormula = isCouple ? `MAX(0, (${prevUncrystPartnerRef} - L${rowNum}) * (1 + 'Settings'!$B$12) + 'Contributions'!R${contribRowNum} + (${pInPartner}) + (${pTrInPartner}) - (${pTrOutPartner}))` : '0';
+    const crystPensionBalPartnerFormula = isCouple ? `MAX(0, (${prevCrystPartnerRef} + (L${rowNum} - N${rowNum}) - P${rowNum}) * (1 + 'Settings'!$B$12))` : '0';
+    const totalPensionBalPartnerFormula = isCouple ? `AD${rowNum} + AE${rowNum}` : '0';
+
     const isaBalPartnerFormula = isCouple ? `MAX(0, (${prevIsaPartnerRef} - (${isaDrawdownPartnerFormula})) * (1 + 'Settings'!$B$13) + 'Contributions'!S${contribRowNum} + (${pclsToIsaPartner}))` : '0';
     const cashBalPartnerFormula = isCouple ? `MAX(0, (${prevCashPartnerRef} - (${cashDrawdownPartnerFormula})) * (1 + 'Settings'!$B$14) + 'Contributions'!T${contribRowNum} + (${pclsToCashPartner}))` : '0';
-    const totalWealthPartnerFormula = `Z${rowNum}+AA${rowNum}+AB${rowNum}`;
+    const totalWealthPartnerFormula = `AF${rowNum} + AG${rowNum} + AH${rowNum}`;
 
-    const householdWealthFormula = `Y${rowNum}+AC${rowNum}`;
+    const householdWealthFormula = `AC${rowNum} + AI${rowNum}`;
 
     const proj = projections[idx];
 
@@ -2294,22 +2395,28 @@ export async function generateFormulaExcelWorkbook(
       { formula: statePartnerFormula, result: proj?.partnerStatePensionReceived ?? 0 },
       { formula: dbYouFormula, result: proj?.primaryDbPensionIncomeReceived ?? proj?.dbPensionIncomeReceived ?? 0 },
       { formula: dbPartnerFormula, result: proj?.partnerDbPensionIncomeReceived ?? 0 },
-      { formula: pclsYouFormula, result: (proj?.primaryPensionDrawdownTaxFree ?? proj?.pensionDrawdownTaxFree ?? 0) },
-      { formula: pclsPartnerFormula, result: (proj?.partnerPensionDrawdownTaxFree ?? 0) },
-      { formula: taxableDrawdownYouFormula, result: (proj?.primaryPensionDrawdown ?? proj?.pensionDrawdown ?? 0) },
-      { formula: taxableDrawdownPartnerFormula, result: (proj?.partnerPensionDrawdown ?? 0) },
-      { formula: totalTaxableYouFormula, result: (proj?.primaryStatePensionReceived ?? proj?.statePensionReceived ?? 0) + (proj?.primaryDbPensionIncomeReceived ?? proj?.dbPensionIncomeReceived ?? 0) + (proj?.primaryPensionDrawdown ?? proj?.pensionDrawdown ?? 0) },
-      { formula: totalTaxablePartnerFormula, result: (proj?.partnerStatePensionReceived ?? 0) + (proj?.partnerDbPensionIncomeReceived ?? 0) + (proj?.partnerPensionDrawdown ?? 0) },
+      { formula: crystTrancheYouFormula, result: proj?.primaryCrystallisedThisYear ?? 0 },
+      { formula: crystTranchePartnerFormula, result: proj?.partnerCrystallisedThisYear ?? 0 },
+      { formula: pclsCashYouFormula, result: (proj?.primaryPensionDrawdownTaxFree ?? proj?.pensionDrawdownTaxFree ?? 0) },
+      { formula: pclsCashPartnerFormula, result: (proj?.partnerPensionDrawdownTaxFree ?? 0) },
+      { formula: taxableDrawdownYouFormula, result: (proj?.primaryPensionDrawdownTaxable ?? proj?.pensionDrawdownTaxable ?? (proj?.primaryPensionDrawdown ?? proj?.pensionDrawdown ?? 0)) },
+      { formula: taxableDrawdownPartnerFormula, result: (proj?.partnerPensionDrawdownTaxable ?? (proj?.partnerPensionDrawdown ?? 0)) },
+      { formula: totalTaxableYouFormula, result: ((proj?.primaryStatePensionReceived ?? proj?.statePensionReceived ?? 0) + (proj?.primaryDbPensionIncomeReceived ?? proj?.dbPensionIncomeReceived ?? 0) + (proj?.primaryTaxableFixedIncomeReceived ?? 0) + (proj?.primaryAnnuityIncomeReceived ?? 0) + (proj?.primaryPensionDrawdownTaxable ?? proj?.pensionDrawdownTaxable ?? (proj?.primaryPensionDrawdown ?? proj?.pensionDrawdown ?? 0))) },
+      { formula: totalTaxablePartnerFormula, result: ((proj?.partnerStatePensionReceived ?? 0) + (proj?.partnerDbPensionIncomeReceived ?? 0) + (proj?.partnerTaxableFixedIncomeReceived ?? 0) + (proj?.partnerAnnuityIncomeReceived ?? 0) + (proj?.partnerPensionDrawdownTaxable ?? (proj?.partnerPensionDrawdown ?? 0))) },
       { formula: taxPaidYouFormula, result: proj?.primaryTaxPaid ?? proj?.totalTaxPaid ?? 0 },
       { formula: taxPaidPartnerFormula, result: proj?.partnerTaxPaid ?? 0 },
       { formula: netIncomeYouFormula, result: proj?.primaryNetIncome ?? proj?.netRetirementIncome ?? 0 },
       { formula: netIncomePartnerFormula, result: proj?.partnerNetIncome ?? 0 },
       { formula: householdNetIncomeFormula, result: proj?.netRetirementIncome ?? 0 },
-      { formula: pensionBalYouFormula, result: proj ? (proj.primaryPensionPot ?? proj.pensionPot) : initPensionYou },
+      { formula: uncrystPensionBalYouFormula, result: proj ? (proj.primaryUncrystallisedPot ?? proj.primaryPensionPot ?? proj.pensionPot) : initPensionYou },
+      { formula: crystPensionBalYouFormula, result: proj ? (proj.primaryCrystallisedPot ?? 0) : 0 },
+      { formula: totalPensionBalYouFormula, result: proj ? (proj.primaryPensionPot ?? proj.pensionPot) : initPensionYou },
       { formula: isaBalYouFormula, result: proj ? (proj.primaryIsaPot ?? proj.isaPot) : initIsaYou },
       { formula: cashBalYouFormula, result: proj ? (proj.primaryCashGiaPot ?? proj.cashGiaPot) : initCashYou },
       { formula: totalWealthYouFormula, result: proj ? (proj.primaryTotalPot ?? proj.totalPot) : (initPensionYou + initIsaYou + initCashYou) },
-      { formula: pensionBalPartnerFormula, result: proj ? (proj.partnerPensionPot ?? 0) : initPensionPartner },
+      { formula: uncrystPensionBalPartnerFormula, result: proj ? (proj.partnerUncrystallisedPot ?? proj.partnerPensionPot ?? 0) : initPensionPartner },
+      { formula: crystPensionBalPartnerFormula, result: proj ? (proj.partnerCrystallisedPot ?? 0) : 0 },
+      { formula: totalPensionBalPartnerFormula, result: proj ? (proj.partnerPensionPot ?? 0) : initPensionPartner },
       { formula: isaBalPartnerFormula, result: proj ? (proj.partnerIsaPot ?? 0) : initIsaPartner },
       { formula: cashBalPartnerFormula, result: proj ? (proj.partnerCashGiaPot ?? 0) : initCashPartner },
       { formula: totalWealthPartnerFormula, result: proj ? (proj.partnerTotalPot ?? 0) : (initPensionPartner + initIsaPartner + initCashPartner) },
@@ -2322,7 +2429,7 @@ export async function generateFormulaExcelWorkbook(
     row.getCell(3).numFmt = '0';
     row.getCell(4).alignment = { horizontal: 'center' };
 
-    for (let c = 5; c <= 30; c++) {
+    for (let c = 5; c <= 36; c++) {
       row.getCell(c).numFmt = '£#,##0';
     }
     row.eachCell((cell) => { cell.border = borderThin; });

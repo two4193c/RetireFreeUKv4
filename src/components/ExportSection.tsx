@@ -1767,9 +1767,23 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
         ? `Hybrid / Tranche (${profile.annuityAllocationPercent || 50}% Baseline)`
         : 'Flexi-Access Drawdown (100% Market Invested)';
 
+      const priHierarchy = profile.drawdownStrategy === 'basic_rate_bracket'
+        ? 'BASIC RATE BRACKET (Target £50,270 ceiling minus taxable fixed income)'
+        : profile.drawdownStrategy === 'tax_free_bracket'
+        ? 'PERSONAL ALLOWANCE BRACKET (Target £12,570 ceiling minus taxable fixed income)'
+        : profile.drawdownStrategy === 'higher_rate_bracket'
+        ? 'HIGHER RATE BRACKET (Target £125,140 ceiling minus taxable fixed income)'
+        : (profile.drawdownStrategy || 'pro_rata').replace(/_/g, ' ').toUpperCase();
+
+      const priPclsDisplay = profile.crystallisationTranches && profile.crystallisationTranches.length > 0
+        ? `Split Pot (Phased Crystallisation: £${(profile.crystallisationTranches[0]?.amount || 100000).toLocaleString()}/yr => 25% Tax-Free Cash + 75% Drawdown Pot)`
+        : profile.takeLumpSumAtStart
+        ? `${profile.pclsLumpSumPercent || 25}% Upfront Lump Sum`
+        : 'UFPLS (Tax-Free as drawn)';
+
       doc.text(`• Product Choice: ${priProduct}`, 18, p3Y + 23);
-      doc.text(`• Withdrawal Hierarchy: ${(profile.drawdownStrategy || 'pro_rata').replace('_', ' ').toUpperCase()}`, 18, p3Y + 29);
-      doc.text(`• Tax Free Cash (PCLS): ${profile.takeLumpSumAtStart ? `${profile.pclsLumpSumPercent || 25}% Upfront Lump Sum` : 'UFPLS (Tax-Free as drawn)'}`, 18, p3Y + 35);
+      doc.text(`• Withdrawal Hierarchy: ${priHierarchy}`, 18, p3Y + 29);
+      doc.text(`• Tax Free Cash (PCLS): ${priPclsDisplay}`, 18, p3Y + 35);
 
       if (isPriAnnuity) {
         const rawPurAge = profile.annuityPurchaseAge || (profile.targetRetirementAge || 60);
@@ -1796,10 +1810,23 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
           ? `Hybrid / Tranche (${partAlloc}% Baseline)`
           : 'Flexi-Access Drawdown (100% Market Invested)';
 
+        const partHierarchy = (profile.partnerDrawdownStrategy || profile.drawdownStrategy) === 'basic_rate_bracket'
+          ? 'BASIC RATE BRACKET (Target £50,270 ceiling minus taxable fixed income)'
+          : (profile.partnerDrawdownStrategy || profile.drawdownStrategy) === 'tax_free_bracket'
+          ? 'PERSONAL ALLOWANCE BRACKET (Target £12,570 ceiling minus taxable fixed income)'
+          : (profile.partnerDrawdownStrategy || profile.drawdownStrategy) === 'higher_rate_bracket'
+          ? 'HIGHER RATE BRACKET (Target £125,140 ceiling minus taxable fixed income)'
+          : (profile.partnerDrawdownStrategy || profile.drawdownStrategy || 'pro_rata').replace(/_/g, ' ').toUpperCase();
+
+        const partPclsDisplay = profile.partnerCrystallisationTranches && profile.partnerCrystallisationTranches.length > 0
+          ? `Split Pot (Phased Crystallisation: £${(profile.partnerCrystallisationTranches[0]?.amount || 100000).toLocaleString()}/yr => 25% Tax-Free Cash + 75% Drawdown Pot)`
+          : profile.partnerTakeLumpSumAtStart
+          ? `${profile.partnerPclsLumpSumPercent || 25}% Upfront Lump Sum`
+          : 'UFPLS (Tax-Free as drawn)';
+
         doc.text(`• Product Choice: ${partProduct}`, 108, p3Y + 23);
-        const partStrategyStr = (profile.partnerDrawdownStrategy || profile.drawdownStrategy || 'pro_rata').replace(/_/g, ' ').toUpperCase();
-        doc.text(`• Withdrawal Hierarchy: ${partStrategyStr}`, 108, p3Y + 29);
-        doc.text(`• Tax Free Cash (PCLS): ${profile.partnerTakeLumpSumAtStart ? `${profile.partnerPclsLumpSumPercent || 25}% Upfront Lump Sum` : 'UFPLS (Tax-Free as drawn)'}`, 108, p3Y + 35);
+        doc.text(`• Withdrawal Hierarchy: ${partHierarchy}`, 108, p3Y + 29);
+        doc.text(`• Tax Free Cash (PCLS): ${partPclsDisplay}`, 108, p3Y + 35);
 
         if (isPartAnnuity) {
           const partPurAge = Math.max(profile.partnerPensionAccessAge || 57, profile.partnerAnnuityPurchaseAge || (profile.partnerTargetRetirementAge || targetAge));

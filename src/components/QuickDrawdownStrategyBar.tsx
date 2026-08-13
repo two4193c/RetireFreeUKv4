@@ -61,7 +61,7 @@ export const STRATEGY_DEFINITIONS: StrategyDefinition[] = [
     borderColor: 'border-emerald-200 dark:border-emerald-800/60',
     activeBorderColor: 'border-emerald-500 dark:border-emerald-500',
     activeBg: 'bg-emerald-500/10 dark:bg-emerald-950/40',
-    description: 'Draw pension up to £12,570 Personal Allowance (0% tax), filling remainder from ISAs.',
+    description: 'Draw pension up to £12,570 Personal Allowance minus taxable fixed income (0% tax), filling remainder from ISAs.',
   },
   {
     id: 'basic_rate_bracket',
@@ -73,7 +73,7 @@ export const STRATEGY_DEFINITIONS: StrategyDefinition[] = [
     borderColor: 'border-teal-200 dark:border-teal-800/60',
     activeBorderColor: 'border-teal-500 dark:border-teal-500',
     activeBg: 'bg-teal-500/10 dark:bg-teal-950/40',
-    description: 'Draw pension up to £50,270 Basic Rate band (max 20% tax), filling remainder from ISAs.',
+    description: 'Draw pension up to £50,270 Basic Rate band minus taxable fixed income (max 20% tax), filling remainder from ISAs.',
   },
   {
     id: 'higher_rate_bracket',
@@ -85,7 +85,7 @@ export const STRATEGY_DEFINITIONS: StrategyDefinition[] = [
     borderColor: 'border-amber-200 dark:border-amber-800/60',
     activeBorderColor: 'border-amber-500 dark:border-amber-500',
     activeBg: 'bg-amber-500/10 dark:bg-amber-950/40',
-    description: 'Draw pension up to £125,140 Higher Rate threshold, preventing 45% tax and PA taper.',
+    description: 'Draw pension up to £125,140 Higher Rate threshold minus taxable fixed income, preventing 45% tax and PA taper.',
   },
   {
     id: 'isa_first',
@@ -183,33 +183,33 @@ export interface StrategyDetails {
 
 export const DETAILED_STRATEGY_INFO: Record<string, StrategyDetails> = {
   tax_free_bracket: {
-    howItWorks: 'Draws pension income each tax year up to your annual Personal Allowance threshold (£12,570 for 2025/26). Because this is within your 0% tax bracket, zero UK income tax is paid on pension withdrawals. Any additional income required for your spending target is automatically drawn from tax-free ISAs or Cash savings.',
+    howItWorks: 'Draws pension income each tax year up to your annual Personal Allowance threshold (£12,570 for 2025/26) minus any taxable fixed income (such as State Pension, DB pensions, and annuities). Because this is within your 0% tax bracket, zero UK income tax is paid on pension withdrawals. Any additional income required for your spending target is automatically drawn from tax-free ISAs or Cash savings.',
     keyBenefits: [
-      '100% Tax-Free income extraction from your pension pot up to Personal Allowance.',
+      '100% Tax-Free income extraction from your pension pot up to Personal Allowance (offsetting guaranteed income).',
       'Eliminates income tax drag in early retirement years.',
-      'Allows remaining pension to compound tax-free while staying within the 0% envelope.'
+      'Allows remaining pension to compound tax-free while staying strictly within the 0% envelope.'
     ],
     considerations: [
-      'If your annual spending requirement is high, ISAs will deplete faster to cover the remaining balance.',
-      'Once ISAs run out, future withdrawals will exceed £12,570 and trigger 20% Basic Rate tax.'
+      'If you have State Pension or DB pension income, pension drawdown room is reduced so total taxable income does not exceed £12,570.',
+      'If your annual spending requirement is high, ISAs will deplete faster to cover the remaining balance.'
     ],
-    drawdownSequence: 'Pension (up to £12.57k/yr @ 0% tax) ➔ ISAs ➔ Cash / Taxable ➔ Pension (Excess)'
+    drawdownSequence: 'Pension (up to PA ceiling minus fixed income @ 0% tax) ➔ ISAs ➔ Cash / Taxable ➔ Pension (Excess)'
   },
   basic_rate_bracket: {
-    howItWorks: 'Draws pension taxable income up to the top of the UK Basic Rate Tax threshold (£50,270 for 2025/26). The first £12,570 is tax-free, and amounts between £12,570 and £50,270 are taxed at 20%. Any spending requirement above £50,270 is funded from ISAs or Cash.',
+    howItWorks: 'Draws pension taxable income up to the top of the UK Basic Rate Tax threshold (£50,270 for 2025/26) minus any taxable fixed income (such as State Pension, DB pensions, and annuities). The first £12,570 is tax-free (0%), and amounts between £12,570 and £50,270 are taxed at 20%. Any spending requirement above £50,270 is funded from ISAs or Cash.',
     keyBenefits: [
-      'Maximizes annual pension income while capping tax strictly at the 20% Basic Rate.',
+      'Maximizes annual pension income while capping tax strictly at the 20% Basic Rate ceiling.',
       'Prevents pushing pension withdrawals into the 40% Higher Rate tax bracket.',
-      'Preserves the £125,140 Personal Allowance taper threshold.'
+      'Automatically deducts State Pension and DB income to prevent accidental higher-rate bracket breach.'
     ],
     considerations: [
       'Incurs moderate 20% income tax annually.',
-      'Requires active monitoring of taxable income if receiving State Pension or DB pensions.'
+      'Pension drawdown room adjusts automatically when State Pension commences.'
     ],
-    drawdownSequence: 'Pension (up to £50.27k/yr @ max 20% tax) ➔ ISAs ➔ Cash / Taxable ➔ Pension (Excess)'
+    drawdownSequence: 'Pension (up to £50.27k ceiling minus fixed income @ max 20% tax) ➔ ISAs ➔ Cash / Taxable ➔ Pension (Excess)'
   },
   higher_rate_bracket: {
-    howItWorks: 'Withdraws pension income up to the £125,140 Higher Rate cap, utilizing the 20% and 40% tax bands while avoiding the 45% Additional Rate tax and the Personal Allowance taper.',
+    howItWorks: 'Withdraws pension income up to the £125,140 Higher Rate cap minus any taxable fixed income (such as State Pension, DB pensions, and annuities), utilizing the 20% and 40% tax bands while avoiding the 45% Additional Rate tax and the Personal Allowance taper.',
     keyBenefits: [
       'Allows rapid extraction of large pension balances without incurring top 45% rate tax.',
       'Prevents entering the 45% Additional Rate band.',
@@ -219,7 +219,7 @@ export const DETAILED_STRATEGY_INFO: Record<string, StrategyDetails> = {
       'Incurs significant 40% Higher Rate income tax on withdrawals above £50,270.',
       'Tapers down your Personal Allowance between £100,000 and £125,140.'
     ],
-    drawdownSequence: 'Pension (up to £125.14k/yr @ max 40% tax) ➔ ISAs ➔ Cash / Taxable ➔ Pension (Excess)'
+    drawdownSequence: 'Pension (up to £125.14k ceiling minus fixed income @ max 40% tax) ➔ ISAs ➔ Cash / Taxable ➔ Pension (Excess)'
   },
   isa_first: {
     howItWorks: 'Draws 100% of required retirement income from ISAs and Cash reserves first. Pensions are left completely untouched to grow tax-free until ISAs are exhausted.',

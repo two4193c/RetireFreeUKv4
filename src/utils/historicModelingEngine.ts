@@ -861,8 +861,8 @@ export function runHistoricModelingSimulation(
           const primaryCashGrowth = primaryCashGiaPot * cashGiaReturn;
           const partnerCashGrowth = partnerCashGiaPot * cashGiaReturn;
 
-          const priIncomeAlready = statePensionThisYr / (profile.isCouplePlanning ? 2 : 1) + (annuityIncomeThisYear + dbIncomeThisYr + (fixedIncomeThisYr || 0)) / (profile.isCouplePlanning ? 2 : 1) + primaryCashGrowth;
-          const partIncomeAlready = profile.isCouplePlanning ? (statePensionThisYr / 2 + (annuityIncomeThisYear + dbIncomeThisYr + (fixedIncomeThisYr || 0)) / 2 + partnerCashGrowth) : 0;
+          const priIncomeAlready = statePensionThisYr / (profile.isCouplePlanning ? 2 : 1) + (annuityIncomeThisYear + dbIncomeThisYr + (fixedIncomeThisYr || 0)) / (profile.isCouplePlanning ? 2 : 1);
+          const partIncomeAlready = profile.isCouplePlanning ? (statePensionThisYr / 2 + (annuityIncomeThisYear + dbIncomeThisYr + (fixedIncomeThisYr || 0)) / 2) : 0;
 
           const priRoom = Math.max(0, priThresholdGross - priIncomeAlready);
           const partRoom = profile.isCouplePlanning ? Math.max(0, partThresholdGross - partIncomeAlready) : 0;
