@@ -1201,16 +1201,15 @@ export async function generateFormulaExcelWorkbook(
   const partnerLsaLimit = getPartnerLsaLimit(profile);
   const primaryPclsAge = getLumpSumTakeAge(profile);
   const primaryPclsYear = (new Date().getFullYear()) + Math.max(0, primaryPclsAge - primaryCurrentAge);
-  const isPhasedPrimary = profile.crystallisationMode === 'phased_tranches';
+  const isPhasedPrimary = profile.crystallisationMode === 'phased_tranches' || (profile.crystallisationTranches && profile.crystallisationTranches.length > 0);
 
   let primaryEstPcls = 0;
   let primaryEstGross = 0;
   let primaryAlloc = { toIsa: 0, toGia: 0, toCashSavings: 0, toCashGia: 0, spentOrDebt: 0 };
 
   // 1. Phased Crystallisation Tranches (Split Pot Tracking)
-  const activeTranchesPrimary = isPhasedPrimary 
-    ? (profile.crystallisationTranches || []).filter(t => t.enabled !== false && t.owner !== 'partner')
-    : [];  activeTranchesPrimary.forEach((t) => {
+  const activeTranchesPrimary = (profile.crystallisationTranches || []).filter(t => t.enabled !== false && t.owner !== 'partner');
+  activeTranchesPrimary.forEach((t) => {
     const tAge = t.age || 57;
     const tYear = (new Date().getFullYear()) + Math.max(0, tAge - primaryCurrentAge);
     const tGross = t.amount || 0;
@@ -1294,10 +1293,8 @@ export async function generateFormulaExcelWorkbook(
   if (isCouple) {
     const partnerCurrentAge = profile.partnerCurrentAge || profile.currentAge || 50;
     const partnerAgeOffset = partnerCurrentAge - (profile.currentAge || 50);
-    const isPhasedPartner = profile.partnerCrystallisationMode === 'phased_tranches';
-    const partnerActiveTranches = isPhasedPartner 
-      ? (profile.partnerCrystallisationTranches || profile.crystallisationTranches || []).filter(t => t.enabled !== false && t.owner === 'partner')
-      : [];
+    const partnerActiveTranches = (profile.partnerCrystallisationTranches || profile.crystallisationTranches || []).filter(t => t.enabled !== false && t.owner === 'partner');
+    const isPhasedPartner = profile.partnerCrystallisationMode === 'phased_tranches' || partnerActiveTranches.length > 0;
 
     partnerActiveTranches.forEach((t) => {
       const tAge = t.age || 57;
