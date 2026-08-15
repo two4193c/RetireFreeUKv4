@@ -692,6 +692,17 @@ describe('maximizedSpendSolver', () => {
       spendingPattern: 'uniform'
     });
 
+    const origTax = calculateUKTax(kittyProfile, kittyPots);
+    const origProj = generateProjections(kittyProfile, kittyPots, origTax);
+    console.log("Original Kitty Depletion Age:", origProj.find(p => (p.incomeShortfall || 0) > 50)?.age);
+    console.log("Orig Proj at 66:", origProj.find(p => p.age === 66));
+
+    const testProf = createCandidateProfile(kittyProfile, 24000, 'uniform', kittyPots, undefined, undefined, 90, 0, 'couple');
+    const feas = testFeasibility(testProf, kittyPots, 90, 0);
+    console.log("Feasibility for 24000:", feas.feasible, "Depleted Age:", feas.depletedAge);
+    console.log("Proj at 66:", feas.projections.find(p => p.age === 66));
+    console.log("Proj at 67:", feas.projections.find(p => p.age === 67));
+
     console.log("Full Kitty Plan Solver Result:", {
       maxAnnualIncome: res.maxAnnualIncome,
       finalPotAtTargetAge: res.finalPotAtTargetAge,

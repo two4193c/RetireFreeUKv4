@@ -405,11 +405,11 @@ export function computePlanInsights(
 
   // Opportunity 4: Spousal Allowance Equalisation (Couple Mode)
   if (isCouple) {
-    const priPension = (cleanPots.sippBalance || 0) + (cleanPots.workplacePensionBalance || 0);
-    const partPension = (cleanPartnerPots.sippBalance || 0) + (cleanPartnerPots.workplacePensionBalance || 0);
+    const priPension = pots.workplacePensionBalance + pots.sippBalance;
+    const partPension = profile.partnerPots ? (profile.partnerPots.workplacePensionBalance + profile.partnerPots.sippBalance) : 0;
 
     // Calculate total ongoing partner annual pension contributions
-    const partnerSippMonthly = cleanPartnerPots.sippMonthlyContribution || 0;
+    const partnerSippMonthly = profile.partnerPots?.sippMonthlyContribution || 0;
     const partnerSippType = cleanPartnerPots.sippContributionType || 'net';
     const partnerSippAnnualGross = partnerSippType === 'gross'
       ? partnerSippMonthly * 12
@@ -434,7 +434,7 @@ export function computePlanInsights(
       }, 0);
 
     const partnerPotTransfersToPension = (profile.potTransfers || [])
-      .filter((t) => t.enabled && (t.destinationOwner === 'partner' || t.destinationPot === 'sipp' || t.destinationPot === 'workplace_pension'))
+      .filter((t) => t.enabled && t.destinationOwner === 'partner' && (t.destinationPot === 'sipp' || t.destinationPot === 'workplace_pension'))
       .reduce((sum, t) => sum + (t.amount || 0), 0);
 
     const partnerAnnualPensionContrib = partnerSippAnnualGross + partnerTotalWorkplaceAnnual + partnerOneOffPensionAnnual + partnerPotTransfersToPension;
@@ -573,12 +573,13 @@ export function computePlanInsights(
     });
   } else if (isFullyFunded && finalPotBalance > targetIncome * 2) {
     try {
+      const isProportional = profile.spendingPhases?.enabled;
       const maxSpendResult = solveMaximizedSpend({
         profile,
         pots,
         targetEndAge: horizonAge,
         targetLegacyBuffer: 0,
-        spendingPattern: 'uniform',
+        spendingPattern: isProportional ? 'proportional_phases' : 'uniform',
       });
 
       const maxIncome = Math.round(maxSpendResult.maxAnnualIncome);
@@ -587,6 +588,13 @@ export function computePlanInsights(
       const extraLifetime = Math.round(maxSpendResult.extraLifetimeSpend);
 
       if (extraAnnual > 500) {
+        let actionableText = '';
+        if (isProportional) {
+          actionableText = `The Max Spend Solver calculated that you can safely scale up your planned spending phases by +${boostPct}%, unlocking up to +£${extraLifetime.toLocaleString()} in extra lifetime spending, or retire earlier.`;
+        } else {
+          actionableText = `The Max Spend Solver calculated that you can safely increase baseline spending from £${Math.round(targetIncome).toLocaleString()}/yr to £${maxIncome.toLocaleString()}/yr (+£${extraAnnual.toLocaleString()}/yr, a +${boostPct}% boost), or retire earlier.`;
+        }
+
         opportunities.push({
           id: 'maximized_spend_potential',
           category: 'Decumulation & SWR',
@@ -594,7 +602,7 @@ export function computePlanInsights(
           impactLevel: 'Strategic Value',
           status: 'recommended',
           observation: `Your portfolio maintains full solvency with a projected surplus of £${finalPotBalance.toLocaleString()} remaining at Age ${horizonAge}. Initial SWR is conservative (${initialSwr.toFixed(1)}%).`,
-          actionableStep: `The Max Spend Solver calculated that you can safely increase baseline spending from £${Math.round(targetIncome).toLocaleString()}/yr to £${maxIncome.toLocaleString()}/yr (+£${extraAnnual.toLocaleString()}/yr, a +${boostPct}% boost), or retire earlier.`,
+          actionableStep: actionableText,
           projectedBenefit: `Safely unlocks up to +£${extraLifetime.toLocaleString()} in extra lifetime lifestyle spending during retirement without running out of capital.`,
         });
       } else {
