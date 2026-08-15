@@ -1,6 +1,7 @@
 import { UserProfile, InvestmentPots, TaxCalculationResult, YearProjection } from '../types';
 import { getPensionAccessAge, getPartnerPensionAccessAge } from './ukTaxEngine';
 import { sanitizePots, DEFAULT_POTS, DEFAULT_PARTNER_POTS } from './defaultData';
+import { solveMaximizedSpend } from './maximizedSpendSolver';
 
 export interface PlanScorecard {
   runwayYears: number;
@@ -559,18 +560,67 @@ export function computePlanInsights(
   }
 
   // Opportunity 8: Plan Longevity & Maximized Spend Advisory
-  if (isFullyFunded && finalPotBalance > targetIncome * 4) {
-    const surplusSpendEst = Math.round(finalPotBalance / Math.max(1, horizonAge - targetAge) / 1.4);
+  if (profile.maximizedSpendConfig?.enabled) {
     opportunities.push({
-      id: 'maximized_spend_potential',
+      id: 'maximized_spend_active',
       category: 'Decumulation & SWR',
-      title: 'Surplus Capital Optimization & Maximized Spend Solver',
+      title: 'Maximized Spend Mode Active',
       impactLevel: 'Strategic Value',
-      status: 'recommended',
-      observation: `Your portfolio maintains full solvency with a projected surplus of £${finalPotBalance.toLocaleString()} remaining at Age ${horizonAge}. Initial SWR is conservative (${initialSwr.toFixed(1)}%).`,
-      actionableStep: `Use the 'Maximize Sustainable Spend' solver to model increasing your annual retirement income by ~£${surplusSpendEst.toLocaleString()}/yr or retiring earlier.`,
-      projectedBenefit: `Safely unlocks maximum lifestyle spending in your active retirement years without risk of running out of capital.`,
+      status: 'already_optimised',
+      observation: `Your plan is actively running in Maximized Spend mode with solved sustainable spending of £${Math.round(targetIncome).toLocaleString()}/yr, calibrating portfolio depletion to Age ${profile.maximizedSpendConfig.targetEndAge || horizonAge}.`,
+      actionableStep: `Review actual annual spending vs solved drawdown capacity to decide whether to enjoy higher lifestyle spending or reinvest excess surplus into ISAs.`,
+      projectedBenefit: `Unlocks 100% of your portfolio's sustainable spending capacity without running out of capital.`,
     });
+  } else if (isFullyFunded && finalPotBalance > targetIncome * 2) {
+    try {
+      const maxSpendResult = solveMaximizedSpend({
+        profile,
+        pots,
+        targetEndAge: horizonAge,
+        targetLegacyBuffer: 0,
+        spendingPattern: 'uniform',
+      });
+
+      const maxIncome = Math.round(maxSpendResult.maxAnnualIncome);
+      const extraAnnual = Math.round(maxSpendResult.extraAnnualSpend);
+      const boostPct = Math.round(maxSpendResult.boostPercentage);
+      const extraLifetime = Math.round(maxSpendResult.extraLifetimeSpend);
+
+      if (extraAnnual > 500) {
+        opportunities.push({
+          id: 'maximized_spend_potential',
+          category: 'Decumulation & SWR',
+          title: 'Surplus Capital Optimization & Maximized Spend Solver',
+          impactLevel: 'Strategic Value',
+          status: 'recommended',
+          observation: `Your portfolio maintains full solvency with a projected surplus of £${finalPotBalance.toLocaleString()} remaining at Age ${horizonAge}. Initial SWR is conservative (${initialSwr.toFixed(1)}%).`,
+          actionableStep: `The Max Spend Solver calculated that you can safely increase baseline spending from £${Math.round(targetIncome).toLocaleString()}/yr to £${maxIncome.toLocaleString()}/yr (+£${extraAnnual.toLocaleString()}/yr, a +${boostPct}% boost), or retire earlier.`,
+          projectedBenefit: `Safely unlocks up to +£${extraLifetime.toLocaleString()} in extra lifetime lifestyle spending during retirement without running out of capital.`,
+        });
+      } else {
+        opportunities.push({
+          id: 'maximized_spend_calibrated',
+          category: 'Decumulation & SWR',
+          title: 'Spending Requirement Efficiently Calibrated',
+          impactLevel: 'Strategic Value',
+          status: 'already_optimised',
+          observation: `Your baseline target spending of £${Math.round(targetIncome).toLocaleString()}/yr closely matches your portfolio's maximum sustainable drawdown capacity.`,
+          actionableStep: `Maintain your current spending and drawdown sequencing.`,
+          projectedBenefit: `Ensures full lifetime financial independence through Age ${horizonAge}.`,
+        });
+      }
+    } catch {
+      opportunities.push({
+        id: 'maximized_spend_potential',
+        category: 'Decumulation & SWR',
+        title: 'Surplus Capital Optimization & Maximized Spend Solver',
+        impactLevel: 'Strategic Value',
+        status: 'recommended',
+        observation: `Your portfolio maintains full solvency with a projected surplus of £${finalPotBalance.toLocaleString()} remaining at Age ${horizonAge}. Initial SWR is conservative (${initialSwr.toFixed(1)}%).`,
+        actionableStep: `Use the 'Maximize Sustainable Spend' modal to calculate your exact personalized maximum spending capacity.`,
+        projectedBenefit: `Safely unlocks maximum lifestyle spending in your active retirement years without risk of running out of capital.`,
+      });
+    }
   } else if (!isFullyFunded) {
     const deficitYears = shortfallYears.length;
     const firstDeficit = shortfallYears[0];

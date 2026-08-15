@@ -35,6 +35,8 @@ describe('planInsightsEngine', () => {
     const maxSpendOpp = insights.opportunities.find((o) => o.id === 'maximized_spend_potential');
     expect(maxSpendOpp).toBeDefined();
     expect(maxSpendOpp?.status).toBe('recommended');
+    expect(maxSpendOpp?.actionableStep).toContain('The Max Spend Solver calculated that you can safely increase baseline spending');
+    expect(maxSpendOpp?.projectedBenefit).toContain('Safely unlocks up to');
   });
 
   it('detects 60% tax trap when active and advises contribution', () => {
