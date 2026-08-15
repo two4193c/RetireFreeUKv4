@@ -143,6 +143,7 @@ export const NAV_STRUCTURE: TabGroup[] = [
     icon: LayoutDashboard,
     description: 'Executive summary dashboard, complete projections, stress testing, and comments',
     cards: [
+      { id: 'card-plan-insights', label: 'Plan Insights & Opportunities' },
       { id: 'card-summary-strat', label: 'Strategy Summary Dashboard' },
       { id: 'card-summary-chart', label: 'Complete Projections Chart' },
       { id: 'card-summary-monte', label: 'Stress Testing Summary' },

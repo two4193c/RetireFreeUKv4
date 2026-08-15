@@ -9,6 +9,7 @@ import { runMonteCarloSimulation } from '../utils/monteCarloEngine';
 import { runHistoricSimulation } from '../utils/historicModelingEngine';
 import { getTargetIncomeForAge } from '../utils/projectionEngine';
 import { generatePlanNarrative } from '../utils/pdfNarrativeGenerator';
+import { computePlanInsights } from '../utils/planInsightsEngine';
 import { generateFormulaExcelWorkbook } from '../utils/excelFormulaExporter';
 import {
   computeCashFlowSankeyData,
@@ -911,7 +912,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       tocY += 8;
 
       const tocItems = [
-        { section: '1. Executive Summary & Plan Feasibility Status', page: 3, desc: 'Overall feasibility verdict, points of failure, shortfall timeline, and key risk alerts.' },
+        { section: '1. Executive Summary, Strategic Narrative & Plan Insights', page: 3, desc: 'Overall feasibility verdict, strategic narrative analysis, health scorecard, and actionable tax opportunities.' },
         { section: '2. Detailed Household Income & Personal Profile', page: 3, desc: 'Current salaries, access ages, State Pension inclusion & Triple Lock details.' },
         { section: '3. Current Investment Pot Assets Breakdown', page: 3, desc: 'Baseline asset breakdown across Pensions, ISAs, GIAs, and Cash Savings.' },
         { section: '4. Accumulation Summary & Pre-Retirement Savings Strategy', page: 4, desc: 'Monthly savings rate, workplace pension employer match, and scheduled pot transfers.' },
@@ -1039,9 +1040,9 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
 
       // SECTION 1b: AUTOMATED STRATEGIC NARRATIVE ANALYSIS
       doc.setFillColor(248, 250, 252);
-      doc.roundedRect(14, y, 182, 38, 3, 3, 'F');
+      doc.roundedRect(14, y, 182, 32, 3, 3, 'F');
       doc.setDrawColor(226, 232, 240);
-      doc.roundedRect(14, y, 182, 38, 3, 3, 'D');
+      doc.roundedRect(14, y, 182, 32, 3, 3, 'D');
 
       doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
       doc.setFont('helvetica', 'bold');
@@ -1053,12 +1054,94 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       doc.setTextColor(51, 65, 85);
 
       const execLines = doc.splitTextToSize(`• Executive Summary: ${autoNarrative.executiveSummary}`, 174);
-      doc.text(execLines, 18, y + 13);
+      doc.text(execLines, 18, y + 12.5);
 
       const decumLines = doc.splitTextToSize(`• Decumulation & Tax Strategy: ${autoNarrative.decumulationStrategy}`, 174);
-      doc.text(decumLines, 18, y + 25);
+      doc.text(decumLines, 18, y + 23);
 
-      y += 44;
+      y += 37;
+
+      // SECTION 1c: PLAN INSIGHTS & STRATEGIC OPPORTUNITIES
+      const planInsights = computePlanInsights(profile, pots, projections, taxResult);
+      const topOpp = planInsights.opportunities[0];
+      const secondOpp = planInsights.opportunities[1];
+
+      const insightsBoxH = 44;
+      doc.setFillColor(248, 250, 252);
+      doc.roundedRect(14, y, 182, insightsBoxH, 3, 3, 'F');
+      doc.setDrawColor(226, 232, 240);
+      doc.roundedRect(14, y, 182, insightsBoxH, 3, 3, 'D');
+
+      doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9.5);
+      doc.text('Plan Insights & Strategic Opportunities', 18, y + 6.5);
+
+      // 4 Scorecard KPI Badges
+      const kpiBoxY = y + 9.5;
+      const kpiW = 41;
+      const kpiH = 11;
+      const kpis = [
+        {
+          label: 'Portfolio Runway',
+          val: planInsights.scorecard.isFullyFunded ? `Age ${profile.lifeExpectancyAge || 90}+` : `Age ${planInsights.scorecard.depletionAge}`,
+          sub: planInsights.scorecard.isFullyFunded ? 'Fully Funded' : 'Shortfall Alert',
+        },
+        {
+          label: 'Initial SWR',
+          val: `${planInsights.scorecard.initialSwr}%`,
+          sub: planInsights.scorecard.swrStatus.toUpperCase(),
+        },
+        {
+          label: 'Floor Coverage',
+          val: `${planInsights.scorecard.guaranteedFloorCoveragePct}%`,
+          sub: `£${Math.round(planInsights.scorecard.guaranteedFloorAmount / 1000)}k/yr Gtd`,
+        },
+        {
+          label: 'Effective Tax',
+          val: `${planInsights.scorecard.effectiveTaxRate}%`,
+          sub: planInsights.scorecard.taxEfficiencyStatus === 'optimal' ? 'Tax Optimal' : 'Moderate Drag',
+        },
+      ];
+
+      kpis.forEach((kpi, kIdx) => {
+        const kX = 18 + kIdx * (kpiW + 3.2);
+        doc.setFillColor(255, 255, 255);
+        doc.roundedRect(kX, kpiBoxY, kpiW, kpiH, 1.5, 1.5, 'F');
+        doc.setDrawColor(226, 232, 240);
+        doc.roundedRect(kX, kpiBoxY, kpiW, kpiH, 1.5, 1.5, 'D');
+
+        doc.setFontSize(5.8);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(100, 116, 139);
+        doc.text(kpi.label, kX + 2.5, kpiBoxY + 3.2);
+
+        doc.setFontSize(7.5);
+        doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+        doc.text(kpi.val, kX + 2.5, kpiBoxY + 7.2);
+
+        doc.setFontSize(5.2);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(16, 185, 129);
+        doc.text(kpi.sub, kX + 2.5, kpiBoxY + 9.8);
+      });
+
+      // Key Insights & Opportunities Bullet Points
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.setTextColor(51, 65, 85);
+
+      const topOppLine = topOpp ? `• Key Opportunity: [${topOpp.category}] ${topOpp.title} — ${topOpp.actionableStep} (${topOpp.projectedBenefit})` : '';
+      const topOppLines = doc.splitTextToSize(topOppLine, 174);
+      doc.text(topOppLines, 18, y + 25);
+
+      if (secondOpp) {
+        const secOppLine = `• Secondary Optimization: [${secondOpp.category}] ${secondOpp.title} — ${secondOpp.actionableStep}`;
+        const secOppLines = doc.splitTextToSize(secOppLine, 174);
+        doc.text(secOppLines, 18, y + 35);
+      }
+
+      y += insightsBoxH + 6;
 
       // SECTION 2: DETAILED HOUSEHOLD INCOME & PERSONAL PROFILE (WITH TRIPLE LOCK DETAIL)
       const macroPre = profile.expectedInvestmentReturn ?? 6.5;

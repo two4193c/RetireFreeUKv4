@@ -34,6 +34,7 @@ import { HistoricModelingCard } from './components/HistoricModelingCard';
 import { IhtEstatePlanningCard } from './components/IhtEstatePlanningCard';
 import { SummaryCommentsCard } from './components/SummaryCommentsCard';
 import { StrategySummaryCard } from './components/StrategySummaryCard';
+import { PlanInsightsCard } from './components/PlanInsightsCard';
 import { IsaVsPensionEfficiencyCard } from './components/IsaVsPensionEfficiencyCard';
 import { MaximizedSpendSolverModal } from './components/MaximizedSpendSolverModal';
 import { SavePlanModal } from './components/SavePlanModal';
@@ -1121,6 +1122,16 @@ function App() {
             {/* Tab 7: Summary */}
             {activeTab === 'overview' && (
               <div className="space-y-6">
+                <div id="card-plan-insights" className="scroll-mt-24 transition-all duration-300">
+                  <PlanInsightsCard
+                    profile={profile}
+                    pots={pots}
+                    projections={projections}
+                    taxResult={taxResult}
+                    onChange={handleProfileChange}
+                    onOpenMaximizedSpendModal={() => setIsMaximizedSpendModalOpen(true)}
+                  />
+                </div>
                 <div id="card-summary-strat" className="scroll-mt-24 transition-all duration-300">
                   <StrategySummaryCard
                     profile={profile}
