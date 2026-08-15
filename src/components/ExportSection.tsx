@@ -10,6 +10,13 @@ import { runHistoricSimulation } from '../utils/historicModelingEngine';
 import { getTargetIncomeForAge } from '../utils/projectionEngine';
 import { generatePlanNarrative } from '../utils/pdfNarrativeGenerator';
 import { generateFormulaExcelWorkbook } from '../utils/excelFormulaExporter';
+import {
+  computeCashFlowSankeyData,
+  computeSankeyLayout,
+  hexToRgb,
+  CashFlowSankeyData,
+  SvgLayoutData,
+} from '../utils/sankeyEngine';
 
 interface ExportSectionProps {
   profile: UserProfile;
@@ -499,7 +506,109 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       const totalAccumPages = Math.ceil(accumLedgerItems.length / accumRowsPerPage) || 1;
       const totalHistoricPages = 3;
       const totalMortgagePages = 1;
-      const TOTAL_PAGES = 12 + totalAccumPages + totalDecumPages + totalHistoricPages + totalMortgagePages;
+
+      // Determine Sankey Milestones for Appendix 5
+      const isCouple = profile.maritalStatus === 'couple';
+      const sankeyMilestones: {
+        title: string;
+        subtitle: string;
+        age: number;
+        viewMode: 'combined' | 'split' | 'primary' | 'partner';
+        phaseLabel: string;
+      }[] = [];
+
+      // 1. Accumulation Phase at Current Age
+      if (profile.currentAge < targetAge) {
+        sankeyMilestones.push({
+          title: `Milestone 1: Accumulation Cash Flow — Current Age (${profile.currentAge})`,
+          subtitle: isCouple
+            ? 'Household earned income split by earner, statutory UK taxes, workplace pensions & ISA savings'
+            : 'Earned income, income tax, National Insurance, pension contributions & net living allocation',
+          age: profile.currentAge,
+          viewMode: isCouple ? 'split' : 'combined',
+          phaseLabel: `Accumulation Phase (Age ${profile.currentAge})`,
+        });
+      }
+
+      // 2. Target Retirement Age(s)
+      if (isCouple && (profile.partnerTargetRetirementAge && profile.partnerTargetRetirementAge !== targetAge)) {
+        sankeyMilestones.push({
+          title: `Milestone 2a: Retirement Cash Flow — Primary Target Retirement Age (${targetAge})`,
+          subtitle: `${profile.name || 'Primary'} reaches target retirement age; transition into decumulation drawdown`,
+          age: targetAge,
+          viewMode: 'split',
+          phaseLabel: `Retirement Phase (Age ${targetAge})`,
+        });
+        const partnerRetireAge = profile.partnerTargetRetirementAge;
+        sankeyMilestones.push({
+          title: `Milestone 2b: Retirement Cash Flow — Partner Target Retirement Age (${partnerRetireAge})`,
+          subtitle: `${profile.partnerName || 'Partner'} reaches target retirement age; combined household decumulation`,
+          age: partnerRetireAge,
+          viewMode: 'split',
+          phaseLabel: `Retirement Phase (Age ${partnerRetireAge})`,
+        });
+      } else {
+        sankeyMilestones.push({
+          title: `Milestone 2: Retirement Cash Flow — Target Retirement Age (${targetAge})`,
+          subtitle: isCouple
+            ? 'Initial retirement drawdown, pot extraction sequencing, tax deductions & lifestyle allocation (Split View)'
+            : 'Initial retirement drawdown, flexi-access pot withdrawals, income tax & living allocation',
+          age: targetAge,
+          viewMode: isCouple ? 'split' : 'combined',
+          phaseLabel: `Retirement Phase (Age ${targetAge})`,
+        });
+      }
+
+      // 3. Private Pension Access Age(s)
+      const primaryAccessAgeVal = getPensionAccessAge(profile);
+      const partnerAccessAgeVal = isCouple ? getPartnerPensionAccessAge(profile) : primaryAccessAgeVal;
+
+      if (primaryAccessAgeVal !== targetAge && primaryAccessAgeVal !== profile.currentAge) {
+        sankeyMilestones.push({
+          title: `Milestone 3${isCouple && partnerAccessAgeVal !== primaryAccessAgeVal ? 'a' : ''}: Private Pension Access Age (${primaryAccessAgeVal})`,
+          subtitle: `Earliest private pension access milestone (Age ${primaryAccessAgeVal}) — DC pension pot access & PCLS liquidity`,
+          age: primaryAccessAgeVal,
+          viewMode: isCouple ? 'split' : 'combined',
+          phaseLabel: `Private Pension Access (Age ${primaryAccessAgeVal})`,
+        });
+      }
+
+      if (isCouple && partnerAccessAgeVal !== primaryAccessAgeVal && partnerAccessAgeVal !== targetAge && partnerAccessAgeVal !== profile.currentAge) {
+        sankeyMilestones.push({
+          title: `Milestone 3b: Partner Private Pension Access Age (${partnerAccessAgeVal})`,
+          subtitle: `${profile.partnerName || 'Partner'} reaches private pension access (Age ${partnerAccessAgeVal})`,
+          age: partnerAccessAgeVal,
+          viewMode: 'split',
+          phaseLabel: `Partner Private Pension Access (Age ${partnerAccessAgeVal})`,
+        });
+      }
+
+      // 4. State Pension Start Age(s)
+      const primarySpaVal = profile.statePensionAge || 67;
+      const partnerSpaVal = isCouple ? (profile.partnerStatePensionAge || 67) : primarySpaVal;
+
+      if (primarySpaVal !== targetAge && primarySpaVal !== primaryAccessAgeVal && primarySpaVal !== profile.currentAge) {
+        sankeyMilestones.push({
+          title: `Milestone 4${isCouple && partnerSpaVal !== primarySpaVal ? 'a' : ''}: State Pension Start Age (${primarySpaVal})`,
+          subtitle: `Guaranteed DWP State Pension commencement (Age ${primarySpaVal}) reducing reliance on flexible pot drawdown`,
+          age: primarySpaVal,
+          viewMode: isCouple ? 'split' : 'combined',
+          phaseLabel: `State Pension Age (${primarySpaVal})`,
+        });
+      }
+
+      if (isCouple && partnerSpaVal !== primarySpaVal && partnerSpaVal !== targetAge && partnerSpaVal !== partnerAccessAgeVal && partnerSpaVal !== profile.currentAge) {
+        sankeyMilestones.push({
+          title: `Milestone 4b: Partner State Pension Start Age (${partnerSpaVal})`,
+          subtitle: `${profile.partnerName || 'Partner'} DWP State Pension commencement (Age ${partnerSpaVal})`,
+          age: partnerSpaVal,
+          viewMode: 'split',
+          phaseLabel: `Partner State Pension Age (${partnerSpaVal})`,
+        });
+      }
+
+      const totalSankeyPages = sankeyMilestones.length;
+      const TOTAL_PAGES = 12 + totalAccumPages + totalDecumPages + totalHistoricPages + totalMortgagePages + totalSankeyPages;
 
       // Helper function for header bar
       const renderPageHeader = (title: string, pageNum: number) => {
@@ -824,6 +933,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
         { section: '18. Appendix 2: Full Decumulation Schedule Output', page: 13 + totalAccumPages, desc: 'Year-by-year decumulation ledger detailing pot balances, withdrawals, and tax paid.' },
         { section: '19. Appendix 3: Historic Market Performance Simulation', page: 13 + totalAccumPages + totalDecumPages, desc: '75-sequence market stress test, sequence distribution bar chart & 75 start year matrix.' },
         { section: '20. Appendix 4: Mortgage Payoff Projection & Debt Amortization', page: 15 + totalAccumPages + totalDecumPages, desc: 'Mortgage balance amortization chart, overpayment savings & milestone debt balances.' },
+        { section: '21. Appendix 5: Cash Flow Sankey Waterfall Diagrams', page: 16 + totalAccumPages + totalDecumPages, desc: 'Detailed Sankey cash flow models across accumulation, retirement, pension access & state pension ages.' },
       ];
 
       tocItems.forEach((item, idx) => {
@@ -1462,8 +1572,8 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       const partnerPensionAtTakePcls = profile.isCouplePlanning ? getProjectedPensionAtTakeAge(profile, pots, partnerTakeAgePcls, true) : 0;
       const partnerMaxPcls = profile.isCouplePlanning ? calculatePartnerMaxPcls(partnerPensionAtTakePcls, profile) : { maxTaxFreeCash: 0, lsaLimit: 268275, pclsPercent: 25, isCappedByLsa: false };
 
-      const isCouple = Boolean(profile.isCouplePlanning);
-      const boxH = isCouple ? 25 : 21;
+      const isCoupleForPcls = Boolean(profile.isCouplePlanning);
+      const boxH = isCoupleForPcls ? 25 : 21;
 
       doc.setFillColor(254, 243, 199);
       doc.roundedRect(14, p2Y, 182, boxH, 3, 3, 'F');
@@ -4413,6 +4523,359 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(7.5);
       }
+
+      // =========================================================================
+      // APPENDIX 5: CASH FLOW SANKEY WATERFALL DIAGRAMS
+      // =========================================================================
+      sankeyMilestones.forEach((mItem, mIdx) => {
+        doc.addPage();
+        curPageNum++;
+        renderPageHeader(
+          totalSankeyPages > 1
+            ? `Appendix 5 — Cash Flow Sankey (Part ${mIdx + 1} of ${totalSankeyPages})`
+            : 'Appendix 5 — Cash Flow Sankey Waterfall',
+          curPageNum
+        );
+
+        let skY = 24;
+
+        // Header Title Box
+        doc.setFillColor(248, 250, 252);
+        doc.roundedRect(14, skY, 182, 19, 3, 3, 'F');
+        doc.setDrawColor(203, 213, 225);
+        doc.roundedRect(14, skY, 182, 19, 3, 3, 'D');
+
+        doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10.5);
+        doc.text(mItem.title, 18, skY + 7);
+
+        // Phase badge
+        doc.setFillColor(241, 245, 249);
+        doc.roundedRect(144, skY + 3.5, 48, 5.5, 2, 2, 'F');
+        doc.setDrawColor(203, 213, 225);
+        doc.roundedRect(144, skY + 3.5, 48, 5.5, 2, 2, 'D');
+        doc.setTextColor(15, 118, 110);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(6.5);
+        doc.text(mItem.phaseLabel, 146, skY + 7.2);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7.5);
+        doc.setTextColor(100, 116, 139);
+        doc.text(mItem.subtitle, 18, skY + 14);
+
+        skY += 22;
+
+        // Compute Sankey Data and Layout
+        const sankeyData = computeCashFlowSankeyData(
+          profile,
+          pots,
+          projections,
+          mItem.age,
+          mItem.viewMode
+        );
+
+        // Summary Metric Strip
+        if (sankeyData) {
+          const metricBoxW = 42.5;
+          const metricBoxH = 15;
+          const metricsStartY = skY;
+
+          const isRetired = sankeyData.isRetired;
+
+          const cards = isRetired
+            ? [
+                {
+                  label: 'Gross Inflows',
+                  val: `£${Math.round(sankeyData.totalGross).toLocaleString()}`,
+                  sub: 'Total Cash / Drawdown',
+                  color: [14, 165, 233],
+                },
+                {
+                  label: 'Total UK Taxes',
+                  val: `£${Math.round(sankeyData.totalTaxes).toLocaleString()}`,
+                  sub: `Effective ${sankeyData.metrics.taxRateEffective.toFixed(1)}% Rate`,
+                  color: [239, 68, 68],
+                },
+                {
+                  label: 'Net Living Income',
+                  val: `£${Math.round(sankeyData.totalNetIncome).toLocaleString()}`,
+                  sub: `£${Math.round(sankeyData.totalNetIncome / 12).toLocaleString()}/month`,
+                  color: [16, 185, 129],
+                },
+                {
+                  label: 'Guaranteed Floor',
+                  val: `£${Math.round(sankeyData.metrics.guaranteedFloor || 0).toLocaleString()}`,
+                  sub: 'State + DB + Annuity',
+                  color: [139, 92, 246],
+                },
+              ]
+            : [
+                {
+                  label: 'Gross Inflows',
+                  val: `£${Math.round(sankeyData.totalGross).toLocaleString()}`,
+                  sub: 'Salary + Empr Pension',
+                  color: [14, 165, 233],
+                },
+                {
+                  label: 'Total UK Taxes',
+                  val: `£${Math.round(sankeyData.totalTaxes).toLocaleString()}`,
+                  sub: `Income Tax & NI (${sankeyData.metrics.taxRateEffective.toFixed(1)}%)`,
+                  color: [239, 68, 68],
+                },
+                {
+                  label: 'Net Take-Home Spend',
+                  val: `£${Math.round(sankeyData.totalNetIncome).toLocaleString()}`,
+                  sub: `£${Math.round(sankeyData.totalNetIncome / 12).toLocaleString()}/month`,
+                  color: [16, 185, 129],
+                },
+                {
+                  label: 'Invested Wealth',
+                  val: `£${Math.round((sankeyData.metrics.savingsRate ? (sankeyData.totalGross * sankeyData.metrics.savingsRate) / 100 : 0)).toLocaleString()}`,
+                  sub: `Savings Rate ${sankeyData.metrics.savingsRate?.toFixed(1) || 0}%`,
+                  color: [99, 102, 241],
+                },
+              ];
+
+          cards.forEach((card, cIdx) => {
+            const cx = 14 + cIdx * (metricBoxW + 4);
+            doc.setFillColor(255, 255, 255);
+            doc.roundedRect(cx, metricsStartY, metricBoxW, metricBoxH, 2, 2, 'F');
+            doc.setDrawColor(226, 232, 240);
+            doc.roundedRect(cx, metricsStartY, metricBoxW, metricBoxH, 2, 2, 'D');
+
+            doc.setFillColor(card.color[0], card.color[1], card.color[2]);
+            doc.rect(cx, metricsStartY, 2, metricBoxH, 'F');
+
+            doc.setFontSize(6);
+            doc.setTextColor(100, 116, 139);
+            doc.setFont('helvetica', 'bold');
+            doc.text(card.label.toUpperCase(), cx + 5, metricsStartY + 4.2);
+
+            doc.setFontSize(8.5);
+            doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+            doc.setFont('helvetica', 'bold');
+            doc.text(card.val, cx + 5, metricsStartY + 9.5);
+
+            doc.setFontSize(5.5);
+            doc.setTextColor(148, 163, 184);
+            doc.setFont('helvetica', 'normal');
+            doc.text(card.sub, cx + 5, metricsStartY + 13.2);
+          });
+
+          skY += 18;
+        }
+
+        // Sankey Diagram Canvas Box
+        const sankeyBoxH = 175;
+        doc.setFillColor(255, 255, 255);
+        doc.roundedRect(14, skY, 182, sankeyBoxH, 3, 3, 'F');
+        doc.setDrawColor(203, 213, 225);
+        doc.roundedRect(14, skY, 182, sankeyBoxH, 3, 3, 'D');
+
+        // Column Titles Bar inside Sankey Box
+        doc.setFontSize(6.5);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(148, 163, 184);
+        doc.text('1. GROSS INFLOWS', 22, skY + 6);
+        doc.text('2. GROSS INFLOW HUB', 74, skY + 6, { align: 'center' });
+        doc.text('3. TAXES & NET CASH', 126, skY + 6, { align: 'center' });
+        doc.text('4. ALLOCATIONS', 182, skY + 6, { align: 'right' });
+
+        // Draw Sankey Flow Links and Nodes
+        const canvasX = 14;
+        const canvasY = skY + 8;
+        const canvasW = 182;
+        const canvasH = sankeyBoxH - 12;
+
+        const sankeyLayout = sankeyData
+          ? computeSankeyLayout(sankeyData, canvasW, canvasH, 8, 8, 5, 5, 3.5)
+          : null;
+
+        if (sankeyLayout && sankeyData && sankeyData.nodes.length > 0) {
+          // 1. Draw Links / Ribbons
+          sankeyLayout.linkPaths.forEach((link) => {
+            const rgb = hexToRgb(link.color);
+            const linkFillR = Math.round(rgb[0] * 0.35 + 255 * 0.65);
+            const linkFillG = Math.round(rgb[1] * 0.35 + 255 * 0.65);
+            const linkFillB = Math.round(rgb[2] * 0.35 + 255 * 0.65);
+
+            const linkStrokeR = Math.round(rgb[0] * 0.6 + 255 * 0.4);
+            const linkStrokeG = Math.round(rgb[1] * 0.6 + 255 * 0.4);
+            const linkStrokeB = Math.round(rgb[2] * 0.6 + 255 * 0.4);
+
+            if (link.coords) {
+              const { x0, y0, x1, y3, y2, y1, dx } = link.coords;
+              const px0 = canvasX + x0;
+              const py0 = canvasY + y0;
+              const px1 = canvasX + x1;
+              const py3 = canvasY + y3;
+              const py2 = canvasY + y2;
+              const py1 = canvasY + y1;
+              const pdx = dx;
+
+              const polyPoints: { x: number; y: number }[] = [];
+              const steps = 18;
+
+              // Top Bezier curve: (px0, py0) -> (px1, py3)
+              for (let s = 0; s <= steps; s++) {
+                const t = s / steps;
+                const mt = 1 - t;
+                const mt2 = mt * mt;
+                const mt3 = mt2 * mt;
+                const t2 = t * t;
+                const t3 = t2 * t;
+
+                const topX = mt3 * px0 + 3 * mt2 * t * (px0 + pdx) + 3 * mt * t2 * (px1 - pdx) + t3 * px1;
+                const topY = mt3 * py0 + 3 * mt2 * t * py0 + 3 * mt * t2 * py3 + t3 * py3;
+                polyPoints.push({ x: topX, y: topY });
+              }
+
+              // Bottom Bezier curve: (px1, py2) -> (px0, py1)
+              for (let s = 0; s <= steps; s++) {
+                const t = s / steps;
+                const mt = 1 - t;
+                const mt2 = mt * mt;
+                const mt3 = mt2 * mt;
+                const t2 = t * t;
+                const t3 = t2 * t;
+
+                const botX = mt3 * px1 + 3 * mt2 * t * (px1 - pdx) + 3 * mt * t2 * (px0 + pdx) + t3 * px0;
+                const botY = mt3 * py2 + 3 * mt2 * t * py2 + 3 * mt * t2 * py1 + t3 * py1;
+                polyPoints.push({ x: botX, y: botY });
+              }
+
+              if (polyPoints.length > 1) {
+                const startPt = polyPoints[0];
+                const relativeVectors: [number, number][] = [];
+                for (let k = 1; k < polyPoints.length; k++) {
+                  relativeVectors.push([
+                    polyPoints[k].x - polyPoints[k - 1].x,
+                    polyPoints[k].y - polyPoints[k - 1].y,
+                  ]);
+                }
+
+                doc.setFillColor(linkFillR, linkFillG, linkFillB);
+                doc.setDrawColor(linkStrokeR, linkStrokeG, linkStrokeB);
+                doc.setLineWidth(0.15);
+                try {
+                  doc.lines(relativeVectors, startPt.x, startPt.y, [1, 1], 'FD', true);
+                } catch {
+                  // Fallback
+                  const fallbackLines = [
+                    [px1 - px0, py3 - py0],
+                    [0, py2 - py3],
+                    [px0 - px1, py1 - py2],
+                  ];
+                  doc.lines(fallbackLines, px0, py0, [1, 1], 'FD', true);
+                }
+              }
+            }
+          });
+
+          // 2. Draw Nodes
+          sankeyLayout.nodePositions.forEach((pos) => {
+            const nodeRgb = hexToRgb(pos.node.color);
+            const nx = canvasX + pos.x;
+            const ny = canvasY + pos.y;
+            const nw = pos.width;
+            const nh = pos.height;
+
+            // Node colored rounded rectangle
+            doc.setFillColor(nodeRgb[0], nodeRgb[1], nodeRgb[2]);
+            doc.setDrawColor(Math.round(nodeRgb[0] * 0.7), Math.round(nodeRgb[1] * 0.7), Math.round(nodeRgb[2] * 0.7));
+            doc.setLineWidth(0.3);
+            doc.roundedRect(nx, ny, nw, nh, 1, 1, 'FD');
+
+            const displayAmount = `£${Math.round(pos.node.amount).toLocaleString()}`;
+            const labelText = pos.node.label.length > 22 ? `${pos.node.label.substring(0, 20)}..` : pos.node.label;
+
+            // Text Labels per column
+            if (pos.node.column === 0) {
+              const labelX = nx + nw + 2;
+              const labelY = ny + Math.max(3, nh / 2);
+
+              doc.setFontSize(5.5);
+              doc.setFont('helvetica', 'bold');
+              doc.setTextColor(15, 23, 42);
+              doc.text(labelText, labelX, labelY - 1);
+
+              doc.setFontSize(4.8);
+              doc.setFont('helvetica', 'normal');
+              doc.setTextColor(71, 85, 105);
+              doc.text(displayAmount, labelX, labelY + 2.5);
+            } else if (pos.node.column === 1) {
+              doc.setFontSize(5.5);
+              doc.setFont('helvetica', 'bold');
+              doc.setTextColor(15, 23, 42);
+              doc.text(labelText, nx + nw / 2, ny - 2, { align: 'center' });
+
+              if (nh >= 12) {
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(5);
+                doc.setFont('helvetica', 'bold');
+                doc.text(displayAmount, nx + nw / 2, ny + nh / 2 + 1, { align: 'center' });
+              } else {
+                doc.setTextColor(71, 85, 105);
+                doc.setFontSize(5);
+                doc.setFont('helvetica', 'normal');
+                doc.text(displayAmount, nx + nw / 2, ny + nh + 3, { align: 'center' });
+              }
+            } else if (pos.node.column === 2) {
+              const labelX = nx + nw + 2;
+              const labelY = ny + Math.max(3, nh / 2);
+              const isTax = pos.node.category === 'deduction';
+
+              doc.setFontSize(5.5);
+              doc.setFont('helvetica', 'bold');
+              doc.setTextColor(isTax ? 220 : 15, isTax ? 38 : 23, isTax ? 38 : 42);
+              doc.text(labelText, labelX, labelY - 1);
+
+              doc.setFontSize(4.8);
+              doc.setFont('helvetica', 'normal');
+              doc.setTextColor(isTax ? 185 : 71, isTax ? 28 : 85, isTax ? 28 : 105);
+              doc.text(displayAmount, labelX, labelY + 2.5);
+            } else if (pos.node.column === 3) {
+              const labelX = nx - 2;
+              const labelY = ny + Math.max(3, nh / 2);
+
+              doc.setFontSize(5.5);
+              doc.setFont('helvetica', 'bold');
+              doc.setTextColor(15, 23, 42);
+              doc.text(labelText, labelX, labelY - 1, { align: 'right' });
+
+              doc.setFontSize(4.8);
+              doc.setFont('helvetica', 'normal');
+              doc.setTextColor(71, 85, 105);
+              doc.text(displayAmount, labelX, labelY + 2.5, { align: 'right' });
+            }
+          });
+        }
+
+        skY += sankeyBoxH + 4;
+
+        // Key Milestone Footnote & Insights Bar
+        doc.setFillColor(248, 250, 252);
+        doc.roundedRect(14, skY, 182, 14, 2, 2, 'F');
+        doc.setDrawColor(226, 232, 240);
+        doc.roundedRect(14, skY, 182, 14, 2, 2, 'D');
+
+        doc.setFontSize(6.5);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+        doc.text('Key Cash Flow Observations for this Milestone:', 18, skY + 4.5);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(6);
+        doc.setTextColor(100, 116, 139);
+
+        const obsText = sankeyData?.isRetired
+          ? `• Inflows are sourced from flexi-access pots, annuities, and DWP State Pension. Net available living income covers essential & lifestyle spending.`
+          : `• Active salary income is optimized via statutory UK Income Tax & National Insurance allowances, workplace pension relief, and tax-sheltered ISA/GIA contributions.`;
+
+        doc.text(obsText, 18, skY + 9);
+      });
 
       // Dynamic Two-Pass Page Numbering & Footer Pass across all actual pages
       const finalTotalPages = doc.getNumberOfPages();
