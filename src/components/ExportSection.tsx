@@ -1775,9 +1775,11 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
         ? 'HIGHER RATE BRACKET (Target £125,140 ceiling minus taxable fixed income)'
         : (profile.drawdownStrategy || 'pro_rata').replace(/_/g, ' ').toUpperCase();
 
-      const priPclsDisplay = profile.crystallisationTranches && profile.crystallisationTranches.length > 0
-        ? `Split Pot (Phased Crystallisation: £${(profile.crystallisationTranches[0]?.amount || 100000).toLocaleString()}/yr => 25% Tax-Free Cash + 75% Drawdown Pot)`
-        : profile.takeLumpSumAtStart
+      const isPhasedPrimary = profile.crystallisationMode === 'phased_tranches';
+      const priActiveTranches = (profile.crystallisationTranches || []).filter(t => t.enabled !== false && t.owner !== 'partner');
+      const priPclsDisplay = isPhasedPrimary && priActiveTranches.length > 0
+        ? `Split Pot (Phased Crystallisation: £${(priActiveTranches[0]?.amount || 100000).toLocaleString()}/yr => 25% Tax-Free Cash + 75% Drawdown Pot)`
+        : (profile.crystallisationMode === 'upfront' || (!profile.crystallisationMode && profile.takeLumpSumAtStart))
         ? `${profile.pclsLumpSumPercent || 25}% Upfront Lump Sum`
         : 'UFPLS (Tax-Free as drawn)';
 
@@ -1818,9 +1820,11 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
           ? 'HIGHER RATE BRACKET (Target £125,140 ceiling minus taxable fixed income)'
           : (profile.partnerDrawdownStrategy || profile.drawdownStrategy || 'pro_rata').replace(/_/g, ' ').toUpperCase();
 
-        const partPclsDisplay = profile.partnerCrystallisationTranches && profile.partnerCrystallisationTranches.length > 0
-          ? `Split Pot (Phased Crystallisation: £${(profile.partnerCrystallisationTranches[0]?.amount || 100000).toLocaleString()}/yr => 25% Tax-Free Cash + 75% Drawdown Pot)`
-          : profile.partnerTakeLumpSumAtStart
+        const isPhasedPartner = profile.partnerCrystallisationMode === 'phased_tranches';
+        const partActiveTranches = (profile.partnerCrystallisationTranches || profile.crystallisationTranches || []).filter(t => t.enabled !== false && t.owner === 'partner');
+        const partPclsDisplay = isPhasedPartner && partActiveTranches.length > 0
+          ? `Split Pot (Phased Crystallisation: £${(partActiveTranches[0]?.amount || 100000).toLocaleString()}/yr => 25% Tax-Free Cash + 75% Drawdown Pot)`
+          : (profile.partnerCrystallisationMode === 'upfront' || (!profile.partnerCrystallisationMode && (profile.partnerTakeLumpSumAtStart ?? profile.takeLumpSumAtStart)))
           ? `${profile.partnerPclsLumpSumPercent || 25}% Upfront Lump Sum`
           : 'UFPLS (Tax-Free as drawn)';
 

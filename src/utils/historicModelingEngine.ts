@@ -165,8 +165,10 @@ export function runHistoricModelingSimulation(
       const age = safeCurrentAge + yr;
       const partnerAge = age + ((profile.partnerCurrentAge ?? profile.currentAge) - profile.currentAge);
       const isRetired = age >= profile.targetRetirementAge;
-      const canAccessPension = age >= pensionAccessAge || (profile.crystallisationTranches || []).some((t) => t.enabled && t.age <= age && (t.owner || 'primary') !== 'partner');
-      const partnerCanAccessPension = profile.isCouplePlanning && !partnerDead && (partnerAge >= partnerPensionAccessAge || (profile.partnerCrystallisationTranches || profile.crystallisationTranches || []).some((t) => t.enabled && t.age <= partnerAge && t.owner === 'partner'));
+      const isPhasedPrimary = profile.crystallisationMode === 'phased_tranches';
+      const isPhasedPartner = profile.partnerCrystallisationMode === 'phased_tranches';
+      const canAccessPension = age >= pensionAccessAge || (isPhasedPrimary && (profile.crystallisationTranches || []).some((t) => t.enabled && t.age <= age && (t.owner || 'primary') !== 'partner'));
+      const partnerCanAccessPension = profile.isCouplePlanning && !partnerDead && (partnerAge >= partnerPensionAccessAge || (isPhasedPartner && (profile.partnerCrystallisationTranches || profile.crystallisationTranches || []).some((t) => t.enabled && t.age <= partnerAge && t.owner === 'partner')));
       const calendarYear = new Date().getFullYear() + yr;
 
       const hData = sequence[yr];
@@ -273,9 +275,11 @@ export function runHistoricModelingSimulation(
       const isUpfrontPartner = (profile.partnerCrystallisationMode === 'upfront') || (!profile.partnerCrystallisationMode && (profile.partnerTakeLumpSumAtStart ?? profile.takeLumpSumAtStart));
 
       // Phased Crystallisation Tranches - Primary
-      const primaryActiveTranches = (profile.crystallisationTranches || []).filter(
-        (t) => t.enabled && t.age === age && t.owner !== 'partner'
-      );
+      const primaryActiveTranches = isPhasedPrimary
+        ? (profile.crystallisationTranches || []).filter(
+            (t) => t.enabled && t.age === age && t.owner !== 'partner'
+          )
+        : [];
       if (primaryPensionPot > 0 && primaryActiveTranches.length > 0) {
         for (const tranche of primaryActiveTranches) {
           if (primaryPensionPot <= 0) break;
@@ -298,9 +302,11 @@ export function runHistoricModelingSimulation(
       }
 
       // Phased Crystallisation Tranches - Partner
-      const partnerActiveTranches = (profile.partnerCrystallisationTranches || profile.crystallisationTranches || []).filter(
-        (t) => t.enabled && t.age === partnerAge && t.owner === 'partner'
-      );
+      const partnerActiveTranches = isPhasedPartner
+        ? (profile.partnerCrystallisationTranches || profile.crystallisationTranches || []).filter(
+            (t) => t.enabled && t.age === partnerAge && t.owner === 'partner'
+          )
+        : [];
       if (profile.isCouplePlanning && !partnerDead && partnerPensionPot > 0 && partnerActiveTranches.length > 0) {
         for (const tranche of partnerActiveTranches) {
           if (partnerPensionPot <= 0) break;

@@ -1201,14 +1201,16 @@ export async function generateFormulaExcelWorkbook(
   const partnerLsaLimit = getPartnerLsaLimit(profile);
   const primaryPclsAge = getLumpSumTakeAge(profile);
   const primaryPclsYear = (new Date().getFullYear()) + Math.max(0, primaryPclsAge - primaryCurrentAge);
-  const isPhasedPrimary = profile.crystallisationMode === 'phased_tranches' || (profile.crystallisationTranches && profile.crystallisationTranches.length > 0);
+  const isPhasedPrimary = profile.crystallisationMode === 'phased_tranches';
 
   let primaryEstPcls = 0;
   let primaryEstGross = 0;
   let primaryAlloc = { toIsa: 0, toGia: 0, toCashSavings: 0, toCashGia: 0, spentOrDebt: 0 };
 
   // 1. Phased Crystallisation Tranches (Split Pot Tracking)
-  const activeTranchesPrimary = (profile.crystallisationTranches || []).filter(t => t.enabled !== false && t.owner !== 'partner');
+  const activeTranchesPrimary = isPhasedPrimary
+    ? (profile.crystallisationTranches || []).filter(t => t.enabled !== false && t.owner !== 'partner')
+    : [];
   activeTranchesPrimary.forEach((t) => {
     const tAge = t.age || 57;
     const tYear = (new Date().getFullYear()) + Math.max(0, tAge - primaryCurrentAge);
@@ -1246,7 +1248,7 @@ export async function generateFormulaExcelWorkbook(
   // If not phased, add Upfront PCLS if configured
   if (!isPhasedPrimary) {
     const primaryPclsPct = (profile.pclsLumpSumPercent ?? 25) / 100;
-    const primaryTakeUpfront = profile.takeLumpSumAtStart !== false;
+    const primaryTakeUpfront = profile.crystallisationMode === 'upfront' || (!profile.crystallisationMode && profile.takeLumpSumAtStart);
     const primaryPclsStrat = primaryTakeUpfront ? 'Take Upfront at Access Age' : 'Drip-Feed / UFPLS';
     const primaryPclsDestStr = getPclsDestStr(profile.lumpSumTargetPot, profile.lumpSumSplits);
 
@@ -1293,8 +1295,10 @@ export async function generateFormulaExcelWorkbook(
   if (isCouple) {
     const partnerCurrentAge = profile.partnerCurrentAge || profile.currentAge || 50;
     const partnerAgeOffset = partnerCurrentAge - (profile.currentAge || 50);
-    const partnerActiveTranches = (profile.partnerCrystallisationTranches || profile.crystallisationTranches || []).filter(t => t.enabled !== false && t.owner === 'partner');
-    const isPhasedPartner = profile.partnerCrystallisationMode === 'phased_tranches' || partnerActiveTranches.length > 0;
+    const isPhasedPartner = profile.partnerCrystallisationMode === 'phased_tranches';
+    const partnerActiveTranches = isPhasedPartner
+      ? (profile.partnerCrystallisationTranches || profile.crystallisationTranches || []).filter(t => t.enabled !== false && t.owner === 'partner')
+      : [];
 
     partnerActiveTranches.forEach((t) => {
       const tAge = t.age || 57;
@@ -1334,7 +1338,7 @@ export async function generateFormulaExcelWorkbook(
       const partnerPclsAge = getPartnerLumpSumTakeAge(profile);
       const partnerPclsYear = (new Date().getFullYear()) + Math.max(0, partnerPclsAge - partnerCurrentAge);
       const partnerPclsPct = (profile.partnerPclsLumpSumPercent ?? 25) / 100;
-      const partnerTakeUpfront = profile.partnerTakeLumpSumAtStart !== false;
+      const partnerTakeUpfront = profile.partnerCrystallisationMode === 'upfront' || (!profile.partnerCrystallisationMode && (profile.partnerTakeLumpSumAtStart ?? profile.takeLumpSumAtStart));
       const partnerPclsStrat = partnerTakeUpfront ? 'Take Upfront at Access Age' : 'Drip-Feed / UFPLS';
       const partnerPclsDestStr = getPclsDestStr(profile.partnerLumpSumTargetPot, profile.partnerLumpSumSplits);
 

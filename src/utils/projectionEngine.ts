@@ -298,12 +298,15 @@ function parseAnnuityTypeConfig(type?: string) {
     const yearOffset = age - profile.currentAge;
     const calendarYear = new Date().getFullYear() + yearOffset;
     const isRetired = age >= profile.targetRetirementAge;
-    const canAccessPension = age >= pensionAccessAge || primaryCrystallisedPot > 0 || (profile.crystallisationTranches || []).some((t) => t.enabled && t.age <= age && (t.owner || 'primary') !== 'partner');
+    const isPhasedPrimary = profile.crystallisationMode === 'phased_tranches';
+    const isPhasedPartner = profile.partnerCrystallisationMode === 'phased_tranches';
+
+    const canAccessPension = age >= pensionAccessAge || primaryCrystallisedPot > 0 || (isPhasedPrimary && (profile.crystallisationTranches || []).some((t) => t.enabled && t.age <= age && (t.owner || 'primary') !== 'partner'));
 
     const partnerAge = profile.isCouplePlanning
       ? age + ((profile.partnerCurrentAge ?? profile.currentAge) - profile.currentAge)
       : age;
-    const partnerCanAccessPension = partnerAge >= partnerPensionAccessAge || partnerCrystallisedPot > 0 || (profile.partnerCrystallisationTranches || profile.crystallisationTranches || []).some((t) => t.enabled && t.age <= partnerAge && t.owner === 'partner');
+    const partnerCanAccessPension = partnerAge >= partnerPensionAccessAge || partnerCrystallisedPot > 0 || (isPhasedPartner && (profile.partnerCrystallisationTranches || profile.crystallisationTranches || []).some((t) => t.enabled && t.age <= partnerAge && t.owner === 'partner'));
 
     // Partner Mortality Inheritance
     if (profile.isCouplePlanning && !partnerDead && partnerAge >= (profile.partnerLifeExpectancyAge || 95)) {
@@ -342,9 +345,11 @@ function parseAnnuityTypeConfig(type?: string) {
     const isUpfrontPartner = (profile.partnerCrystallisationMode === 'upfront') || (!profile.partnerCrystallisationMode && (profile.partnerTakeLumpSumAtStart ?? profile.takeLumpSumAtStart));
 
     // 1. Phased Crystallisation Tranches - Primary
-    const primaryActiveTranches = (profile.crystallisationTranches || []).filter(
-      (t) => t.enabled && t.age === age && t.owner !== 'partner'
-    );
+    const primaryActiveTranches = isPhasedPrimary
+      ? (profile.crystallisationTranches || []).filter(
+          (t) => t.enabled && t.age === age && t.owner !== 'partner'
+        )
+      : [];
     if (primaryUncrystallisedPot > 0 && primaryActiveTranches.length > 0) {
       for (const tranche of primaryActiveTranches) {
         if (primaryUncrystallisedPot <= 0) break;
@@ -388,9 +393,11 @@ function parseAnnuityTypeConfig(type?: string) {
     }
 
     // 2. Phased Crystallisation Tranches - Partner
-    const partnerActiveTranches = (profile.partnerCrystallisationTranches || profile.crystallisationTranches || []).filter(
-      (t) => t.enabled && t.age === partnerAge && t.owner === 'partner'
-    );
+    const partnerActiveTranches = isPhasedPartner
+      ? (profile.partnerCrystallisationTranches || profile.crystallisationTranches || []).filter(
+          (t) => t.enabled && t.age === partnerAge && t.owner === 'partner'
+        )
+      : [];
     if (profile.isCouplePlanning && !partnerDead && partnerUncrystallisedPot > 0 && partnerActiveTranches.length > 0) {
       for (const tranche of partnerActiveTranches) {
         if (partnerUncrystallisedPot <= 0) break;
