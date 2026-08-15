@@ -144,7 +144,7 @@ export const SayeBayeGuideCard: React.FC = () => {
           Under HMRC rules, when your SAYE scheme matures (or when you withdraw shares from a SIP after 5 years), you can transfer up to <strong>£20,000 worth of shares directly into a Stocks & Shares ISA within 90 days</strong> of exercising the option or leaving the plan.
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
           <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-emerald-200/60 dark:border-emerald-900/60 space-y-1.5">
             <div className="flex items-center gap-2 font-bold text-emerald-900 dark:text-emerald-300">
               <span className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-xs flex items-center justify-center font-black">1</span>
@@ -172,6 +172,16 @@ export const SayeBayeGuideCard: React.FC = () => {
             </div>
             <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
               The £20,000 of shares is sheltered in your ISA. <strong>No Capital Gains Tax is due on transfer</strong>, and all future growth and dividends remain 100% tax-free!
+            </p>
+          </div>
+
+          <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-emerald-200/60 dark:border-emerald-900/60 space-y-1.5">
+            <div className="flex items-center gap-2 font-bold text-emerald-900 dark:text-emerald-300">
+              <span className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-xs flex items-center justify-center font-black">4</span>
+              <span>SIPP Tax Relief (Optional)</span>
+            </div>
+            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+              Once sheltered in your ISA, you can optionally sell the shares tax-free and contribute the cash into a <strong>SIPP</strong>, claiming 20% to 45% income tax relief on the contribution.
             </p>
           </div>
         </div>
