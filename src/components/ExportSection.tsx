@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { UserProfile, InvestmentPots, YearProjection, UKTaxResult, PlannerScenario } from '../types';
+import { UserProfile, InvestmentPots, YearProjection, UKTaxResult, PlannerScenario, CrystallisationTranche, LumpSumSplit } from '../types';
 import { DEFAULT_PARTNER_POTS, DEFAULT_POTS, DEFAULT_MORTGAGE, sanitizePots } from '../utils/defaultData';
 import { jsPDF } from 'jspdf';
 import { FileText, Download, Printer, CheckCircle2, Sparkles, ShieldCheck, ArrowUpRight, Table, PieChart, Image as ImageIcon, BarChart3, Upload, FileJson, FileSpreadsheet } from 'lucide-react';
@@ -1838,7 +1838,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
         p3Y += 16;
       }
 
-      // SECTION 8: RETIREMENT INCOME PRODUCT STRUCTURE & DRAWDOWN STRATEGY
+      // SECTION 10: RETIREMENT INCOME PRODUCT STRUCTURE & DRAWDOWN STRATEGY
       const priOpt = profile.incomeProductOption || 'flexi_drawdown';
       const partOpt = profile.partnerIncomeProductOption || profile.incomeProductOption || 'flexi_drawdown';
       const isPriAnnuity = priOpt === 'annuity' || priOpt === 'hybrid';
@@ -1848,34 +1848,35 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       const partTranchesList = profile.isCouplePlanning
         ? (profile.partnerAnnuityTranches || (profile.annuityTranches || []).filter((t) => t.enabled && t.owner === 'partner'))
         : [];
-      const maxTranchesCount = Math.max(priTranchesList.length, partTranchesList.length);
 
-      const baseCardHeight = (profile.isCouplePlanning && isPartAnnuity) || isPriAnnuity ? 52 : 42;
-      const cardHeight = baseCardHeight + (maxTranchesCount * 5.5);
+      const isPhasedPrimary = profile.crystallisationMode === 'phased_tranches';
+      const priActivePhased: CrystallisationTranche[] = (profile.crystallisationTranches || []).filter((t) => t.enabled !== false && t.owner !== 'partner');
 
-      doc.setFillColor(slateLight[0], slateLight[1], slateLight[2]);
-      doc.roundedRect(14, p3Y, 182, cardHeight, 3, 3, 'F');
-      doc.setDrawColor(226, 232, 240);
-      doc.roundedRect(14, p3Y, 182, cardHeight, 3, 3, 'D');
+      const isPhasedPartner = Boolean(profile.isCouplePlanning && profile.partnerCrystallisationMode === 'phased_tranches');
+      const partActivePhased: CrystallisationTranche[] = profile.isCouplePlanning
+        ? (profile.partnerCrystallisationTranches || profile.crystallisationTranches || []).filter((t) => t.enabled !== false && t.owner === 'partner')
+        : [];
 
-      doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(10.5);
-      doc.text('10. Retirement Income Product Structure & Drawdown Strategy (Per Person)', 18, p3Y + 8);
-
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8.5);
-      doc.setTextColor(51, 65, 85);
-
-      // Primary Strategy Column
-      doc.setFont('helvetica', 'bold');
-      doc.text(`Primary Member Strategy (${primaryName}):`, 18, p3Y + 17);
-      doc.setFont('helvetica', 'normal');
-      const priProduct = priOpt === 'annuity'
-        ? 'Guaranteed Lifetime Annuity (100% Capital)'
-        : priOpt === 'hybrid'
-        ? `Hybrid / Tranche (${profile.annuityAllocationPercent || 50}% Baseline)`
-        : 'Flexi-Access Drawdown (100% Market Invested)';
+      const formatDestPotLabel = (pot?: string, splits?: LumpSumSplit[]) => {
+        if (pot === 'split' && splits && splits.length > 0) {
+          const splitDescs = splits.map((s) => {
+            const pLabel = s.pot === 'stocks_and_shares_isa' ? 'S&S ISA'
+              : s.pot === 'cash_isa' ? 'Cash ISA'
+              : s.pot === 'cash_savings' ? 'Cash'
+              : s.pot === 'gia' ? 'GIA'
+              : 'Spend/Debt';
+            return s.mode === 'percentage' ? `${pLabel} ${s.value}%` : `${pLabel} £${Math.round(s.value).toLocaleString()}`;
+          });
+          return `Split: ${splitDescs.join(', ')}`;
+        }
+        if (pot === 'stocks_and_shares_isa') return 'S&S ISA (Tax-Free)';
+        if (pot === 'cash_isa') return 'Cash ISA (Tax-Free)';
+        if (pot === 'cash_savings') return 'Cash Savings';
+        if (pot === 'gia') return 'GIA (General Inv.)';
+        if (pot === 'spend_clear_debt') return 'Spend / Clear Debt';
+        if (pot === 'split') return 'Split across Multiple Pots';
+        return 'S&S ISA (Tax-Free)';
+      };
 
       const priHierarchy = profile.drawdownStrategy === 'tax_optimizer'
         ? 'TAX OPTIMIZER (Dynamic solver: 0% PA & 20% band smoothing, ISA shielding, spousal equalization)'
@@ -1887,76 +1888,308 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
         ? 'HIGHER RATE BRACKET (Target £125,140 ceiling minus taxable fixed income)'
         : (profile.drawdownStrategy || 'pro_rata').replace(/_/g, ' ').toUpperCase();
 
-      const isPhasedPrimary = profile.crystallisationMode === 'phased_tranches';
-      const priActiveTranches = (profile.crystallisationTranches || []).filter(t => t.enabled !== false && t.owner !== 'partner');
-      const priPclsDisplay = isPhasedPrimary && priActiveTranches.length > 0
-        ? `Split Pot (Phased Crystallisation: £${(priActiveTranches[0]?.amount || 100000).toLocaleString()}/yr => 25% Tax-Free Cash + 75% Drawdown Pot)`
-        : (profile.crystallisationMode === 'upfront' || (!profile.crystallisationMode && profile.takeLumpSumAtStart))
-        ? `${profile.pclsLumpSumPercent || 25}% Upfront Lump Sum`
-        : 'UFPLS (Tax-Free as drawn)';
+      const partHierarchy = (profile.partnerDrawdownStrategy || profile.drawdownStrategy) === 'tax_optimizer'
+        ? 'TAX OPTIMIZER (Dynamic solver: 0% PA & 20% band smoothing, ISA shielding, spousal equalization)'
+        : (profile.partnerDrawdownStrategy || profile.drawdownStrategy) === 'basic_rate_bracket'
+        ? 'BASIC RATE BRACKET (Target £50,270 ceiling minus taxable fixed income)'
+        : (profile.partnerDrawdownStrategy || profile.drawdownStrategy) === 'tax_free_bracket'
+        ? 'PERSONAL ALLOWANCE BRACKET (Target £12,570 ceiling minus taxable fixed income)'
+        : (profile.partnerDrawdownStrategy || profile.drawdownStrategy) === 'higher_rate_bracket'
+        ? 'HIGHER RATE BRACKET (Target £125,140 ceiling minus taxable fixed income)'
+        : (profile.partnerDrawdownStrategy || profile.drawdownStrategy || 'pro_rata').replace(/_/g, ' ').toUpperCase();
 
-      doc.text(`• Product Choice: ${priProduct}`, 18, p3Y + 23);
-      doc.text(`• Withdrawal Hierarchy: ${priHierarchy}`, 18, p3Y + 29);
-      doc.text(`• Tax Free Cash (PCLS): ${priPclsDisplay}`, 18, p3Y + 35);
+      doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10.5);
+      doc.text('10. Retirement Income Product Structure & Drawdown Strategy (Per Person)', 14, p3Y);
+      p3Y += 5;
 
-      if (isPriAnnuity) {
-        const rawPurAge = profile.annuityPurchaseAge || (profile.targetRetirementAge || 60);
-        const purAge = Math.max(profile.pensionAccessAge || 57, rawPurAge);
-        doc.text(`• Baseline Purchase Start: Age ${purAge} (${profile.annuityRatePercent || 4.2}% rate)`, 18, p3Y + 41);
-        doc.text(`• Baseline Payout Type: ${profile.annuityType || 'Standard Single Life'}`, 18, p3Y + 47);
-        let trY = p3Y + 53;
-        priTranchesList.forEach((t, i) => {
-          const tType = (t.annuityType || '').includes('inflation') ? 'Infl-Linked' : 'Level';
-          doc.text(`• Tranche ${i + 1}: Age ${t.purchaseAge} (${t.allocationPercent}% Alloc @ ${t.annuityRatePercent || 4.2}%, ${tType})`, 18, trY);
-          trY += 5.5;
-        });
-      }
+      const renderMemberStrategyCard = (
+        isPartner: boolean,
+        memberName: string,
+        productOpt: string,
+        hierarchyText: string,
+        crystMode: string | undefined,
+        activePhasedTranches: CrystallisationTranche[],
+        pclsPercent: number,
+        takeLumpSumAtStart: boolean,
+        lumpSumTargetPot?: string,
+        lumpSumSplits?: LumpSumSplit[],
+        annAllocPercent: number = 50,
+        annRatePercent: number = 4.2,
+        annTypeStr?: string,
+        annPurAge?: number,
+        annTranchesList: any[] = [],
+        basePensionPot: number = 0,
+        lsaLimitVal: number = 268275,
+        takeAgeVal: number = 57,
+        maxPclsObj?: { maxTaxFreeCash: number; lsaLimit: number; pclsPercent: number; isCappedByLsa: boolean }
+      ) => {
+        const isPhased = crystMode === 'phased_tranches' && activePhasedTranches.length > 0;
+        const isAnnuity = productOpt === 'annuity' || productOpt === 'hybrid';
+        const hasAnnTranches = productOpt === 'hybrid' && annTranchesList.length > 0;
 
-      // Partner Strategy Column (if couple)
-      if (profile.isCouplePlanning) {
+        // Calculate card height dynamically
+        let mCardHeight = 24; // Base header & product/hierarchy/mode lines
+        if (isPhased) {
+          mCardHeight += 8; // Explanatory note
+          mCardHeight += 5.5; // Table header
+          mCardHeight += activePhasedTranches.length * 5; // Table rows
+          mCardHeight += 9.5; // Summary KPI strip
+        } else {
+          mCardHeight += 10; // Upfront or UFPLS detailed bullets
+        }
+        if (isAnnuity) {
+          mCardHeight += 8.5; // Annuity baseline details
+          if (hasAnnTranches) {
+            mCardHeight += annTranchesList.length * 4.5;
+          }
+        }
+
+        // Draw card container
+        doc.setFillColor(slateLight[0], slateLight[1], slateLight[2]);
+        doc.roundedRect(14, p3Y, 182, mCardHeight, 2.5, 2.5, 'F');
+        doc.setDrawColor(226, 232, 240);
+        doc.roundedRect(14, p3Y, 182, mCardHeight, 2.5, 2.5, 'D');
+
+        // Header pill
+        const pillBg = isPartner ? [238, 242, 255] : [240, 253, 244];
+        const pillBorder = isPartner ? [199, 210, 254] : [187, 247, 208];
+        const pillText = isPartner ? [79, 70, 229] : [5, 150, 105];
+
+        doc.setFillColor(pillBg[0], pillBg[1], pillBg[2]);
+        doc.roundedRect(18, p3Y + 3, 174, 5.5, 1.5, 1.5, 'F');
+        doc.setDrawColor(pillBorder[0], pillBorder[1], pillBorder[2]);
+        doc.roundedRect(18, p3Y + 3, 174, 5.5, 1.5, 1.5, 'D');
+
         doc.setFont('helvetica', 'bold');
-        doc.text(`Partner Member Strategy (${partnerName}):`, 108, p3Y + 17);
-        doc.setFont('helvetica', 'normal');
-        const partAlloc = profile.partnerAnnuityAllocationPercent || profile.annuityAllocationPercent || 50;
-        const partProduct = partOpt === 'annuity'
+        doc.setFontSize(8);
+        doc.setTextColor(pillText[0], pillText[1], pillText[2]);
+        doc.text(`${isPartner ? 'Partner Member' : 'Primary Member'}: ${memberName}`, 22, p3Y + 6.8);
+
+        const prodLabel = productOpt === 'annuity'
           ? 'Guaranteed Lifetime Annuity (100% Capital)'
-          : partOpt === 'hybrid'
-          ? `Hybrid / Tranche (${partAlloc}% Baseline)`
+          : productOpt === 'hybrid'
+          ? `Hybrid / Tranche Strategy (${annAllocPercent}% Baseline Annuity)`
           : 'Flexi-Access Drawdown (100% Market Invested)';
 
-        const partHierarchy = (profile.partnerDrawdownStrategy || profile.drawdownStrategy) === 'tax_optimizer'
-          ? 'TAX OPTIMIZER (Dynamic solver: 0% PA & 20% band smoothing, ISA shielding, spousal equalization)'
-          : (profile.partnerDrawdownStrategy || profile.drawdownStrategy) === 'basic_rate_bracket'
-          ? 'BASIC RATE BRACKET (Target £50,270 ceiling minus taxable fixed income)'
-          : (profile.partnerDrawdownStrategy || profile.drawdownStrategy) === 'tax_free_bracket'
-          ? 'PERSONAL ALLOWANCE BRACKET (Target £12,570 ceiling minus taxable fixed income)'
-          : (profile.partnerDrawdownStrategy || profile.drawdownStrategy) === 'higher_rate_bracket'
-          ? 'HIGHER RATE BRACKET (Target £125,140 ceiling minus taxable fixed income)'
-          : (profile.partnerDrawdownStrategy || profile.drawdownStrategy || 'pro_rata').replace(/_/g, ' ').toUpperCase();
+        doc.setFontSize(7);
+        doc.text(prodLabel, 190 - doc.getTextWidth(prodLabel), p3Y + 6.8);
 
-        const isPhasedPartner = profile.partnerCrystallisationMode === 'phased_tranches';
-        const partActiveTranches = (profile.partnerCrystallisationTranches || profile.crystallisationTranches || []).filter(t => t.enabled !== false && t.owner === 'partner');
-        const partPclsDisplay = isPhasedPartner && partActiveTranches.length > 0
-          ? `Split Pot (Phased Crystallisation: £${(partActiveTranches[0]?.amount || 100000).toLocaleString()}/yr => 25% Tax-Free Cash + 75% Drawdown Pot)`
-          : (profile.partnerCrystallisationMode === 'upfront' || (!profile.partnerCrystallisationMode && (profile.partnerTakeLumpSumAtStart ?? profile.takeLumpSumAtStart)))
-          ? `${profile.partnerPclsLumpSumPercent || 25}% Upfront Lump Sum`
-          : 'UFPLS (Tax-Free as drawn)';
+        let curY = p3Y + 12;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7.5);
+        doc.setTextColor(51, 65, 85);
 
-        doc.text(`• Product Choice: ${partProduct}`, 108, p3Y + 23);
-        doc.text(`• Withdrawal Hierarchy: ${partHierarchy}`, 108, p3Y + 29);
-        doc.text(`• Tax Free Cash (PCLS): ${partPclsDisplay}`, 108, p3Y + 35);
+        // Core strategy bullets
+        doc.setFont('helvetica', 'bold');
+        doc.text('• Withdrawal Hierarchy:', 18, curY);
+        doc.setFont('helvetica', 'normal');
+        doc.text(hierarchyText, 53, curY);
+        curY += 4.5;
 
-        if (isPartAnnuity) {
-          const partPurAge = Math.max(profile.partnerPensionAccessAge || 57, profile.partnerAnnuityPurchaseAge || (profile.partnerTargetRetirementAge || targetAge));
-          doc.text(`• Baseline Purchase Start: Age ${partPurAge} (${profile.partnerAnnuityRatePercent || 4.2}% rate)`, 108, p3Y + 41);
-          doc.text(`• Baseline Payout Type: ${profile.partnerAnnuityType || 'Standard Single Life'}`, 108, p3Y + 47);
-          let trY = p3Y + 53;
-          partTranchesList.forEach((t, i) => {
-            const tType = (t.annuityType || '').includes('inflation') ? 'Infl-Linked' : 'Level';
-            doc.text(`• Tranche ${i + 1}: Age ${t.purchaseAge} (${t.allocationPercent}% Alloc @ ${t.annuityRatePercent || 4.2}%, ${tType})`, 108, trY);
-            trY += 5.5;
+        const crystModeLabel = isPhased
+          ? `Phased Crystallisation (${activePhasedTranches.length} Scheduled Age Tranches)`
+          : (crystMode === 'upfront' || (!crystMode && takeLumpSumAtStart))
+          ? `Upfront PCLS Lump Sum (${pclsPercent}% at Age ${takeAgeVal})`
+          : 'UFPLS Drip-Feed (25% Tax-Free per withdrawal)';
+
+        doc.setFont('helvetica', 'bold');
+        doc.text('• PCLS / Crystallisation Mode:', 18, curY);
+        doc.setFont('helvetica', 'normal');
+        doc.text(crystModeLabel, 62, curY);
+        curY += 5;
+
+        if (isPhased) {
+          // Explanatory note
+          doc.setFont('helvetica', 'italic');
+          doc.setFontSize(6.8);
+          doc.setTextColor(71, 85, 105);
+          const noteText = 'Crystallises pension capital in planned age tranches. Each tranche releases 25% tax-free cash (PCLS) into designated tax shelters, transferring 75% into Crystallised Flexi-Access Drawdown. Remaining uncrystallised funds stay invested to compound tax-sheltered with future 25% tax-free growth potential.';
+          const wrappedNote = doc.splitTextToSize(noteText, 174);
+          wrappedNote.forEach((line: string) => {
+            doc.text(line, 18, curY);
+            curY += 3.4;
           });
+          curY += 1;
+
+          // Table Header
+          doc.setFillColor(30, 41, 59);
+          doc.rect(18, curY, 174, 5, 'F');
+          doc.setTextColor(255, 255, 255);
+          doc.setFontSize(6.8);
+          doc.setFont('helvetica', 'bold');
+          doc.text('Tranche Name', 21, curY + 3.5);
+          doc.text('Age (Year)', 52, curY + 3.5);
+          doc.text('Gross Cryst. (£)', 78, curY + 3.5);
+          doc.text('Tax-Free PCLS (25%)', 106, curY + 3.5);
+          doc.text('Drawdown Pot (75%)', 136, curY + 3.5);
+          doc.text('PCLS Destination Pot', 164, curY + 3.5);
+
+          curY += 5;
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(51, 65, 85);
+          doc.setFontSize(6.8);
+
+          const curYear = new Date().getFullYear();
+          const memberCurAge = isPartner ? (profile.partnerCurrentAge ?? currentAge) : currentAge;
+
+          let totalGross = 0;
+          let totalPcls = 0;
+          let totalDrawdown = 0;
+
+          activePhasedTranches.forEach((t, idx) => {
+            if (idx % 2 === 1) {
+              doc.setFillColor(241, 245, 249);
+              doc.rect(18, curY, 174, 4.8, 'F');
+            }
+            const trAge = t.age;
+            const trYear = curYear + Math.max(0, trAge - memberCurAge);
+            const grossAmt = t.amount || 0;
+            const pclsPctVal = t.pclsPercent ?? 25;
+            const pclsCash = Math.round(grossAmt * (pclsPctVal / 100));
+            const ddPot = grossAmt - pclsCash;
+            const destLabel = formatDestPotLabel(t.targetPot, t.splits);
+
+            totalGross += grossAmt;
+            totalPcls += pclsCash;
+            totalDrawdown += ddPot;
+
+            const tName = t.name || `Tranche #${idx + 1}`;
+            doc.text(tName.length > 18 ? tName.substring(0, 17) + '..' : tName, 21, curY + 3.4);
+            doc.text(`Age ${trAge} (${trYear})`, 52, curY + 3.4);
+            doc.text(`£${Math.round(grossAmt).toLocaleString()}`, 78, curY + 3.4);
+
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(16, 185, 129); // Emerald for tax-free cash
+            doc.text(`£${Math.round(pclsCash).toLocaleString()} (${pclsPctVal}%)`, 106, curY + 3.4);
+
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(51, 65, 85);
+            doc.text(`£${Math.round(ddPot).toLocaleString()}`, 136, curY + 3.4);
+            doc.text(destLabel.length > 18 ? destLabel.substring(0, 17) + '..' : destLabel, 164, curY + 3.4);
+
+            curY += 4.8;
+          });
+
+          // Summary Metrics Strip
+          curY += 1;
+          const uncrystPot = Math.max(0, basePensionPot - totalGross);
+          const remLsa = Math.max(0, lsaLimitVal - totalPcls);
+
+          doc.setFillColor(248, 250, 252);
+          doc.roundedRect(18, curY, 174, 7.5, 1.5, 1.5, 'F');
+          doc.setDrawColor(203, 213, 225);
+          doc.roundedRect(18, curY, 174, 7.5, 1.5, 1.5, 'D');
+
+          doc.setFontSize(6.5);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(15, 23, 42);
+
+          doc.text(`Total Cryst.: £${Math.round(totalGross).toLocaleString()}`, 21, curY + 4.8);
+          doc.setTextColor(5, 150, 105);
+          doc.text(`Total PCLS: £${Math.round(totalPcls).toLocaleString()}`, 56, curY + 4.8);
+          doc.setTextColor(79, 70, 229);
+          doc.text(`In Drawdown: £${Math.round(totalDrawdown).toLocaleString()}`, 90, curY + 4.8);
+          doc.setTextColor(51, 65, 85);
+          doc.text(`Uncrystallised: £${Math.round(uncrystPot).toLocaleString()}`, 126, curY + 4.8);
+          doc.setTextColor(180, 83, 9);
+          doc.text(`Rem. LSA: £${Math.round(remLsa).toLocaleString()}`, 162, curY + 4.8);
+
+          curY += 8.5;
+        } else if (crystMode === 'upfront' || (!crystMode && takeLumpSumAtStart)) {
+          const maxTaxFree = maxPclsObj?.maxTaxFreeCash || (basePensionPot * (pclsPercent / 100));
+          const destStr = formatDestPotLabel(lumpSumTargetPot, lumpSumSplits);
+          const remLsa = Math.max(0, lsaLimitVal - maxTaxFree);
+
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(7.2);
+          doc.setTextColor(51, 65, 85);
+          doc.text(`• Upfront Extraction: £${Math.round(maxTaxFree).toLocaleString()} (${pclsPercent}% taken at Age ${takeAgeVal}) transferred directly into ${destStr}`, 18, curY);
+          curY += 4.2;
+          doc.text(`• Statutory Allowance: £${Math.round(remLsa).toLocaleString()} Remaining Lump Sum Allowance (LSA) out of £${Math.round(lsaLimitVal).toLocaleString()} standard ceiling`, 18, curY);
+          curY += 4.8;
+        } else {
+          // UFPLS
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(7.2);
+          doc.setTextColor(51, 65, 85);
+          doc.text('• UFPLS Mechanism: 25% of every flexible drawdown withdrawal is paid tax-free; remaining 75% is taxable income under PAYE.', 18, curY);
+          curY += 4.2;
+          doc.text(`• Compounding Advantage: 100% of un-drawn capital remains inside uncrystallised pension to compound tax-sheltered (Subject to £${Math.round(lsaLimitVal).toLocaleString()} LSA limit).`, 18, curY);
+          curY += 4.8;
         }
+
+        // Annuity details
+        if (isAnnuity) {
+          const purAge = annPurAge || takeAgeVal;
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(7.2);
+          doc.setTextColor(109, 40, 217);
+          doc.text(`• Lifetime Annuity Baseline: Purchase Age ${purAge} @ ${annRatePercent}% rate (${annTypeStr || 'Standard Single Life'})`, 18, curY);
+          curY += 4.2;
+
+          if (hasAnnTranches) {
+            annTranchesList.forEach((t, i) => {
+              const tType = (t.annuityType || '').includes('inflation') ? 'Inflation-Linked' : 'Level';
+              doc.setFont('helvetica', 'normal');
+              doc.setTextColor(51, 65, 85);
+              doc.text(`  - Tranche ${i + 1}: Purchase Age ${t.purchaseAge} (${t.allocationPercent}% Pension Capital @ ${t.annuityRatePercent || annRatePercent}%, ${tType})`, 18, curY);
+              curY += 4.2;
+            });
+          }
+        }
+
+        p3Y += mCardHeight + 3.5;
+      };
+
+      // 1. Primary Strategy Card
+      renderMemberStrategyCard(
+        false,
+        primaryName,
+        priOpt,
+        priHierarchy,
+        profile.crystallisationMode,
+        priActivePhased,
+        profile.pclsLumpSumPercent || 25,
+        Boolean(profile.takeLumpSumAtStart),
+        profile.lumpSumTargetPot,
+        profile.lumpSumSplits,
+        profile.annuityAllocationPercent || 50,
+        profile.annuityRatePercent || 4.2,
+        profile.annuityType,
+        Math.max(profile.pensionAccessAge || 57, profile.annuityPurchaseAge || (profile.targetRetirementAge || 60)),
+        priTranchesList,
+        primaryPensionAtTakePcls || (pots.workplacePensionBalance + pots.sippBalance) || 0,
+        primaryMaxPcls.lsaLimit || 268275,
+        primaryTakeAgePcls,
+        primaryMaxPcls
+      );
+
+      // 2. Partner Strategy Card (if couple)
+      if (profile.isCouplePlanning) {
+        const partnerPotsObj: InvestmentPots = sanitizePots(profile.partnerPots, DEFAULT_PARTNER_POTS);
+        renderMemberStrategyCard(
+          true,
+          partnerName || 'Partner',
+          partOpt,
+          partHierarchy,
+          profile.partnerCrystallisationMode || profile.crystallisationMode,
+          partActivePhased,
+          profile.partnerPclsLumpSumPercent || profile.pclsLumpSumPercent || 25,
+          Boolean(profile.partnerTakeLumpSumAtStart ?? profile.takeLumpSumAtStart),
+          profile.partnerLumpSumTargetPot || profile.lumpSumTargetPot,
+          profile.partnerLumpSumSplits || profile.lumpSumSplits,
+          profile.partnerAnnuityAllocationPercent || profile.annuityAllocationPercent || 50,
+          profile.partnerAnnuityRatePercent || profile.annuityRatePercent || 4.2,
+          profile.partnerAnnuityType || profile.annuityType,
+          Math.max(profile.partnerPensionAccessAge || 57, profile.partnerAnnuityPurchaseAge || (profile.partnerTargetRetirementAge || targetAge)),
+          partTranchesList,
+          partnerPensionAtTakePcls || (partnerPotsObj.workplacePensionBalance + partnerPotsObj.sippBalance) || 0,
+          partnerMaxPcls.lsaLimit || 268275,
+          partnerTakeAgePcls,
+          partnerMaxPcls
+        );
       }
 
       // Check PCLS Recycling Risk
@@ -1969,7 +2202,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       const hasRecyclingRisk = hasPriRecycling || hasPartRecycling;
 
       if (hasRecyclingRisk) {
-        p3Y += cardHeight + 4;
+        p3Y += 2;
         const details = hasPriRecycling ? primaryTax?.pclsRecyclingDetails : partnerTax?.pclsRecyclingDetails;
         const memberName = hasPriRecycling ? primaryName : (partnerName || 'Partner');
 
@@ -2013,9 +2246,17 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
           });
         });
 
-        p3Y += warnBoxH + 6;
+        p3Y += warnBoxH + 5;
       } else {
-        p3Y += cardHeight + 8;
+        p3Y += 3;
+      }
+
+      // Check if Section 11 needs a page break to prevent table/box clipping
+      if (p3Y > 215) {
+        doc.addPage();
+        curPageNum++;
+        renderPageHeader('Key Milestone Schedule & Execution Details', curPageNum);
+        p3Y = 24;
       }
 
       // SECTION 11: KEY MILESTONE SCHEDULE
