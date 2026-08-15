@@ -201,14 +201,15 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
   const fmt = (v: number) => `£${Math.round(v).toLocaleString()}`;
 
   // Effective adjusted target income (defaults to maxAnnualIncome if not explicitly overridden)
-  const effectiveAdjustedIncome = customAdjustedTargetIncome !== null ? customAdjustedTargetIncome : maxAnnualIncome;
+  const effectiveDrawdownTarget = reinvestExcessDrawdown ? maxAnnualIncome : (customAdjustedTargetIncome !== null ? customAdjustedTargetIncome : maxAnnualIncome);
+  const effectiveSpendingTarget = reinvestExcessDrawdown && customAdjustedTargetIncome !== null ? customAdjustedTargetIncome : actualSpendingTargetAnnual;
 
   // Candidate profile for adjusted max target income
   const adjustedCandidateProfile = useMemo(() => {
     if (!solverResult) return profile;
     return createCandidateProfile(
       profile,
-      effectiveAdjustedIncome,
+      effectiveDrawdownTarget,
       spendingPattern,
       pots,
       {
@@ -223,7 +224,7 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
       },
       {
         reinvestExcessDrawdown,
-        actualSpendingTargetAnnual,
+        actualSpendingTargetAnnual: effectiveSpendingTarget,
         reinvestDestinationPot,
       },
       targetEndAge,
@@ -232,7 +233,8 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
     );
   }, [
     solverResult,
-    effectiveAdjustedIncome,
+    effectiveDrawdownTarget,
+    effectiveSpendingTarget,
     profile,
     spendingPattern,
     pots,
@@ -962,12 +964,15 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
                         step={1000}
                         min={5000}
                         max={maxAnnualIncome}
-                        value={actualSpendingTargetAnnual}
-                        onChange={(e) => setActualSpendingTargetAnnual(Math.max(0, parseInt(e.target.value) || 0))}
+                        value={effectiveSpendingTarget}
+                        onChange={(e) => {
+                          setActualSpendingTargetAnnual(Math.max(0, parseInt(e.target.value) || 0));
+                          setCustomAdjustedTargetIncome(Math.max(0, parseInt(e.target.value) || 0));
+                        }}
                         className="w-full bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs font-bold p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-emerald-500"
                       />
                       <p className="text-[10px] text-slate-500 dark:text-slate-400">
-                        Amount needed for lifestyle expenses. Surplus drawdown of <strong className="text-emerald-600 dark:text-emerald-400">{fmt(Math.max(0, maxAnnualIncome - actualSpendingTargetAnnual))}/yr</strong> will be reinvested.
+                        Amount needed for lifestyle expenses. Surplus drawdown of <strong className="text-emerald-600 dark:text-emerald-400">{fmt(Math.max(0, maxAnnualIncome - effectiveSpendingTarget))}/yr</strong> will be reinvested.
                       </p>
                     </div>
 
@@ -997,8 +1002,8 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
                         <div className="font-extrabold text-[11px] uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
                           Reinvestment Strategy Active
                         </div>
-                        <p className="text-[11px] leading-relaxed">
-                          Drawing down maximum <strong>{fmt(maxAnnualIncome)}/yr</strong> from pensions & pots. Spending <strong>{fmt(actualSpendingTargetAnnual)}/yr</strong> on lifestyle requirements. Reinvesting <strong>{fmt(reinvestExcessDetails.annualSurplusReinvested)}/yr</strong> surplus into your <strong>{reinvestDestinationPot.toUpperCase()} pot</strong>.
+                        <p className="text-xs text-emerald-900 dark:text-emerald-200 leading-relaxed max-w-2xl">
+                          Drawing down maximum <strong>{fmt(maxAnnualIncome)}/yr</strong> from pensions & pots. Spending <strong>{fmt(effectiveSpendingTarget)}/yr</strong> on lifestyle requirements. Reinvesting <strong>{fmt(Math.max(0, maxAnnualIncome - effectiveSpendingTarget))}/yr</strong> surplus into your <strong>{reinvestDestinationPot.toUpperCase()} pot</strong>.
                         </p>
                       </div>
                     </div>
@@ -1047,15 +1052,19 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
                 <div className="w-full flex-1 space-y-1">
                   <div className="flex justify-between items-center text-xs font-bold">
                     <span className="text-slate-600 dark:text-slate-400">Adjusted Spending Target:</span>
-                    <span className="text-emerald-600 dark:text-emerald-400 font-extrabold text-sm">{fmt(effectiveAdjustedIncome)}/yr</span>
+                    <span className="text-emerald-600 dark:text-emerald-400 font-extrabold text-sm">{fmt(reinvestExcessDrawdown ? effectiveSpendingTarget : effectiveDrawdownTarget)}/yr</span>
                   </div>
                   <input
                     type="range"
                     min={Math.max(5000, Math.round((maxAnnualIncome || 30000) * 0.3))}
-                    max={Math.max(50000, Math.round((maxAnnualIncome || 30000) * 1.4))}
+                    max={reinvestExcessDrawdown ? maxAnnualIncome : Math.max(50000, Math.round((maxAnnualIncome || 30000) * 1.4))}
                     step={500}
-                    value={effectiveAdjustedIncome}
-                    onChange={(e) => setCustomAdjustedTargetIncome(parseInt(e.target.value) || maxAnnualIncome)}
+                    value={reinvestExcessDrawdown ? effectiveSpendingTarget : effectiveDrawdownTarget}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value) || maxAnnualIncome;
+                      setCustomAdjustedTargetIncome(val);
+                      if (reinvestExcessDrawdown) setActualSpendingTargetAnnual(val);
+                    }}
                     className="w-full accent-emerald-600 cursor-pointer"
                   />
                 </div>
