@@ -788,10 +788,10 @@ function parseAnnuityTypeConfig(type?: string) {
               const pensionGrossNeeded = shortfall / 0.85; 
               const pensionDraw = Math.min(totalAvail, pensionGrossNeeded);
               const actualNetAdded = pensionDraw * 0.85;
-              deductProRata("pension", pensionDraw);
               const priR = (canAccessPension && totalAvail > 0) ? primaryPensionPot / totalAvail : (canAccessPension ? 1 : 0);
-            const priDraw = canAccessPension ? pensionDraw * priR : 0;
-            const partDraw = partnerCanAccessPension ? pensionDraw * (1 - priR) : 0;
+              const priDraw = canAccessPension ? pensionDraw * priR : 0;
+              const partDraw = partnerCanAccessPension ? pensionDraw * (1 - priR) : 0;
+              deductProRata("pension", pensionDraw);
 
             if (primaryCumulativeTaxFreeDrawn < maxLsa && priDraw > 0) {
               primaryCumulativeTaxFreeDrawn += Math.min(priDraw * 0.25, Math.max(0, maxLsa - primaryCumulativeTaxFreeDrawn));

@@ -765,7 +765,11 @@ export function computeCashFlowSankeyData(
       const priReinvest = totalSpendable > 0 ? (priSpendable / totalSpendable) * reinvestSurplus : 0;
       const partReinvest = totalSpendable > 0 ? (partSpendable / totalSpendable) * reinvestSurplus : 0;
 
-      const availableLiving = Math.max(0, totalSpendable - reinvestSurplus);
+      const lifeEventsExpense = p.lifeEventsExpense || 0;
+      const availableLiving = Math.max(0, totalSpendable - reinvestSurplus - lifeEventsExpense);
+      const priLifeEventsAlloc = totalSpendable > 0 ? (priSpendable / totalSpendable) * lifeEventsExpense : 0;
+      const partLifeEventsAlloc = totalSpendable > 0 ? (partSpendable / totalSpendable) * lifeEventsExpense : 0;
+
       const essentialLiving = Math.min(availableLiving, inflatedEssentialTarget);
       const priEssential = availableLiving > 0 ? (priSpendable / totalSpendable) * essentialLiving : 0;
       const partEssential = availableLiving > 0 ? (partSpendable / totalSpendable) * essentialLiving : 0;
@@ -1054,6 +1058,22 @@ export function computeCashFlowSankeyData(
         });
         if (priEssential > 0) links.push({ sourceId: 'pri_net_spendable', targetId: 'essential_retirement_spend', amount: priEssential, color: '#059669' });
         if (partEssential > 0) links.push({ sourceId: 'part_net_spendable', targetId: 'essential_retirement_spend', amount: partEssential, color: '#10b981' });
+      }
+
+      if (lifeEventsExpense > 0) {
+        nodes.push({
+          id: 'life_events_expense',
+          label: 'Life Events Capital',
+          sublabel: p.decumulationLifeEventsSummary || 'One-off capital expenses',
+          amount: lifeEventsExpense,
+          color: '#f59e0b',
+          category: 'allocation',
+          column: 3,
+        });
+        const priLifeEventsAlloc = totalSpendable > 0 ? (priSpendable / totalSpendable) * lifeEventsExpense : 0;
+        const partLifeEventsAlloc = totalSpendable > 0 ? (partSpendable / totalSpendable) * lifeEventsExpense : 0;
+        if (priLifeEventsAlloc > 0) links.push({ sourceId: 'pri_net_spendable', targetId: 'life_events_expense', amount: priLifeEventsAlloc, color: '#f59e0b' });
+        if (partLifeEventsAlloc > 0) links.push({ sourceId: 'part_net_spendable', targetId: 'life_events_expense', amount: partLifeEventsAlloc, color: '#fbbf24' });
       }
 
       if (discretionaryLiving > 0) {

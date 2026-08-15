@@ -357,8 +357,7 @@ function parseAnnuityTypeConfig(type?: string) {
         const requestedGross = tranche.amount;
         const pclsPct = Math.min(100, Math.max(0, tranche.pclsPercent ?? 25)) / 100;
         const remainingLsa = Math.max(0, primaryMaxLsa - primaryCumulativeTaxFreeDrawn);
-        const maxGrossForLsa = pclsPct > 0 ? Math.floor(remainingLsa / pclsPct) : primaryUncrystallisedPot;
-        const grossCrystallised = Math.min(primaryUncrystallisedPot, requestedGross, maxGrossForLsa);
+        const grossCrystallised = Math.min(primaryUncrystallisedPot, requestedGross);
         if (grossCrystallised <= 0) continue;
 
         const pclsAmount = Math.min(grossCrystallised * pclsPct, remainingLsa);
@@ -405,8 +404,7 @@ function parseAnnuityTypeConfig(type?: string) {
         const requestedGross = tranche.amount;
         const pclsPct = Math.min(100, Math.max(0, tranche.pclsPercent ?? 25)) / 100;
         const remainingLsa = Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn);
-        const maxGrossForLsa = pclsPct > 0 ? Math.floor(remainingLsa / pclsPct) : partnerUncrystallisedPot;
-        const grossCrystallised = Math.min(partnerUncrystallisedPot, requestedGross, maxGrossForLsa);
+        const grossCrystallised = Math.min(partnerUncrystallisedPot, requestedGross);
         if (grossCrystallised <= 0) continue;
 
         const pclsAmount = Math.min(grossCrystallised * pclsPct, remainingLsa);
@@ -1040,7 +1038,8 @@ function parseAnnuityTypeConfig(type?: string) {
           if (pclsGenerated > 0) {
             const alloc = allocateLumpSumToPots(pclsGenerated, profile.lumpSumTargetPot, profile.lumpSumSplits);
             primaryIsaPot += alloc.toIsa;
-            primarySsIsaPot += alloc.toIsa;
+            primarySsIsaPot += alloc.toSsIsa;
+            primaryCashIsaPot += alloc.toCashIsa;
             primaryGiaPot += alloc.toGia;
             primaryCashSavingsPot += alloc.toCashSavings;
             primaryCashGiaPot = primaryGiaPot + primaryCashSavingsPot;
@@ -1096,7 +1095,8 @@ function parseAnnuityTypeConfig(type?: string) {
               if (pclsGenerated > 0) {
                 const alloc = allocateLumpSumToPots(pclsGenerated, profile.lumpSumTargetPot, profile.lumpSumSplits);
                 primaryIsaPot += alloc.toIsa;
-                primarySsIsaPot += alloc.toIsa;
+                primarySsIsaPot += alloc.toSsIsa;
+                primaryCashIsaPot += alloc.toCashIsa;
                 primaryGiaPot += alloc.toGia;
                 primaryCashSavingsPot += alloc.toCashSavings;
                 primaryCashGiaPot = primaryGiaPot + primaryCashSavingsPot;
@@ -1165,7 +1165,8 @@ function parseAnnuityTypeConfig(type?: string) {
             if (pclsGenerated > 0) {
               const alloc = allocateLumpSumToPots(pclsGenerated, profile.partnerLumpSumTargetPot, profile.partnerLumpSumSplits);
               partnerIsaPot += alloc.toIsa;
-            partnerSsIsaPot += alloc.toIsa;
+              partnerSsIsaPot += alloc.toSsIsa;
+              partnerCashIsaPot += alloc.toCashIsa;
               partnerGiaPot += alloc.toGia;
               partnerCashSavingsPot += alloc.toCashSavings;
               partnerCashGiaPot = partnerGiaPot + partnerCashSavingsPot;
@@ -1221,7 +1222,8 @@ function parseAnnuityTypeConfig(type?: string) {
                 if (pclsGenerated > 0) {
                   const alloc = allocateLumpSumToPots(pclsGenerated, profile.partnerLumpSumTargetPot, profile.partnerLumpSumSplits);
                   partnerIsaPot += alloc.toIsa;
-                partnerSsIsaPot += alloc.toIsa;
+                  partnerSsIsaPot += alloc.toSsIsa;
+                  partnerCashIsaPot += alloc.toCashIsa;
                   partnerGiaPot += alloc.toGia;
                   partnerCashSavingsPot += alloc.toCashSavings;
                   partnerCashGiaPot = partnerGiaPot + partnerCashSavingsPot;
@@ -1533,8 +1535,8 @@ function parseAnnuityTypeConfig(type?: string) {
       const accumFeesPaid = Math.round(
         (primaryPensionPot * primaryPensionFee) +
         (partnerPensionPot * partnerPensionFee) +
-        (primaryIsaPot * primaryIsaFee) +
-        (partnerIsaPot * partnerIsaFee) +
+        (primarySsIsaPot * primaryIsaFee) +
+        (partnerSsIsaPot * partnerIsaFee) +
         (primaryGiaPot * primaryGiaFee) +
         (partnerGiaPot * partnerGiaFee)
       );
@@ -1549,8 +1551,10 @@ function parseAnnuityTypeConfig(type?: string) {
       
       const isaGrowth = getGrowth(primarySsIsaPot, primarySsIsaContribThisYr, primaryAccumIsaRate) + 
                         getGrowth(primaryLisaPot, primaryLisaContribThisYr, primaryAccumIsaRate) + 
+                        getGrowth(primaryCashIsaPot, primaryCashIsaContribThisYr, accumCashRate) +
                         getGrowth(partnerSsIsaPot, partnerSsIContribThisYr, partnerAccumIsaRate) + 
-                        getGrowth(partnerLisaPot, partnerLisaContribThisYr, partnerAccumIsaRate);
+                        getGrowth(partnerLisaPot, partnerLisaContribThisYr, partnerAccumIsaRate) +
+                        getGrowth(partnerCashIsaPot, partnerCashIContribThisYr, accumCashRate);
                         
       const giaGrowth = getGrowth(primaryGiaPot, primaryGiaContribThisYr, primaryAccumGiaRate) + 
                         getGrowth(partnerGiaPot, partnerGiaContribThisYr, partnerAccumGiaRate);
@@ -2147,18 +2151,30 @@ function parseAnnuityTypeConfig(type?: string) {
           }
         }
       } else if (effectiveStrategy === 'isa_first' || effectiveStrategy === 'cash_first') {
-        // Draw from Cash/GIA first
-        if (cashGiaPot > 0 && remainingIncomeNeeded > 0) {
-          cashDrawdown = Math.min(cashGiaPot, remainingIncomeNeeded);
-          cashGiaPot -= cashDrawdown;
-          remainingIncomeNeeded -= cashDrawdown;
-        }
+        const drawIsaFirst = effectiveStrategy === 'isa_first';
+        
+        const drawCash = () => {
+          if (cashGiaPot > 0 && remainingIncomeNeeded > 0) {
+            cashDrawdown = Math.min(cashGiaPot, remainingIncomeNeeded);
+            cashGiaPot -= cashDrawdown;
+            remainingIncomeNeeded -= cashDrawdown;
+          }
+        };
 
-        // Next draw from ISA (100% tax-free)
-        if (isaPot > 0 && remainingIncomeNeeded > 0) {
-          isaDrawdown = Math.min(isaPot, remainingIncomeNeeded);
-          isaPot -= isaDrawdown;
-          remainingIncomeNeeded -= isaDrawdown;
+        const drawIsa = () => {
+          if (isaPot > 0 && remainingIncomeNeeded > 0) {
+            isaDrawdown = Math.min(isaPot, remainingIncomeNeeded);
+            isaPot -= isaDrawdown;
+            remainingIncomeNeeded -= isaDrawdown;
+          }
+        };
+
+        if (drawIsaFirst) {
+          drawIsa();
+          drawCash();
+        } else {
+          drawCash();
+          drawIsa();
         }
 
         // Finally draw from Pension (only if age >= pensionAccessAge)
@@ -2243,31 +2259,11 @@ function parseAnnuityTypeConfig(type?: string) {
         isaPot = Math.max(0, isaPot - isaDrawdown);
 
         if (isaDrawdown > 0) {
-          const isaTotalBefore = primarySsIsaPot + primaryCashIsaPot + primaryLisaPot + (profile.isCouplePlanning ? (partnerSsIsaPot + partnerCashIsaPot) : 0);
-          if (isaTotalBefore > 0) {
-            const ratio = Math.min(1, isaDrawdown / isaTotalBefore);
-            primarySsIsaPot = Math.max(0, primarySsIsaPot - primarySsIsaPot * ratio);
-            primaryCashIsaPot = Math.max(0, primaryCashIsaPot - primaryCashIsaPot * ratio);
-            primaryLisaPot = Math.max(0, primaryLisaPot - primaryLisaPot * ratio);
-            primaryIsaPot = primarySsIsaPot + primaryCashIsaPot + primaryLisaPot;
-
-            if (profile.isCouplePlanning) {
-              partnerSsIsaPot = Math.max(0, partnerSsIsaPot - partnerSsIsaPot * ratio);
-              partnerCashIsaPot = Math.max(0, partnerCashIsaPot - partnerCashIsaPot * ratio);
-              partnerIsaPot = partnerSsIsaPot + partnerCashIsaPot;
-            }
-          }
+          // Sub-pot reduction handled globally at line ~2641
         }
 
         if (cashDrawdown > 0) {
-          const cashTotalBefore = primaryCashGiaPot + (profile.isCouplePlanning ? partnerCashGiaPot : 0);
-          if (cashTotalBefore > 0) {
-            const ratio = Math.min(1, cashDrawdown / cashTotalBefore);
-            primaryCashGiaPot = Math.max(0, primaryCashGiaPot - primaryCashGiaPot * ratio);
-            if (profile.isCouplePlanning) {
-              partnerCashGiaPot = Math.max(0, partnerCashGiaPot - partnerCashGiaPot * ratio);
-            }
-          }
+          // Sub-pot reduction handled globally at line ~2641
         }
 
         remainingIncomeNeeded = Math.max(0, remainingIncomeNeeded - optResult.totalNetIncomeAchieved);
@@ -2434,15 +2430,6 @@ function parseAnnuityTypeConfig(type?: string) {
           pensionPot -= pensionDrawdown;
           isaPot -= isaDrawdown;
           cashGiaPot -= cashDrawdown;
-
-          const isaTotalBeforeRata = primarySsIsaPot + primaryCashIsaPot + primaryLisaPot;
-          if (isaTotalBeforeRata > 0 && isaDrawdown > 0) {
-            const ratio = Math.min(1, isaDrawdown / isaTotalBeforeRata);
-            primarySsIsaPot = Math.max(0, primarySsIsaPot - primarySsIsaPot * ratio);
-            primaryCashIsaPot = Math.max(0, primaryCashIsaPot - primaryCashIsaPot * ratio);
-            primaryLisaPot = Math.max(0, primaryLisaPot - primaryLisaPot * ratio);
-            primaryIsaPot = primarySsIsaPot + primaryCashIsaPot + primaryLisaPot;
-          }
 
           const netPensionDrawdown = getNetProducedByPensionGross(pensionDrawdown);
           const currentNetAchieved = netPensionDrawdown + isaDrawdown + cashDrawdown;

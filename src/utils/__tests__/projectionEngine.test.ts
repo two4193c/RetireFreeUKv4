@@ -356,4 +356,48 @@ describe('projectionEngine - generateProjections', () => {
     expect(row72.partnerStatePensionReceived).toBe(0);
     expect(row72.partnerTotalPot).toBe(0);
   });
+  it('verifies that the tax_optimizer strategy does NOT double deduct from ISA and Cash/GIA sub-pots', () => {
+    const profile: any = {
+      ...DEFAULT_PROFILE,
+      currentAge: 60,
+      targetRetirementAge: 60,
+      lifeExpectancyAge: 85,
+      targetRetirementIncomeAnnual: 60000,
+      drawdownStrategy: 'tax_optimizer',
+      includeStatePension: false,
+      crystallisationMode: 'phased_tranches',
+      expectedInvestmentReturn: 0.00001,
+      postRetirementReturn: 0.00001,
+      potReturnOverrides: { enabled: false },
+    };
+    
+    const pots: any = {
+      ...DEFAULT_POTS,
+      workplacePensionBalance: 100000,
+      sippBalance: 0,
+      stocksAndSharesIsaBalance: 50000,
+      cashIsaBalance: 0,
+      lisaBalance: 0,
+      giaBalance: 0,
+      cashSavingsBalance: 0,
+    };
+
+    const rows = generateProjections(profile, pots);
+    const row60 = rows.find((r) => r.age === 60);
+
+    expect(row60).toBeDefined();
+
+    // Verify the primarySsIsaPot is accurately decremented, not double deducted.
+    // If it double deducted, the reduction would be 2x the isaDrawdown amount.
+    const startingIsa = 50000;
+    const isaDrawdown = row60!.isaDrawdown || 0;
+    
+    // Ensure that it actually drew from ISA
+    expect(isaDrawdown).toBeGreaterThan(0);
+
+    expect(row60!.primaryStocksAndSharesIsaPot).toBeCloseTo(startingIsa - isaDrawdown, 1);
+    expect(row60!.primaryIsaPot).toBeCloseTo(startingIsa - isaDrawdown, 1);
+    expect(Math.abs((row60!.primaryIsaPot + row60!.partnerIsaPot) - row60!.isaPot)).toBeLessThanOrEqual(1);
+    expect(Math.abs((row60!.primaryGiaPot + row60!.primaryCashSavingsPot) - row60!.primaryCashGiaPot)).toBeLessThanOrEqual(1);
+  });
 });

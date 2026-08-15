@@ -280,17 +280,23 @@ export function solveTaxOptimalAnnualDrawdown(
   const priPaRoom = Math.max(0, singlePA - primaryTaxableGuaranteed);
   const partPaRoom = isCouple ? Math.max(0, singlePA - partnerTaxableGuaranteed) : 0;
 
-  // Uncrystallised pension gives 25% tax-free under LSA, meaning gross draw = PA_Room / 0.75
+  const getGrossForTaxableTarget = (taxableTarget: number, crystPot: number, remainingLsa: number): number => {
+    if (taxableTarget <= crystPot) return taxableTarget;
+    let targetUncrystTaxable = taxableTarget - crystPot;
+    const maxUncrystTaxableWithPcls = remainingLsa * 3;
+    if (targetUncrystTaxable <= maxUncrystTaxableWithPcls) {
+      return crystPot + (targetUncrystTaxable / 0.75);
+    }
+    targetUncrystTaxable -= maxUncrystTaxableWithPcls;
+    return crystPot + (maxUncrystTaxableWithPcls / 0.75) + targetUncrystTaxable;
+  };
+
   const priMaxGrossForPA = canAccessPriPension
-    ? (pots.primaryCrystallisedPot >= priPaRoom
-        ? priPaRoom
-        : pots.primaryCrystallisedPot + (priPaRoom - pots.primaryCrystallisedPot) / ((primaryCumulativeTaxFreeDrawn >= primaryMaxLsa) ? 1.0 : 0.75))
+    ? getGrossForTaxableTarget(priPaRoom, pots.primaryCrystallisedPot, Math.max(0, primaryMaxLsa - primaryCumulativeTaxFreeDrawn))
     : 0;
 
   const partMaxGrossForPA = canAccessPartPension
-    ? (pots.partnerCrystallisedPot >= partPaRoom
-        ? partPaRoom
-        : pots.partnerCrystallisedPot + (partPaRoom - pots.partnerCrystallisedPot) / ((partnerCumulativeTaxFreeDrawn >= partnerMaxLsa) ? 1.0 : 0.75))
+    ? getGrossForTaxableTarget(partPaRoom, pots.partnerCrystallisedPot, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn))
     : 0;
 
   // 2. Calculate Basic Rate (20% Max Tax) Capacity
@@ -298,15 +304,11 @@ export function solveTaxOptimalAnnualDrawdown(
   const partBrRoom = isCouple ? Math.max(0, partBasicLimit - partnerTaxableGuaranteed) : 0;
 
   const priMaxGrossForBR = canAccessPriPension
-    ? (pots.primaryCrystallisedPot >= priBrRoom
-        ? priBrRoom
-        : pots.primaryCrystallisedPot + (priBrRoom - pots.primaryCrystallisedPot) / ((primaryCumulativeTaxFreeDrawn >= primaryMaxLsa) ? 1.0 : 0.75))
+    ? getGrossForTaxableTarget(priBrRoom, pots.primaryCrystallisedPot, Math.max(0, primaryMaxLsa - primaryCumulativeTaxFreeDrawn))
     : 0;
 
   const partMaxGrossForBR = canAccessPartPension
-    ? (pots.partnerCrystallisedPot >= partBrRoom
-        ? partBrRoom
-        : pots.partnerCrystallisedPot + (partBrRoom - pots.partnerCrystallisedPot) / ((partnerCumulativeTaxFreeDrawn >= partnerMaxLsa) ? 1.0 : 0.75))
+    ? getGrossForTaxableTarget(partBrRoom, pots.partnerCrystallisedPot, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn))
     : 0;
 
   // Evaluate full Personal Allowance fill

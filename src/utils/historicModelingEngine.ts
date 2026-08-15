@@ -30,6 +30,10 @@ export interface HistoricYearSnapshot {
   totalPot: number;
   totalPotReal: number;
   drawdownAmount: number;
+  primaryUncrystallisedPot?: number;
+  primaryCrystallisedPot?: number;
+  partnerUncrystallisedPot?: number;
+  partnerCrystallisedPot?: number;
 }
 
 export interface HistoricRunResult {
@@ -127,8 +131,12 @@ export function runHistoricModelingSimulation(
     const rawSequence = getHistoricSequence(startIndex, numYears);
     const sequence = reverseSequence ? [...rawSequence].reverse() : rawSequence;
 
-    let primaryPensionPot = cleanPots.workplacePensionBalance + cleanPots.sippBalance;
-    let partnerPensionPot = profile.isCouplePlanning ? (partnerPots.workplacePensionBalance + partnerPots.sippBalance) : 0;
+    let primaryUncrystallisedPot = cleanPots.workplacePensionBalance + cleanPots.sippBalance;
+    let primaryCrystallisedPot = 0;
+    let primaryPensionPot = primaryUncrystallisedPot + primaryCrystallisedPot;
+    let partnerUncrystallisedPot = profile.isCouplePlanning ? (partnerPots.workplacePensionBalance + partnerPots.sippBalance) : 0;
+    let partnerCrystallisedPot = 0;
+    let partnerPensionPot = partnerUncrystallisedPot + partnerCrystallisedPot;
     let primaryIsaPot = cleanPots.stocksAndSharesIsaBalance + cleanPots.cashIsaBalance + cleanPots.lisaBalance;
     let partnerIsaPot = profile.isCouplePlanning ? (partnerPots.stocksAndSharesIsaBalance + partnerPots.cashIsaBalance + partnerPots.lisaBalance) : 0;
     let primaryCashGiaPot = cleanPots.giaBalance + cleanPots.cashSavingsBalance;
@@ -184,11 +192,20 @@ export function runHistoricModelingSimulation(
             const priRatio = priAvail / totalAvail;
             const primaryDraw = amount * priRatio;
             const partnerDraw = amount * (1 - priRatio);
-            primaryPensionPot = Math.max(0, primaryPensionPot - primaryDraw);
-            partnerPensionPot = Math.max(0, partnerPensionPot - partnerDraw);
+            const priCrystDrawn = Math.min(primaryCrystallisedPot, primaryDraw);
+            const priUncrystDrawn = Math.min(primaryUncrystallisedPot, Math.max(0, primaryDraw - priCrystDrawn));
+            primaryCrystallisedPot -= priCrystDrawn;
+            primaryUncrystallisedPot -= priUncrystDrawn;
+            primaryPensionPot = primaryCrystallisedPot + primaryUncrystallisedPot;
+            primaryCumulativeTaxFreeDrawn += Math.min(priUncrystDrawn * 0.25, Math.max(0, maxLsa - primaryCumulativeTaxFreeDrawn));
+            
+            const partCrystDrawn = Math.min(partnerCrystallisedPot, partnerDraw);
+            const partUncrystDrawn = Math.min(partnerUncrystallisedPot, Math.max(0, partnerDraw - partCrystDrawn));
+            partnerCrystallisedPot -= partCrystDrawn;
+            partnerUncrystallisedPot -= partUncrystDrawn;
+            partnerPensionPot = partnerCrystallisedPot + partnerUncrystallisedPot;
+            partnerCumulativeTaxFreeDrawn += Math.min(partUncrystDrawn * 0.25, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn));
             pensionPot = primaryPensionPot + partnerPensionPot;
-            primaryCumulativeTaxFreeDrawn += Math.min(primaryDraw * 0.25, Math.max(0, maxLsa - primaryCumulativeTaxFreeDrawn));
-            partnerCumulativeTaxFreeDrawn += Math.min(partnerDraw * 0.25, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn));
           }
         } else if (potType === 'isa') {
           const priRatio = primaryIsaPot / (isaPot || 1);
@@ -205,11 +222,19 @@ export function runHistoricModelingSimulation(
       const deductExplicit = (potType: 'pension' | 'isa' | 'cashGia', amount: number, owner: 'primary' | 'partner') => {
         if (potType === 'pension') {
           if (owner === 'primary') {
-            primaryPensionPot = Math.max(0, primaryPensionPot - amount);
-            primaryCumulativeTaxFreeDrawn += Math.min(amount * 0.25, Math.max(0, maxLsa - primaryCumulativeTaxFreeDrawn));
+            const priCrystDrawn = Math.min(primaryCrystallisedPot, amount);
+            const priUncrystDrawn = Math.min(primaryUncrystallisedPot, Math.max(0, amount - priCrystDrawn));
+            primaryCrystallisedPot -= priCrystDrawn;
+            primaryUncrystallisedPot -= priUncrystDrawn;
+            primaryPensionPot = primaryCrystallisedPot + primaryUncrystallisedPot;
+            primaryCumulativeTaxFreeDrawn += Math.min(priUncrystDrawn * 0.25, Math.max(0, maxLsa - primaryCumulativeTaxFreeDrawn));
           } else {
-            partnerPensionPot = Math.max(0, partnerPensionPot - amount);
-            partnerCumulativeTaxFreeDrawn += Math.min(amount * 0.25, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn));
+            const partCrystDrawn = Math.min(partnerCrystallisedPot, amount);
+            const partUncrystDrawn = Math.min(partnerUncrystallisedPot, Math.max(0, amount - partCrystDrawn));
+            partnerCrystallisedPot -= partCrystDrawn;
+            partnerUncrystallisedPot -= partUncrystDrawn;
+            partnerPensionPot = partnerCrystallisedPot + partnerUncrystallisedPot;
+            partnerCumulativeTaxFreeDrawn += Math.min(partUncrystDrawn * 0.25, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn));
           }
           pensionPot = primaryPensionPot + partnerPensionPot;
         } else if (potType === 'isa') {
@@ -224,7 +249,13 @@ export function runHistoricModelingSimulation(
       };
       const addProRata = (potType, amount, isPartner = false) => {
         if (potType === 'pension') {
-          if (isPartner) partnerPensionPot += amount; else primaryPensionPot += amount;
+          if (isPartner) {
+            partnerUncrystallisedPot += amount;
+            partnerPensionPot = partnerUncrystallisedPot + partnerCrystallisedPot;
+          } else {
+            primaryUncrystallisedPot += amount;
+            primaryPensionPot = primaryUncrystallisedPot + primaryCrystallisedPot;
+          }
           pensionPot = primaryPensionPot + partnerPensionPot;
         } else if (potType === 'isa') {
           if (isPartner) partnerIsaPot += amount; else primaryIsaPot += amount;
@@ -235,8 +266,12 @@ export function runHistoricModelingSimulation(
         }
       };
       const growPots = (pensionReturn, isaReturn, cashGiaReturn) => {
-        primaryPensionPot = Math.max(0, primaryPensionPot * (1 + pensionReturn));
-        partnerPensionPot = Math.max(0, partnerPensionPot * (1 + pensionReturn));
+        primaryUncrystallisedPot = Math.max(0, primaryUncrystallisedPot * (1 + pensionReturn));
+        primaryCrystallisedPot = Math.max(0, primaryCrystallisedPot * (1 + pensionReturn));
+        primaryPensionPot = primaryUncrystallisedPot + primaryCrystallisedPot;
+        partnerUncrystallisedPot = Math.max(0, partnerUncrystallisedPot * (1 + pensionReturn));
+        partnerCrystallisedPot = Math.max(0, partnerCrystallisedPot * (1 + pensionReturn));
+        partnerPensionPot = partnerUncrystallisedPot + partnerCrystallisedPot;
         pensionPot = primaryPensionPot + partnerPensionPot;
         primaryIsaPot = Math.max(0, primaryIsaPot * (1 + isaReturn));
         partnerIsaPot = Math.max(0, partnerIsaPot * (1 + isaReturn));
@@ -285,12 +320,16 @@ export function runHistoricModelingSimulation(
           if (primaryPensionPot <= 0) break;
           const pclsPct = Math.min(100, Math.max(0, tranche.pclsPercent ?? 25)) / 100;
           const remainingLsa = Math.max(0, maxLsa - primaryCumulativeTaxFreeDrawn);
-          const maxGrossForLsa = pclsPct > 0 ? Math.floor(remainingLsa / pclsPct) : primaryPensionPot;
-          const grossCrystallised = Math.min(primaryPensionPot, tranche.amount, maxGrossForLsa);
+          const maxGrossForLsa = pclsPct > 0 ? Math.floor(remainingLsa / pclsPct) : primaryUncrystallisedPot;
+          const grossCrystallised = Math.min(primaryUncrystallisedPot, tranche.amount, maxGrossForLsa);
           if (grossCrystallised <= 0) continue;
 
           const pclsAmount = Math.min(grossCrystallised * pclsPct, remainingLsa);
-          primaryPensionPot -= pclsAmount;
+          primaryUncrystallisedPot -= grossCrystallised;
+          
+          primaryCrystallisedPot += (grossCrystallised - pclsAmount);
+          
+          primaryPensionPot = primaryUncrystallisedPot + primaryCrystallisedPot;
           primaryCumulativeTaxFreeDrawn += pclsAmount;
           const alloc = allocateLumpSumToPots(pclsAmount, tranche.targetPot || profile.lumpSumTargetPot, tranche.splits || profile.lumpSumSplits);
           primaryIsaPot += alloc.toIsa;
@@ -312,12 +351,16 @@ export function runHistoricModelingSimulation(
           if (partnerPensionPot <= 0) break;
           const pclsPct = Math.min(100, Math.max(0, tranche.pclsPercent ?? 25)) / 100;
           const remainingLsa = Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn);
-          const maxGrossForLsa = pclsPct > 0 ? Math.floor(remainingLsa / pclsPct) : partnerPensionPot;
-          const grossCrystallised = Math.min(partnerPensionPot, tranche.amount, maxGrossForLsa);
+          const maxGrossForLsa = pclsPct > 0 ? Math.floor(remainingLsa / pclsPct) : partnerUncrystallisedPot;
+          const grossCrystallised = Math.min(partnerUncrystallisedPot, tranche.amount, maxGrossForLsa);
           if (grossCrystallised <= 0) continue;
 
           const pclsAmount = Math.min(grossCrystallised * pclsPct, remainingLsa);
-          partnerPensionPot -= pclsAmount;
+          partnerUncrystallisedPot -= grossCrystallised;
+          
+          partnerCrystallisedPot += (grossCrystallised - pclsAmount);
+          
+          partnerPensionPot = partnerUncrystallisedPot + partnerCrystallisedPot;
           partnerCumulativeTaxFreeDrawn += pclsAmount;
           const alloc = allocateLumpSumToPots(pclsAmount, tranche.targetPot || profile.partnerLumpSumTargetPot || profile.lumpSumTargetPot, tranche.splits || profile.partnerLumpSumSplits || profile.lumpSumSplits);
           partnerIsaPot += alloc.toIsa;
@@ -335,12 +378,16 @@ export function runHistoricModelingSimulation(
         !pclsTaken &&
         age >= lumpSumTakeAge &&
         canAccessPension &&
-        primaryPensionPot > 0 &&
+        primaryUncrystallisedPot > 0 &&
         (profile.pclsLumpSumPercent ?? 25) > 0
       ) {
         const lumpSumPercent = Math.min(100, profile.pclsLumpSumPercent ?? 25) / 100;
-        const pclsAmount = Math.min(primaryPensionPot * lumpSumPercent, Math.max(0, maxLsa - primaryCumulativeTaxFreeDrawn));
-        primaryPensionPot -= pclsAmount;
+        const pclsAmount = Math.min(primaryUncrystallisedPot * lumpSumPercent, Math.max(0, maxLsa - primaryCumulativeTaxFreeDrawn));
+        
+        primaryCrystallisedPot += (primaryUncrystallisedPot - pclsAmount);
+        primaryUncrystallisedPot = 0;
+        
+        primaryPensionPot = primaryUncrystallisedPot + primaryCrystallisedPot;
         pensionPot = primaryPensionPot + partnerPensionPot;
         const alloc = allocateLumpSumToPots(pclsAmount, profile.lumpSumTargetPot, profile.lumpSumSplits);
         primaryIsaPot += alloc.toIsa;
@@ -359,12 +406,16 @@ export function runHistoricModelingSimulation(
         partnerAge >= (profile.partnerTargetRetirementAge ?? profile.targetRetirementAge) &&
         partnerAge >= lumpSumTakeAge &&
         partnerCanAccessPension &&
-        partnerPensionPot > 0 &&
+        partnerUncrystallisedPot > 0 &&
         (profile.partnerPclsLumpSumPercent ?? 25) > 0
       ) {
         const lumpSumPercent = Math.min(100, profile.partnerPclsLumpSumPercent ?? 25) / 100;
-        const partnerPclsAmount = Math.min(partnerPensionPot * lumpSumPercent, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn));
-        partnerPensionPot -= partnerPclsAmount;
+        const partnerPclsAmount = Math.min(partnerUncrystallisedPot * lumpSumPercent, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn));
+        
+        partnerCrystallisedPot += (partnerUncrystallisedPot - partnerPclsAmount);
+        partnerUncrystallisedPot = 0;
+        
+        partnerPensionPot = partnerUncrystallisedPot + partnerCrystallisedPot;
         pensionPot = primaryPensionPot + partnerPensionPot;
         const alloc = allocateLumpSumToPots(partnerPclsAmount, profile.partnerLumpSumTargetPot || profile.lumpSumTargetPot, profile.partnerLumpSumSplits || profile.lumpSumSplits);
         partnerIsaPot += alloc.toIsa;
@@ -706,7 +757,6 @@ export function runHistoricModelingSimulation(
         const guaranteedIncome = statePensionThisYr + annuityIncomeThisYear + dbIncomeThisYr + fixedIncomeThisYr;
         let remainingNeeded = Math.max(0, drawdownNetTarget - guaranteedIncome);
 
-        let drawdownThisYr = 0;
         const executeDeduct = (potType: 'pension' | 'isa' | 'cashGia', amount: number, owner?: 'primary' | 'partner') => {
           if (amount <= 0) return;
           if (owner) {
@@ -737,10 +787,16 @@ export function runHistoricModelingSimulation(
           let partTaxFree = 0;
           
           if (primaryCumulativeTaxFreeDrawn < maxLsa) {
-             priTaxFree = Math.min((grossDraw * priRatio) * 0.25, Math.max(0, maxLsa - primaryCumulativeTaxFreeDrawn));
+             const priGrossDraw = grossDraw * priRatio;
+             const priCrystDrawn = Math.min(primaryCrystallisedPot, priGrossDraw);
+             const priUncrystDrawn = Math.min(primaryUncrystallisedPot, Math.max(0, priGrossDraw - priCrystDrawn));
+             priTaxFree = Math.min(priUncrystDrawn * 0.25, Math.max(0, maxLsa - primaryCumulativeTaxFreeDrawn));
           }
           if (partnerCumulativeTaxFreeDrawn < partnerMaxLsa) {
-             partTaxFree = Math.min((grossDraw * partRatio) * 0.25, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn));
+             const partGrossDraw = grossDraw * partRatio;
+             const partCrystDrawn = Math.min(partnerCrystallisedPot, partGrossDraw);
+             const partUncrystDrawn = Math.min(partnerUncrystallisedPot, Math.max(0, partGrossDraw - partCrystDrawn));
+             partTaxFree = Math.min(partUncrystDrawn * 0.25, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn));
           }
           
           const priTaxable = (grossDraw * priRatio) - priTaxFree;
@@ -860,9 +916,6 @@ export function runHistoricModelingSimulation(
             partThresholdGross = (isPartnerScot ? (12570 + SCOT_HIGHER_THRESHOLD) : RUK_ADDITIONAL_THRESHOLD) * inflMult;
           }
 
-          const primaryTaxablePercent = (primaryCumulativeTaxFreeDrawn >= maxLsa) ? 1.0 : 0.75;
-          const partnerTaxablePercent = (partnerCumulativeTaxFreeDrawn >= partnerMaxLsa) ? 1.0 : 0.75;
-
           const cashGiaReturn = cashGiaReturnRate !== undefined ? cashGiaReturnRate : (blendedReturnRate * 0.90);
           const primaryCashGrowth = primaryCashGiaPot * cashGiaReturn;
           const partnerCashGrowth = partnerCashGiaPot * cashGiaReturn;
@@ -873,8 +926,24 @@ export function runHistoricModelingSimulation(
           const priRoom = Math.max(0, priThresholdGross - priIncomeAlready);
           const partRoom = profile.isCouplePlanning ? Math.max(0, partThresholdGross - partIncomeAlready) : 0;
 
-          const maxPriGrossForBracket = primaryTaxablePercent > 0 ? priRoom / primaryTaxablePercent : priRoom;
-          const maxPartGrossForBracket = partnerTaxablePercent > 0 ? partRoom / partnerTaxablePercent : partRoom;
+          const getGrossForTaxableTarget = (taxableTarget: number, crystPot: number, remainingLsa: number): number => {
+            if (taxableTarget <= crystPot) return taxableTarget;
+            let targetUncrystTaxable = taxableTarget - crystPot;
+            const maxUncrystTaxableWithPcls = remainingLsa * 3;
+            if (targetUncrystTaxable <= maxUncrystTaxableWithPcls) {
+              return crystPot + (targetUncrystTaxable / 0.75);
+            }
+            targetUncrystTaxable -= maxUncrystTaxableWithPcls;
+            return crystPot + (maxUncrystTaxableWithPcls / 0.75) + targetUncrystTaxable;
+          };
+
+          const maxPriGrossForBracket = canAccessPension
+            ? getGrossForTaxableTarget(priRoom, primaryCrystallisedPot, Math.max(0, maxLsa - primaryCumulativeTaxFreeDrawn))
+            : 0;
+            
+          const maxPartGrossForBracket = partnerCanAccessPension
+            ? getGrossForTaxableTarget(partRoom, partnerCrystallisedPot, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn))
+            : 0;
 
           let priTargetGross = Math.min(canAccessPension ? primaryPensionPot : 0, maxPriGrossForBracket);
           let partTargetGross = Math.min(partnerCanAccessPension ? partnerPensionPot : 0, maxPartGrossForBracket);
@@ -999,6 +1068,10 @@ export function runHistoricModelingSimulation(
         totalPot: Math.round(totalPot),
         totalPotReal: Math.round(totalPotReal),
         drawdownAmount: Math.round(drawdownThisYr),
+        primaryUncrystallisedPot: Math.round(primaryUncrystallisedPot),
+        primaryCrystallisedPot: Math.round(primaryCrystallisedPot),
+        partnerUncrystallisedPot: Math.round(partnerUncrystallisedPot),
+        partnerCrystallisedPot: Math.round(partnerCrystallisedPot),
       });
     }
 
