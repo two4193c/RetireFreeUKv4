@@ -1075,7 +1075,7 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
                     <input
                       type="number"
                       step={500}
-                      value={effectiveAdjustedIncome}
+                      value={reinvestExcessDrawdown ? effectiveSpendingTarget : effectiveDrawdownTarget}
                       onChange={(e) => setCustomAdjustedTargetIncome(Math.max(0, parseInt(e.target.value) || 0))}
                       className="w-full pl-7 pr-3 py-1.5 text-xs font-bold bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500"
                     />
@@ -1120,7 +1120,7 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
 
                           <div className="space-y-0.5 pt-0.5">
                             <div className="text-[10px] font-black uppercase text-emerald-400">
-                              {isAdjustedDifferent ? `Adjusted Target Spend (${fmt(effectiveAdjustedIncome)}/yr)` : 'Applied Target Income'}
+                              {isAdjustedDifferent ? `Adjusted Target Spend (${fmt(reinvestExcessDrawdown ? effectiveSpendingTarget : effectiveDrawdownTarget)}/yr)` : 'Applied Target Income'}
                             </div>
                             <div className="flex items-center justify-between gap-4">
                               <span className="text-slate-400">Wealth Pot:</span>
@@ -1152,7 +1152,7 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
                   <Line
                     type="monotone"
                     dataKey="adjustedPot"
-                    name={`Adjusted Target Wealth (${fmt(effectiveAdjustedIncome)}/yr)`}
+                    name={`Adjusted Target Wealth (${fmt(reinvestExcessDrawdown ? effectiveSpendingTarget : effectiveDrawdownTarget)}/yr)`}
                     stroke="#10b981"
                     strokeWidth={3}
                     dot={false}
@@ -1166,7 +1166,7 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
         {/* MODAL FOOTER */}
         <div className="p-5 bg-slate-50 dark:bg-slate-900/90 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
           <div className="text-xs text-slate-600 dark:text-slate-400 font-medium">
-            Applying this solver will set your plan target annual retirement spend to <strong className="font-bold text-emerald-600 dark:text-emerald-400">{fmt(effectiveAdjustedIncome)}/yr</strong>.
+            Applying this solver will set your plan target annual retirement spend to <strong className="font-bold text-emerald-600 dark:text-emerald-400">{fmt(reinvestExcessDrawdown ? effectiveSpendingTarget : effectiveDrawdownTarget)}/yr</strong>.
           </div>
 
           <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -1183,7 +1183,7 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
               className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs font-black text-white bg-gradient-to-r from-emerald-600 via-teal-600 to-amber-600 hover:from-emerald-700 hover:to-amber-700 transition-all shadow-lg shadow-emerald-500/20 cursor-pointer flex items-center justify-center gap-2"
             >
               <Check className="w-4 h-4" />
-              <span>Apply Maximized Spend ({fmt(effectiveAdjustedIncome)}/yr)</span>
+              <span>Apply Maximized Spend ({fmt(reinvestExcessDrawdown ? effectiveSpendingTarget : effectiveDrawdownTarget)}/yr)</span>
             </button>
           </div>
         </div>
