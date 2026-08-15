@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   YearProjection,
@@ -90,6 +90,33 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
   const [hoveredLinkId, setHoveredLinkId] = useState<string | null>(null);
   const [combinedEssentialFloor, setCombinedEssentialFloor] = useState<number>(defaultCombinedEssentialFloor); // Numerical essential floor in today's £
   const [viewMode, setViewMode] = useState<CashFlowViewMode>(initialViewMode);
+
+  // Dynamic theme tracking for SVG rendering and light/dark styling
+  const [isDark, setIsDark] = useState<boolean>(() => {
+    if (typeof document !== 'undefined') {
+      return document.documentElement.classList.contains('dark');
+    }
+    return true;
+  });
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const updateTheme = () => {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    };
+    updateTheme();
+
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+          updateTheme();
+        }
+      }
+    });
+
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
 
   const isCouple = Boolean(profile.isCouplePlanning);
   const activeViewMode: CashFlowViewMode = isCouple ? viewMode : 'combined';
@@ -1104,9 +1131,9 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
       )}
 
       {/* SANKEY VISUALIZATION CANVAS */}
-      <div className="relative bg-slate-900 text-white rounded-3xl p-4 sm:p-6 border border-slate-800 overflow-hidden shadow-2xl">
+      <div className="relative bg-slate-50/80 dark:bg-slate-950 text-slate-900 dark:text-white rounded-3xl p-4 sm:p-6 border border-slate-200/90 dark:border-slate-800/90 overflow-hidden shadow-md dark:shadow-2xl transition-colors">
         {/* Column Headers */}
-        <div className="grid grid-cols-4 gap-2 pb-3 mb-2 border-b border-slate-800 text-[11px] font-black uppercase tracking-wider text-slate-400">
+        <div className="grid grid-cols-4 gap-2 pb-3 mb-2 border-b border-slate-200 dark:border-slate-800 text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
           <div className="pl-2">1. Gross Inflows</div>
           <div className="text-center">2. Total Gross Hub</div>
           <div className="text-center">3. Tax Deductions & Net Cash</div>
@@ -1140,8 +1167,8 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
                       x2="100%"
                       y2="0%"
                     >
-                      <stop offset="0%" stopColor={c1} stopOpacity={0.65} />
-                      <stop offset="100%" stopColor={c2} stopOpacity={0.65} />
+                      <stop offset="0%" stopColor={c1} stopOpacity={isDark ? 0.65 : 0.45} />
+                      <stop offset="100%" stopColor={c2} stopOpacity={isDark ? 0.65 : 0.45} />
                     </linearGradient>
                   );
                 })}
@@ -1161,9 +1188,9 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
                       key={link.id}
                       d={link.path}
                       fill={`url(#grad-${link.id})`}
-                      opacity={hoveredNodeId || hoveredLinkId ? (isHovered ? 0.95 : 0.15) : 0.6}
-                      stroke={isHovered ? '#ffffff' : 'none'}
-                      strokeWidth={isHovered ? 1.5 : 0}
+                      opacity={hoveredNodeId || hoveredLinkId ? (isHovered ? (isDark ? 0.95 : 0.85) : (isDark ? 0.15 : 0.08)) : (isDark ? 0.6 : 0.42)}
+                      stroke={isHovered ? (isDark ? '#ffffff' : '#0f172a') : 'none'}
+                      strokeWidth={isHovered ? (isDark ? 1.5 : 2) : 0}
                       className="transition-all duration-200 cursor-pointer"
                       onMouseEnter={() => setHoveredLinkId(link.id)}
                       onMouseLeave={() => setHoveredLinkId(null)}
@@ -1202,9 +1229,9 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
                         height={height}
                         rx={6}
                         fill={node.color}
-                        stroke={isHovered ? '#ffffff' : '#1e293b'}
+                        stroke={isHovered ? (isDark ? '#ffffff' : '#0f172a') : (isDark ? '#1e293b' : '#cbd5e1')}
                         strokeWidth={isHovered ? 2.5 : 1}
-                        className="transition-all duration-150 drop-shadow-md"
+                        className="transition-all duration-150 drop-shadow-sm"
                       />
 
                       {/* Node Label Text */}
@@ -1213,14 +1240,14 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
                           x={x + width + 8}
                           y={y + height / 2}
                           dominantBaseline="middle"
-                          fill="#f8fafc"
+                          fill={isDark ? '#f8fafc' : '#0f172a'}
                           fontSize="11"
                           fontWeight="700"
                         >
                           <tspan x={x + width + 8} dy="-4" fontWeight="800">
                             {node.label}
                           </tspan>
-                          <tspan x={x + width + 8} dy="13" fill="#94a3b8" fontSize="10">
+                          <tspan x={x + width + 8} dy="13" fill={isDark ? '#94a3b8' : '#475569'} fontSize="10" fontWeight="600">
                             {formatGBP(node.amount)}
                           </tspan>
                         </text>
@@ -1231,7 +1258,7 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
                           x={x + width / 2}
                           y={y - 10}
                           textAnchor="middle"
-                          fill="#f8fafc"
+                          fill={isDark ? '#f8fafc' : '#0f172a'}
                           fontSize="11"
                           fontWeight="800"
                         >
@@ -1244,7 +1271,7 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
                           x={x + width / 2}
                           y={y + height + 14}
                           textAnchor="middle"
-                          fill="#f8fafc"
+                          fill={isDark ? '#f8fafc' : '#0f172a'}
                           fontSize="11"
                           fontWeight="800"
                         >
@@ -1258,14 +1285,14 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
                           y={y + height / 2}
                           textAnchor="end"
                           dominantBaseline="middle"
-                          fill="#f8fafc"
+                          fill={isDark ? '#f8fafc' : '#0f172a'}
                           fontSize="11"
                           fontWeight="700"
                         >
                           <tspan x={x - 8} dy="-4" fontWeight="800">
                             {node.label}
                           </tspan>
-                          <tspan x={x - 8} dy="13" fill="#cbd5e1" fontSize="10">
+                          <tspan x={x - 8} dy="13" fill={isDark ? '#cbd5e1' : '#475569'} fontSize="10" fontWeight="600">
                             {formatGBP(node.amount)}
                           </tspan>
                         </text>
@@ -1283,14 +1310,14 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
         )}
 
         {/* Hover inspection pill banner */}
-        <div className="mt-3 pt-3 border-t border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs">
-          <div className="flex items-center gap-2 text-slate-300">
-            <Sparkles className="w-4 h-4 text-amber-400" />
+        <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs">
+          <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+            <Sparkles className="w-4 h-4 text-amber-500 dark:text-amber-400" />
             <span>
               {hoveredNodeId ? (
                 <>
                   Inspecting Node:{' '}
-                  <strong className="text-white">
+                  <strong className="text-slate-900 dark:text-white">
                     {flowData?.nodes.find((n) => n.id === hoveredNodeId)?.label}
                   </strong>{' '}
                   ({formatGBP(flowData?.nodes.find((n) => n.id === hoveredNodeId)?.amount || 0)})
@@ -1301,7 +1328,7 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
             </span>
           </div>
 
-          <div className="text-[11px] text-slate-400">
+          <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
             {adjustInflation ? "Real Terms (Today's £)" : 'Nominal Inflated Terms'}
           </div>
         </div>

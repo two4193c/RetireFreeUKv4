@@ -56,6 +56,37 @@ export const CoupleGuideCard: React.FC = () => {
           </p>
         </div>
       </div>
+
+      {/* Cash Flow Sankey Couple View & 50% Floor Split */}
+      <div className="p-5 bg-teal-50/60 dark:bg-teal-950/30 rounded-2xl border border-teal-200/60 dark:border-teal-800/60 space-y-3">
+        <h3 className="font-bold text-teal-950 dark:text-teal-200 text-sm flex items-center gap-2">
+          <Scale className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+          <span>Cash Flow Sankey: Combined vs. Individual Views & 50% Floor Share</span>
+        </h3>
+        <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+          When <strong>Couple / Joint Planning</strong> is enabled, the <strong>Interactive Cash Flow Sankey Diagram</strong> supports multi-member view switching:
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+          <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 space-y-1">
+            <span className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+              <Users className="w-3.5 h-3.5 text-teal-600" />
+              Combined Household View
+            </span>
+            <p className="text-slate-600 dark:text-slate-400">
+              Aggregates all income sources and pots across both partners, comparing household net take-home against the total combined Essential Floor.
+            </p>
+          </div>
+          <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 space-y-1">
+            <span className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+              <Heart className="w-3.5 h-3.5 text-rose-500" />
+              Individual Partner Views (½ Share)
+            </span>
+            <p className="text-slate-600 dark:text-slate-400">
+              Switches to an individual partner's view and automatically adjusts the essential floor to an equal <strong>50% share</strong> (with a <span className="font-bold text-teal-600">½ share</span> badge). Changing the individual input synchronizes back to the total combined floor.
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

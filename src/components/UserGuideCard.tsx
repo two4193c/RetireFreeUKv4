@@ -805,10 +805,10 @@ export const UserGuideCard: React.FC<UserGuideCardProps> = ({
           <div className="p-3.5 bg-indigo-50/70 dark:bg-indigo-950/40 rounded-xl border border-indigo-200 dark:border-indigo-800 space-y-1 text-xs">
             <span className="font-bold text-indigo-900 dark:text-indigo-200 flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
-              Advanced Strategy Tools Unlocked:
+              Advanced Strategy & Visualization Tools:
             </span>
-            <p className="text-slate-600 dark:text-slate-300 text-[11px]">
-              In Advanced Mode, you also unlock <strong>Withdrawal Guardrail Gauges</strong> (Guyton-Klinger dynamic rules), <strong>Safe Withdrawal Rate (SWR) Matrices</strong>, and <strong>Essential vs. Discretionary Floor Splits</strong>.
+            <p className="text-slate-600 dark:text-slate-300 text-[11px] leading-relaxed">
+              In Advanced Mode and the <strong>Projections / Annual Breakdown</strong> page, you also unlock the <strong>Interactive Cash Flow Sankey Diagram</strong> (with numerical £/yr Essential Floor tuning, age timeline slider, and automatic 50% split for individual partner views), <strong>Withdrawal Guardrail Gauges</strong> (Guyton-Klinger rules), and <strong>Safe Withdrawal Rate (SWR) Matrices</strong>.
             </p>
           </div>
         </div>

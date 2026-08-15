@@ -67,6 +67,22 @@ export const FloorGuideCard: React.FC = () => {
           A pure flexi-access drawdown strategy carries market volatility risk, while a pure 100% annuity strategy lacks flexibility and inflation upside. A <strong>Hybrid Strategy</strong> allocates a portion of your pension capital to guarantee essential income, leaving remaining capital invested in S&S ISAs and pensions for growth.
         </p>
       </div>
+
+      {/* Cash Flow Sankey & Numerical Floor Integration */}
+      <div className="p-5 bg-teal-50/60 dark:bg-teal-950/30 rounded-2xl border border-teal-200/60 dark:border-teal-800/60 space-y-3">
+        <h3 className="font-bold text-teal-950 dark:text-teal-200 text-sm flex items-center gap-2">
+          <ShieldCheck className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+          <span>Interactive Cash Flow Sankey & Numerical Floor Settings</span>
+        </h3>
+        <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+          On the <strong>Projections / Annual Breakdown</strong> page, the <strong>Interactive Cash Flow Sankey Diagram</strong> allows you to specify your exact essential spending floor in <strong>numerical currency (£/yr)</strong>:
+        </p>
+        <ul className="text-xs text-slate-600 dark:text-slate-400 space-y-1.5 list-disc list-inside">
+          <li><strong>Direct Value Setting:</strong> Enter an exact figure (e.g. £24,000/yr) with stepper buttons (<code className="font-bold text-teal-700 dark:text-teal-300">-</code> / <code className="font-bold text-teal-700 dark:text-teal-300">+</code>) rather than a rigid percentage.</li>
+          <li><strong>Essential vs. Discretionary Allocation:</strong> Net income first prioritizes filling the essential floor (bills, housing, council tax, groceries). Any surplus income flows directly to Discretionary Lifestyle Spending.</li>
+          <li><strong>Coverage Status:</strong> The diagram dynamically tracks whether your total net income covers 100% of your target essential floor or indicates the percentage covered.</li>
+        </ul>
+      </div>
     </div>
   );
 };
