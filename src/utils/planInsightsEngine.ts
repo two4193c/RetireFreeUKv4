@@ -46,6 +46,61 @@ export interface ComprehensivePlanInsights {
   executiveSummary: string;
 }
 
+function calculateActualMortgageClearanceAge(profile: UserProfile): number {
+  const mortgage = profile.mortgage;
+  if (!mortgage || !mortgage.enabled || !mortgage.currentBalance) return profile.currentAge;
+  
+  let balance = mortgage.currentBalance;
+  const monthlyRate = (mortgage.interestRatePercent / 100) / 12;
+  const n = Math.max(1, mortgage.remainingTermYears * 12 + (mortgage.remainingTermMonths || 0));
+  
+  let basePmt = 0;
+  if (mortgage.customMonthlyPayment) {
+    basePmt = mortgage.customMonthlyPayment;
+  } else if (mortgage.repaymentType === 'interest_only') {
+    basePmt = balance * monthlyRate;
+  } else {
+    basePmt = monthlyRate > 0 ? (balance * monthlyRate * Math.pow(1 + monthlyRate, n)) / (Math.pow(1 + monthlyRate, n) - 1) : balance / n;
+  }
+  
+  const totalMonthlyPmt = basePmt + (mortgage.regularMonthlyOverpayment || 0);
+  
+  const lumpSumsByMonth = new Map<number, number>();
+  if (mortgage.lumpSumOverpayments) {
+    mortgage.lumpSumOverpayments.forEach(ls => {
+      if (ls.age >= profile.currentAge) {
+        const monthOffset = Math.round((ls.age - profile.currentAge) * 12);
+        lumpSumsByMonth.set(monthOffset, (lumpSumsByMonth.get(monthOffset) || 0) + ls.amount);
+      }
+    });
+  }
+  
+  let monthsPassed = 0;
+  const maxMonths = 100 * 12; // Prevent infinite loops
+  
+  // If payment doesn't even cover interest, and no lump sums exist to bail it out, it's infinite.
+  // We'll let the while loop hit maxMonths in that case.
+  while (balance > 0 && monthsPassed < maxMonths) {
+    const lumpSum = lumpSumsByMonth.get(monthsPassed) || 0;
+    if (lumpSum > 0) {
+      balance -= lumpSum;
+      if (balance <= 0) break;
+    }
+    
+    balance += balance * monthlyRate;
+    balance -= totalMonthlyPmt;
+    
+    monthsPassed++;
+  }
+  
+  // If it hit maxMonths, just return the naive term to avoid crazy numbers
+  if (monthsPassed >= maxMonths) {
+    return profile.currentAge + mortgage.remainingTermYears + (mortgage.remainingTermMonths || 0) / 12;
+  }
+  
+  return profile.currentAge + (monthsPassed / 12);
+}
+
 export function computePlanInsights(
   profile: UserProfile,
   pots: InvestmentPots,
@@ -476,18 +531,23 @@ export function computePlanInsights(
   // Opportunity 5: Mortgage Strategy & Decumulation Cash Flow
   if (profile.mortgage?.enabled && (profile.mortgage.currentBalance || 0) > 0) {
     const mortgageBal = profile.mortgage.currentBalance;
-    const termYears = profile.mortgage.remainingTermYears || 20;
-    const clearanceAge = currentAge + Math.ceil(termYears);
+    const clearanceAgeExact = calculateActualMortgageClearanceAge(profile);
+    const clearanceAge = Math.ceil(clearanceAgeExact);
     const isPayoffAtRetirement = profile.mortgage.payoffAtRetirement;
 
     if (clearanceAge > targetAge && !isPayoffAtRetirement) {
+      const yearsIntoRetirement = Math.max(1, clearanceAge - targetAge);
+      const overpaymentText = profile.mortgage.regularMonthlyOverpayment || profile.mortgage.lumpSumOverpayments?.length
+        ? " (accounting for your configured overpayments/lump sums)"
+        : "";
+
       opportunities.push({
         id: 'mortgage_retirement_clearance',
         category: 'Decumulation & SWR',
         title: 'Mortgage Retirement Clearance Strategy',
         impactLevel: 'High Impact',
         status: 'recommended',
-        observation: `Outstanding mortgage of £${Math.round(mortgageBal).toLocaleString()} (${profile.mortgage.interestRatePercent}%) is projected to extend ${clearanceAge - targetAge} years into retirement.`,
+        observation: `Outstanding mortgage of £${Math.round(mortgageBal).toLocaleString()} (${profile.mortgage.interestRatePercent}%) is projected to extend ${yearsIntoRetirement} years into retirement${overpaymentText}.`,
         actionableStep: `Evaluate enabling 'Pay off at retirement' using 25% Tax-Free Pension Lump Sum (PCLS) or increasing monthly overpayments (currently £${profile.mortgage.regularMonthlyOverpayment || 0}/mo).`,
         projectedBenefit: `Removes ongoing monthly debt service in retirement, reducing required gross portfolio withdrawals and lowering sequence risk.`,
       });

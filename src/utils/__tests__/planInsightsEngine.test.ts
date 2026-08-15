@@ -156,6 +156,43 @@ describe('planInsightsEngine', () => {
     expect(spousalOpp?.observation).toContain('Spousal pension funding is actively configured');
   });
 
+  it('correctly calculates actual mortgage clearance age including lump sums and overpayments', () => {
+    const profile: UserProfile = {
+      ...DEFAULT_PROFILE,
+      currentAge: 50,
+      targetRetirementAge: 60,
+      mortgage: {
+        enabled: true,
+        currentBalance: 100000,
+        interestRatePercent: 5,
+        remainingTermYears: 20,
+        repaymentType: 'repayment',
+        regularMonthlyOverpayment: 500, // Speeds it up!
+        lumpSumOverpayments: [
+          { id: '1', name: 'lump', age: 52, amount: 20000 }, // Speeds it up even more!
+        ],
+        payoffAtRetirement: false,
+        propertyName: 'Home',
+        propertyValue: 300000,
+        deductFromRetirementIncome: false
+      } as any
+    };
+
+    const taxResult = calculateUKTax(profile, DEFAULT_POTS);
+    const projections = generateProjections(profile, DEFAULT_POTS, taxResult);
+    const insights = computePlanInsights(profile, DEFAULT_POTS, projections, taxResult);
+    
+    // With 100k bal, 5% int, 20 yrs normal payment is ~£660. 
+    // Plus £500/mo overpayment = £1160/mo.
+    // Plus a £20k lump sum in 2 years.
+    // It should clear well before 60!
+    
+    const mortgageOpt = insights.opportunities.find((o) => o.id === 'mortgage_clearance_optimised');
+    expect(mortgageOpt).toBeDefined();
+    expect(mortgageOpt?.observation).toContain('repaid by Age');
+    expect(mortgageOpt?.observation).not.toContain('Age 70'); // Should not be 50 + 20
+  });
+
   it('recommends spousal pension contributions when couple has large pot disparity and zero partner contributions', () => {
     const profile: UserProfile = {
       ...DEFAULT_PROFILE,
