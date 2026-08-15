@@ -593,9 +593,9 @@ export function solveMaximizedSpend(options: SolveMaximizedSpendOptions): SolveM
   };
 
   const reinvestOpts: ReinvestExcessOptions = {
-    reinvestExcessDrawdown: options.reinvestExcessDrawdown,
-    actualSpendingTargetAnnual: options.actualSpendingTargetAnnual,
-    reinvestDestinationPot: options.reinvestDestinationPot,
+    reinvestExcessDrawdown: options.reinvestExcessDrawdown ?? cfg?.reinvestExcessDrawdown ?? profile.reinvestExcessDrawdown ?? false,
+    actualSpendingTargetAnnual: options.actualSpendingTargetAnnual ?? cfg?.actualSpendingTargetAnnual ?? profile.actualSpendingTargetAnnual,
+    reinvestDestinationPot: options.reinvestDestinationPot ?? cfg?.reinvestDestinationPot ?? profile.reinvestDestinationPot ?? 'isa',
   };
 
   const { evalProfile, evalPots } = getScopeEvaluationInputs(profile, pots, coupleScope);
