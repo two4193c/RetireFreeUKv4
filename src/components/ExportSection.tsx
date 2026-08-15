@@ -1767,7 +1767,9 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
         ? `Hybrid / Tranche (${profile.annuityAllocationPercent || 50}% Baseline)`
         : 'Flexi-Access Drawdown (100% Market Invested)';
 
-      const priHierarchy = profile.drawdownStrategy === 'basic_rate_bracket'
+      const priHierarchy = profile.drawdownStrategy === 'tax_optimizer'
+        ? 'TAX OPTIMIZER (Dynamic solver: 0% PA & 20% band smoothing, ISA shielding, spousal equalization)'
+        : profile.drawdownStrategy === 'basic_rate_bracket'
         ? 'BASIC RATE BRACKET (Target £50,270 ceiling minus taxable fixed income)'
         : profile.drawdownStrategy === 'tax_free_bracket'
         ? 'PERSONAL ALLOWANCE BRACKET (Target £12,570 ceiling minus taxable fixed income)'
@@ -1812,7 +1814,9 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
           ? `Hybrid / Tranche (${partAlloc}% Baseline)`
           : 'Flexi-Access Drawdown (100% Market Invested)';
 
-        const partHierarchy = (profile.partnerDrawdownStrategy || profile.drawdownStrategy) === 'basic_rate_bracket'
+        const partHierarchy = (profile.partnerDrawdownStrategy || profile.drawdownStrategy) === 'tax_optimizer'
+          ? 'TAX OPTIMIZER (Dynamic solver: 0% PA & 20% band smoothing, ISA shielding, spousal equalization)'
+          : (profile.partnerDrawdownStrategy || profile.drawdownStrategy) === 'basic_rate_bracket'
           ? 'BASIC RATE BRACKET (Target £50,270 ceiling minus taxable fixed income)'
           : (profile.partnerDrawdownStrategy || profile.drawdownStrategy) === 'tax_free_bracket'
           ? 'PERSONAL ALLOWANCE BRACKET (Target £12,570 ceiling minus taxable fixed income)'

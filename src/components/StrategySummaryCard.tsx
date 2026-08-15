@@ -154,14 +154,15 @@ export const StrategySummaryCard: React.FC<StrategySummaryCardProps> = ({
             <div className="flex justify-between">
               <span className="text-slate-500 dark:text-slate-400">Drawdown Ordering:</span>
               <span className="font-bold text-emerald-700 dark:text-emerald-300 capitalize">
-                {profile.drawdownStrategy === 'isa_first' ? 'ISA First'
+                {profile.drawdownStrategy === 'tax_optimizer' ? 'Tax Optimizer (Dynamic Solver)'
+                  : profile.drawdownStrategy === 'isa_first' ? 'ISA First'
                   : profile.drawdownStrategy === 'pension_first' ? 'Pension First'
                   : profile.drawdownStrategy === 'cash_first' ? 'Cash/GIA First'
                   : profile.drawdownStrategy === 'pro_rata' ? 'Pro Rata'
                   : profile.drawdownStrategy === 'tax_free_bracket' ? 'Fill Tax-Free Allowance'
                   : profile.drawdownStrategy === 'basic_rate_bracket' ? 'Fill Basic Rate Band'
                   : profile.drawdownStrategy === 'higher_rate_bracket' ? 'Fill Higher Rate Band'
-                  : 'ISA First'}
+                  : 'Tax Optimizer (Dynamic Solver)'}
               </span>
             </div>
             {profile.incomeProductOption === 'hybrid' && (profile.annuityTranches || []).filter(t => t.enabled && (!t.owner || t.owner === 'primary')).length > 0 && (
@@ -232,14 +233,15 @@ export const StrategySummaryCard: React.FC<StrategySummaryCardProps> = ({
                 <span className="font-bold text-slate-900 dark:text-white capitalize">
                   {(() => {
                     const strat = profile.partnerDrawdownStrategy || profile.drawdownStrategy;
-                    return strat === 'isa_first' ? 'ISA First'
+                    return strat === 'tax_optimizer' ? 'Tax Optimizer (Dynamic Solver)'
+                      : strat === 'isa_first' ? 'ISA First'
                       : strat === 'pension_first' ? 'Pension First'
                       : strat === 'cash_first' ? 'Cash/GIA First'
                       : strat === 'pro_rata' ? 'Pro Rata'
                       : strat === 'tax_free_bracket' ? 'Fill Tax-Free Allowance'
                       : strat === 'basic_rate_bracket' ? 'Fill Basic Rate Band'
                       : strat === 'higher_rate_bracket' ? 'Fill Higher Rate Band'
-                      : 'ISA First';
+                      : 'Tax Optimizer (Dynamic Solver)';
                   })()}
                 </span>
               </div>

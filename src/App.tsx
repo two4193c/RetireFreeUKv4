@@ -78,6 +78,7 @@ import { AccumulationLedgerCard } from './components/AccumulationLedgerCard';
 import { MortgageDebtCard } from './components/MortgageDebtCard';
 import { LifeEventsDecumulationCard } from './components/LifeEventsDecumulationCard';
 import { InvestmentFeesCard } from './components/InvestmentFeesCard';
+import { CashFlowSankeyCard } from './components/CashFlowSankeyCard';
 import { PlanManagementCard } from './components/PlanManagementCard';
 import { Sparkles, ArrowUpRight, RotateCcw, Pencil, X, Check, LayoutDashboard, Wallet, Percent, LineChart, Shield, Landmark, Download, ArrowRightLeft, TrendingUp, Home, Trash2, AlertTriangle, BookOpen, Award, Scale, Heart, Users, Briefcase, Flame, ShieldAlert, Smile } from 'lucide-react';
 import { SidebarNav } from './components/SidebarNav';
@@ -380,6 +381,7 @@ function App() {
 
     if (mode === 'variants') {
       handleCreateStrategyVariants(source.id, [
+        'tax_optimizer',
         'tax_free_bracket',
         'basic_rate_bracket',
         'isa_first',
@@ -1068,6 +1070,15 @@ function App() {
                 </div>
                 {appMode === 'advanced' && (
                   <>
+                    <div id="card-cashflow-sankey" className="scroll-mt-24 transition-all duration-300">
+                      <CashFlowSankeyCard
+                        projections={projections}
+                        profile={profile}
+                        pots={pots}
+                        taxResult={taxResult}
+                        appMode={appMode}
+                      />
+                    </div>
                     <div id="card-proj-macro" className="scroll-mt-24 transition-all duration-300">
                       <MacroSettingsCard profile={profile} onChange={handleProfileChange} />
                     </div>

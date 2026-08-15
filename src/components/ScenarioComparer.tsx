@@ -182,6 +182,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
   // Helper for drawdown strategy formatting
   const formatStrategy = (strat?: string) => {
     switch (strat) {
+      case 'tax_optimizer': return 'Tax Optimizer (Dynamic Solver)';
       case 'isa_first': return 'ISA First (Tax-Free Bridge)';
       case 'cash_first': return 'Cash Buffer First';
       case 'pension_first': return 'Pension First (Taxable Drawdown)';
@@ -189,7 +190,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
       case 'tax_free_bracket': return 'Fill Tax-Free Allowance (£12.57k)';
       case 'basic_rate_bracket': return 'Fill Basic Rate Band (£50.27k)';
       case 'higher_rate_bracket': return 'Fill Higher Rate Band (£125.14k)';
-      default: return 'ISA First (Tax-Free Bridge)';
+      default: return 'Tax Optimizer (Dynamic Solver)';
     }
   };
 

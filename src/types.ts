@@ -237,6 +237,7 @@ export interface MaximizedSpendConfig {
 }
 
 export type DrawdownStrategy =
+  | 'tax_optimizer'
   | 'isa_first'
   | 'cash_first'
   | 'pension_first'

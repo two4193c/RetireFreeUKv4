@@ -839,7 +839,7 @@ export function runHistoricModelingSimulation(
               netDrawdownAchieved += netDraw;
             }
           }
-        } else if (strategy === 'tax_free_bracket' || strategy === 'basic_rate_bracket' || strategy === 'higher_rate_bracket') {
+        } else if (strategy === 'tax_optimizer' || strategy === 'tax_free_bracket' || strategy === 'basic_rate_bracket' || strategy === 'higher_rate_bracket') {
           const isPrimaryScot = profile.taxRegion === 'scotland';
           const isPartnerScot = (profile.partnerTaxRegion || profile.taxRegion) === 'scotland';
 
@@ -847,14 +847,14 @@ export function runHistoricModelingSimulation(
           const inflMult = indexTaxBands ? cumulativeInflationFactor : 1;
 
           let priThresholdGross = 12570 * inflMult;
-          if (strategy === 'basic_rate_bracket') {
+          if (strategy === 'tax_optimizer' || strategy === 'basic_rate_bracket') {
             priThresholdGross = (12570 + (isPrimaryScot ? SCOT_INTERMEDIATE_THRESHOLD : RUK_BASIC_THRESHOLD)) * inflMult;
           } else if (strategy === 'higher_rate_bracket') {
             priThresholdGross = (isPrimaryScot ? (12570 + SCOT_HIGHER_THRESHOLD) : RUK_ADDITIONAL_THRESHOLD) * inflMult;
           }
 
           let partThresholdGross = 12570 * inflMult;
-          if (strategy === 'basic_rate_bracket') {
+          if (strategy === 'tax_optimizer' || strategy === 'basic_rate_bracket') {
             partThresholdGross = (12570 + (isPartnerScot ? SCOT_INTERMEDIATE_THRESHOLD : RUK_BASIC_THRESHOLD)) * inflMult;
           } else if (strategy === 'higher_rate_bracket') {
             partThresholdGross = (isPartnerScot ? (12570 + SCOT_HIGHER_THRESHOLD) : RUK_ADDITIONAL_THRESHOLD) * inflMult;

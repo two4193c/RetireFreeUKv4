@@ -26,6 +26,7 @@ import {
   SCOT_HIGHER_THRESHOLD,
   PA_TAPER_THRESHOLD,
 } from '../config/ukTaxRates';
+import { solveTaxOptimalAnnualDrawdown } from './taxOptimizerSolver';
 
 export { getPensionAccessAge, getLsaLimit };
 
@@ -1916,11 +1917,13 @@ function parseAnnuityTypeConfig(type?: string) {
       const primaryStrategy = profile.drawdownStrategy || 'isa_first';
       const partnerStrategy = profile.isCouplePlanning ? (profile.partnerDrawdownStrategy || primaryStrategy) : primaryStrategy;
       
-      // Effective strategy selection: if equal, use that. Prefer explicit bracket filling strategies over fallback defaults.
+      // Effective strategy selection: if equal, use that. Prefer explicit optimizer & bracket filling strategies over fallback defaults.
       let effectiveStrategy = primaryStrategy;
       if (profile.isCouplePlanning && primaryStrategy !== partnerStrategy) {
-        const isBracketStrategy = (s: string) => s === 'tax_free_bracket' || s === 'basic_rate_bracket' || s === 'higher_rate_bracket';
-        if (isBracketStrategy(primaryStrategy)) {
+        const isBracketStrategy = (s: string) => s === 'tax_optimizer' || s === 'tax_free_bracket' || s === 'basic_rate_bracket' || s === 'higher_rate_bracket';
+        if (primaryStrategy === 'tax_optimizer' || partnerStrategy === 'tax_optimizer') {
+          effectiveStrategy = 'tax_optimizer';
+        } else if (isBracketStrategy(primaryStrategy)) {
           effectiveStrategy = primaryStrategy;
         } else if (isBracketStrategy(partnerStrategy)) {
           effectiveStrategy = partnerStrategy;
@@ -2187,6 +2190,87 @@ function parseAnnuityTypeConfig(type?: string) {
           cashGiaPot -= cashDrawdown;
           remainingIncomeNeeded -= cashDrawdown;
         }
+      } else if (effectiveStrategy === 'tax_optimizer') {
+        // Dynamic Programming / Analytical Multi-Bucket Tax Optimizer
+        const remainingYears = Math.max(1, (profile.lifeExpectancyAge || 90) - age);
+        const partnerAgeCurrent = profile.isCouplePlanning ? (age + ((profile.partnerCurrentAge ?? profile.currentAge) - profile.currentAge)) : undefined;
+
+        const optResult = solveTaxOptimalAnnualDrawdown({
+          age,
+          partnerAge: partnerAgeCurrent,
+          pensionAccessAge,
+          partnerPensionAccessAge: profile.isCouplePlanning ? partnerPensionAccessAge : undefined,
+          netIncomeNeeded: remainingIncomeNeeded,
+          primaryTaxableGuaranteed,
+          partnerTaxableGuaranteed,
+          primaryTaxFreeGuaranteed: primaryTaxFreeFixedIncomeReceived,
+          partnerTaxFreeGuaranteed: partnerTaxFreeFixedIncomeReceived,
+          primaryMaxLsa,
+          partnerMaxLsa,
+          primaryCumulativeTaxFreeDrawn,
+          partnerCumulativeTaxFreeDrawn,
+          pots: {
+            primaryUncrystallisedPot,
+            primaryCrystallisedPot,
+            partnerUncrystallisedPot: profile.isCouplePlanning ? partnerUncrystallisedPot : 0,
+            partnerCrystallisedPot: profile.isCouplePlanning ? partnerCrystallisedPot : 0,
+            primarySsIsaPot,
+            primaryCashIsaPot,
+            primaryLisaPot,
+            partnerSsIsaPot: profile.isCouplePlanning ? partnerSsIsaPot : 0,
+            partnerCashIsaPot: profile.isCouplePlanning ? partnerCashIsaPot : 0,
+            primaryCashGiaPot,
+            partnerCashGiaPot: profile.isCouplePlanning ? partnerCashGiaPot : 0,
+          },
+          inflationFactor,
+          isScottishTax,
+          isPartnerScottishTax,
+          indexTaxBands,
+          isCouple: Boolean(profile.isCouplePlanning),
+          remainingRetirementYears: remainingYears,
+          customTaxBands: profile.customTaxBands,
+        });
+
+        explicitPriPensionDraw = optResult.primaryGrossPensionDraw;
+        explicitPartPensionDraw = optResult.partnerGrossPensionDraw;
+        pensionDrawdown = optResult.totalGrossPensionDraw;
+        pensionPot = Math.max(0, pensionPot - pensionDrawdown);
+
+        cashDrawdown = optResult.cashGiaDrawdown;
+        cashGiaPot = Math.max(0, cashGiaPot - cashDrawdown);
+
+        isaDrawdown = optResult.isaDrawdown;
+        isaPot = Math.max(0, isaPot - isaDrawdown);
+
+        if (isaDrawdown > 0) {
+          const isaTotalBefore = primarySsIsaPot + primaryCashIsaPot + primaryLisaPot + (profile.isCouplePlanning ? (partnerSsIsaPot + partnerCashIsaPot) : 0);
+          if (isaTotalBefore > 0) {
+            const ratio = Math.min(1, isaDrawdown / isaTotalBefore);
+            primarySsIsaPot = Math.max(0, primarySsIsaPot - primarySsIsaPot * ratio);
+            primaryCashIsaPot = Math.max(0, primaryCashIsaPot - primaryCashIsaPot * ratio);
+            primaryLisaPot = Math.max(0, primaryLisaPot - primaryLisaPot * ratio);
+            primaryIsaPot = primarySsIsaPot + primaryCashIsaPot + primaryLisaPot;
+
+            if (profile.isCouplePlanning) {
+              partnerSsIsaPot = Math.max(0, partnerSsIsaPot - partnerSsIsaPot * ratio);
+              partnerCashIsaPot = Math.max(0, partnerCashIsaPot - partnerCashIsaPot * ratio);
+              partnerIsaPot = partnerSsIsaPot + partnerCashIsaPot;
+            }
+          }
+        }
+
+        if (cashDrawdown > 0) {
+          const cashTotalBefore = primaryCashGiaPot + (profile.isCouplePlanning ? partnerCashGiaPot : 0);
+          if (cashTotalBefore > 0) {
+            const ratio = Math.min(1, cashDrawdown / cashTotalBefore);
+            primaryCashGiaPot = Math.max(0, primaryCashGiaPot - primaryCashGiaPot * ratio);
+            if (profile.isCouplePlanning) {
+              partnerCashGiaPot = Math.max(0, partnerCashGiaPot - partnerCashGiaPot * ratio);
+            }
+          }
+        }
+
+        remainingIncomeNeeded = Math.max(0, remainingIncomeNeeded - optResult.totalNetIncomeAchieved);
       } else if (
         effectiveStrategy === 'tax_free_bracket' ||
         effectiveStrategy === 'basic_rate_bracket' ||

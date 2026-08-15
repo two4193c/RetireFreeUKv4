@@ -52,6 +52,18 @@ export interface StrategyDefinition {
 
 export const STRATEGY_DEFINITIONS: StrategyDefinition[] = [
   {
+    id: 'tax_optimizer',
+    title: 'Tax Optimizer (Dynamic Solver)',
+    shortLabel: 'Tax Optimizer',
+    tagline: 'Min Lifetime Tax & Max Wealth',
+    badgeBg: 'bg-emerald-100 dark:bg-emerald-950/80',
+    badgeText: 'text-emerald-800 dark:text-emerald-300',
+    borderColor: 'border-emerald-300 dark:border-emerald-700',
+    activeBorderColor: 'border-emerald-500 dark:border-emerald-400',
+    activeBg: 'bg-emerald-500/10 dark:bg-emerald-950/40',
+    description: 'Dynamic solver mathematically blends Pension, ISA, and GIA every year to fill 0% PA & 20% bands, avoid 40%/60% tax spikes, and maximize terminal wealth.',
+  },
+  {
     id: 'tax_free_bracket',
     title: 'Tax-Free Allowance Fill',
     shortLabel: '0% Tax-Free Fill',
@@ -182,6 +194,21 @@ export interface StrategyDetails {
 }
 
 export const DETAILED_STRATEGY_INFO: Record<string, StrategyDetails> = {
+  tax_optimizer: {
+    howItWorks: 'A dynamic multi-year optimization solver that mathematically evaluates every available pot (Pension, ISA, LISA, Cash/GIA) each single year of retirement. It automatically captures 100% of your 0% Personal Allowance, smooths withdrawals through the 20% Basic Rate band, shields you from 40% Higher Rate and 60% Personal Allowance Taper traps using ISAs and Cash, and balances draws between partners to mathematically minimize lifetime tax and maximize terminal legacy wealth.',
+    keyBenefits: [
+      'Mathematically minimizes cumulative lifetime tax liabilities across all retirement years.',
+      'Prevents 40% and 60% tax spikes by utilizing ISAs precisely when spending exceeds basic rate bands.',
+      'Maximizes 0% Personal Allowance utilisation every year before allowances expire.',
+      'Balances spousal draws for couples to double available 0% and 20% tax bands.',
+      'Maximizes terminal portfolio wealth remaining at life expectancy.'
+    ],
+    considerations: [
+      'Drawdown blend adjusts dynamically each year based on inflation, tax bands, and pot sizes.',
+      'Preserves high-growth ISAs while utilizing pension tax allowances effectively.'
+    ],
+    drawdownSequence: 'Pension (0% PA Fill) ➔ Pension (20% Basic Rate Band) ➔ Cash / GIA (Tax drag clearance) ➔ ISAs (Tax-Free Shelter) ➔ Higher Bands (if required)'
+  },
   tax_free_bracket: {
     howItWorks: 'Draws pension income each tax year up to your annual Personal Allowance threshold (£12,570 for 2025/26) minus any taxable fixed income (such as State Pension, DB pensions, and annuities). Because this is within your 0% tax bracket, zero UK income tax is paid on pension withdrawals. Any additional income required for your spending target is automatically drawn from tax-free ISAs or Cash savings.',
     keyBenefits: [

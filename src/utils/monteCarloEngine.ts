@@ -1338,8 +1338,10 @@ function parseAnnuityTypeConfig(type?: string) {
 
         let effectiveStrategy = primaryStrategy;
         if (profile.isCouplePlanning && primaryStrategy !== partnerStrategy) {
-          const isBracketStrategy = (s: string) => s === 'tax_free_bracket' || s === 'basic_rate_bracket' || s === 'higher_rate_bracket';
-          if (isBracketStrategy(primaryStrategy)) {
+          const isBracketStrategy = (s: string) => s === 'tax_optimizer' || s === 'tax_free_bracket' || s === 'basic_rate_bracket' || s === 'higher_rate_bracket';
+          if (primaryStrategy === 'tax_optimizer' || partnerStrategy === 'tax_optimizer') {
+            effectiveStrategy = 'tax_optimizer';
+          } else if (isBracketStrategy(primaryStrategy)) {
             effectiveStrategy = primaryStrategy;
           } else if (isBracketStrategy(partnerStrategy)) {
             effectiveStrategy = partnerStrategy;
@@ -1448,7 +1450,7 @@ function parseAnnuityTypeConfig(type?: string) {
               remainingNeeded = Math.max(0, remainingNeeded - netDraw);
             }
           }
-        } else if (effectiveStrategy === 'tax_free_bracket' || effectiveStrategy === 'basic_rate_bracket' || effectiveStrategy === 'higher_rate_bracket') {
+        } else if (effectiveStrategy === 'tax_optimizer' || effectiveStrategy === 'tax_free_bracket' || effectiveStrategy === 'basic_rate_bracket' || effectiveStrategy === 'higher_rate_bracket') {
           const isPrimaryScot = profile.taxRegion === 'scotland';
           const isPartnerScot = (profile.partnerTaxRegion || profile.taxRegion) === 'scotland';
 
@@ -1456,14 +1458,14 @@ function parseAnnuityTypeConfig(type?: string) {
           const inflMult = indexTaxBands ? inflationFactor : 1;
 
           let priThresholdGross = 12570 * inflMult;
-          if (primaryStrategy === 'basic_rate_bracket') {
+          if (primaryStrategy === 'tax_optimizer' || primaryStrategy === 'basic_rate_bracket') {
             priThresholdGross = (12570 + (isPrimaryScot ? SCOT_INTERMEDIATE_THRESHOLD : RUK_BASIC_THRESHOLD)) * inflMult;
           } else if (primaryStrategy === 'higher_rate_bracket') {
             priThresholdGross = (isPrimaryScot ? (12570 + SCOT_HIGHER_THRESHOLD) : RUK_ADDITIONAL_THRESHOLD) * inflMult;
           }
 
           let partThresholdGross = 12570 * inflMult;
-          if (partnerStrategy === 'basic_rate_bracket') {
+          if (partnerStrategy === 'tax_optimizer' || partnerStrategy === 'basic_rate_bracket') {
             partThresholdGross = (12570 + (isPartnerScot ? SCOT_INTERMEDIATE_THRESHOLD : RUK_BASIC_THRESHOLD)) * inflMult;
           } else if (partnerStrategy === 'higher_rate_bracket') {
             partThresholdGross = (isPartnerScot ? (12570 + SCOT_HIGHER_THRESHOLD) : RUK_ADDITIONAL_THRESHOLD) * inflMult;

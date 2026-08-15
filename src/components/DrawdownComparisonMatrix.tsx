@@ -76,6 +76,21 @@ export const DrawdownComparisonMatrix: React.FC<DrawdownComparisonMatrixProps> =
     borderColor: string;
   }[] = [
     {
+      id: 'tax_optimizer',
+      title: 'Tax Optimizer (Dynamic Solver)',
+      tagline: 'Min Lifetime Tax & Max Wealth',
+      hierarchy: 'Dynamic Dynamic Blend: 0% PA → 20% Basic → Cash/GIA → ISA → Higher',
+      targetTaxBand: 'Dynamic Multi-Bucket Optimization',
+      maxMarginalTax: 'Mathematically Minimized (0% / 20% / Smooth)',
+      pclsUfplsImpact: takeLumpSumAtStart
+        ? 'Dynamic blending utilizes PCLS cash strategically while pulling pension up to 20% basic band, then drawing tax-free ISAs for excess needs.'
+        : 'UFPLS dynamic solver blends 25% tax-free tranches to expand 0% personal allowance to £16,760 and 20% band to £67,026 with zero tax spikes.',
+      bestFor: 'Retirees wanting a mathematically proven strategy to pay the absolute lowest lifetime tax and leave maximum terminal wealth.',
+      badgeBg: 'bg-emerald-100 dark:bg-emerald-950/80',
+      badgeText: 'text-emerald-800 dark:text-emerald-300',
+      borderColor: 'border-emerald-300 dark:border-emerald-700/60',
+    },
+    {
       id: 'tax_free_bracket',
       title: 'Tax-Free Allowance Fill',
       tagline: '0% Income Tax Guarantee',

@@ -207,6 +207,7 @@ function computeAnnualContributionForPot(
 
 function getStrategyLabel(strategy?: string): string {
   switch (strategy) {
+    case 'tax_optimizer': return 'Tax Optimizer (Dynamic Solver: Min Lifetime Tax & Max Wealth)';
     case 'isa_first': return 'ISA / Tax-Free Pots First';
     case 'cash_first': return 'Cash / Savings First';
     case 'pension_first': return 'Pension / Taxable First';
@@ -216,7 +217,7 @@ function getStrategyLabel(strategy?: string): string {
     case 'higher_rate_bracket': return 'Higher Rate Tax Bracket First (£125,140)';
     case 'annuity': return 'Guaranteed Annuity Purchase';
     case 'hybrid_annuity': return 'Hybrid Annuity & Flexi-Drawdown';
-    default: return 'ISA / Tax-Free Pots First';
+    default: return 'Tax Optimizer (Dynamic Solver: Min Lifetime Tax & Max Wealth)';
   }
 }
 
