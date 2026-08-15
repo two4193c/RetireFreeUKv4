@@ -1,0 +1,100 @@
+{
+  "version": "v2",
+  "exportedAt": "2026-08-15T22:19:29.577Z",
+  "scenarios": [
+    {
+      "id": "scenario_1785525569342",
+      "name": "Freedom Kitty - Kitty Plan",
+      "updatedAt": "2026-08-11T22:09:33.174Z",
+      "profile": {
+        "dateOfBirth": "1979-06-15",
+        "currentAge": 47,
+        "targetRetirementAge": 53,
+        "lifeExpectancyAge": 76,
+        "statePensionAge": 68,
+        "includeStatePension": true,
+        "enableTripleLock": true,
+        "statePensionAmountAnnual": 12547.6,
+        "fullStatePensionAmount": 12547.6,
+        "qualifyingYears": 35,
+        "grossAnnualSalary": 26437,
+        "isCouplePlanning": false,
+        "taxRegion": "england_ni_wales",
+        "pensionContributionMethod": "salary_sacrifice",
+        "targetRetirementIncomeAnnual": 12500,
+        "spendingPhases": {
+          "enabled": false
+        },
+        "expectedInflationRate": 2,
+        "adjustForInflation": true,
+        "indexTaxBands": false,
+        "expectedInvestmentReturn": 8,
+        "postRetirementReturn": 5.5,
+        "pclsLumpSumPercent": 25,
+        "takeLumpSumAtStart": false,
+        "crystallisationMode": "ufpls",
+        "lumpSumTiming": "access_age",
+        "protectedPensionAccessAge": 57,
+        "drawdownStrategy": "tax_free_bracket",
+        "incomeProductOption": "flexi_drawdown",
+        "oneOffContributions": [
+          {
+            "id": "contrib_1785526878900",
+            "name": "Workplace Pension Monthly Contribution",
+            "owner": "primary",
+            "targetPot": "workplace_pension",
+            "frequency": "regular_monthly",
+            "grossAmount": 0,
+            "startAge": 47,
+            "endAge": 53,
+            "workplaceContributionType": "percent",
+            "employeePercent": 2,
+            "employerPercent": 8,
+            "enabled": true
+          },
+          {
+            "id": "contrib_1785588160044",
+            "name": "Regular Monthly SIPP Savings",
+            "owner": "primary",
+            "targetPot": "stocks_and_shares_isa",
+            "frequency": "regular_monthly",
+            "grossAmount": 500,
+            "startAge": 48,
+            "endAge": 49,
+            "enabled": true
+          },
+          {
+            "id": "contrib_1785588296050",
+            "name": "Regular Monthly SIPP Savings",
+            "owner": "primary",
+            "targetPot": "sipp",
+            "frequency": "regular_monthly",
+            "grossAmount": 500,
+            "startAge": 49,
+            "endAge": 53,
+            "enabled": true
+          }
+        ],
+        "potTransfers": [
+          {
+            "id": "transfer_1785590974926",
+            "name": "Cash Savings to Cash ISA",
+            "owner": "primary",
+            "sourcePot": "cash_savings",
+            "destinationOwner": "primary",
+            "destinationPot": "sipp",
+            "amount": 19000,
+            "transferDate": "2027-04-10",
+            "enabled": true
+          }
+        ]
+      },
+      "pots": {
+        "workplacePensionBalance": 1119,
+        "sippBalance": 23968,
+        "stocksAndSharesIsaBalance": 40394,
+        "cashSavingsBalance": 84979
+      }
+    }
+  ]
+}

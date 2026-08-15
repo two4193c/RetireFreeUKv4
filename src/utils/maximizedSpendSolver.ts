@@ -244,9 +244,9 @@ export function createCandidateProfile(
   const candidate = JSON.parse(JSON.stringify(profile)) as UserProfile;
   const roundedBaseline = Math.round(baselineIncome);
 
-  const isReinvestExcess = Boolean(
-    reinvestOpts?.reinvestExcessDrawdown || profile.reinvestExcessDrawdown || profile.maximizedSpendConfig?.reinvestExcessDrawdown
-  );
+  const isReinvestExcess = reinvestOpts !== undefined 
+    ? Boolean(reinvestOpts.reinvestExcessDrawdown)
+    : Boolean(profile.reinvestExcessDrawdown || profile.maximizedSpendConfig?.reinvestExcessDrawdown);
   const actualSpendingTarget =
     reinvestOpts?.actualSpendingTargetAnnual ??
     profile.actualSpendingTargetAnnual ??
@@ -639,7 +639,7 @@ export function solveMaximizedSpend(options: SolveMaximizedSpendOptions): SolveM
       spendingPattern,
       evalPots,
       annuityFloorOpts,
-      undefined, // Disable reinvestment logic during binary search to properly find the maximum capacity
+      { reinvestExcessDrawdown: false }, // Explicitly disable reinvestment logic during binary search
       clampedEndAge,
       targetLegacyBuffer,
       coupleScope

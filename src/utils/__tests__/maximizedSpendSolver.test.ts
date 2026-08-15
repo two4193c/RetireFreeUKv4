@@ -548,6 +548,26 @@ describe('maximizedSpendSolver', () => {
     });
 
     expect(res.maxAnnualIncome).toBeGreaterThan(0);
+    expect(res.maxAnnualIncome).toBeLessThan(1000000); // Should not hit max bound
+  });
+
+  it('correctly disables reinvestment during binary search to prevent false feasible high bounds', () => {
+    // Replicates the 'Freedom Kitty - Kitty Plan' bug where reinvestment caused max bound of 2M
+    const bugProfile: any = JSON.parse(JSON.stringify(DEFAULT_PROFILE));
+    bugProfile.reinvestExcessDrawdown = true;
+    bugProfile.actualSpendingTargetAnnual = 12500;
+    bugProfile.targetRetirementIncomeAnnual = 12500;
+    bugProfile.spendingPhases = { enabled: false };
+
+    const res = solveMaximizedSpend({
+      profile: bugProfile,
+      pots: DEFAULT_POTS as any,
+      targetEndAge: 90,
+      targetLegacyBuffer: 0,
+      spendingPattern: 'uniform',
+    });
+
+    expect(res.maxAnnualIncome).toBeLessThan(1000000); // Should not hit max bound
   });
 
   it('runs on Freedom Kitty plan (scenario_1785588361044) and checks max spend', () => {
