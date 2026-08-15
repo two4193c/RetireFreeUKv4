@@ -192,6 +192,7 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
     finalPotAtTargetAge = 0,
     bestCandidateProfile = profile,
     projectionsWithMaxSpend = [],
+    rawMaxProjections,
     phaseIncomes = [],
     annuityFloorDetails,
     reinvestExcessDetails,
@@ -269,12 +270,14 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
 
   // Prepare chart comparison data (Solved Max vs Adjusted Target)
   const chartData = useMemo(() => {
-    const maxMap = new Map((projectionsWithMaxSpend || []).map((p: any) => [p.age, p]));
+    // For the ceiling "Solved Max Wealth" line, we prefer the raw unreinvested projections if available, so it accurately depicts the ceiling hitting 0.
+    const ceilingProjections = rawMaxProjections || projectionsWithMaxSpend || [];
+    const maxMap = new Map(ceilingProjections.map((p: any) => [p.age, p]));
     const adjustedMap = new Map((adjustedProjections || []).map((p: any) => [p.age, p]));
 
     // Collect all unique ages >= currentRetirementAge and <= 100
     const agesSet = new Set<number>();
-    (projectionsWithMaxSpend || []).forEach((p: any) => {
+    ceilingProjections.forEach((p: any) => {
       if (p.age >= currentRetirementAge && p.age <= 100) agesSet.add(p.age);
     });
     (adjustedProjections || []).forEach((p: any) => {
@@ -305,7 +308,7 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
         adjustedTargetIncome: adjP ? Math.round((adjP as any).targetRetirementIncome || (adjP as any).netRetirementIncome || 0) : maxP ? Math.round((maxP as any).targetRetirementIncome || (maxP as any).netRetirementIncome || 0) : 0,
       };
     });
-  }, [projectionsWithMaxSpend, adjustedProjections, currentRetirementAge, targetEndAge]);
+  }, [projectionsWithMaxSpend, rawMaxProjections, adjustedProjections, currentRetirementAge, targetEndAge]);
 
   const maxPlottedAge = chartData.length > 0 ? chartData[chartData.length - 1].age : targetEndAge;
 

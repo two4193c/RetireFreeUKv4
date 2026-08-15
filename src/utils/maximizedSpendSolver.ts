@@ -46,6 +46,7 @@ export interface SolveMaximizedSpendResult {
   boostPercentage: number;
   bestCandidateProfile: UserProfile;
   projectionsWithMaxSpend: YearProjection[];
+  rawMaxProjections?: YearProjection[]; // The raw un-reinvested maximum projections (used for chart baseline bounds)
   spendingPattern: 'uniform' | 'proportional_phases' | 'front_loaded';
   coupleScope: CoupleMaxSpendScope;
   phaseIncomes?: {
@@ -669,8 +670,10 @@ export function solveMaximizedSpend(options: SolveMaximizedSpendOptions): SolveM
   );
 
   // If reinvest surplus is active, re-evaluate projections with reinvestment enabled
+  let rawMaxProjections: YearProjection[] | undefined;
   if (reinvestOpts?.reinvestExcessDrawdown) {
     const finalResult = testFeasibility(bestCandidateProfile, evalPots, clampedEndAge, targetLegacyBuffer);
+    rawMaxProjections = bestProjections; // Store the pure maximum drawdown trajectory (no reinvestment) for chart ceiling comparison
     bestProjections = finalResult.projections;
     bestFinalPot = finalResult.finalPot;
   }
@@ -752,6 +755,7 @@ export function solveMaximizedSpend(options: SolveMaximizedSpendOptions): SolveM
     boostPercentage,
     bestCandidateProfile,
     projectionsWithMaxSpend: bestProjections,
+    rawMaxProjections,
     spendingPattern,
     coupleScope,
     phaseIncomes,
