@@ -1040,7 +1040,12 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
                 {customAdjustedTargetIncome !== null && customAdjustedTargetIncome !== maxAnnualIncome && (
                   <button
                     type="button"
-                    onClick={() => setCustomAdjustedTargetIncome(null)}
+                    onClick={() => {
+                      setCustomAdjustedTargetIncome(null);
+                      if (reinvestExcessDrawdown) {
+                        setActualSpendingTargetAnnual(maxAnnualIncome);
+                      }
+                    }}
                     className="px-2.5 py-1 rounded-lg bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 text-[11px] font-extrabold border border-amber-300 dark:border-amber-800 hover:bg-amber-200 transition-colors cursor-pointer self-start sm:self-auto shrink-0"
                   >
                     ↺ Reset to Max ({fmt(maxAnnualIncome)}/yr)
