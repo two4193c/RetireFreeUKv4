@@ -125,4 +125,62 @@ describe('planInsightsEngine', () => {
     expect(mortOpp?.status).toBe('recommended');
     expect(mortOpp?.observation).toContain('extend 7 years into retirement');
   });
+
+  it('recognizes when spousal pension contributions are actively configured in couple mode', () => {
+    const profile: UserProfile = {
+      ...DEFAULT_PROFILE,
+      isCouplePlanning: true,
+      partnerName: 'Jane',
+      partnerPots: {
+        ...DEFAULT_POTS,
+        sippBalance: 5000,
+        workplacePensionBalance: 10000,
+        sippMonthlyContribution: 240, // £240/mo net = £300/mo gross = £3,600/yr
+      },
+    };
+    const primaryPots: InvestmentPots = {
+      ...DEFAULT_POTS,
+      sippBalance: 150000,
+      workplacePensionBalance: 250000,
+    };
+    const taxResult = calculateUKTax(profile, primaryPots);
+    const projections = generateProjections(profile, primaryPots);
+
+    const insights = computePlanInsights(profile, primaryPots, projections, taxResult);
+    const spousalOpp = insights.opportunities.find((o) => o.id === 'spousal_balanced');
+
+    expect(spousalOpp).toBeDefined();
+    expect(spousalOpp?.status).toBe('already_optimised');
+    expect(spousalOpp?.observation).toContain('Spousal pension funding is actively configured');
+  });
+
+  it('recommends spousal pension contributions when couple has large pot disparity and zero partner contributions', () => {
+    const profile: UserProfile = {
+      ...DEFAULT_PROFILE,
+      isCouplePlanning: true,
+      partnerName: 'Jane',
+      partnerPots: {
+        ...DEFAULT_POTS,
+        sippBalance: 0,
+        workplacePensionBalance: 0,
+        sippMonthlyContribution: 0,
+        workplacePensionMonthlyEmployee: 0,
+      },
+    };
+    const primaryPots: InvestmentPots = {
+      ...DEFAULT_POTS,
+      sippBalance: 200000,
+      workplacePensionBalance: 300000,
+    };
+    const taxResult = calculateUKTax(profile, primaryPots);
+    const projections = generateProjections(profile, primaryPots);
+
+    const insights = computePlanInsights(profile, primaryPots, projections, taxResult);
+    const spousalOpp = insights.opportunities.find((o) => o.id === 'spousal_equalisation');
+
+    expect(spousalOpp).toBeDefined();
+    expect(spousalOpp?.status).toBe('recommended');
+    expect(spousalOpp?.observation).toContain('no regular spousal pension contributions are currently configured');
+  });
 });
+

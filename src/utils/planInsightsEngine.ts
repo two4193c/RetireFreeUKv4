@@ -406,30 +406,68 @@ export function computePlanInsights(
   if (isCouple) {
     const priPension = (cleanPots.sippBalance || 0) + (cleanPots.workplacePensionBalance || 0);
     const partPension = (cleanPartnerPots.sippBalance || 0) + (cleanPartnerPots.workplacePensionBalance || 0);
-    const potRatio = priPension > 0 ? partPension / priPension : 1;
 
-    if (potRatio < 0.4 || potRatio > 2.5) {
-      const lowerMember = potRatio < 0.4 ? (profile.partnerName || 'Partner') : (profile.name || 'Primary');
+    // Calculate total ongoing partner annual pension contributions
+    const partnerSippMonthly = cleanPartnerPots.sippMonthlyContribution || 0;
+    const partnerSippType = cleanPartnerPots.sippContributionType || 'net';
+    const partnerSippAnnualGross = partnerSippType === 'gross'
+      ? partnerSippMonthly * 12
+      : partnerSippMonthly * 1.25 * 12;
+
+    const partnerSalary = profile.partnerGrossAnnualSalary || 0;
+    let partnerWorkplaceAnnualGross = 0;
+    if (cleanPartnerPots.workplacePensionMonthlyEmployeeType === 'fixed') {
+      partnerWorkplaceAnnualGross = (cleanPartnerPots.workplacePensionMonthlyEmployee || 0) * 12;
+    } else {
+      partnerWorkplaceAnnualGross = partnerSalary * ((cleanPartnerPots.workplacePensionMonthlyEmployee || 0) / 100);
+    }
+    const partnerEmployerMatchAnnual = partnerSalary * ((cleanPartnerPots.employerMatchPercentage || 0) / 100);
+    const partnerTotalWorkplaceAnnual = partnerWorkplaceAnnualGross + partnerEmployerMatchAnnual;
+
+    // Check one-off and pot transfer regular contributions for partner
+    const partnerOneOffPensionAnnual = (profile.oneOffContributions || [])
+      .filter((c) => c.enabled && c.owner === 'partner' && (c.targetPot === 'sipp' || c.targetPot === 'workplace_pension'))
+      .reduce((sum, c) => {
+        if (c.frequency === 'regular_monthly') return sum + (c.grossAmount || 0) * 12;
+        return sum + (c.grossAmount || 0);
+      }, 0);
+
+    const partnerPotTransfersToPension = (profile.potTransfers || [])
+      .filter((t) => t.enabled && (t.destinationOwner === 'partner' || t.destinationPot === 'sipp' || t.destinationPot === 'workplace_pension'))
+      .reduce((sum, t) => sum + (t.amount || 0), 0);
+
+    const partnerAnnualPensionContrib = partnerSippAnnualGross + partnerTotalWorkplaceAnnual + partnerOneOffPensionAnnual + partnerPotTransfersToPension;
+
+    const projectedPartnerPensionAtRet = retProj ? (retProj.partnerPensionPot || 0) : partPension;
+    const projectedPrimaryPensionAtRet = retProj ? (retProj.primaryPensionPot || 0) : priPension;
+    const projectedRatio = projectedPrimaryPensionAtRet > 0 ? (projectedPartnerPensionAtRet / projectedPrimaryPensionAtRet) : 1;
+
+    const isPartnerContributionActive = partnerAnnualPensionContrib >= 2400 || partnerSippMonthly > 0;
+
+    if (isPartnerContributionActive || (projectedRatio >= 0.4 && projectedRatio <= 2.5) || projectedPartnerPensionAtRet >= 100000) {
+      opportunities.push({
+        id: 'spousal_balanced',
+        category: 'Tax Efficiency',
+        title: 'Spousal Pension Equalisation Strategy Active',
+        impactLevel: 'Strategic Value',
+        status: 'already_optimised',
+        observation: isPartnerContributionActive
+          ? `Spousal pension funding is actively configured: £${Math.round(partnerAnnualPensionContrib).toLocaleString()}/yr is being contributed into ${profile.partnerName || 'Partner'}'s pension, building a projected pot of £${Math.round(projectedPartnerPensionAtRet).toLocaleString()} at retirement.`
+          : `Spousal pension pots are well-balanced (£${Math.round(priPension).toLocaleString()} vs £${Math.round(partPension).toLocaleString()}), enabling dual Personal Allowance utilization.`,
+        actionableStep: `Continue scheduled monthly spousal contributions to maximize dual Personal Allowance utilisation (£25,140/yr combined) throughout retirement.`,
+        projectedBenefit: `Maximises joint tax-free Personal Allowances and basic rate tax bands in retirement, saving up to £2,514/yr in joint income tax.`,
+      });
+    } else {
+      const lowerMember = (partPension < priPension) ? (profile.partnerName || 'Partner') : (profile.name || 'Primary');
       opportunities.push({
         id: 'spousal_equalisation',
         category: 'Tax Efficiency',
         title: 'Spousal Pension Equalisation & Dual Personal Allowance',
         impactLevel: 'High Impact',
         status: 'recommended',
-        observation: `Significant disparity between spousal pension sizes (${profile.name || 'Primary'}: £${Math.round(priPension).toLocaleString()} vs ${profile.partnerName || 'Partner'}: £${Math.round(partPension).toLocaleString()}).`,
+        observation: `Significant disparity between spousal pension sizes (${profile.name || 'Primary'}: £${Math.round(priPension).toLocaleString()} vs ${profile.partnerName || 'Partner'}: £${Math.round(partPension).toLocaleString()}), and no regular spousal pension contributions are currently configured.`,
         actionableStep: `Direct new pension contributions or spousal SIPP contributions (£2,880 net / £3,600 gross for non-earners) toward ${lowerMember}.`,
         projectedBenefit: `Utilises both spouses' £12,570 Personal Allowances and 20% basic rate bands in retirement, saving up to £2,514/yr in joint income tax.`,
-      });
-    } else {
-      opportunities.push({
-        id: 'spousal_balanced',
-        category: 'Tax Efficiency',
-        title: 'Spousal Allowance Equalisation',
-        impactLevel: 'Strategic Value',
-        status: 'already_optimised',
-        observation: `Spousal pension pots are well-balanced (£${Math.round(priPension).toLocaleString()} vs £${Math.round(partPension).toLocaleString()}), enabling dual Personal Allowance utilization.`,
-        actionableStep: `Continue maintaining proportional decumulation to split taxable withdrawals equally across both tax profiles.`,
-        projectedBenefit: `Maximises joint tax-free Personal Allowances (£25,140/yr combined) throughout retirement.`,
       });
     }
   }

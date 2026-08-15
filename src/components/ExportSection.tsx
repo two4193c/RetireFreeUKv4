@@ -963,7 +963,8 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       // PAGE 3: EXECUTIVE SUMMARY, HOUSEHOLD PROFILE & CURRENT ASSETS
       // =========================================================================
       doc.addPage();
-      renderPageHeader('Executive Summary & Current Assets', 3);
+      let curPageNum = 3;
+      renderPageHeader('Executive Summary & Current Assets', curPageNum);
 
       let y = 24;
 
@@ -1061,87 +1062,267 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
 
       y += 37;
 
-      // SECTION 1c: PLAN INSIGHTS & STRATEGIC OPPORTUNITIES
-      const planInsights = computePlanInsights(profile, pots, projections, taxResult);
-      const topOpp = planInsights.opportunities[0];
-      const secondOpp = planInsights.opportunities[1];
+      // =========================================================================
+      // SECTION 1c: PLAN INSIGHTS & STRATEGIC OPPORTUNITIES (MIRRORING APP)
+      // =========================================================================
+      const planInsights = computePlanInsights(profile, pots, projections, exportTaxResult as any);
 
-      const insightsBoxH = 44;
-      doc.setFillColor(248, 250, 252);
-      doc.roundedRect(14, y, 182, insightsBoxH, 3, 3, 'F');
-      doc.setDrawColor(226, 232, 240);
-      doc.roundedRect(14, y, 182, insightsBoxH, 3, 3, 'D');
+      // Helper for pagination checks inside Section 1c
+      const checkInsightsPageBreak = (neededH: number) => {
+        if (y + neededH > 265) {
+          doc.addPage();
+          curPageNum++;
+          renderPageHeader('Plan Insights & Strategic Opportunities', curPageNum);
+          y = 24;
+        }
+      };
 
+      checkInsightsPageBreak(50);
+
+      // Header Bar with status badge
       doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9.5);
-      doc.text('Plan Insights & Strategic Opportunities', 18, y + 6.5);
+      doc.setFontSize(11);
+      doc.text('Plan Insights & Strategic Opportunities', 14, y + 4);
 
-      // 4 Scorecard KPI Badges
-      const kpiBoxY = y + 9.5;
-      const kpiW = 41;
-      const kpiH = 11;
+      const statusBadgeText = planInsights.scorecard.isFullyFunded ? '100% FUNDED ON TRACK' : `SHORTFALL ALERT (AGE ${planInsights.scorecard.depletionAge})`;
+      const badgeW = planInsights.scorecard.isFullyFunded ? 44 : 52;
+      doc.setFillColor(planInsights.scorecard.isFullyFunded ? 240 : 254, planInsights.scorecard.isFullyFunded ? 253 : 242, planInsights.scorecard.isFullyFunded ? 244 : 242);
+      doc.roundedRect(196 - badgeW, y - 1, badgeW, 6.5, 2, 2, 'F');
+      doc.setDrawColor(planInsights.scorecard.isFullyFunded ? 187 : 254, planInsights.scorecard.isFullyFunded ? 247 : 205, planInsights.scorecard.isFullyFunded ? 208 : 205);
+      doc.roundedRect(196 - badgeW, y - 1, badgeW, 6.5, 2, 2, 'D');
+      doc.setFontSize(6.5);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(planInsights.scorecard.isFullyFunded ? 22 : 159, planInsights.scorecard.isFullyFunded ? 101 : 18, planInsights.scorecard.isFullyFunded ? 52 : 57);
+      doc.text(statusBadgeText, 196 - badgeW + 3, y + 3.8);
+
+      y += 8;
+
+      // Executive Health Verdict Callout Box
+      doc.setFillColor(248, 250, 252);
+      doc.roundedRect(14, y, 182, 22, 2.5, 2.5, 'F');
+      doc.setDrawColor(226, 232, 240);
+      doc.roundedRect(14, y, 182, 22, 2.5, 2.5, 'D');
+
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(79, 70, 229);
+      doc.text('Executive Overview & Health Verdict', 18, y + 5);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(6.8);
+      doc.setTextColor(51, 65, 85);
+      const execSummaryLines = doc.splitTextToSize(planInsights.executiveSummary, 174);
+      doc.text(execSummaryLines.slice(0, 3), 18, y + 10);
+
+      y += 26;
+
+      // 1. Plan Health Scorecard (5 KPI Tiles)
+      doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8.5);
+      doc.text('1. Plan Longevity & Health Scorecard', 14, y + 2);
+      y += 4.5;
+
+      const kpiW = 34.4;
+      const kpiH = 14;
       const kpis = [
         {
           label: 'Portfolio Runway',
           val: planInsights.scorecard.isFullyFunded ? `Age ${profile.lifeExpectancyAge || 90}+` : `Age ${planInsights.scorecard.depletionAge}`,
-          sub: planInsights.scorecard.isFullyFunded ? 'Fully Funded' : 'Shortfall Alert',
+          sub: planInsights.scorecard.isFullyFunded ? `+£${(planInsights.scorecard.finalPotBalance || 0).toLocaleString()} at 90` : `${planInsights.scorecard.runwayYears} yrs runway`,
+          color: planInsights.scorecard.isFullyFunded ? [16, 185, 129] : [225, 29, 72],
         },
         {
           label: 'Initial SWR',
           val: `${planInsights.scorecard.initialSwr}%`,
-          sub: planInsights.scorecard.swrStatus.toUpperCase(),
+          sub: planInsights.scorecard.swrStatus === 'conservative' ? 'Conservative (<3.4%)' : planInsights.scorecard.swrStatus === 'moderate' ? 'Balanced (3.4%-4.2%)' : 'Elevated (>4.2%)',
+          color: planInsights.scorecard.swrStatus === 'conservative' ? [16, 185, 129] : [79, 70, 229],
         },
         {
-          label: 'Floor Coverage',
+          label: 'Guaranteed Floor',
           val: `${planInsights.scorecard.guaranteedFloorCoveragePct}%`,
-          sub: `£${Math.round(planInsights.scorecard.guaranteedFloorAmount / 1000)}k/yr Gtd`,
+          sub: `£${planInsights.scorecard.guaranteedFloorAmount.toLocaleString()}/yr Gtd`,
+          color: [59, 130, 246],
         },
         {
-          label: 'Effective Tax',
+          label: 'Effective Tax Rate',
           val: `${planInsights.scorecard.effectiveTaxRate}%`,
-          sub: planInsights.scorecard.taxEfficiencyStatus === 'optimal' ? 'Tax Optimal' : 'Moderate Drag',
+          sub: planInsights.scorecard.taxEfficiencyStatus === 'optimal' ? 'Tax Optimal (PA & 20%)' : 'Moderate Tax Drag',
+          color: [217, 119, 6],
+        },
+        {
+          label: 'Stochastic Score',
+          val: `${planInsights.scorecard.monteCarloEstimatedSuccess}%`,
+          sub: planInsights.scorecard.monteCarloEstimatedSuccess >= 85 ? 'High Resilience' : 'Review Guardrails',
+          color: [147, 51, 234],
         },
       ];
 
-      kpis.forEach((kpi, kIdx) => {
-        const kX = 18 + kIdx * (kpiW + 3.2);
+      kpis.forEach((kpi, idx) => {
+        const kX = 14 + idx * (kpiW + 2.5);
         doc.setFillColor(255, 255, 255);
-        doc.roundedRect(kX, kpiBoxY, kpiW, kpiH, 1.5, 1.5, 'F');
+        doc.roundedRect(kX, y, kpiW, kpiH, 1.5, 1.5, 'F');
         doc.setDrawColor(226, 232, 240);
-        doc.roundedRect(kX, kpiBoxY, kpiW, kpiH, 1.5, 1.5, 'D');
+        doc.roundedRect(kX, y, kpiW, kpiH, 1.5, 1.5, 'D');
 
-        doc.setFontSize(5.8);
+        doc.setFontSize(5.5);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(100, 116, 139);
-        doc.text(kpi.label, kX + 2.5, kpiBoxY + 3.2);
+        doc.text(kpi.label, kX + 2.5, y + 3.5);
 
-        doc.setFontSize(7.5);
+        doc.setFontSize(8);
         doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
-        doc.text(kpi.val, kX + 2.5, kpiBoxY + 7.2);
+        doc.text(kpi.val, kX + 2.5, y + 8);
 
-        doc.setFontSize(5.2);
+        doc.setFontSize(4.8);
         doc.setFont('helvetica', 'bold');
-        doc.setTextColor(16, 185, 129);
-        doc.text(kpi.sub, kX + 2.5, kpiBoxY + 9.8);
+        doc.setTextColor(kpi.color[0], kpi.color[1], kpi.color[2]);
+        doc.text(kpi.sub, kX + 2.5, y + 11.8);
       });
 
-      // Key Insights & Opportunities Bullet Points
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(7);
-      doc.setTextColor(51, 65, 85);
+      y += kpiH + 6;
 
-      const topOppLine = topOpp ? `• Key Opportunity: [${topOpp.category}] ${topOpp.title} — ${topOpp.actionableStep} (${topOpp.projectedBenefit})` : '';
-      const topOppLines = doc.splitTextToSize(topOppLine, 174);
-      doc.text(topOppLines, 18, y + 25);
+      // 2. Strategic Milestones & Inflection Timeline
+      if (planInsights.milestones.length > 0) {
+        checkInsightsPageBreak(35);
+        doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.5);
+        doc.text('2. Strategic Milestones & Inflection Points', 14, y + 2);
+        y += 4.5;
 
-      if (secondOpp) {
-        const secOppLine = `• Secondary Optimization: [${secondOpp.category}] ${secondOpp.title} — ${secondOpp.actionableStep}`;
-        const secOppLines = doc.splitTextToSize(secOppLine, 174);
-        doc.text(secOppLines, 18, y + 35);
+        planInsights.milestones.forEach((m) => {
+          checkInsightsPageBreak(17);
+          doc.setFillColor(248, 250, 252);
+          doc.roundedRect(14, y, 182, 15, 2, 2, 'F');
+          doc.setDrawColor(226, 232, 240);
+          doc.roundedRect(14, y, 182, 15, 2, 2, 'D');
+
+          doc.setFontSize(7);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+          doc.text(`• ${m.title}`, 18, y + 4.2);
+
+          doc.setFillColor(238, 242, 255);
+          doc.roundedRect(145, y + 1.2, 47, 4.5, 1, 1, 'F');
+          doc.setFontSize(5.2);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(79, 70, 229);
+          doc.text(m.badge, 147, y + 4.2);
+
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(6.2);
+          doc.setTextColor(51, 65, 85);
+          doc.text(m.summary, 18, y + 8.2);
+
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(5.8);
+          doc.setTextColor(100, 116, 139);
+          const detailLines = doc.splitTextToSize(m.detail, 174);
+          doc.text(detailLines.slice(0, 1), 18, y + 12);
+
+          y += 17;
+        });
+        y += 2;
       }
 
-      y += insightsBoxH + 6;
+      // 3. Actionable Tax & Decumulation Opportunities
+      if (planInsights.opportunities.length > 0) {
+        checkInsightsPageBreak(40);
+        doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.5);
+        doc.text(`3. Actionable Tax & Decumulation Opportunities (${planInsights.opportunities.length})`, 14, y + 2);
+        y += 4.5;
+
+        planInsights.opportunities.forEach((opp) => {
+          checkInsightsPageBreak(32);
+
+          const cardH = 29;
+          doc.setFillColor(248, 250, 252);
+          doc.roundedRect(14, y, 182, cardH, 2.5, 2.5, 'F');
+          doc.setDrawColor(226, 232, 240);
+          doc.roundedRect(14, y, 182, cardH, 2.5, 2.5, 'D');
+
+          // Card Header Bar
+          doc.setFontSize(7.2);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+          doc.text(opp.title, 18, y + 4.5);
+
+          // Category tag
+          doc.setFontSize(5.5);
+          doc.setTextColor(100, 116, 139);
+          doc.text(`[${opp.category}]`, 120, y + 4.5);
+
+          // Status Badge
+          const isOpt = opp.status === 'already_optimised';
+          const isRec = opp.status === 'recommended';
+          doc.setFillColor(isOpt ? 209 : isRec ? 254 : 241, isOpt ? 250 : isRec ? 243 : 245, isOpt ? 229 : isRec ? 199 : 249);
+          doc.roundedRect(154, y + 1.2, 38, 4.5, 1, 1, 'F');
+          doc.setFontSize(5.2);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(isOpt ? 6 : isRec ? 180 : 71, isOpt ? 95 : isRec ? 83 : 85, isOpt ? 70 : isRec ? 9 : 105);
+          doc.text(isOpt ? 'ALREADY OPTIMISED' : isRec ? 'ACTION RECOMMENDED' : 'REVIEW SUGGESTED', 156, y + 4.2);
+
+          // Two Comparison Boxes (Observation & Action)
+          const boxW = 86;
+          const boxH = 14;
+
+          // Box 1: Observation
+          doc.setFillColor(255, 255, 255);
+          doc.roundedRect(18, y + 6.5, boxW, boxH, 1.5, 1.5, 'F');
+          doc.setDrawColor(226, 232, 240);
+          doc.roundedRect(18, y + 6.5, boxW, boxH, 1.5, 1.5, 'D');
+          doc.setFontSize(4.8);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(100, 116, 139);
+          doc.text('OBSERVATION', 20, y + 9.2);
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(5.5);
+          doc.setTextColor(51, 65, 85);
+          const obsLines = doc.splitTextToSize(opp.observation, boxW - 5);
+          doc.text(obsLines.slice(0, 2), 20, y + 13);
+
+          // Box 2: Recommended Action
+          doc.setFillColor(255, 255, 255);
+          doc.roundedRect(107, y + 6.5, boxW, boxH, 1.5, 1.5, 'F');
+          doc.setDrawColor(226, 232, 240);
+          doc.roundedRect(107, y + 6.5, boxW, boxH, 1.5, 1.5, 'D');
+          doc.setFontSize(4.8);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(79, 70, 229);
+          doc.text('RECOMMENDED ACTION', 109, y + 9.2);
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(5.5);
+          doc.setTextColor(51, 65, 85);
+          const actLines = doc.splitTextToSize(opp.actionableStep, boxW - 5);
+          doc.text(actLines.slice(0, 2), 109, y + 13);
+
+          // Projected Financial Benefit Banner
+          doc.setFillColor(236, 253, 245);
+          doc.roundedRect(18, y + 21.5, 175, 5.5, 1, 1, 'F');
+          doc.setDrawColor(167, 243, 208);
+          doc.roundedRect(18, y + 21.5, 175, 5.5, 1, 1, 'D');
+          doc.setFontSize(5.5);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(6, 95, 70);
+          const benLines = doc.splitTextToSize(`Projected Financial Benefit: ${opp.projectedBenefit}`, 171);
+          doc.text(benLines.slice(0, 1), 21, y + 25.2);
+
+          y += cardH + 4;
+        });
+      }
+
+      y += 6;
+
+      if (y > 180) {
+        doc.addPage();
+        curPageNum++;
+        renderPageHeader('Detailed Household Profile & Current Assets', curPageNum);
+        y = 24;
+      }
 
       // SECTION 2: DETAILED HOUSEHOLD INCOME & PERSONAL PROFILE (WITH TRIPLE LOCK DETAIL)
       const macroPre = profile.expectedInvestmentReturn ?? 6.5;
@@ -1250,7 +1431,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       // PAGE 4: ACCUMULATION SUMMARY, PROJECTED ASSETS & MACRO ASSUMPTIONS
       // =========================================================================
       doc.addPage();
-      let curPageNum = 4;
+      curPageNum++;
       renderPageHeader('Accumulation Summary & Projected Assets', curPageNum);
 
       let p2Y = 24;
