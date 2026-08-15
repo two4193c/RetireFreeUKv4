@@ -38,9 +38,10 @@ import {
   AlertTriangle,
   Users,
   User,
+  Split,
 } from 'lucide-react';
 
-export type CashFlowViewMode = 'combined' | 'primary' | 'partner';
+export type CashFlowViewMode = 'combined' | 'split' | 'primary' | 'partner';
 
 interface CashFlowSankeyCardProps {
   projections: YearProjection[];
@@ -206,7 +207,349 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
       const partNI = partTax ? partTax.totalNationalInsurance : 0;
       const partNetTakeHome = Math.max(0, (partTax?.netTakeHomePay || 0) - partIsaContribs - partCashGiaContribs);
 
-      // Selected View Mode Values
+      const isIndividualShare = isCouple && (activeViewMode === 'primary' || activeViewMode === 'partner');
+      const effectiveEssentialFloor = isIndividualShare ? combinedEssentialFloor / 2 : combinedEssentialFloor;
+      const inflatedEssentialTarget = adjustInflation ? effectiveEssentialFloor : (effectiveEssentialFloor * inflationFactor);
+
+      const nodes: FlowNode[] = [];
+      const links: FlowLink[] = [];
+
+      if (activeViewMode === 'split' && isCouple) {
+        // ====================================================
+        // SPLIT VIEW MODE: COMBINED HOUSEHOLD DATA SPLIT BY PERSON
+        // ====================================================
+        const priGross = priSalary + priEmprPension;
+        const partGross = partSalary + partEmprPension;
+        const totalGrossIncome = priGross + partGross;
+        const totalTaxAndNI = priIncomeTax + priNI + partIncomeTax + partNI;
+        const totalSavingsInvested = priPensionTotal + partPensionTotal + priIsaContribs + partIsaContribs + priCashGiaContribs + partCashGiaContribs;
+
+        // Mortgage shares
+        const priMortgageShare = totalSalary > 0 ? (priSalary / totalSalary) * mortgagePaymentAnnual : mortgagePaymentAnnual * 0.5;
+        const partMortgageShare = totalSalary > 0 ? (partSalary / totalSalary) * mortgagePaymentAnnual : mortgagePaymentAnnual * 0.5;
+        const priMortgageAlloc = Math.min(priNetTakeHome, priMortgageShare);
+        const partMortgageAlloc = Math.min(partNetTakeHome, partMortgageShare);
+        const totalMortgageAlloc = priMortgageAlloc + partMortgageAlloc;
+
+        const priRemaining = Math.max(0, priNetTakeHome - priMortgageAlloc);
+        const partRemaining = Math.max(0, partNetTakeHome - partMortgageAlloc);
+        const totalRemaining = priRemaining + partRemaining;
+
+        const essentialLiving = Math.min(totalRemaining, inflatedEssentialTarget);
+        const priEssential = totalRemaining > 0 ? (priRemaining / totalRemaining) * essentialLiving : 0;
+        const partEssential = totalRemaining > 0 ? (partRemaining / totalRemaining) * essentialLiving : 0;
+
+        const discretionaryLiving = Math.max(0, totalRemaining - essentialLiving);
+        const priDiscretionary = totalRemaining > 0 ? (priRemaining / totalRemaining) * discretionaryLiving : 0;
+        const partDiscretionary = totalRemaining > 0 ? (partRemaining / totalRemaining) * discretionaryLiving : 0;
+
+        // Column 0: Sources (Split by person)
+        if (priSalary > 0) {
+          nodes.push({
+            id: 'pri_salary',
+            label: `${primaryName} Gross Salary`,
+            sublabel: `PAYE (Age ${p.age})`,
+            amount: priSalary,
+            color: '#0284c7', // sky-600
+            category: 'source',
+            column: 0,
+            icon: Building,
+          });
+        }
+        if (priEmprPension > 0) {
+          nodes.push({
+            id: 'pri_empr_pension',
+            label: `${primaryName} Employer Match`,
+            sublabel: 'Workplace Pension Top-up',
+            amount: priEmprPension,
+            color: '#10b981', // emerald-500
+            category: 'source',
+            column: 0,
+            icon: Sparkles,
+          });
+        }
+        if (partSalary > 0) {
+          nodes.push({
+            id: 'part_salary',
+            label: `${partnerName} Gross Salary`,
+            sublabel: `PAYE (Age ${partnerAge})`,
+            amount: partSalary,
+            color: '#38bdf8', // sky-400
+            category: 'source',
+            column: 0,
+            icon: Building,
+          });
+        }
+        if (partEmprPension > 0) {
+          nodes.push({
+            id: 'part_empr_pension',
+            label: `${partnerName} Employer Match`,
+            sublabel: 'Workplace Pension Top-up',
+            amount: partEmprPension,
+            color: '#34d399', // emerald-400
+            category: 'source',
+            column: 0,
+            icon: Sparkles,
+          });
+        }
+
+        // Column 1: Gross Inflow Hubs (Split by person)
+        nodes.push({
+          id: 'pri_gross_hub',
+          label: `${primaryName} Gross Inflows`,
+          sublabel: `Salary & Employer Top-up`,
+          amount: priGross,
+          color: '#6366f1', // indigo-500
+          category: 'hub',
+          column: 1,
+          icon: Coins,
+        });
+        if (priSalary > 0) links.push({ sourceId: 'pri_salary', targetId: 'pri_gross_hub', amount: priSalary, color: '#0284c7' });
+        if (priEmprPension > 0) links.push({ sourceId: 'pri_empr_pension', targetId: 'pri_gross_hub', amount: priEmprPension, color: '#10b981' });
+
+        nodes.push({
+          id: 'part_gross_hub',
+          label: `${partnerName} Gross Inflows`,
+          sublabel: `Salary & Employer Top-up`,
+          amount: partGross,
+          color: '#8b5cf6', // purple-500
+          category: 'hub',
+          column: 1,
+          icon: Coins,
+        });
+        if (partSalary > 0) links.push({ sourceId: 'part_salary', targetId: 'part_gross_hub', amount: partSalary, color: '#38bdf8' });
+        if (partEmprPension > 0) links.push({ sourceId: 'part_empr_pension', targetId: 'part_gross_hub', amount: partEmprPension, color: '#34d399' });
+
+        // Column 2: Tax Deductions & Net Take-Home (Split by person)
+        if (priIncomeTax > 0) {
+          nodes.push({
+            id: 'pri_income_tax',
+            label: `${primaryName} Income Tax`,
+            sublabel: `PAYE Income Tax`,
+            amount: priIncomeTax,
+            color: '#ef4444',
+            category: 'deduction',
+            column: 2,
+            icon: Receipt,
+          });
+          links.push({ sourceId: 'pri_gross_hub', targetId: 'pri_income_tax', amount: priIncomeTax, color: '#ef4444' });
+        }
+        if (priNI > 0) {
+          nodes.push({
+            id: 'pri_ni_tax',
+            label: `${primaryName} National Insurance`,
+            sublabel: `Class 1 Contributions`,
+            amount: priNI,
+            color: '#f97316',
+            category: 'deduction',
+            column: 2,
+            icon: Receipt,
+          });
+          links.push({ sourceId: 'pri_gross_hub', targetId: 'pri_ni_tax', amount: priNI, color: '#f97316' });
+        }
+
+        const priNetSpendableHubAmount = priNetTakeHome + priIsaContribs + priCashGiaContribs;
+        nodes.push({
+          id: 'pri_net_hub',
+          label: `${primaryName} Take-Home Pay`,
+          sublabel: `Net disposable salary`,
+          amount: priNetSpendableHubAmount,
+          color: '#14b8a6', // teal-500
+          category: 'hub',
+          column: 2,
+          icon: Wallet,
+        });
+        links.push({ sourceId: 'pri_gross_hub', targetId: 'pri_net_hub', amount: priNetSpendableHubAmount, color: '#14b8a6' });
+
+        if (partIncomeTax > 0) {
+          nodes.push({
+            id: 'part_income_tax',
+            label: `${partnerName} Income Tax`,
+            sublabel: `PAYE Income Tax`,
+            amount: partIncomeTax,
+            color: '#f43f5e',
+            category: 'deduction',
+            column: 2,
+            icon: Receipt,
+          });
+          links.push({ sourceId: 'part_gross_hub', targetId: 'part_income_tax', amount: partIncomeTax, color: '#f43f5e' });
+        }
+        if (partNI > 0) {
+          nodes.push({
+            id: 'part_ni_tax',
+            label: `${partnerName} National Insurance`,
+            sublabel: `Class 1 Contributions`,
+            amount: partNI,
+            color: '#fb923c',
+            category: 'deduction',
+            column: 2,
+            icon: Receipt,
+          });
+          links.push({ sourceId: 'part_gross_hub', targetId: 'part_ni_tax', amount: partNI, color: '#fb923c' });
+        }
+
+        const partNetSpendableHubAmount = partNetTakeHome + partIsaContribs + partCashGiaContribs;
+        nodes.push({
+          id: 'part_net_hub',
+          label: `${partnerName} Take-Home Pay`,
+          sublabel: `Net disposable salary`,
+          amount: partNetSpendableHubAmount,
+          color: '#06b6d4', // cyan-500
+          category: 'hub',
+          column: 2,
+          icon: Wallet,
+        });
+        links.push({ sourceId: 'part_gross_hub', targetId: 'part_net_hub', amount: partNetSpendableHubAmount, color: '#06b6d4' });
+
+        // Column 3: Allocations
+        if (priPensionTotal > 0) {
+          nodes.push({
+            id: 'pri_pension_savings',
+            label: `${primaryName} Pension Savings`,
+            sublabel: `Workplace & SIPP Inflows`,
+            amount: priPensionTotal,
+            color: '#10b981',
+            category: 'allocation',
+            column: 3,
+            icon: PiggyBank,
+          });
+          links.push({ sourceId: 'pri_gross_hub', targetId: 'pri_pension_savings', amount: priPensionTotal, color: '#10b981' });
+        }
+        if (partPensionTotal > 0) {
+          nodes.push({
+            id: 'part_pension_savings',
+            label: `${partnerName} Pension Savings`,
+            sublabel: `Workplace & SIPP Inflows`,
+            amount: partPensionTotal,
+            color: '#34d399',
+            category: 'allocation',
+            column: 3,
+            icon: PiggyBank,
+          });
+          links.push({ sourceId: 'part_gross_hub', targetId: 'part_pension_savings', amount: partPensionTotal, color: '#34d399' });
+        }
+
+        if (priIsaContribs > 0) {
+          nodes.push({
+            id: 'pri_isa_savings',
+            label: `${primaryName} ISA / LISA`,
+            sublabel: `Stocks & Shares / Cash ISA`,
+            amount: priIsaContribs,
+            color: '#8b5cf6',
+            category: 'allocation',
+            column: 3,
+            icon: TrendingUp,
+          });
+          links.push({ sourceId: 'pri_net_hub', targetId: 'pri_isa_savings', amount: priIsaContribs, color: '#8b5cf6' });
+        }
+        if (priCashGiaContribs > 0) {
+          nodes.push({
+            id: 'pri_cash_gia_savings',
+            label: `${primaryName} Cash / GIA`,
+            sublabel: `General Account & Cash`,
+            amount: priCashGiaContribs,
+            color: '#f59e0b',
+            category: 'allocation',
+            column: 3,
+            icon: Coins,
+          });
+          links.push({ sourceId: 'pri_net_hub', targetId: 'pri_cash_gia_savings', amount: priCashGiaContribs, color: '#f59e0b' });
+        }
+
+        if (partIsaContribs > 0) {
+          nodes.push({
+            id: 'part_isa_savings',
+            label: `${partnerName} ISA / LISA`,
+            sublabel: `Stocks & Shares / Cash ISA`,
+            amount: partIsaContribs,
+            color: '#a855f7',
+            category: 'allocation',
+            column: 3,
+            icon: TrendingUp,
+          });
+          links.push({ sourceId: 'part_net_hub', targetId: 'part_isa_savings', amount: partIsaContribs, color: '#a855f7' });
+        }
+        if (partCashGiaContribs > 0) {
+          nodes.push({
+            id: 'part_cash_gia_savings',
+            label: `${partnerName} Cash / GIA`,
+            sublabel: `General Account & Cash`,
+            amount: partCashGiaContribs,
+            color: '#fbbf24',
+            category: 'allocation',
+            column: 3,
+            icon: Coins,
+          });
+          links.push({ sourceId: 'part_net_hub', targetId: 'part_cash_gia_savings', amount: partCashGiaContribs, color: '#fbbf24' });
+        }
+
+        if (totalMortgageAlloc > 0) {
+          nodes.push({
+            id: 'mortgage_pay',
+            label: 'Mortgage Repayment',
+            sublabel: 'Joint Debt Clearance',
+            amount: totalMortgageAlloc,
+            color: '#0ea5e9',
+            category: 'allocation',
+            column: 3,
+            icon: Home,
+          });
+          if (priMortgageAlloc > 0) links.push({ sourceId: 'pri_net_hub', targetId: 'mortgage_pay', amount: priMortgageAlloc, color: '#0ea5e9' });
+          if (partMortgageAlloc > 0) links.push({ sourceId: 'part_net_hub', targetId: 'mortgage_pay', amount: partMortgageAlloc, color: '#38bdf8' });
+        }
+
+        if (essentialLiving > 0) {
+          const isFloorMet = totalRemaining >= inflatedEssentialTarget;
+          nodes.push({
+            id: 'essential_living',
+            label: 'Household Essential Floor',
+            sublabel: `Target: ${formatGBP(inflatedEssentialTarget)} (${isFloorMet ? '100% Met' : `${Math.round((totalRemaining / Math.max(1, inflatedEssentialTarget)) * 100)}% Met`})`,
+            amount: essentialLiving,
+            color: '#059669',
+            category: 'allocation',
+            column: 3,
+            icon: ShieldCheck,
+          });
+          if (priEssential > 0) links.push({ sourceId: 'pri_net_hub', targetId: 'essential_living', amount: priEssential, color: '#059669' });
+          if (partEssential > 0) links.push({ sourceId: 'part_net_hub', targetId: 'essential_living', amount: partEssential, color: '#10b981' });
+        }
+
+        if (discretionaryLiving > 0) {
+          nodes.push({
+            id: 'discretionary_living',
+            label: 'Household Discretionary Lifestyle',
+            sublabel: 'Surplus leisure & travel budget',
+            amount: discretionaryLiving,
+            color: '#ec4899',
+            category: 'allocation',
+            column: 3,
+            icon: Heart,
+          });
+          if (priDiscretionary > 0) links.push({ sourceId: 'pri_net_hub', targetId: 'discretionary_living', amount: priDiscretionary, color: '#ec4899' });
+          if (partDiscretionary > 0) links.push({ sourceId: 'part_net_hub', targetId: 'discretionary_living', amount: partDiscretionary, color: '#f472b6' });
+        }
+
+        return {
+          isRetired: false,
+          totalGross: totalGrossIncome,
+          totalTaxes: totalTaxAndNI,
+          totalNetIncome: priNetSpendableHubAmount + partNetSpendableHubAmount,
+          totalAllocated: totalGrossIncome,
+          nodes,
+          links,
+          metrics: {
+            taxRateEffective: totalGrossIncome > 0 ? (totalTaxAndNI / totalGrossIncome) * 100 : 0,
+            savingsRate: totalGrossIncome > 0 ? (totalSavingsInvested / totalGrossIncome) * 100 : 0,
+            takeHomePay: priNetTakeHome + partNetTakeHome,
+            pensionInflows: priPensionTotal + partPensionTotal,
+            isaInflows: priIsaContribs + partIsaContribs,
+            livingSpend: essentialLiving + discretionaryLiving,
+            mortgageSpend: totalMortgageAlloc,
+          },
+        };
+      }
+
+      // Selected View Mode Values (Combined / Primary / Partner)
       let curSalary = totalSalary;
       let curEmprPension = priEmprPension + partEmprPension;
       let curIncomeTax = priIncomeTax + partIncomeTax;
@@ -214,12 +557,8 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
       let curPensionContribs = priPensionTotal + partPensionTotal;
       let curIsaContribs = priIsaContribs + partIsaContribs;
       let curCashGiaContribs = priCashGiaContribs + partCashGiaContribs;
-      let curNetTakeHome = totalNetTakeHomeWrapper(priNetTakeHome, partNetTakeHome);
+      let curNetTakeHome = priNetTakeHome + partNetTakeHome;
       let curMortgageShare = mortgagePaymentAnnual;
-
-      function totalNetTakeHomeWrapper(pri: number, part: number) {
-        return pri + part;
-      }
 
       if (activeViewMode === 'primary') {
         curSalary = priSalary;
@@ -253,18 +592,9 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
 
       const mortgageAlloc = Math.min(curNetTakeHome, curMortgageShare);
       const remainingLifestyle = Math.max(0, curNetTakeHome - mortgageAlloc);
-      
-      const effectiveEssentialFloor = isCouple && activeViewMode !== 'combined'
-        ? combinedEssentialFloor / 2
-        : combinedEssentialFloor;
-      const inflatedEssentialTarget = adjustInflation ? effectiveEssentialFloor : (effectiveEssentialFloor * inflationFactor);
 
       const essentialLiving = Math.min(remainingLifestyle, inflatedEssentialTarget);
       const discretionaryLiving = Math.max(0, remainingLifestyle - essentialLiving);
-
-      // Nodes
-      const nodes: FlowNode[] = [];
-      const links: FlowLink[] = [];
 
       // Column 0: Gross Inflow Sources
       if (activeViewMode === 'combined') {
@@ -515,6 +845,456 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
       // ==========================================
       // DECUMULATION PHASE CASH FLOW (RETIREMENT DRAWDOWN)
       // ==========================================
+      const isIndividualShare = isCouple && (activeViewMode === 'primary' || activeViewMode === 'partner');
+      const effectiveEssentialFloor = isIndividualShare ? combinedEssentialFloor / 2 : combinedEssentialFloor;
+      const inflatedEssentialTarget = adjustInflation ? effectiveEssentialFloor : (effectiveEssentialFloor * inflationFactor);
+
+      // Primary components
+      const priStatePension = p.primaryStatePensionReceived ?? p.statePensionReceived ?? 0;
+      const priDbPension = p.primaryDbPensionIncomeReceived ?? p.dbPensionIncomeReceived ?? 0;
+      const priAnnuity = p.primaryAnnuityIncomeReceived ?? p.annuityIncomeReceived ?? 0;
+      const priTaxableFixed = p.primaryTaxableFixedIncomeReceived ?? (isCouple ? ((p.taxableFixedIncomeReceived || 0) * 0.5) : (p.taxableFixedIncomeReceived || 0));
+      const priTaxFreeFixed = p.primaryTaxFreeFixedIncomeReceived ?? (isCouple ? ((p.taxFreeFixedIncomeReceived || 0) * 0.5) : (p.taxFreeFixedIncomeReceived || 0));
+      const priPensionDrawdownTaxable = p.primaryPensionDrawdownTaxable ?? (isCouple ? ((p.pensionDrawdownTaxable || 0) * 0.5) : (p.pensionDrawdownTaxable || 0));
+      const priPensionDrawdownTaxFree = p.primaryPensionDrawdownTaxFree ?? (isCouple ? ((p.pensionDrawdownTaxFree || 0) * 0.5) : (p.pensionDrawdownTaxFree || 0));
+      const priPensionDrawdownTotal = p.primaryPensionDrawdown ?? (priPensionDrawdownTaxable + priPensionDrawdownTaxFree);
+      const priIsaDrawdown = p.primaryIsaDrawdown ?? (isCouple ? ((p.isaDrawdown || 0) * 0.5) : (p.isaDrawdown || 0));
+      const priCashDrawdown = p.primaryCashDrawdown ?? (isCouple ? ((p.cashDrawdown || 0) * 0.5) : (p.cashDrawdown || 0));
+      const priLifeEventsInc = p.lifeEventsIncome || 0;
+      const priTaxPaid = p.primaryTaxPaid ?? (isCouple ? ((p.totalTaxPaid || 0) * 0.5) : (p.totalTaxPaid || 0));
+
+      const priGrossTotal =
+        priStatePension +
+        priDbPension +
+        priAnnuity +
+        priTaxableFixed +
+        priTaxFreeFixed +
+        priLifeEventsInc +
+        priPensionDrawdownTotal +
+        priIsaDrawdown +
+        priCashDrawdown;
+      const priNetTotal = Math.max(0, priGrossTotal - priTaxPaid);
+
+      // Partner components
+      const partStatePension = isCouple ? (p.partnerStatePensionReceived || 0) : 0;
+      const partDbPension = isCouple ? (p.partnerDbPensionIncomeReceived || 0) : 0;
+      const partAnnuity = isCouple ? (p.partnerAnnuityIncomeReceived || 0) : 0;
+      const partTaxableFixed = isCouple ? (p.partnerTaxableFixedIncomeReceived || 0) : 0;
+      const partTaxFreeFixed = isCouple ? (p.partnerTaxFreeFixedIncomeReceived || 0) : 0;
+      const partPensionDrawdownTaxable = isCouple ? (p.partnerPensionDrawdownTaxable || 0) : 0;
+      const partPensionDrawdownTaxFree = isCouple ? (p.partnerPensionDrawdownTaxFree || 0) : 0;
+      const partPensionDrawdownTotal = isCouple ? (p.partnerPensionDrawdown ?? (partPensionDrawdownTaxable + partPensionDrawdownTaxFree)) : 0;
+      const partIsaDrawdown = isCouple ? (p.partnerIsaDrawdown || 0) : 0;
+      const partCashDrawdown = isCouple ? (p.partnerCashDrawdown || 0) : 0;
+      const partLifeEventsInc = 0;
+      const partTaxPaid = isCouple ? (p.partnerTaxPaid || 0) : 0;
+
+      const partGrossTotal =
+        partStatePension +
+        partDbPension +
+        partAnnuity +
+        partTaxableFixed +
+        partTaxFreeFixed +
+        partLifeEventsInc +
+        partPensionDrawdownTotal +
+        partIsaDrawdown +
+        partCashDrawdown;
+      const partNetTotal = Math.max(0, partGrossTotal - partTaxPaid);
+
+      const nodes: FlowNode[] = [];
+      const links: FlowLink[] = [];
+
+      if (activeViewMode === 'split' && isCouple) {
+        // ====================================================
+        // SPLIT VIEW MODE: COMBINED RETIREMENT SPLIT BY PERSON
+        // ====================================================
+        const totalGrossRetire = priGrossTotal + partGrossTotal;
+        const totalTaxPaid = priTaxPaid + partTaxPaid;
+        const totalNetRetire = priNetTotal + partNetTotal;
+
+        // Mortgage split
+        const priMortgageShare = mortgagePaymentAnnual * 0.5;
+        const partMortgageShare = mortgagePaymentAnnual * 0.5;
+        const priMortgageAlloc = Math.min(priNetTotal, priMortgageShare);
+        const partMortgageAlloc = Math.min(partNetTotal, partMortgageShare);
+        const totalMortgageAlloc = priMortgageAlloc + partMortgageAlloc;
+
+        const priSpendable = Math.max(0, priNetTotal - priMortgageAlloc);
+        const partSpendable = Math.max(0, partNetTotal - partMortgageAlloc);
+        const totalSpendable = priSpendable + partSpendable;
+
+        const annualExcess = p.annualIncomeExcess || 0;
+        const reinvestSurplus = Math.min(totalSpendable, annualExcess);
+        const priReinvest = totalSpendable > 0 ? (priSpendable / totalSpendable) * reinvestSurplus : 0;
+        const partReinvest = totalSpendable > 0 ? (partSpendable / totalSpendable) * reinvestSurplus : 0;
+
+        const availableLiving = Math.max(0, totalSpendable - reinvestSurplus);
+        const essentialLiving = Math.min(availableLiving, inflatedEssentialTarget);
+        const priEssential = availableLiving > 0 ? (priSpendable / totalSpendable) * essentialLiving : 0;
+        const partEssential = availableLiving > 0 ? (partSpendable / totalSpendable) * essentialLiving : 0;
+
+        const discretionaryLiving = Math.max(0, availableLiving - essentialLiving);
+        const priDiscretionary = availableLiving > 0 ? (priSpendable / totalSpendable) * discretionaryLiving : 0;
+        const partDiscretionary = availableLiving > 0 ? (partSpendable / totalSpendable) * discretionaryLiving : 0;
+
+        // Column 0: Primary Retirement Sources
+        if (priStatePension > 0) {
+          nodes.push({
+            id: 'pri_state_pension',
+            label: `${primaryName} State Pension`,
+            sublabel: 'CPI Triple-Lock',
+            amount: priStatePension,
+            color: '#8b5cf6',
+            category: 'source',
+            column: 0,
+            icon: Building,
+          });
+        }
+        if (priDbPension > 0) {
+          nodes.push({
+            id: 'pri_db_pension',
+            label: `${primaryName} DB Pension`,
+            sublabel: 'Guaranteed DB Scheme',
+            amount: priDbPension,
+            color: '#0284c7',
+            category: 'source',
+            column: 0,
+            icon: ShieldCheck,
+          });
+        }
+        if (priAnnuity > 0) {
+          nodes.push({
+            id: 'pri_annuity',
+            label: `${primaryName} Annuity`,
+            sublabel: 'Lifetime Annuity Income',
+            amount: priAnnuity,
+            color: '#ec4899',
+            category: 'source',
+            column: 0,
+            icon: Sparkles,
+          });
+        }
+        if (priTaxableFixed + priTaxFreeFixed > 0) {
+          nodes.push({
+            id: 'pri_fixed',
+            label: `${primaryName} Fixed Income`,
+            sublabel: 'Other Fixed Incomes',
+            amount: priTaxableFixed + priTaxFreeFixed,
+            color: '#0d9488',
+            category: 'source',
+            column: 0,
+            icon: Coins,
+          });
+        }
+        if (priPensionDrawdownTotal > 0) {
+          nodes.push({
+            id: 'pri_pension_dd',
+            label: `${primaryName} Pension Drawdown`,
+            sublabel: `Taxable: ${formatGBP(priPensionDrawdownTaxable)} | Free: ${formatGBP(priPensionDrawdownTaxFree)}`,
+            amount: priPensionDrawdownTotal,
+            color: '#10b981',
+            category: 'source',
+            column: 0,
+            icon: PiggyBank,
+          });
+        }
+        if (priIsaDrawdown > 0) {
+          nodes.push({
+            id: 'pri_isa_dd',
+            label: `${primaryName} ISA Drawdown`,
+            sublabel: 'Tax-Free ISA Pot',
+            amount: priIsaDrawdown,
+            color: '#6366f1',
+            category: 'source',
+            column: 0,
+            icon: TrendingUp,
+          });
+        }
+        if (priCashDrawdown > 0) {
+          nodes.push({
+            id: 'pri_cash_dd',
+            label: `${primaryName} Cash Drawdown`,
+            sublabel: 'Cash & GIA Capital',
+            amount: priCashDrawdown,
+            color: '#f59e0b',
+            category: 'source',
+            column: 0,
+            icon: Wallet,
+          });
+        }
+        if (priLifeEventsInc > 0) {
+          nodes.push({
+            id: 'pri_life_events',
+            label: `${primaryName} Life Event`,
+            sublabel: p.decumulationLifeEventsSummary || 'Downsizing / Lump Sum',
+            amount: priLifeEventsInc,
+            color: '#06b6d4',
+            category: 'source',
+            column: 0,
+            icon: Sparkles,
+          });
+        }
+
+        // Column 0: Partner Retirement Sources
+        if (partStatePension > 0) {
+          nodes.push({
+            id: 'part_state_pension',
+            label: `${partnerName} State Pension`,
+            sublabel: 'CPI Triple-Lock',
+            amount: partStatePension,
+            color: '#a855f7',
+            category: 'source',
+            column: 0,
+            icon: Building,
+          });
+        }
+        if (partDbPension > 0) {
+          nodes.push({
+            id: 'part_db_pension',
+            label: `${partnerName} DB Pension`,
+            sublabel: 'Guaranteed DB Scheme',
+            amount: partDbPension,
+            color: '#38bdf8',
+            category: 'source',
+            column: 0,
+            icon: ShieldCheck,
+          });
+        }
+        if (partAnnuity > 0) {
+          nodes.push({
+            id: 'part_annuity',
+            label: `${partnerName} Annuity`,
+            sublabel: 'Lifetime Annuity Income',
+            amount: partAnnuity,
+            color: '#f472b6',
+            category: 'source',
+            column: 0,
+            icon: Sparkles,
+          });
+        }
+        if (partTaxableFixed + partTaxFreeFixed > 0) {
+          nodes.push({
+            id: 'part_fixed',
+            label: `${partnerName} Fixed Income`,
+            sublabel: 'Other Fixed Incomes',
+            amount: partTaxableFixed + partTaxFreeFixed,
+            color: '#2dd4bf',
+            category: 'source',
+            column: 0,
+            icon: Coins,
+          });
+        }
+        if (partPensionDrawdownTotal > 0) {
+          nodes.push({
+            id: 'part_pension_dd',
+            label: `${partnerName} Pension Drawdown`,
+            sublabel: `Taxable: ${formatGBP(partPensionDrawdownTaxable)} | Free: ${formatGBP(partPensionDrawdownTaxFree)}`,
+            amount: partPensionDrawdownTotal,
+            color: '#34d399',
+            category: 'source',
+            column: 0,
+            icon: PiggyBank,
+          });
+        }
+        if (partIsaDrawdown > 0) {
+          nodes.push({
+            id: 'part_isa_dd',
+            label: `${partnerName} ISA Drawdown`,
+            sublabel: 'Tax-Free ISA Pot',
+            amount: partIsaDrawdown,
+            color: '#818cf8',
+            category: 'source',
+            column: 0,
+            icon: TrendingUp,
+          });
+        }
+        if (partCashDrawdown > 0) {
+          nodes.push({
+            id: 'part_cash_dd',
+            label: `${partnerName} Cash Drawdown`,
+            sublabel: 'Cash & GIA Capital',
+            amount: partCashDrawdown,
+            color: '#fbbf24',
+            category: 'source',
+            column: 0,
+            icon: Wallet,
+          });
+        }
+
+        // Column 1: Gross Inflow Hubs (Split by person)
+        nodes.push({
+          id: 'pri_retire_hub',
+          label: `${primaryName} Gross Inflows`,
+          sublabel: `Total Inflows (Age ${p.age})`,
+          amount: priGrossTotal,
+          color: '#3b82f6',
+          category: 'hub',
+          column: 1,
+          icon: Coins,
+        });
+        if (priStatePension > 0) links.push({ sourceId: 'pri_state_pension', targetId: 'pri_retire_hub', amount: priStatePension, color: '#8b5cf6' });
+        if (priDbPension > 0) links.push({ sourceId: 'pri_db_pension', targetId: 'pri_retire_hub', amount: priDbPension, color: '#0284c7' });
+        if (priAnnuity > 0) links.push({ sourceId: 'pri_annuity', targetId: 'pri_retire_hub', amount: priAnnuity, color: '#ec4899' });
+        if (priTaxableFixed + priTaxFreeFixed > 0) links.push({ sourceId: 'pri_fixed', targetId: 'pri_retire_hub', amount: priTaxableFixed + priTaxFreeFixed, color: '#0d9488' });
+        if (priPensionDrawdownTotal > 0) links.push({ sourceId: 'pri_pension_dd', targetId: 'pri_retire_hub', amount: priPensionDrawdownTotal, color: '#10b981' });
+        if (priIsaDrawdown > 0) links.push({ sourceId: 'pri_isa_dd', targetId: 'pri_retire_hub', amount: priIsaDrawdown, color: '#6366f1' });
+        if (priCashDrawdown > 0) links.push({ sourceId: 'pri_cash_dd', targetId: 'pri_retire_hub', amount: priCashDrawdown, color: '#f59e0b' });
+        if (priLifeEventsInc > 0) links.push({ sourceId: 'pri_life_events', targetId: 'pri_retire_hub', amount: priLifeEventsInc, color: '#06b6d4' });
+
+        nodes.push({
+          id: 'part_retire_hub',
+          label: `${partnerName} Gross Inflows`,
+          sublabel: `Total Inflows (Age ${partnerAge})`,
+          amount: partGrossTotal,
+          color: '#6366f1',
+          category: 'hub',
+          column: 1,
+          icon: Coins,
+        });
+        if (partStatePension > 0) links.push({ sourceId: 'part_state_pension', targetId: 'part_retire_hub', amount: partStatePension, color: '#a855f7' });
+        if (partDbPension > 0) links.push({ sourceId: 'part_db_pension', targetId: 'part_retire_hub', amount: partDbPension, color: '#38bdf8' });
+        if (partAnnuity > 0) links.push({ sourceId: 'part_annuity', targetId: 'part_retire_hub', amount: partAnnuity, color: '#f472b6' });
+        if (partTaxableFixed + partTaxFreeFixed > 0) links.push({ sourceId: 'part_fixed', targetId: 'part_retire_hub', amount: partTaxableFixed + partTaxFreeFixed, color: '#2dd4bf' });
+        if (partPensionDrawdownTotal > 0) links.push({ sourceId: 'part_pension_dd', targetId: 'part_retire_hub', amount: partPensionDrawdownTotal, color: '#34d399' });
+        if (partIsaDrawdown > 0) links.push({ sourceId: 'part_isa_dd', targetId: 'part_retire_hub', amount: partIsaDrawdown, color: '#818cf8' });
+        if (partCashDrawdown > 0) links.push({ sourceId: 'part_cash_dd', targetId: 'part_retire_hub', amount: partCashDrawdown, color: '#fbbf24' });
+
+        // Column 2: Tax Deductions & Spendable Hubs (Split by person)
+        if (priTaxPaid > 0) {
+          nodes.push({
+            id: 'pri_income_tax_decum',
+            label: `${primaryName} HMRC Tax`,
+            sublabel: `${((priTaxPaid / Math.max(1, priGrossTotal)) * 100).toFixed(1)}% tax rate`,
+            amount: priTaxPaid,
+            color: '#ef4444',
+            category: 'deduction',
+            column: 2,
+            icon: Receipt,
+          });
+          links.push({ sourceId: 'pri_retire_hub', targetId: 'pri_income_tax_decum', amount: priTaxPaid, color: '#ef4444' });
+        }
+        nodes.push({
+          id: 'pri_net_spendable',
+          label: `${primaryName} Net Spendable`,
+          sublabel: 'Post-tax retirement cash',
+          amount: priNetTotal,
+          color: '#10b981',
+          category: 'hub',
+          column: 2,
+          icon: Wallet,
+        });
+        links.push({ sourceId: 'pri_retire_hub', targetId: 'pri_net_spendable', amount: priNetTotal, color: '#10b981' });
+
+        if (partTaxPaid > 0) {
+          nodes.push({
+            id: 'part_income_tax_decum',
+            label: `${partnerName} HMRC Tax`,
+            sublabel: `${((partTaxPaid / Math.max(1, partGrossTotal)) * 100).toFixed(1)}% tax rate`,
+            amount: partTaxPaid,
+            color: '#f43f5e',
+            category: 'deduction',
+            column: 2,
+            icon: Receipt,
+          });
+          links.push({ sourceId: 'part_retire_hub', targetId: 'part_income_tax_decum', amount: partTaxPaid, color: '#f43f5e' });
+        }
+        nodes.push({
+          id: 'part_net_spendable',
+          label: `${partnerName} Net Spendable`,
+          sublabel: 'Post-tax retirement cash',
+          amount: partNetTotal,
+          color: '#06b6d4',
+          category: 'hub',
+          column: 2,
+          icon: Wallet,
+        });
+        links.push({ sourceId: 'part_retire_hub', targetId: 'part_net_spendable', amount: partNetTotal, color: '#06b6d4' });
+
+        // Column 3: Outgoing Allocations
+        if (totalMortgageAlloc > 0) {
+          nodes.push({
+            id: 'retirement_mortgage',
+            label: 'Ongoing Mortgage Payment',
+            sublabel: 'Active mortgage term in retirement',
+            amount: totalMortgageAlloc,
+            color: '#0ea5e9',
+            category: 'allocation',
+            column: 3,
+            icon: Home,
+          });
+          if (priMortgageAlloc > 0) links.push({ sourceId: 'pri_net_spendable', targetId: 'retirement_mortgage', amount: priMortgageAlloc, color: '#0ea5e9' });
+          if (partMortgageAlloc > 0) links.push({ sourceId: 'part_net_spendable', targetId: 'retirement_mortgage', amount: partMortgageAlloc, color: '#38bdf8' });
+        }
+
+        if (essentialLiving > 0) {
+          const isFloorMet = totalSpendable >= inflatedEssentialTarget;
+          nodes.push({
+            id: 'essential_retirement_spend',
+            label: 'Household Essential Floor',
+            sublabel: `Target: ${formatGBP(inflatedEssentialTarget)} (${isFloorMet ? '100% Covered' : `${Math.round((totalSpendable / Math.max(1, inflatedEssentialTarget)) * 100)}% Covered`})`,
+            amount: essentialLiving,
+            color: '#059669',
+            category: 'allocation',
+            column: 3,
+            icon: ShieldCheck,
+          });
+          if (priEssential > 0) links.push({ sourceId: 'pri_net_spendable', targetId: 'essential_retirement_spend', amount: priEssential, color: '#059669' });
+          if (partEssential > 0) links.push({ sourceId: 'part_net_spendable', targetId: 'essential_retirement_spend', amount: partEssential, color: '#10b981' });
+        }
+
+        if (discretionaryLiving > 0) {
+          nodes.push({
+            id: 'discretionary_retirement_spend',
+            label: 'Household Discretionary Spend',
+            sublabel: 'Leisure, dining, travel & gifting',
+            amount: discretionaryLiving,
+            color: '#ec4899',
+            category: 'allocation',
+            column: 3,
+            icon: Heart,
+          });
+          if (priDiscretionary > 0) links.push({ sourceId: 'pri_net_spendable', targetId: 'discretionary_retirement_spend', amount: priDiscretionary, color: '#ec4899' });
+          if (partDiscretionary > 0) links.push({ sourceId: 'part_net_spendable', targetId: 'discretionary_retirement_spend', amount: partDiscretionary, color: '#f472b6' });
+        }
+
+        if (reinvestSurplus > 0) {
+          nodes.push({
+            id: 'reinvested_surplus',
+            label: 'Re-invested Drawdown Surplus',
+            sublabel: 'Surplus re-allocated to ISA / GIA portfolio',
+            amount: reinvestSurplus,
+            color: '#a855f7',
+            category: 'allocation',
+            column: 3,
+            icon: TrendingUp,
+          });
+          if (priReinvest > 0) links.push({ sourceId: 'pri_net_spendable', targetId: 'reinvested_surplus', amount: priReinvest, color: '#a855f7' });
+          if (partReinvest > 0) links.push({ sourceId: 'part_net_spendable', targetId: 'reinvested_surplus', amount: partReinvest, color: '#c084fc' });
+        }
+
+        return {
+          isRetired: true,
+          totalGross: totalGrossRetire,
+          totalTaxes: totalTaxPaid,
+          totalNetIncome: totalNetRetire,
+          totalAllocated: totalGrossRetire,
+          nodes,
+          links,
+          metrics: {
+            taxRateEffective: totalGrossRetire > 0 ? (totalTaxPaid / totalGrossRetire) * 100 : 0,
+            guaranteedFloor: priStatePension + priDbPension + priAnnuity + partStatePension + partDbPension + partAnnuity,
+            portfolioDrawdown: priPensionDrawdownTotal + priIsaDrawdown + priCashDrawdown + partPensionDrawdownTotal + partIsaDrawdown + partCashDrawdown,
+            netIncome: totalNetRetire,
+            essentialSpend: essentialLiving,
+            discretionarySpend: discretionaryLiving,
+            reinvestedExcess: reinvestSurplus,
+            mortgageSpend: totalMortgageAlloc,
+            shortfall: p.incomeShortfall || 0,
+          },
+        };
+      }
+
+      // Default: Combined / Primary / Partner
       let statePension = (p.statePensionReceived || 0);
       let dbPension = (p.dbPensionIncomeReceived || 0);
       let annuity = (p.annuityIncomeReceived || 0);
@@ -532,32 +1312,32 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
       let curMortgageShare = mortgagePaymentAnnual;
 
       if (activeViewMode === 'primary') {
-        statePension = p.primaryStatePensionReceived ?? p.statePensionReceived ?? 0;
-        dbPension = p.primaryDbPensionIncomeReceived ?? p.dbPensionIncomeReceived ?? 0;
-        annuity = p.primaryAnnuityIncomeReceived ?? p.annuityIncomeReceived ?? 0;
-        taxableFixed = p.primaryTaxableFixedIncomeReceived ?? (isCouple ? ((p.taxableFixedIncomeReceived || 0) * 0.5) : (p.taxableFixedIncomeReceived || 0));
-        taxFreeFixed = p.primaryTaxFreeFixedIncomeReceived ?? (isCouple ? ((p.taxFreeFixedIncomeReceived || 0) * 0.5) : (p.taxFreeFixedIncomeReceived || 0));
-        pensionDrawdownTaxable = p.primaryPensionDrawdownTaxable ?? (isCouple ? ((p.pensionDrawdownTaxable || 0) * 0.5) : (p.pensionDrawdownTaxable || 0));
-        pensionDrawdownTaxFree = p.primaryPensionDrawdownTaxFree ?? (isCouple ? ((p.pensionDrawdownTaxFree || 0) * 0.5) : (p.pensionDrawdownTaxFree || 0));
-        pensionDrawdownTotal = p.primaryPensionDrawdown ?? (pensionDrawdownTaxable + pensionDrawdownTaxFree);
-        isaDrawdown = p.primaryIsaDrawdown ?? (isCouple ? ((p.isaDrawdown || 0) * 0.5) : (p.isaDrawdown || 0));
-        cashDrawdown = p.primaryCashDrawdown ?? (isCouple ? ((p.cashDrawdown || 0) * 0.5) : (p.cashDrawdown || 0));
-        lifeEventsInc = p.lifeEventsIncome || 0;
-        totalTaxPaid = p.primaryTaxPaid ?? (isCouple ? ((p.totalTaxPaid || 0) * 0.5) : (p.totalTaxPaid || 0));
+        statePension = priStatePension;
+        dbPension = priDbPension;
+        annuity = priAnnuity;
+        taxableFixed = priTaxableFixed;
+        taxFreeFixed = priTaxFreeFixed;
+        pensionDrawdownTaxable = priPensionDrawdownTaxable;
+        pensionDrawdownTaxFree = priPensionDrawdownTaxFree;
+        pensionDrawdownTotal = priPensionDrawdownTotal;
+        isaDrawdown = priIsaDrawdown;
+        cashDrawdown = priCashDrawdown;
+        lifeEventsInc = priLifeEventsInc;
+        totalTaxPaid = priTaxPaid;
         curMortgageShare = isCouple ? mortgagePaymentAnnual * 0.5 : mortgagePaymentAnnual;
       } else if (activeViewMode === 'partner') {
-        statePension = p.partnerStatePensionReceived || 0;
-        dbPension = p.partnerDbPensionIncomeReceived || 0;
-        annuity = p.partnerAnnuityIncomeReceived || 0;
-        taxableFixed = p.partnerTaxableFixedIncomeReceived || 0;
-        taxFreeFixed = p.partnerTaxFreeFixedIncomeReceived || 0;
-        pensionDrawdownTaxable = p.partnerPensionDrawdownTaxable || 0;
-        pensionDrawdownTaxFree = p.partnerPensionDrawdownTaxFree || 0;
-        pensionDrawdownTotal = p.partnerPensionDrawdown ?? (pensionDrawdownTaxable + pensionDrawdownTaxFree);
-        isaDrawdown = p.partnerIsaDrawdown || 0;
-        cashDrawdown = p.partnerCashDrawdown || 0;
+        statePension = partStatePension;
+        dbPension = partDbPension;
+        annuity = partAnnuity;
+        taxableFixed = partTaxableFixed;
+        taxFreeFixed = partTaxFreeFixed;
+        pensionDrawdownTaxable = partPensionDrawdownTaxable;
+        pensionDrawdownTaxFree = partPensionDrawdownTaxFree;
+        pensionDrawdownTotal = partPensionDrawdownTotal;
+        isaDrawdown = partIsaDrawdown;
+        cashDrawdown = partCashDrawdown;
         lifeEventsInc = 0;
-        totalTaxPaid = p.partnerTaxPaid || 0;
+        totalTaxPaid = partTaxPaid;
         curMortgageShare = mortgagePaymentAnnual * 0.5;
       }
 
@@ -594,16 +1374,8 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
         reinvestSurplus = 0;
       }
 
-      const effectiveEssentialFloor = isCouple && activeViewMode !== 'combined'
-        ? combinedEssentialFloor / 2
-        : combinedEssentialFloor;
-      const inflatedEssentialTarget = adjustInflation ? effectiveEssentialFloor : (effectiveEssentialFloor * inflationFactor);
-
       const essentialLiving = Math.min(availableForLiving, inflatedEssentialTarget);
       const discretionaryLiving = Math.max(0, availableForLiving - essentialLiving);
-
-      const nodes: FlowNode[] = [];
-      const links: FlowLink[] = [];
 
       const currentPersonName = activeViewMode === 'primary' ? primaryName : activeViewMode === 'partner' ? partnerName : 'Household';
 
@@ -1035,6 +1807,18 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
             </button>
             <button
               type="button"
+              onClick={() => setViewMode('split')}
+              className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
+                activeViewMode === 'split'
+                  ? 'bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-400 shadow-xs font-black'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <Split className="w-3.5 h-3.5" />
+              <span>Split</span>
+            </button>
+            <button
+              type="button"
               onClick={() => setViewMode('primary')}
               className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
                 activeViewMode === 'primary'
@@ -1068,8 +1852,10 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
             <div className="text-[10px] font-black uppercase tracking-wider text-sky-700 dark:text-sky-300 flex items-center gap-1">
               <Coins className="w-3.5 h-3.5" />
               <span>
-                1. {isCouple && activeViewMode !== 'combined'
+                1. {isCouple && (activeViewMode === 'primary' || activeViewMode === 'partner')
                   ? `${activeViewMode === 'primary' ? primaryName : partnerName} Inflow`
+                  : activeViewMode === 'split'
+                  ? 'Combined Inflow (Split)'
                   : 'Total Gross Inflow'}
               </span>
             </div>
@@ -1085,8 +1871,10 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
             <div className="text-[10px] font-black uppercase tracking-wider text-rose-700 dark:text-rose-300 flex items-center gap-1">
               <Receipt className="w-3.5 h-3.5" />
               <span>
-                2. {isCouple && activeViewMode !== 'combined'
+                2. {isCouple && (activeViewMode === 'primary' || activeViewMode === 'partner')
                   ? `${activeViewMode === 'primary' ? primaryName : partnerName} Tax & NI`
+                  : activeViewMode === 'split'
+                  ? 'Total Tax & NI (Split)'
                   : 'Total Tax & NI Deducted'}
               </span>
             </div>
@@ -1102,8 +1890,10 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
             <div className="text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-300 flex items-center gap-1">
               <Wallet className="w-3.5 h-3.5" />
               <span>
-                3. {isCouple && activeViewMode !== 'combined'
+                3. {isCouple && (activeViewMode === 'primary' || activeViewMode === 'partner')
                   ? `${activeViewMode === 'primary' ? primaryName : partnerName} Net Cash`
+                  : activeViewMode === 'split'
+                  ? 'Net Spendable Cash (Split)'
                   : 'Net Spendable Cash'}
               </span>
             </div>
@@ -1397,7 +2187,7 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
               <span className="text-slate-600 dark:text-slate-300 font-semibold">
                 Essential Floor:
               </span>
-              {isCouple && activeViewMode !== 'combined' && (
+              {isCouple && (activeViewMode === 'primary' || activeViewMode === 'partner') && (
                 <span className="text-[10px] bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 font-bold px-1.5 py-0.5 rounded-md border border-teal-200/60 dark:border-teal-800/60">
                   ½ share
                 </span>
@@ -1408,10 +2198,11 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
               <button
                 type="button"
                 onClick={() => {
-                  const step = isCouple && activeViewMode !== 'combined' ? 500 : 1000;
-                  const currentVal = isCouple && activeViewMode !== 'combined' ? combinedEssentialFloor / 2 : combinedEssentialFloor;
+                  const isInd = isCouple && (activeViewMode === 'primary' || activeViewMode === 'partner');
+                  const step = isInd ? 500 : 1000;
+                  const currentVal = isInd ? combinedEssentialFloor / 2 : combinedEssentialFloor;
                   const nextVal = Math.max(0, currentVal - step);
-                  if (isCouple && activeViewMode !== 'combined') {
+                  if (isInd) {
                     setCombinedEssentialFloor(nextVal * 2);
                   } else {
                     setCombinedEssentialFloor(nextVal);
@@ -1427,13 +2218,14 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
                 <span className="absolute left-2 text-slate-400 font-bold text-xs pointer-events-none">£</span>
                 <input
                   type="number"
-                  step={isCouple && activeViewMode !== 'combined' ? 250 : 500}
+                  step={isCouple && (activeViewMode === 'primary' || activeViewMode === 'partner') ? 250 : 500}
                   min={0}
                   max={200000}
-                  value={Math.round(isCouple && activeViewMode !== 'combined' ? combinedEssentialFloor / 2 : combinedEssentialFloor)}
+                  value={Math.round(isCouple && (activeViewMode === 'primary' || activeViewMode === 'partner') ? combinedEssentialFloor / 2 : combinedEssentialFloor)}
                   onChange={(e) => {
+                    const isInd = isCouple && (activeViewMode === 'primary' || activeViewMode === 'partner');
                     const num = Math.max(0, Number(e.target.value) || 0);
-                    if (isCouple && activeViewMode !== 'combined') {
+                    if (isInd) {
                       setCombinedEssentialFloor(num * 2);
                     } else {
                       setCombinedEssentialFloor(num);
@@ -1446,10 +2238,11 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
               <button
                 type="button"
                 onClick={() => {
-                  const step = isCouple && activeViewMode !== 'combined' ? 500 : 1000;
-                  const currentVal = isCouple && activeViewMode !== 'combined' ? combinedEssentialFloor / 2 : combinedEssentialFloor;
+                  const isInd = isCouple && (activeViewMode === 'primary' || activeViewMode === 'partner');
+                  const step = isInd ? 500 : 1000;
+                  const currentVal = isInd ? combinedEssentialFloor / 2 : combinedEssentialFloor;
                   const nextVal = currentVal + step;
-                  if (isCouple && activeViewMode !== 'combined') {
+                  if (isInd) {
                     setCombinedEssentialFloor(nextVal * 2);
                   } else {
                     setCombinedEssentialFloor(nextVal);
