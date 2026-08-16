@@ -1,9 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   UserProfile,
   InvestmentPots,
   YearProjection,
   DecumulationLifeEvent,
+  LifeEventType,
 } from '../types';
 import { getPensionAccessAge, getPartnerPensionAccessAge } from '../utils/ukTaxEngine';
 import {
@@ -27,6 +28,12 @@ import {
   AlertCircle,
   Sliders,
   CheckCircle2,
+  Filter,
+  Trash2,
+  Info,
+  DollarSign,
+  Wallet,
+  X,
 } from 'lucide-react';
 
 interface MilestoneTimelineCardProps {
@@ -36,10 +43,13 @@ interface MilestoneTimelineCardProps {
   onChange: (updatedProfile: UserProfile) => void;
 }
 
+export type MilestoneCategory = 'all' | 'core' | 'pension' | 'property' | 'life_event';
+
 export interface TimelineMilestone {
   id: string;
   key: string;
   label: string;
+  shortLabel: string;
   category: 'core' | 'property' | 'pension' | 'life_event' | 'horizon';
   age: number;
   year: number;
@@ -53,6 +63,7 @@ export interface TimelineMilestone {
   type?: 'income' | 'expense' | 'milestone';
   badge?: string;
   owner?: 'primary' | 'partner' | 'joint';
+  tier?: number; // 0 = upper level 1, 1 = lower level 1, 2 = upper level 2, 3 = lower level 2
 }
 
 export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
@@ -68,8 +79,19 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
   const minHorizon = Math.min(currentAge, 35);
   const totalYearsSpan = Math.max(1, maxHorizon - minHorizon);
 
-  // Derive key milestones
-  const milestones: TimelineMilestone[] = useMemo(() => {
+  const [activeCategory, setActiveCategory] = useState<MilestoneCategory>('all');
+  const [selectedMilestoneId, setSelectedMilestoneId] = useState<string>('ms-target-retire');
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
+  // New Event Form State
+  const [newEventName, setNewEventName] = useState('');
+  const [newEventAge, setNewEventAge] = useState(65);
+  const [newEventType, setNewEventType] = useState<LifeEventType>('expense');
+  const [newEventAmount, setNewEventAmount] = useState(15000);
+  const [newEventOwner, setNewEventOwner] = useState<'primary' | 'partner'>('primary');
+
+  // Derive all raw milestones
+  const allMilestones: TimelineMilestone[] = useMemo(() => {
     const list: TimelineMilestone[] = [];
 
     // 1. Current Age (Start of Plan)
@@ -77,14 +99,16 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
       id: 'ms-start',
       key: 'start',
       label: 'Current Age',
+      shortLabel: 'Current Age',
       category: 'core',
       age: currentAge,
       year: currentYear,
       color: '#0284c7', // sky-600
       icon: Clock,
-      description: 'Starting point of financial plan and active accumulation.',
+      description: 'Starting point of your retirement plan and active savings accumulation.',
       isEditable: false,
       badge: 'Active Now',
+      owner: 'primary',
     });
 
     // 2. Mortgage Payoff (if configured)
@@ -95,6 +119,7 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
           id: 'ms-mortgage-payoff',
           key: 'mortgage_payoff',
           label: 'Mortgage Cleared',
+          shortLabel: 'Mortgage Paid',
           category: 'property',
           age: payoffAge,
           year: currentYear + profile.mortgageDebt.remainingTermYears,
@@ -102,7 +127,8 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
           icon: Home,
           description: `Standard mortgage term concludes, freeing up £${Math.round(profile.mortgageDebt.monthlyPayment * 12).toLocaleString()}/yr of cash flow.`,
           isEditable: false,
-          badge: 'Debt-Free',
+          badge: 'Debt Free',
+          owner: 'joint',
         });
       }
     }
@@ -112,7 +138,8 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
     list.push({
       id: 'ms-primary-nmpa',
       key: 'primary_nmpa',
-      label: `${profile.name || 'Primary'} Pension Access (NMPA)`,
+      label: `${profile.name || 'Primary'} Pension Access`,
+      shortLabel: 'Pension Access',
       category: 'pension',
       age: primaryNmpa,
       year: currentYear + (primaryNmpa - currentAge),
@@ -133,14 +160,15 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
         id: 'ms-partner-nmpa',
         key: 'partner_nmpa',
         label: `${profile.partnerName || 'Partner'} Pension Access`,
+        shortLabel: 'Partner NMPA',
         category: 'pension',
         age: primaryAgeAtPartnerNmpa,
         year: currentYear + (primaryAgeAtPartnerNmpa - currentAge),
         color: '#34d399', // emerald-400
         icon: Coins,
-        description: `${profile.partnerName || 'Partner'} reaches pension access age (${partnerNmpa}). Partner SIPP/DC pots unlocked.`,
+        description: `${profile.partnerName || 'Partner'} reaches pension access age (${partnerNmpa}). Partner SIPP/DC pots accessible.`,
         isEditable: false,
-        badge: 'Partner NMPA',
+        badge: 'Partner Access',
         owner: 'partner',
       });
     }
@@ -151,12 +179,13 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
       id: 'ms-target-retire',
       key: 'target_retire',
       label: `${profile.name || 'Primary'} Retirement`,
+      shortLabel: 'Retirement',
       category: 'core',
       age: targetRetire,
       year: currentYear + (targetRetire - currentAge),
       color: '#8b5cf6', // violet-500
       icon: Flag,
-      description: `Primary earner leaves employment and enters decumulation phase. Active portfolio drawdown begins.`,
+      description: `Primary earner leaves employment and enters decumulation. Active portfolio drawdown begins.`,
       isEditable: true,
       minAge: Math.max(currentAge, 45),
       maxAge: 75,
@@ -173,12 +202,13 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
           id: 'ms-partner-retire',
           key: 'partner_retire',
           label: `${profile.partnerName || 'Partner'} Retirement`,
+          shortLabel: 'Partner Retire',
           category: 'core',
           age: primaryAgeAtPartnerRetire,
           year: currentYear + (primaryAgeAtPartnerRetire - currentAge),
           color: '#a855f7', // purple-500
           icon: Flag,
-          description: `${profile.partnerName || 'Partner'} retires at partner age ${profile.partnerTargetRetirementAge}. Combined household fully retired.`,
+          description: `${profile.partnerName || 'Partner'} retires at partner age ${profile.partnerTargetRetirementAge}. Household fully retired.`,
           isEditable: true,
           minAge: Math.max(currentAge, 45),
           maxAge: 75,
@@ -195,6 +225,7 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
         id: 'ms-downsizing',
         key: 'downsize',
         label: 'Right-Sizing Home',
+        shortLabel: 'Downsize Home',
         category: 'property',
         age: dsAge,
         year: currentYear + (dsAge - currentAge),
@@ -205,6 +236,7 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
         minAge: Math.max(currentAge, 50),
         maxAge: 85,
         badge: 'Equity Release',
+        owner: 'joint',
       });
     }
 
@@ -214,6 +246,7 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
       id: 'ms-primary-spa',
       key: 'primary_spa',
       label: `${profile.name || 'Primary'} State Pension`,
+      shortLabel: 'State Pension',
       category: 'pension',
       age: primarySpa,
       year: currentYear + (primarySpa - currentAge),
@@ -237,6 +270,7 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
           id: 'ms-partner-spa',
           key: 'partner_spa',
           label: `${profile.partnerName || 'Partner'} State Pension`,
+          shortLabel: 'Partner State Pension',
           category: 'pension',
           age: primaryAgeAtPartnerSpa,
           year: currentYear + (primaryAgeAtPartnerSpa - currentAge),
@@ -261,19 +295,20 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
           id: `ms-event-${event.id}`,
           key: `event_${event.id}`,
           label: event.name,
+          shortLabel: event.name.length > 18 ? `${event.name.substring(0, 16)}...` : event.name,
           category: 'life_event',
           age: event.age,
           year: currentYear + (event.age - currentAge),
           color: isIncome ? '#10b981' : '#ec4899', // emerald for inflow, pink for outflow
           icon: isIncome ? TrendingUp : Plane,
-          description: `${isIncome ? 'Capital Inflow' : 'One-Off Expenditure'} of £${Math.round(event.amount).toLocaleString()} (${event.targetPot || 'General'} pot).`,
+          description: `${isIncome ? 'Capital Inflow' : 'One-off Expenditure'} of £${Math.round(event.amount).toLocaleString()} (${event.targetPot || 'General'} pot).`,
           isEditable: true,
           minAge: currentAge,
           maxAge: maxHorizon,
           amount: event.amount,
           type: event.type,
           badge: isIncome ? '+ Inflow' : '- Outflow',
-          owner: event.owner,
+          owner: event.owner || 'primary',
         });
       });
 
@@ -281,39 +316,80 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
     list.push({
       id: 'ms-horizon',
       key: 'horizon',
-      label: 'Life Expectancy (Horizon)',
+      label: 'Life Expectancy',
+      shortLabel: 'Horizon',
       category: 'horizon',
       age: maxHorizon,
       year: currentYear + (maxHorizon - currentAge),
       color: '#ef4444', // rose-500
       icon: Heart,
-      description: `Plan planning horizon age (${maxHorizon}). Target terminal legacy wealth evaluated.`,
+      description: `Plan planning horizon age (${maxHorizon}). Terminal legacy wealth evaluated.`,
       isEditable: true,
       minAge: 75,
       maxAge: 105,
-      badge: 'Planning Horizon',
+      badge: 'Horizon',
+      owner: 'joint',
     });
 
-    // Sort chronologically by age
-    return list.sort((a, b) => a.age - b.age);
-  }, [profile, currentAge, currentYear, maxHorizon, isCouple]);
+    // Sort chronologically
+    const sorted = list.sort((a, b) => a.age - b.age);
 
-  // Active selected milestone
-  const [selectedMilestoneId, setSelectedMilestoneId] = useState<string>(
-    milestones.find((m) => m.key === 'target_retire')?.id || milestones[0]?.id
-  );
+    // Collision-Free Multi-Tier Layout Algorithm:
+    // Stagger items across 4 vertical tiers:
+    // Tier 0 = Top Track Level 1 (above axis)
+    // Tier 1 = Bottom Track Level 1 (below axis)
+    // Tier 2 = Top Track Level 2 (higher above axis)
+    // Tier 3 = Bottom Track Level 2 (lower below axis)
+    let lastTopPct = -100;
+    let lastBottomPct = -100;
+
+    return sorted.map((m, idx) => {
+      const pct = ((m.age - minHorizon) / totalYearsSpan) * 100;
+      let tier = 0;
+
+      if (idx % 2 === 0) {
+        // Top track candidate
+        if (pct - lastTopPct < 10) {
+          tier = 2; // Move higher up to tier 2
+        } else {
+          tier = 0; // Standard top tier
+          lastTopPct = pct;
+        }
+      } else {
+        // Bottom track candidate
+        if (pct - lastBottomPct < 10) {
+          tier = 3; // Move lower down to tier 3
+        } else {
+          tier = 1; // Standard bottom tier
+          lastBottomPct = pct;
+        }
+      }
+
+      return { ...m, tier };
+    });
+  }, [profile, currentAge, currentYear, maxHorizon, isCouple, minHorizon, totalYearsSpan]);
+
+  // Filtered milestones based on category tab
+  const filteredMilestones = useMemo(() => {
+    if (activeCategory === 'all') return allMilestones;
+    return allMilestones.filter((m) => m.category === activeCategory);
+  }, [allMilestones, activeCategory]);
 
   const activeMilestone = useMemo(() => {
-    return milestones.find((m) => m.id === selectedMilestoneId) || milestones[0];
-  }, [milestones, selectedMilestoneId]);
+    return (
+      allMilestones.find((m) => m.id === selectedMilestoneId) ||
+      allMilestones.find((m) => m.key === 'target_retire') ||
+      allMilestones[0]
+    );
+  }, [allMilestones, selectedMilestoneId]);
 
-  // Projected data for selected milestone age
+  // Projection snapshot for active milestone
   const milestoneProjection = useMemo(() => {
     if (!activeMilestone) return null;
     return projections.find((p) => p.age === activeMilestone.age) || null;
   }, [projections, activeMilestone]);
 
-  // Handler to adjust milestone age
+  // Update handler
   const handleUpdateAge = (milestone: TimelineMilestone, newAge: number) => {
     const clampedAge = Math.max(
       milestone.minAge ?? currentAge,
@@ -351,10 +427,46 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
     }
   };
 
+  // Add new event handler
+  const handleCreateNewEvent = () => {
+    if (!newEventName.trim()) return;
+
+    const newEvent: DecumulationLifeEvent = {
+      id: `event_${Date.now()}`,
+      name: newEventName.trim(),
+      age: newEventAge,
+      type: newEventType,
+      amount: newEventAmount,
+      owner: newEventOwner,
+      enabled: true,
+      inflationLinked: true,
+    };
+
+    const updated = [...(profile.decumulationLifeEvents || []), newEvent];
+    onChange({
+      ...profile,
+      decumulationLifeEvents: updated,
+    });
+
+    setNewEventName('');
+    setIsAddModalOpen(false);
+  };
+
+  // Delete event handler
+  const handleDeleteEvent = (milestone: TimelineMilestone) => {
+    if (!milestone.key.startsWith('event_')) return;
+    const eventId = milestone.key.replace('event_', '');
+    const updated = (profile.decumulationLifeEvents || []).filter((e) => e.id !== eventId);
+    onChange({
+      ...profile,
+      decumulationLifeEvents: updated,
+    });
+  };
+
   // Helper to calculate X percentage position on timeline
   const getPercentPosition = (age: number) => {
     const pct = ((age - minHorizon) / totalYearsSpan) * 100;
-    return Math.max(2, Math.min(98, pct));
+    return Math.max(3, Math.min(97, pct));
   };
 
   // Retirement phases definitions for background bands
@@ -365,8 +477,8 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
 
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 sm:p-7 shadow-sm space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-5">
+      {/* Header Bar */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-5">
         <div className="flex items-center gap-3">
           <div className="p-3 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 rounded-2xl">
             <Calendar className="w-6 h-6" />
@@ -374,153 +486,243 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-lg font-black text-slate-900 dark:text-slate-100">
-                Visual Interactive Milestone Timeline
+                Visual Milestone Timeline
               </h3>
-              <span className="px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300 rounded-full">
-                Interactive Demo
+              <span className="px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider bg-emerald-100 text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-300 rounded-full">
+                Interactive Multi-Track
               </span>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Click any milestone to inspect its financial impact or adjust dates with the stepper controls. Changes immediately recalculate your forecast.
+              Interactive life roadmap across retirement phases. Staggered collision-free layout with live cashflow recalculation.
             </p>
           </div>
         </div>
 
-        {/* Quick summary chip */}
-        <div className="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800/80 px-3.5 py-2 rounded-xl">
-          <Sparkles className="w-4 h-4 text-emerald-500" />
-          <span>{milestones.length} Milestones Plotted</span>
+        {/* Action Controls & Category Filters */}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Add Milestone Button */}
+          <button
+            type="button"
+            onClick={() => setIsAddModalOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Add Event</span>
+          </button>
+
+          {/* Category Tabs */}
+          <div className="flex items-center bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200/80 dark:border-slate-700/60 text-xs font-bold text-slate-600 dark:text-slate-400">
+            <button
+              type="button"
+              onClick={() => setActiveCategory('all')}
+              className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                activeCategory === 'all'
+                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xs'
+                  : 'hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              All ({allMilestones.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveCategory('core')}
+              className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                activeCategory === 'core'
+                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xs'
+                  : 'hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              Retirement
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveCategory('pension')}
+              className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                activeCategory === 'pension'
+                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xs'
+                  : 'hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              Pensions
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveCategory('property')}
+              className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                activeCategory === 'property'
+                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xs'
+                  : 'hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              Property
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveCategory('life_event')}
+              className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                activeCategory === 'life_event'
+                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xs'
+                  : 'hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              Events
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Main Interactive Timeline Canvas */}
-      <div className="relative pt-8 pb-4 px-2 sm:px-4 select-none">
-        {/* Phase Background Bands */}
-        <div className="h-10 w-full rounded-2xl overflow-hidden flex shadow-inner border border-slate-200/80 dark:border-slate-700/60 opacity-90">
-          {/* 1. Accumulation Phase */}
+      {/* Main Multi-Tier Interactive Timeline Canvas */}
+      <div className="relative pt-24 pb-20 px-3 sm:px-6 select-none bg-slate-50/50 dark:bg-slate-950/40 rounded-2xl border border-slate-200/60 dark:border-slate-800/80 overflow-hidden">
+        {/* Phase Background Bands (Positioned on the axis) */}
+        <div className="absolute top-1/2 -translate-y-1/2 left-3 right-3 sm:left-6 sm:right-6 h-9 rounded-xl overflow-hidden flex shadow-inner border border-slate-200/80 dark:border-slate-700/60 opacity-80 pointer-events-none">
+          {/* Accumulation Phase */}
           <div
             style={{ width: `${Math.max(5, getPercentPosition(phase1End) - getPercentPosition(minHorizon))}%` }}
-            className="bg-linear-to-r from-sky-500/20 to-blue-500/20 dark:from-sky-950/50 dark:to-blue-950/50 border-r border-blue-300/40 dark:border-blue-700/40 flex items-center justify-center px-2 relative group"
-            title={`Accumulation Phase: Ages ${minHorizon} to ${phase1End}`}
+            className="bg-linear-to-r from-sky-500/25 to-blue-500/25 dark:from-sky-950/60 dark:to-blue-950/60 border-r border-blue-300/40 dark:border-blue-700/40 flex items-center justify-center px-2"
           >
-            <span className="text-[10px] font-extrabold tracking-tight text-blue-700 dark:text-blue-300 truncate">
-              Accumulation ({minHorizon}–{phase1End})
+            <span className="text-[9px] font-extrabold tracking-tight text-blue-700 dark:text-blue-300 truncate">
+              Accumulation (Age {minHorizon}–{phase1End})
             </span>
           </div>
 
-          {/* 2. Go-Go Active Retirement */}
+          {/* Go-Go Active Retirement */}
           <div
             style={{ width: `${Math.max(5, getPercentPosition(phase2End) - getPercentPosition(phase1End))}%` }}
-            className="bg-linear-to-r from-emerald-500/20 to-teal-500/20 dark:from-emerald-950/50 dark:to-teal-950/50 border-r border-emerald-300/40 dark:border-emerald-700/40 flex items-center justify-center px-2 group"
-            title={`Go-Go Active Phase: Ages ${phase1End} to ${phase2End}`}
+            className="bg-linear-to-r from-emerald-500/25 to-teal-500/25 dark:from-emerald-950/60 dark:to-teal-950/60 border-r border-emerald-300/40 dark:border-emerald-700/40 flex items-center justify-center px-2"
           >
-            <span className="text-[10px] font-extrabold tracking-tight text-emerald-700 dark:text-emerald-300 truncate">
+            <span className="text-[9px] font-extrabold tracking-tight text-emerald-700 dark:text-emerald-300 truncate">
               Go-Go Active ({phase1End}–{phase2End})
             </span>
           </div>
 
-          {/* 3. Slow-Go Leisure */}
+          {/* Slow-Go Leisure */}
           <div
             style={{ width: `${Math.max(5, getPercentPosition(phase3End) - getPercentPosition(phase2End))}%` }}
-            className="bg-linear-to-r from-amber-500/20 to-orange-500/20 dark:from-amber-950/50 dark:to-orange-950/50 border-r border-amber-300/40 dark:border-amber-700/40 flex items-center justify-center px-2 group"
-            title={`Slow-Go Leisure Phase: Ages ${phase2End} to ${phase3End}`}
+            className="bg-linear-to-r from-amber-500/25 to-orange-500/25 dark:from-amber-950/60 dark:to-orange-950/60 border-r border-amber-300/40 dark:border-amber-700/40 flex items-center justify-center px-2"
           >
-            <span className="text-[10px] font-extrabold tracking-tight text-amber-700 dark:text-amber-300 truncate">
+            <span className="text-[9px] font-extrabold tracking-tight text-amber-700 dark:text-amber-300 truncate">
               Slow-Go ({phase2End}–{phase3End})
             </span>
           </div>
 
-          {/* 4. No-Go Elder Care */}
+          {/* No-Go Elder Care */}
           <div
             style={{ width: `${Math.max(5, 100 - getPercentPosition(phase3End))}%` }}
-            className="bg-linear-to-r from-purple-500/20 to-rose-500/20 dark:from-purple-950/50 dark:to-rose-950/50 flex items-center justify-center px-2 group"
-            title={`No-Go Elder Care Phase: Ages ${phase3End} to ${maxHorizon}`}
+            className="bg-linear-to-r from-purple-500/25 to-rose-500/25 dark:from-purple-950/60 dark:to-rose-950/60 flex items-center justify-center px-2"
           >
-            <span className="text-[10px] font-extrabold tracking-tight text-purple-700 dark:text-purple-300 truncate">
+            <span className="text-[9px] font-extrabold tracking-tight text-purple-700 dark:text-purple-300 truncate">
               No-Go ({phase3End}–{maxHorizon})
             </span>
           </div>
         </div>
 
         {/* Central Axis Line */}
-        <div className="relative h-1.5 bg-slate-300 dark:bg-slate-700 rounded-full my-6">
-          {/* Milestone Node Markers */}
-          {milestones.map((m) => {
+        <div className="relative h-1.5 bg-slate-300 dark:bg-slate-700 rounded-full my-0 z-0">
+          {/* Staggered Non-Overlapping Milestone Nodes */}
+          {filteredMilestones.map((m) => {
             const leftPct = getPercentPosition(m.age);
-            const isSelected = m.id === selectedMilestoneId;
+            const isSelected = m.id === activeMilestone.id;
             const IconComponent = m.icon;
+            const tier = m.tier ?? 0;
+
+            // Compute vertical offset and connector stem height based on tier
+            // Tier 0: Top level 1 (-64px)
+            // Tier 2: Top level 2 (-96px)
+            // Tier 1: Bottom level 1 (+28px)
+            // Tier 3: Bottom level 2 (+60px)
+            const isTop = tier === 0 || tier === 2;
+            const cardYOffset = tier === 2 ? '-top-24' : tier === 0 ? '-top-16' : tier === 1 ? 'top-8' : 'top-16';
+            const stemHeight = tier === 2 ? 'h-20' : tier === 0 ? 'h-12' : tier === 1 ? 'h-5' : 'h-13';
 
             return (
-              <button
+              <div
                 key={m.id}
-                type="button"
-                onClick={() => setSelectedMilestoneId(m.id)}
                 style={{ left: `${leftPct}%` }}
-                className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 flex flex-col items-center group cursor-pointer transition-all duration-200 z-10"
+                className="absolute top-1/2 -translate-x-1/2 flex flex-col items-center z-10"
               >
-                {/* Node Pill Tag on Hover / Selected */}
-                <div
-                  className={`absolute -top-9 px-2 py-0.5 rounded-md text-[10px] font-bold whitespace-nowrap shadow-md transition-all duration-200 ${
-                    isSelected
-                      ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 scale-105 opacity-100 ring-2 ring-indigo-500'
-                      : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 opacity-85 group-hover:opacity-100 group-hover:scale-105'
-                  }`}
-                >
-                  <span className="mr-1">{m.label.split(' ')[0]}</span>
-                  <span className="font-extrabold">Age {m.age}</span>
-                </div>
-
-                {/* Glowing Circular Node */}
+                {/* Vertical Connector Stem */}
                 <div
                   style={{ backgroundColor: m.color }}
-                  className={`w-6 h-6 rounded-full flex items-center justify-center text-white shadow-md transition-transform duration-200 ${
+                  className={`absolute w-0.5 opacity-60 transition-all ${stemHeight} ${
+                    isTop ? 'bottom-3 origin-bottom' : 'top-3 origin-top'
+                  } ${isSelected ? 'opacity-100 w-1' : ''}`}
+                />
+
+                {/* Staggered Badge Card */}
+                <button
+                  type="button"
+                  onClick={() => setSelectedMilestoneId(m.id)}
+                  className={`absolute ${cardYOffset} px-2.5 py-1 rounded-xl text-[10px] font-bold whitespace-nowrap shadow-sm transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${
                     isSelected
-                      ? 'scale-125 ring-4 ring-indigo-400/40 dark:ring-indigo-500/60 shadow-lg'
-                      : 'group-hover:scale-115'
+                      ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 scale-105 ring-2 ring-indigo-500 shadow-md z-30'
+                      : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:scale-105 z-20'
                   }`}
                 >
-                  <IconComponent className="w-3.5 h-3.5" />
-                </div>
+                  <span
+                    style={{ backgroundColor: m.color }}
+                    className="w-2 h-2 rounded-full shrink-0"
+                  />
+                  <span>{m.shortLabel}</span>
+                  <span className="font-extrabold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-1 rounded">
+                    {m.age}
+                  </span>
+                </button>
 
-                {/* Calendar Year Tag below */}
-                <span className="absolute -bottom-5 text-[9px] font-bold text-slate-400 dark:text-slate-500 whitespace-nowrap">
-                  {m.year}
-                </span>
-              </button>
+                {/* Glowing Axis Node Circle */}
+                <button
+                  type="button"
+                  onClick={() => setSelectedMilestoneId(m.id)}
+                  style={{ backgroundColor: m.color }}
+                  className={`w-6 h-6 rounded-full flex items-center justify-center text-white shadow-md transition-transform duration-200 cursor-pointer z-20 ${
+                    isSelected
+                      ? 'scale-130 ring-4 ring-indigo-400/50 dark:ring-indigo-500/70 shadow-lg'
+                      : 'hover:scale-115'
+                  }`}
+                  title={`${m.label} (Age ${m.age})`}
+                >
+                  <IconComponent className="w-3.5 h-3.5" />
+                </button>
+              </div>
             );
           })}
         </div>
 
-        {/* Age Scale Ticks */}
-        <div className="flex justify-between text-[10px] font-bold text-slate-400 dark:text-slate-500 pt-3 border-t border-slate-200/60 dark:border-slate-800/80">
+        {/* Age Scale Reference Ticks */}
+        <div className="flex justify-between text-[10px] font-bold text-slate-400 dark:text-slate-500 pt-6 mt-16 border-t border-slate-200/80 dark:border-slate-800">
           <span>Age {minHorizon} ({currentYear - (currentAge - minHorizon)})</span>
-          <span>Age 50</span>
-          <span>Age 60</span>
-          <span>Age 70</span>
-          <span>Age 80</span>
+          <span>Age 50 ({currentYear + (50 - currentAge)})</span>
+          <span>Age 60 ({currentYear + (60 - currentAge)})</span>
+          <span>Age 70 ({currentYear + (70 - currentAge)})</span>
+          <span>Age 80 ({currentYear + (80 - currentAge)})</span>
           <span>Age {maxHorizon} ({currentYear + (maxHorizon - currentAge)})</span>
         </div>
       </div>
 
       {/* Selected Milestone Inspector & Live Adjuster Panel */}
       {activeMilestone && (
-        <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-2xl p-5 space-y-4 animate-fade-in">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/80 dark:border-slate-700/60 pb-3">
+        <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-2xl p-5 space-y-5 animate-fade-in">
+          {/* Title & Live Controls Row */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/80 dark:border-slate-700/60 pb-4">
             <div className="flex items-center gap-3">
               <div
                 style={{ backgroundColor: activeMilestone.color }}
-                className="p-2.5 rounded-xl text-white shadow-xs"
+                className="p-3 rounded-2xl text-white shadow-xs"
               >
-                <activeMilestone.icon className="w-5 h-5" />
+                <activeMilestone.icon className="w-6 h-6" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
                   <h4 className="text-base font-extrabold text-slate-900 dark:text-slate-100">
                     {activeMilestone.label}
                   </h4>
-                  <span className="px-2 py-0.5 text-[10px] font-extrabold rounded-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">
+                  <span className="px-2.5 py-0.5 text-[10px] font-extrabold rounded-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">
                     {activeMilestone.badge}
                   </span>
+                  {activeMilestone.owner && (
+                    <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 capitalize">
+                      {activeMilestone.owner}
+                    </span>
+                  )}
                 </div>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                   {activeMilestone.description}
@@ -528,48 +730,64 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
               </div>
             </div>
 
-            {/* Live Age Adjuster Buttons */}
-            {activeMilestone.isEditable ? (
-              <div className="flex items-center gap-2 bg-white dark:bg-slate-900 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xs self-start sm:self-auto">
-                <span className="text-xs font-bold text-slate-500 dark:text-slate-400 px-2">
-                  Target Age:
-                </span>
+            {/* Live Age Adjuster & Delete Option */}
+            <div className="flex items-center gap-2 self-start sm:self-auto">
+              {activeMilestone.key.startsWith('event_') && (
                 <button
                   type="button"
-                  onClick={() => handleUpdateAge(activeMilestone, activeMilestone.age - 1)}
-                  disabled={activeMilestone.age <= (activeMilestone.minAge ?? currentAge)}
-                  className="p-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-30 cursor-pointer"
-                  title="Decrease Age by 1 Year"
+                  onClick={() => handleDeleteEvent(activeMilestone)}
+                  className="p-2 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/60 transition-colors cursor-pointer"
+                  title="Delete Custom Life Event"
                 >
-                  <ChevronLeft className="w-4 h-4" />
+                  <Trash2 className="w-4 h-4" />
                 </button>
-                <span className="text-sm font-black text-indigo-600 dark:text-indigo-400 px-2 min-w-8 text-center">
-                  {activeMilestone.age}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => handleUpdateAge(activeMilestone, activeMilestone.age + 1)}
-                  disabled={activeMilestone.age >= (activeMilestone.maxAge ?? 100)}
-                  className="p-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-30 cursor-pointer"
-                  title="Increase Age by 1 Year"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            ) : (
-              <div className="px-3 py-1 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300 self-start sm:self-auto">
-                Fixed Rule (Age {activeMilestone.age})
-              </div>
-            )}
+              )}
+
+              {activeMilestone.isEditable ? (
+                <div className="flex items-center gap-2 bg-white dark:bg-slate-900 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xs">
+                  <span className="text-xs font-bold text-slate-500 dark:text-slate-400 px-2">
+                    Target Age:
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleUpdateAge(activeMilestone, activeMilestone.age - 1)}
+                    disabled={activeMilestone.age <= (activeMilestone.minAge ?? currentAge)}
+                    className="p-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-30 cursor-pointer"
+                    title="Decrease Age by 1 Year"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <span className="text-sm font-black text-indigo-600 dark:text-indigo-400 px-2 min-w-8 text-center">
+                    {activeMilestone.age}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleUpdateAge(activeMilestone, activeMilestone.age + 1)}
+                    disabled={activeMilestone.age >= (activeMilestone.maxAge ?? 100)}
+                    className="p-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-30 cursor-pointer"
+                    title="Increase Age by 1 Year"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <div className="px-3 py-1.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300">
+                  Fixed Statutory Rule (Age {activeMilestone.age})
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Financial Metrics at this Milestone */}
+          {/* Milestone Financial Projection Impact Cards */}
           {milestoneProjection ? (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
-              <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200/80 dark:border-slate-700/60">
-                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
-                  Total Pot Value
-                </span>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200/80 dark:border-slate-700/60 shadow-2xs">
+                <div className="flex items-center justify-between text-slate-400 dark:text-slate-500 mb-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider">
+                    Total Pot Assets
+                  </span>
+                  <Wallet className="w-3.5 h-3.5 text-indigo-500" />
+                </div>
                 <span className="text-base font-black text-slate-900 dark:text-slate-100">
                   £{Math.round(milestoneProjection.totalPot || 0).toLocaleString()}
                 </span>
@@ -578,10 +796,13 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
                 </span>
               </div>
 
-              <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200/80 dark:border-slate-700/60">
-                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
-                  Net Living Cash
-                </span>
+              <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200/80 dark:border-slate-700/60 shadow-2xs">
+                <div className="flex items-center justify-between text-slate-400 dark:text-slate-500 mb-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider">
+                    Net Living Income
+                  </span>
+                  <Coins className="w-3.5 h-3.5 text-emerald-500" />
+                </div>
                 <span className="text-base font-black text-emerald-600 dark:text-emerald-400">
                   £{Math.round(milestoneProjection.netRetirementIncome || milestoneProjection.netIncomeReceived || 0).toLocaleString()}/yr
                 </span>
@@ -590,10 +811,13 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
                 </span>
               </div>
 
-              <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200/80 dark:border-slate-700/60">
-                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
-                  Guaranteed Floor
-                </span>
+              <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200/80 dark:border-slate-700/60 shadow-2xs">
+                <div className="flex items-center justify-between text-slate-400 dark:text-slate-500 mb-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider">
+                    Guaranteed Floor
+                  </span>
+                  <ShieldCheck className="w-3.5 h-3.5 text-indigo-500" />
+                </div>
                 <span className="text-base font-black text-indigo-600 dark:text-indigo-400">
                   £{Math.round(
                     (milestoneProjection.statePensionReceived || 0) +
@@ -606,15 +830,18 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
                 </span>
               </div>
 
-              <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200/80 dark:border-slate-700/60">
-                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
-                  Annual Tax Liability
-                </span>
+              <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200/80 dark:border-slate-700/60 shadow-2xs">
+                <div className="flex items-center justify-between text-slate-400 dark:text-slate-500 mb-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider">
+                    Annual UK Tax
+                  </span>
+                  <AlertCircle className="w-3.5 h-3.5 text-rose-500" />
+                </div>
                 <span className="text-base font-black text-rose-500 dark:text-rose-400">
                   £{Math.round(milestoneProjection.totalTaxPaid || 0).toLocaleString()}
                 </span>
                 <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-0.5">
-                  Income Tax &amp; NI
+                  HMRC Income Tax &amp; NI
                 </span>
               </div>
             </div>
@@ -623,6 +850,198 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
               Projection data for Age {activeMilestone.age} is outside the active simulation range.
             </div>
           )}
+        </div>
+      )}
+
+      {/* Grid of All Milestones for Quick Scanning */}
+      <div className="space-y-3 pt-2">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            Roadmap Milestones List
+          </span>
+          <span className="text-xs text-slate-400 dark:text-slate-500">
+            Click any milestone card to inspect
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {filteredMilestones.map((m) => {
+            const isSelected = m.id === activeMilestone.id;
+            const IconComponent = m.icon;
+
+            return (
+              <div
+                key={m.id}
+                onClick={() => setSelectedMilestoneId(m.id)}
+                className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                  isSelected
+                    ? 'bg-indigo-50/70 dark:bg-indigo-950/40 border-indigo-300 dark:border-indigo-700 ring-2 ring-indigo-500 shadow-xs'
+                    : 'bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+                }`}
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div
+                    style={{ backgroundColor: m.color }}
+                    className="p-2 rounded-xl text-white shrink-0"
+                  >
+                    <IconComponent className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="text-xs font-bold text-slate-900 dark:text-slate-100 block truncate">
+                      {m.label}
+                    </span>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 block truncate">
+                      {m.badge} • Year {m.year}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="text-right shrink-0">
+                  <span className="text-sm font-black text-indigo-600 dark:text-indigo-400 block">
+                    Age {m.age}
+                  </span>
+                  {m.amount && (
+                    <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 block">
+                      £{Math.round(m.amount).toLocaleString()}
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Add New Milestone Modal */}
+      {isAddModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-fade-in">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-7 max-w-md w-full shadow-2xl space-y-5">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 rounded-xl">
+                  <Plus className="w-5 h-5" />
+                </div>
+                <h4 className="text-base font-extrabold text-slate-900 dark:text-slate-100">
+                  Add Life Milestone Event
+                </h4>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsAddModalOpen(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                  Event Name
+                </label>
+                <input
+                  type="text"
+                  value={newEventName}
+                  onChange={(e) => setNewEventName(e.target.value)}
+                  placeholder="e.g. World Tour Cruise, Wedding, Inheritance"
+                  className="w-full px-3 py-2 text-xs font-medium rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                    Target Age
+                  </label>
+                  <input
+                    type="number"
+                    min={currentAge}
+                    max={maxHorizon}
+                    value={newEventAge}
+                    onChange={(e) => setNewEventAge(Number(e.target.value))}
+                    className="w-full px-3 py-2 text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                    Event Type
+                  </label>
+                  <select
+                    value={newEventType}
+                    onChange={(e) => setNewEventType(e.target.value as LifeEventType)}
+                    className="w-full px-3 py-2 text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                  >
+                    <option value="expense">Expense (- Outflow)</option>
+                    <option value="income">Income (+ Inflow)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                  Amount (£ in today's money)
+                </label>
+                <input
+                  type="number"
+                  step={1000}
+                  value={newEventAmount}
+                  onChange={(e) => setNewEventAmount(Number(e.target.value))}
+                  className="w-full px-3 py-2 text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                />
+              </div>
+
+              {isCouple && (
+                <div>
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                    Owner
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setNewEventOwner('primary')}
+                      className={`py-1.5 text-xs font-bold rounded-xl border cursor-pointer ${
+                        newEventOwner === 'primary'
+                          ? 'bg-indigo-600 text-white border-indigo-600'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
+                      }`}
+                    >
+                      {profile.name || 'Primary'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNewEventOwner('partner')}
+                      className={`py-1.5 text-xs font-bold rounded-xl border cursor-pointer ${
+                        newEventOwner === 'partner'
+                          ? 'bg-indigo-600 text-white border-indigo-600'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
+                      }`}
+                    >
+                      {profile.partnerName || 'Partner'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsAddModalOpen(false)}
+                className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleCreateNewEvent}
+                disabled={!newEventName.trim()}
+                className="flex-1 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
+              >
+                Save Milestone
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

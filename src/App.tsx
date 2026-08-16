@@ -1091,14 +1091,6 @@ function App() {
             {/* Tab 4: Projection */}
             {activeTab === 'projections' && (
               <div className="space-y-6">
-                <div id="card-milestone-timeline" className="scroll-mt-24 transition-all duration-300">
-                  <MilestoneTimelineCard
-                    profile={profile}
-                    pots={pots}
-                    projections={projections}
-                    onChange={handleProfileChange}
-                  />
-                </div>
                 <div id="card-proj-chart" className="scroll-mt-24 transition-all duration-300">
                   <ProjectionChart
                     projections={projections}
@@ -1118,6 +1110,14 @@ function App() {
                         pots={pots}
                         taxResult={taxResult}
                         appMode={appMode}
+                      />
+                    </div>
+                    <div id="card-milestone-timeline" className="scroll-mt-24 transition-all duration-300">
+                      <MilestoneTimelineCard
+                        profile={profile}
+                        pots={pots}
+                        projections={projections}
+                        onChange={handleProfileChange}
                       />
                     </div>
                     <div id="card-proj-macro" className="scroll-mt-24 transition-all duration-300">
