@@ -679,7 +679,7 @@ export function SidebarNav({
                 }`}
               >
                 <SlidersHorizontal className="w-3 h-3" />
-                <span>Assumptions</span>
+                <span>Advanced</span>
               </button>
             </div>
           )}
