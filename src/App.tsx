@@ -23,6 +23,7 @@ import { TaxOptimizerCard } from './components/TaxOptimizerCard';
 import { MonthlySavingsRateCard } from './components/MonthlySavingsRateCard';
 import { SpendingPhasesCard } from './components/SpendingPhasesCard';
 import { ProjectionChart } from './components/ProjectionChart';
+import { MilestoneTimelineCard } from './components/MilestoneTimelineCard';
 import { AnnualBreakdownTable } from './components/AnnualBreakdownTable';
 import { MonteCarloCard } from './components/MonteCarloCard';
 import { DrawdownPlanner } from './components/DrawdownPlanner';
@@ -1090,6 +1091,14 @@ function App() {
             {/* Tab 4: Projection */}
             {activeTab === 'projections' && (
               <div className="space-y-6">
+                <div id="card-milestone-timeline" className="scroll-mt-24 transition-all duration-300">
+                  <MilestoneTimelineCard
+                    profile={profile}
+                    pots={pots}
+                    projections={projections}
+                    onChange={handleProfileChange}
+                  />
+                </div>
                 <div id="card-proj-chart" className="scroll-mt-24 transition-all duration-300">
                   <ProjectionChart
                     projections={projections}

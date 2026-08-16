@@ -121,6 +121,7 @@ export const NAV_STRUCTURE: TabGroup[] = [
     icon: TrendingUp,
     description: 'Long-term income, capital forecasts, cashflow Sankey waterfall, and year-by-year tables',
     cards: [
+      { id: 'card-milestone-timeline', label: 'Visual Milestone Timeline' },
       { id: 'card-proj-chart', label: 'Capital & Income Growth Chart' },
       { id: 'card-cashflow-sankey', label: 'Cash Flow Waterfall & Sankey Diagram' },
       { id: 'card-proj-macro', label: 'Economic & Growth Assumptions' },
