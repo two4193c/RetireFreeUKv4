@@ -623,7 +623,8 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       }
 
       const totalSankeyPages = sankeyMilestones.length;
-      const TOTAL_PAGES = 12 + totalAccumPages + totalDecumPages + totalHistoricPages + totalMortgagePages + totalSankeyPages;
+      const totalTimelinePages = 1;
+      const TOTAL_PAGES = 12 + totalAccumPages + totalDecumPages + totalHistoricPages + totalMortgagePages + totalSankeyPages + totalTimelinePages;
 
       // Helper function for header bar
       const renderPageHeader = (title: string, pageNum: number) => {
@@ -949,6 +950,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
         { section: '19. Appendix 3: Historic Market Performance Simulation', page: 13 + totalAccumPages + totalDecumPages, desc: '75-sequence market stress test, sequence distribution bar chart & 75 start year matrix.' },
         { section: '20. Appendix 4: Mortgage Payoff Projection & Debt Amortization', page: 15 + totalAccumPages + totalDecumPages, desc: 'Mortgage balance amortization chart, overpayment savings & milestone debt balances.' },
         { section: '21. Appendix 5: Cash Flow Sankey Waterfall Diagrams', page: 16 + totalAccumPages + totalDecumPages, desc: 'Detailed Sankey cash flow models across accumulation, retirement, pension access & state pension ages.' },
+        { section: '22. Appendix 6: Visual Milestone Timeline & Lifecycle Roadmap', page: 16 + totalAccumPages + totalDecumPages + totalSankeyPages, desc: 'Chronological life roadmap, key financial milestones (Retirement, State Pension, NMPA, Downsizing), and phase analysis.' },
       ];
 
       tocItems.forEach((item, idx) => {
@@ -5395,6 +5397,433 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
 
         doc.text(obsText, 18, skY + 9);
       });
+
+      // =========================================================================
+      // APPENDIX 6: VISUAL MILESTONE TIMELINE & LIFECYCLE ROADMAP
+      // =========================================================================
+        doc.addPage();
+        curPageNum++;
+        renderPageHeader('Appendix 6 — Visual Milestone Timeline & Roadmap', curPageNum);
+
+        let tmY = 24;
+
+        // Header Title Box
+        doc.setFillColor(248, 250, 252);
+        doc.roundedRect(14, tmY, 182, 19, 3, 3, 'F');
+        doc.setDrawColor(203, 213, 225);
+        doc.roundedRect(14, tmY, 182, 19, 3, 3, 'D');
+
+        doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10.5);
+        doc.text('Appendix 6 — Visual Milestone Timeline & Lifecycle Roadmap', 18, tmY + 7);
+
+        // Phase badge
+        doc.setFillColor(238, 242, 255);
+        doc.roundedRect(140, tmY + 3.5, 52, 5.5, 2, 2, 'F');
+        doc.setDrawColor(199, 210, 254);
+        doc.roundedRect(140, tmY + 3.5, 52, 5.5, 2, 2, 'D');
+        doc.setTextColor(79, 70, 229);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(6.5);
+        doc.text('Strategic Lifecycle Roadmap', 142, tmY + 7.2);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7.5);
+        doc.setTextColor(100, 116, 139);
+        doc.text('Comprehensive chronological progression across accumulation, decumulation phases, and key financial gates.', 18, tmY + 14);
+
+        tmY += 22;
+
+        // Derive milestones for PDF
+        const pdfMilestones: {
+          label: string;
+          shortLabel: string;
+          age: number;
+          year: number;
+          color: [number, number, number];
+          category: string;
+          impact: string;
+          owner: string;
+          level: number;
+        }[] = [];
+
+        const curAge = profile.currentAge || 40;
+        const targetRetireAgeVal = profile.targetRetirementAge || 60;
+        const maxLifeAge = profile.lifeExpectancyAge || 90;
+        const minAgeSpan = Math.min(curAge, 35);
+        const totalSpanYears = Math.max(1, maxLifeAge - minAgeSpan);
+        const baseYear = new Date().getFullYear();
+
+        // 1. Current Age
+        pdfMilestones.push({
+          label: 'Current Starting Age',
+          shortLabel: 'Current Age',
+          age: curAge,
+          year: baseYear,
+          color: [2, 132, 199],
+          category: 'Core',
+          impact: 'Baseline savings & asset accumulation start',
+          owner: profile.name || 'Primary',
+          level: 0,
+        });
+
+        // 2. Mortgage Payoff
+        if (profile.mortgageDebt?.enabled && profile.mortgageDebt.remainingTermYears) {
+          const mPayoffAge = curAge + profile.mortgageDebt.remainingTermYears;
+          if (mPayoffAge <= maxLifeAge) {
+            pdfMilestones.push({
+              label: 'Mortgage Cleared',
+              shortLabel: 'Debt Free',
+              age: mPayoffAge,
+              year: baseYear + profile.mortgageDebt.remainingTermYears,
+              color: [14, 165, 233],
+              category: 'Property',
+              impact: `+£${Math.round(profile.mortgageDebt.monthlyPayment * 12).toLocaleString()}/yr freed cash flow`,
+              owner: 'Household',
+              level: 1,
+            });
+          }
+        }
+
+        // 3. Primary Pension Access (NMPA)
+        const pNmpa = getPensionAccessAge(profile);
+        pdfMilestones.push({
+          label: `${profile.name || 'Primary'} Pension Access (NMPA)`,
+          shortLabel: 'Pension Access',
+          age: pNmpa,
+          year: baseYear + (pNmpa - curAge),
+          color: [16, 185, 129],
+          category: 'Pension',
+          impact: '25% Tax-Free Cash (PCLS) & flexible drawdown unlocked',
+          owner: profile.name || 'Primary',
+          level: 0,
+        });
+
+        // 4. Partner Pension Access (if couple)
+        if (isCouple) {
+          const partNmpa = getPartnerPensionAccessAge(profile);
+          const partOff = (profile.partnerCurrentAge || curAge) - curAge;
+          const pAgeAtPartNmpa = partNmpa - partOff;
+          pdfMilestones.push({
+            label: `${profile.partnerName || 'Partner'} Pension Access`,
+            shortLabel: 'Partner NMPA',
+            age: pAgeAtPartNmpa,
+            year: baseYear + (pAgeAtPartNmpa - curAge),
+            color: [52, 211, 153],
+            category: 'Pension',
+            impact: 'Partner DC pension pots & PCLS unlocked',
+            owner: profile.partnerName || 'Partner',
+            level: 1,
+          });
+        }
+
+        // 5. Target Retirement Primary
+        pdfMilestones.push({
+          label: `${profile.name || 'Primary'} Target Retirement`,
+          shortLabel: 'Retirement',
+          age: targetRetireAgeVal,
+          year: baseYear + (targetRetireAgeVal - curAge),
+          color: [139, 92, 246],
+          category: 'Core',
+          impact: 'Active employment ceases; decumulation drawdown begins',
+          owner: profile.name || 'Primary',
+          level: 2,
+        });
+
+        // 6. Target Retirement Partner
+        if (isCouple && profile.partnerTargetRetirementAge) {
+          const partOff = (profile.partnerCurrentAge || curAge) - curAge;
+          const pAgeAtPartRet = profile.partnerTargetRetirementAge - partOff;
+          if (pAgeAtPartRet !== targetRetireAgeVal) {
+            pdfMilestones.push({
+              label: `${profile.partnerName || 'Partner'} Target Retirement`,
+              shortLabel: 'Partner Retire',
+              age: pAgeAtPartRet,
+              year: baseYear + (pAgeAtPartRet - curAge),
+              color: [168, 85, 247],
+              category: 'Core',
+              impact: 'Partner employment ceases; combined decumulation',
+              owner: profile.partnerName || 'Partner',
+              level: 3,
+            });
+          }
+        }
+
+        // 7. Property Right-Sizing
+        if (profile.propertyDownsizePlan?.enabled) {
+          const dsAge = profile.propertyDownsizePlan.downsizeAge || 68;
+          pdfMilestones.push({
+            label: 'Property Right-Sizing',
+            shortLabel: 'Downsize Home',
+            age: dsAge,
+            year: baseYear + (dsAge - curAge),
+            color: [245, 158, 11],
+            category: 'Property',
+            impact: 'Net equity release injected into liquid retirement pots',
+            owner: 'Household',
+            level: 1,
+          });
+        }
+
+        // 8. Primary State Pension
+        const pSpa = profile.statePensionAge || 67;
+        pdfMilestones.push({
+          label: `${profile.name || 'Primary'} State Pension`,
+          shortLabel: 'State Pension',
+          age: pSpa,
+          year: baseYear + (pSpa - curAge),
+          color: [99, 102, 241],
+          category: 'Pension',
+          impact: 'DWP State Pension Triple-Lock floor commences',
+          owner: profile.name || 'Primary',
+          level: 2,
+        });
+
+        // 9. Partner State Pension
+        if (isCouple) {
+          const partSpa = profile.partnerStatePensionAge || 67;
+          const partOff = (profile.partnerCurrentAge || curAge) - curAge;
+          const pAgeAtPartSpa = partSpa - partOff;
+          if (pAgeAtPartSpa !== pSpa) {
+            pdfMilestones.push({
+              label: `${profile.partnerName || 'Partner'} State Pension`,
+              shortLabel: 'Partner State Pen.',
+              age: pAgeAtPartSpa,
+              year: baseYear + (pAgeAtPartSpa - curAge),
+              color: [129, 140, 248],
+              category: 'Pension',
+              impact: 'Partner DWP State Pension floor commences',
+              owner: profile.partnerName || 'Partner',
+              level: 3,
+            });
+          }
+        }
+
+        // 10. Custom Decumulation Events
+        (profile.decumulationLifeEvents || []).filter(e => e.enabled).forEach(ev => {
+          pdfMilestones.push({
+            label: ev.name,
+            shortLabel: ev.name.length > 15 ? ev.name.substring(0, 13) + '..' : ev.name,
+            age: ev.age,
+            year: baseYear + (ev.age - curAge),
+            color: ev.type === 'income' ? [16, 185, 129] : [236, 72, 153],
+            category: 'Life Event',
+            impact: `${ev.type === 'income' ? '+' : '-'}£${Math.round(ev.amount).toLocaleString()} (${ev.targetPot || 'General'} pot)`,
+            owner: ev.owner === 'partner' ? (profile.partnerName || 'Partner') : (profile.name || 'Primary'),
+            level: 1,
+          });
+        });
+
+        // 11. Life Expectancy Horizon
+        pdfMilestones.push({
+          label: 'Planning Horizon',
+          shortLabel: 'Horizon',
+          age: maxLifeAge,
+          year: baseYear + (maxLifeAge - curAge),
+          color: [239, 68, 68],
+          category: 'Horizon',
+          impact: 'Terminal legacy & estate wealth evaluated',
+          owner: 'Household',
+          level: 0,
+        });
+
+        // Sort milestones
+        pdfMilestones.sort((a, b) => a.age - b.age);
+
+        // Assign non-colliding vertical level heights (0..4)
+        const lastPdfAgeByLvl = [-100, -100, -100, -100, -100];
+        pdfMilestones.forEach(m => {
+          let bestLvl = 0;
+          for (let l = 0; l < 5; l++) {
+            if (m.age - lastPdfAgeByLvl[l] >= 6) {
+              bestLvl = l;
+              break;
+            }
+          }
+          lastPdfAgeByLvl[bestLvl] = m.age;
+          m.level = bestLvl;
+        });
+
+        // Draw Visual Timeline Box
+        const tBoxX = 14;
+        const tBoxY = tmY;
+        const tBoxW = 182;
+        const tBoxH = 68;
+
+        doc.setFillColor(248, 250, 252);
+        doc.roundedRect(tBoxX, tBoxY, tBoxW, tBoxH, 3, 3, 'F');
+        doc.setDrawColor(226, 232, 240);
+        doc.roundedRect(tBoxX, tBoxY, tBoxW, tBoxH, 3, 3, 'D');
+
+        // Timeline axis line
+        const axisLineY = tBoxY + 48;
+        const axisStart = tBoxX + 10;
+        const axisEnd = tBoxX + tBoxW - 10;
+        const axisLen = axisEnd - axisStart;
+
+        doc.setDrawColor(99, 102, 241);
+        doc.setLineWidth(1.2);
+        doc.line(axisStart, axisLineY, axisEnd, axisLineY);
+        doc.setLineWidth(0.2);
+
+        // Decade reference gridlines
+        for (let a = Math.ceil(minAgeSpan / 10) * 10; a <= maxLifeAge; a += 10) {
+          const tX = axisStart + ((a - minAgeSpan) / totalSpanYears) * axisLen;
+          doc.setDrawColor(203, 213, 225);
+          doc.line(tX, tBoxY + 6, tX, axisLineY + 6);
+          doc.setFontSize(5.5);
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(148, 163, 184);
+          doc.text(`Age ${a}`, tX, axisLineY + 9, { align: 'center' });
+        }
+
+        // Render each milestone pin
+        pdfMilestones.forEach(m => {
+          const mX = axisStart + ((m.age - minAgeSpan) / totalSpanYears) * axisLen;
+          const stemH = 7 + m.level * 6.5;
+          const cardY = axisLineY - stemH - 6.5;
+
+          // Stalk
+          doc.setDrawColor(m.color[0], m.color[1], m.color[2]);
+          doc.setLineWidth(0.5);
+          doc.line(mX, axisLineY, mX, cardY + 5.5);
+          doc.setLineWidth(0.2);
+
+          // Card Tag
+          doc.setFillColor(255, 255, 255);
+          doc.roundedRect(mX - 11, cardY, 22, 6, 1, 1, 'F');
+          doc.setDrawColor(m.color[0], m.color[1], m.color[2]);
+          doc.roundedRect(mX - 11, cardY, 22, 6, 1, 1, 'D');
+
+          // Colored dot
+          doc.setFillColor(m.color[0], m.color[1], m.color[2]);
+          doc.circle(mX - 8.5, cardY + 3, 1, 'F');
+
+          // Tag Text
+          doc.setFontSize(4.8);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(30, 41, 59);
+          doc.text(m.shortLabel.length > 10 ? m.shortLabel.substring(0, 9) + '.' : m.shortLabel, mX - 6.5, cardY + 2.8);
+
+          doc.setFontSize(4.2);
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(100, 116, 139);
+          doc.text(`Age ${m.age}`, mX - 6.5, cardY + 5);
+
+          // Node circle on axis
+          doc.setFillColor(m.color[0], m.color[1], m.color[2]);
+          doc.circle(mX, axisLineY, 2, 'F');
+          doc.setFillColor(255, 255, 255);
+          doc.circle(mX, axisLineY, 0.8, 'F');
+        });
+
+        tmY += tBoxH + 4;
+
+        // 4 Retirement Phase Cards
+        const phaseBoxW = 43.5;
+        const phaseBoxH = 17;
+        const p2End = Math.min(maxLifeAge, Math.max(targetRetireAgeVal, 72));
+        const p3End = Math.min(maxLifeAge, Math.max(p2End, 82));
+
+        const timelinePdfPhases = [
+          { title: 'Accumulation Phase', span: `Ages ${minAgeSpan}–${targetRetireAgeVal}`, desc: 'Active savings, pension tax relief & compound growth', color: [2, 132, 199] },
+          { title: 'Go-Go Active Phase', span: `Ages ${targetRetireAgeVal}–${p2End}`, desc: 'Peak travel, hobbies, bucket list & higher spending', color: [16, 185, 129] },
+          { title: 'Slow-Go Leisure', span: `Ages ${p2End}–${p3End}`, desc: 'Moderate local living, reduced travel & lower spend', color: [245, 158, 11] },
+          { title: 'No-Go Elder Care', span: `Ages ${p3End}–${maxLifeAge}`, desc: 'Health, comfort, estate preservation & IHT planning', color: [168, 85, 247] },
+        ];
+
+        timelinePdfPhases.forEach((ph, pIdx) => {
+          const phX = 14 + pIdx * (phaseBoxW + 2.5);
+          doc.setFillColor(248, 250, 252);
+          doc.roundedRect(phX, tmY, phaseBoxW, phaseBoxH, 2, 2, 'F');
+          doc.setDrawColor(ph.color[0], ph.color[1], ph.color[2]);
+          doc.roundedRect(phX, tmY, phaseBoxW, phaseBoxH, 2, 2, 'D');
+
+          doc.setFontSize(6.5);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(ph.color[0], ph.color[1], ph.color[2]);
+          doc.text(ph.title, phX + 2.5, tmY + 4.5);
+
+          doc.setFontSize(5.5);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(30, 41, 59);
+          doc.text(ph.span, phX + 2.5, tmY + 8.5);
+
+          doc.setFontSize(4.8);
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(100, 116, 139);
+          doc.text(doc.splitTextToSize(ph.desc, phaseBoxW - 5), phX + 2.5, tmY + 12);
+        });
+
+        tmY += phaseBoxH + 5;
+
+        // Key Milestones Execution Schedule Table
+        doc.setFillColor(30, 41, 59);
+        doc.roundedRect(14, tmY, 182, 6, 1, 1, 'F');
+
+        doc.setFontSize(6);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(255, 255, 255);
+        doc.text('Milestone Event & Description', 18, tmY + 4);
+        doc.text('Category', 68, tmY + 4);
+        doc.text('Target Age (Year)', 92, tmY + 4);
+        doc.text('Owner', 122, tmY + 4);
+        doc.text('Financial & Cash Flow Impact', 145, tmY + 4);
+
+        tmY += 6.5;
+
+        pdfMilestones.forEach((m, mIdx) => {
+          if (mIdx % 2 === 1) {
+            doc.setFillColor(248, 250, 252);
+            doc.rect(14, tmY, 182, 5.5, 'F');
+          }
+
+          // Bullet dot
+          doc.setFillColor(m.color[0], m.color[1], m.color[2]);
+          doc.circle(16.5, tmY + 2.8, 1, 'F');
+
+          doc.setFontSize(6);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(30, 41, 59);
+          doc.text(m.label.length > 28 ? m.label.substring(0, 26) + '..' : m.label, 19, tmY + 3.8);
+
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(5.5);
+          doc.setTextColor(71, 85, 105);
+          doc.text(m.category, 68, tmY + 3.8);
+
+          doc.setFont('helvetica', 'bold');
+          doc.text(`Age ${m.age} (${m.year})`, 92, tmY + 3.8);
+
+          doc.setFont('helvetica', 'normal');
+          doc.text(m.owner, 122, tmY + 3.8);
+
+          doc.setFontSize(5);
+          doc.setTextColor(15, 118, 110);
+          doc.text(m.impact.length > 34 ? m.impact.substring(0, 32) + '..' : m.impact, 145, tmY + 3.8);
+
+          tmY += 5.5;
+        });
+
+        // Strategic Lifecycle Observations Box
+        if (tmY < 265) {
+          const obsH = Math.min(278 - tmY, 14);
+          doc.setFillColor(248, 250, 252);
+          doc.roundedRect(14, tmY + 2, 182, obsH, 2, 2, 'F');
+          doc.setDrawColor(226, 232, 240);
+          doc.roundedRect(14, tmY + 2, 182, obsH, 2, 2, 'D');
+
+          doc.setFontSize(6.5);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+          doc.text('Strategic Lifecycle Planning Observations:', 18, tmY + 6.5);
+
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(5.5);
+          doc.setTextColor(100, 116, 139);
+          doc.text('• Plan milestones reflect statutory UK Normal Minimum Pension Age gates, Triple-Lock State Pension commencement, and personalized decumulation transitions.', 18, tmY + 11);
+        }
 
       // Dynamic Two-Pass Page Numbering & Footer Pass across all actual pages
       const finalTotalPages = doc.getNumberOfPages();
