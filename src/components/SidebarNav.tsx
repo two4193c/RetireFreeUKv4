@@ -210,6 +210,7 @@ export const NAV_STRUCTURE: TabGroup[] = [
     cards: [
       // 1. Getting Started & Foundations
       { id: 'card-doc-userguide', label: 'Quick Start Guide', category: '1. Foundations' },
+      { id: 'card-doc-featuresguide', label: 'App Features & Capabilities', category: '1. Foundations' },
       { id: 'card-doc-cashbufferguide', label: 'Emergency Fund & Cash Buffer Guide', category: '1. Foundations' },
       { id: 'card-doc-statepensionniguide', label: 'State Pension & Voluntary NI Guide', category: '1. Foundations' },
       { id: 'card-doc-livingstandards', label: 'Retirement Living Standards', category: '1. Foundations' },

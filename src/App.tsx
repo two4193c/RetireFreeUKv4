@@ -43,6 +43,7 @@ import { DuplicateVariantConflictModal, ConflictPlanInfo } from './components/Du
 import { AiTaxAdvisorModal } from './components/AiTaxAdvisorModal';
 import { TaxGuideCard } from './components/TaxGuideCard';
 import { UserGuideCard } from './components/UserGuideCard';
+import { FeaturesGuideCard } from './components/FeaturesGuideCard';
 import { RetirementLivingStandardsCard } from './components/RetirementLivingStandardsCard';
 import { HealthyLifeExpectancyCard } from './components/HealthyLifeExpectancyCard';
 import { MortgageGuideCard } from './components/MortgageGuideCard';
@@ -240,7 +241,7 @@ function App() {
   }, [scenarios, activeScenarioId]);
 
   const [activeTab, setActiveTab] = useState<DashboardTab>('inputs');
-  const [docSubTab, setDocSubTab] = useState<'user_guide' | 'cash_buffer_guide' | 'lifestyling_guide' | 'state_pension_ni_guide' | 'ufpls_small_pots_guide' | 'phased_retirement_guide' | 'tapered_allowance_guide' | 'expat_qrops_guide' | 'living_standards' | 'healthy_life' | 'tax_rules' | 'mortgage_guide' | 'risk_guide' | 'iht_guide' | 'floor_guide' | 'couple_guide' | 'benchmark_guide' | 'sipp_guide' | 'wrapper_guide' | 'self_employed_guide' | 'db_guide' | 'dynamic_guide' | 'care_guide' | 'fire_bridge_guide' | 'cgt_harvesting_guide' | 'recycling_guide' | 'four_percent_guide' | 'spending_smile_guide' | 'saye_baye_guide'>('user_guide');
+  const [docSubTab, setDocSubTab] = useState<'user_guide' | 'features_guide' | 'cash_buffer_guide' | 'lifestyling_guide' | 'state_pension_ni_guide' | 'ufpls_small_pots_guide' | 'phased_retirement_guide' | 'tapered_allowance_guide' | 'expat_qrops_guide' | 'living_standards' | 'healthy_life' | 'tax_rules' | 'mortgage_guide' | 'risk_guide' | 'iht_guide' | 'floor_guide' | 'couple_guide' | 'benchmark_guide' | 'sipp_guide' | 'wrapper_guide' | 'self_employed_guide' | 'db_guide' | 'dynamic_guide' | 'care_guide' | 'fire_bridge_guide' | 'cgt_harvesting_guide' | 'recycling_guide' | 'four_percent_guide' | 'spending_smile_guide' | 'saye_baye_guide'>('user_guide');
   const [appMode, setAppMode] = useState<AppMode>(() => {
     try {
       const saved = localStorage.getItem('retireready_mode_v1');
@@ -741,6 +742,8 @@ function App() {
           setActiveCardId(cardId);
           if (cardId === 'card-doc-userguide' || cardId === 'card-other-userguide') {
             setDocSubTab('user_guide');
+          } else if (cardId === 'card-doc-featuresguide') {
+            setDocSubTab('features_guide');
           } else if (cardId === 'card-doc-cashbufferguide') {
             setDocSubTab('cash_buffer_guide');
           } else if (cardId === 'card-doc-lifestylingguide') {
@@ -1284,6 +1287,11 @@ function App() {
                 {/* Page 1: User Guide Page */}
                 {docSubTab === 'user_guide' && (
                   <UserGuideCard appMode={appMode} onToggleAppMode={setAppMode} />
+                )}
+
+                {/* Page 1a: Features Guide */}
+                {docSubTab === 'features_guide' && (
+                  <FeaturesGuideCard />
                 )}
 
                 {/* Page 1b: Emergency Fund & Cash Buffer Strategy Guide */}
