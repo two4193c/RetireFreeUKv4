@@ -302,6 +302,7 @@ function parseAnnuityTypeConfig(type?: string) {
 
   for (let age = safeCurrentAge; age <= effectiveMaxAge; age++) {
     const yearOffset = age - profile.currentAge;
+    const inflationFactor = Math.pow(1 + inflation, yearOffset);
     const calendarYear = new Date().getFullYear() + yearOffset;
     const isRetired = age >= profile.targetRetirementAge;
     const isPhasedPrimary = profile.crystallisationMode === 'phased_tranches';
@@ -574,9 +575,6 @@ function parseAnnuityTypeConfig(type?: string) {
       cashGiaPot = giaPot + cashSavingsPot;
       partnerPclsTaken = true;
     }
-
-    // Inflation factor for purchasing power tracking
-    const inflationFactor = Math.pow(1 + inflation, yearOffset);
 
     // Defined Benefit (DB) pensions processing
     const activeDbPensions = (profile.dbPensions || []).filter((p) => p.enabled);
