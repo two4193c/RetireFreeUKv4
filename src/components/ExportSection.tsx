@@ -939,6 +939,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
         { section: '8. Investment Growth & Macroeconomic Assumptions', page: 4, desc: 'Pre and post-retirement returns, CPI inflation, and indexing assumptions.' },
         { section: '9. Spending Phase Profile & Target Income Amounts', page: 5, desc: 'Age-based spending requirements (Go-Go, Slow-Go, No-Go) and monthly targets.' },
         { section: '10. Retirement Income Product Structure & Drawdown Strategy', page: 5, desc: 'Flexi-access drawdown, lifetime annuities, PCLS tax-free cash & destination strategy.' },
+        { section: '10a. Effective Withdrawal Rate Trajectory Chart (SWR %)', page: 5, desc: 'Year-by-year effective SWR % overlay, Bengen 3.5% UK benchmark, 5% danger threshold & peak rate analysis.' },
         { section: '11. Key Milestone Schedule & Execution Details', page: 5, desc: 'Milestone timeline table, State Pension execution details, and annuity purchase rates.' },
         { section: '12. Visual Diagram Models — Portfolio Allocation & Trajectories', page: 6, desc: 'Charts of initial asset distribution and multi-year portfolio wealth trajectory curves.' },
         { section: '13. Visual Diagram Models — Drawdown Income Breakdown', page: 7, desc: 'Charts of net annual drawdown income sources in both Nominal and Real Today\'s £.' },
@@ -956,23 +957,23 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       tocItems.forEach((item, idx) => {
         if (idx % 2 === 1) {
           doc.setFillColor(slateLight[0], slateLight[1], slateLight[2]);
-          doc.rect(14, tocY, 182, 10.5, 'F');
+          doc.rect(14, tocY, 182, 9.8, 'F');
         }
 
         doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(8.5);
-        doc.text(item.section, 18, tocY + 4.5);
+        doc.setFontSize(8);
+        doc.text(item.section, 18, tocY + 3.8);
 
         doc.setTextColor(16, 185, 129);
-        doc.text(`Page ${item.page}`, 172, tocY + 4.5);
+        doc.text(`Page ${item.page}`, 172, tocY + 3.8);
 
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(7);
+        doc.setFontSize(6.8);
         doc.setTextColor(100, 116, 139);
-        doc.text(item.desc, 18, tocY + 8.5);
+        doc.text(item.desc, 18, tocY + 7.5);
 
-        tocY += 10.5;
+        tocY += 9.8;
       });
 
       // =========================================================================
@@ -2625,6 +2626,256 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       } else {
         p3Y += 3;
       }
+
+      // -------------------------------------------------------------------------
+      // SECTION 10a: EFFECTIVE WITHDRAWAL RATE TRAJECTORY CHART (SWR & GUARDRAILS)
+      // -------------------------------------------------------------------------
+      // Check if Section 10a needs a fresh page
+      if (p3Y > 185) {
+        doc.addPage();
+        curPageNum++;
+        renderPageHeader('Retirement Strategy & Withdrawal Rate Trajectory', curPageNum);
+        p3Y = 24;
+      } else {
+        p3Y += 2;
+      }
+
+      const swrRetiredYears = (projections || []).filter((p) => p.isRetired);
+      const swrChartData = swrRetiredYears.map((p) => {
+        const totalPortfolio = p.totalPot || 0;
+        const totalDrawdown = p.totalWithdrawalAmount > 0
+          ? p.totalWithdrawalAmount
+          : (p.pensionDrawdown || 0) + (p.isaDrawdown || 0) + (p.cashDrawdown || 0);
+        const startingPortfolio = totalPortfolio + totalDrawdown;
+        const effectiveSwr = startingPortfolio > 0
+          ? Math.min(30, Math.max(0, (totalDrawdown / startingPortfolio) * 100))
+          : 0;
+        return {
+          age: p.age,
+          year: p.year,
+          effectiveSwr: Number(effectiveSwr.toFixed(2)),
+          totalPortfolio: Math.round(totalPortfolio),
+          totalDrawdown: Math.round(totalDrawdown),
+        };
+      });
+
+      const peakSwrItem = swrChartData.reduce(
+        (max, item) => (item.effectiveSwr > max.effectiveSwr ? item : max),
+        { age: targetAge, effectiveSwr: 0, year: new Date().getFullYear() }
+      );
+
+      const swrYMax = Math.min(25, Math.max(8, Math.ceil((peakSwrItem.effectiveSwr * 1.3) / 2) * 2));
+
+      doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10.5);
+      doc.text('10a. Effective Withdrawal Rate Trajectory Chart (Year-by-Year SWR % Overlay)', 14, p3Y);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(100, 116, 139);
+      doc.text('Tracks annual portfolio drawdown demand as a % of starting wealth across all retirement years, overlaid against UK safe benchmarks.', 14, p3Y + 4.5);
+
+      p3Y += 7.5;
+
+      const swrBoxH = 68;
+      const swrBoxY = p3Y;
+      doc.setFillColor(248, 250, 252);
+      doc.roundedRect(14, swrBoxY, 182, swrBoxH, 3, 3, 'F');
+      doc.setDrawColor(203, 213, 225);
+      doc.roundedRect(14, swrBoxY, 182, swrBoxH, 3, 3, 'D');
+
+      const chartLeft = 32;
+      const chartRight = 186;
+      const chartWidth = chartRight - chartLeft;
+      const chartTop = swrBoxY + 7;
+      const chartBottom = swrBoxY + 52;
+      const chartHeight = chartBottom - chartTop;
+
+      const getSwrY = (val: number) => {
+        const norm = Math.max(0, Math.min(swrYMax, val)) / (swrYMax || 1);
+        return chartBottom - norm * chartHeight;
+      };
+
+      // 0% Baseline (Solid line)
+      doc.setDrawColor(203, 213, 225);
+      doc.setLineWidth(0.3);
+      doc.line(chartLeft, chartBottom, chartRight, chartBottom);
+      doc.setFontSize(6.5);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100, 116, 139);
+      doc.text('0.0%', 16, chartBottom + 1);
+
+      // Top Scale Line
+      const topY = getSwrY(swrYMax);
+      doc.setDrawColor(226, 232, 240);
+      doc.line(chartLeft, topY, chartRight, topY);
+      doc.text(`${swrYMax.toFixed(1)}%`, 16, topY + 1);
+
+      // 2.8% UK FIRE Benchmark (Indigo dashed)
+      if (2.8 <= swrYMax) {
+        const y28 = getSwrY(2.8);
+        doc.setDrawColor(99, 102, 241);
+        doc.setLineWidth(0.25);
+        for (let dx = chartLeft; dx < chartRight; dx += 4) {
+          doc.line(dx, y28, Math.min(dx + 2.5, chartRight), y28);
+        }
+        doc.setTextColor(99, 102, 241);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(6);
+        doc.text('2.8% UK FIRE', 16, y28 + 1);
+      }
+
+      // 3.5% UK Standard Safe Rate (Emerald dashed)
+      if (3.5 <= swrYMax) {
+        const y35 = getSwrY(3.5);
+        doc.setDrawColor(16, 185, 129);
+        doc.setLineWidth(0.35);
+        for (let dx = chartLeft; dx < chartRight; dx += 4) {
+          doc.line(dx, y35, Math.min(dx + 2.5, chartRight), y35);
+        }
+        doc.setTextColor(16, 185, 129);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(6);
+        doc.text('3.5% UK SWR', 16, y35 + 1);
+      }
+
+      // 5.0% Danger Zone (Rose dashed)
+      if (5.0 <= swrYMax) {
+        const y50 = getSwrY(5.0);
+        doc.setDrawColor(244, 63, 94);
+        doc.setLineWidth(0.35);
+        for (let dx = chartLeft; dx < chartRight; dx += 4) {
+          doc.line(dx, y50, Math.min(dx + 2.5, chartRight), y50);
+        }
+        doc.setTextColor(225, 29, 72);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(6);
+        doc.text('5.0% Danger', 16, y50 + 1);
+      }
+
+      // X-Axis Age Ticks & Trajectory Curve
+      const minSwrAge = swrChartData.length > 0 ? swrChartData[0].age : targetAge;
+      const maxSwrAge = swrChartData.length > 0 ? swrChartData[swrChartData.length - 1].age : horizonAge;
+      const swrAgeSpan = Math.max(1, maxSwrAge - minSwrAge);
+
+      const getAgeX = (age: number) => {
+        const pct = Math.max(0, Math.min(1, (age - minSwrAge) / swrAgeSpan));
+        return chartLeft + pct * chartWidth;
+      };
+
+      const tickAges = [
+        minSwrAge,
+        Math.min(maxSwrAge, minSwrAge + 5),
+        profile.statePensionAge || 67,
+        75,
+        80,
+        maxSwrAge,
+      ].filter((a, idx, arr) => a >= minSwrAge && a <= maxSwrAge && arr.indexOf(a) === idx).sort((a, b) => a - b);
+
+      doc.setDrawColor(203, 213, 225);
+      doc.setFontSize(6.5);
+      doc.setTextColor(100, 116, 139);
+      doc.setFont('helvetica', 'normal');
+      tickAges.forEach((tAge) => {
+        const tx = getAgeX(tAge);
+        doc.line(tx, chartBottom, tx, chartBottom + 2.5);
+        doc.text(`Age ${tAge}`, tx - 5, chartBottom + 5.5);
+      });
+
+      // Plot Trajectory Curve Line & Points
+      if (swrChartData.length > 1) {
+        doc.setDrawColor(99, 102, 241);
+        doc.setLineWidth(0.85);
+        for (let i = 0; i < swrChartData.length - 1; i++) {
+          const p1 = swrChartData[i];
+          const p2 = swrChartData[i + 1];
+          const x1 = getAgeX(p1.age);
+          const y1 = getSwrY(p1.effectiveSwr);
+          const x2 = getAgeX(p2.age);
+          const y2 = getSwrY(p2.effectiveSwr);
+          doc.line(x1, y1, x2, y2);
+        }
+
+        // Draw Data Markers
+        swrChartData.forEach((pt) => {
+          const px = getAgeX(pt.age);
+          const py = getSwrY(pt.effectiveSwr);
+          doc.setFillColor(99, 102, 241);
+          doc.circle(px, py, 0.7, 'F');
+        });
+
+        // Peak Pill Highlight
+        if (peakSwrItem.effectiveSwr > 0) {
+          const peakX = getAgeX(peakSwrItem.age);
+          const peakY = getSwrY(peakSwrItem.effectiveSwr);
+          doc.setFillColor(238, 242, 255);
+          doc.setDrawColor(99, 102, 241);
+          doc.setLineWidth(0.4);
+          doc.roundedRect(peakX - 14, Math.max(swrBoxY + 3, peakY - 6.5), 28, 4.8, 1, 1, 'FD');
+          doc.setTextColor(67, 56, 202);
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(5.5);
+          doc.text(`Peak: ${peakSwrItem.effectiveSwr}% (Age ${peakSwrItem.age})`, peakX - 12.5, Math.max(swrBoxY + 3, peakY - 6.5) + 3.4);
+        }
+      }
+
+      // Legend Strip
+      const legY = swrBoxY + 60;
+      doc.setFontSize(6.5);
+      doc.setFont('helvetica', 'bold');
+
+      doc.setFillColor(99, 102, 241);
+      doc.rect(20, legY, 6, 1.5, 'F');
+      doc.setTextColor(71, 85, 105);
+      doc.text('Effective Drawdown Rate (%)', 28, legY + 1.5);
+
+      doc.setFillColor(99, 102, 241);
+      doc.rect(74, legY, 6, 1, 'F');
+      doc.text('2.8% UK FIRE Longevity', 82, legY + 1.5);
+
+      doc.setFillColor(16, 185, 129);
+      doc.rect(126, legY, 6, 1, 'F');
+      doc.text('3.5% UK Safe Rate', 134, legY + 1.5);
+
+      doc.setFillColor(244, 63, 94);
+      doc.rect(164, legY, 6, 1, 'F');
+      doc.text('5% Danger Zone', 172, legY + 1.5);
+
+      p3Y += swrBoxH + 3.5;
+
+      // Peak Trajectory Risk Verdict Pill
+      const isPeakSafe = peakSwrItem.effectiveSwr <= 3.5;
+      const isPeakModerate = peakSwrItem.effectiveSwr > 3.5 && peakSwrItem.effectiveSwr <= 5.0;
+      const vBg = isPeakSafe ? [240, 253, 244] : isPeakModerate ? [254, 243, 199] : [254, 242, 242];
+      const vBorder = isPeakSafe ? [187, 247, 208] : isPeakModerate ? [253, 230, 138] : [254, 202, 202];
+      const vText = isPeakSafe ? [5, 150, 105] : isPeakModerate ? [180, 83, 9] : [185, 28, 28];
+
+      doc.setFillColor(vBg[0], vBg[1], vBg[2]);
+      doc.roundedRect(14, p3Y, 182, 9.5, 2, 2, 'F');
+      doc.setDrawColor(vBorder[0], vBorder[1], vBorder[2]);
+      doc.roundedRect(14, p3Y, 182, 9.5, 2, 2, 'D');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.5);
+      doc.setTextColor(vText[0], vText[1], vText[2]);
+      const verdictTitle = isPeakSafe
+        ? `✓ SWR Resilient: Peak withdrawal rate is ${peakSwrItem.effectiveSwr}% at Age ${peakSwrItem.age}`
+        : isPeakModerate
+        ? `⚠ Moderate Peak SWR: Peak withdrawal rate reaches ${peakSwrItem.effectiveSwr}% at Age ${peakSwrItem.age}`
+        : `⚠ Elevated Sequence Risk: Peak withdrawal rate exceeds 5.0% (${peakSwrItem.effectiveSwr}% at Age ${peakSwrItem.age})`;
+      doc.text(verdictTitle, 18, p3Y + 3.8);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(6.5);
+      const verdictDesc = isPeakSafe
+        ? 'Drawdown demand remains sustainably within the 3.5% UK safe withdrawal corridor throughout retirement.'
+        : isPeakModerate
+        ? 'Higher withdrawal intensity occurs prior to State Pension access. Post-State Pension, effective SWR steps down safely.'
+        : 'Peak rate exceeds 5.0% early in retirement. Recommend utilizing cash buffers or dynamic guardrails to mitigate sequence risk.';
+      doc.text(verdictDesc, 18, p3Y + 7.2);
+
+      p3Y += 13;
 
       // Check if Section 11 needs a page break to prevent table/box clipping
       if (p3Y > 215) {
