@@ -220,13 +220,13 @@ export const RightSizingCard: React.FC<RightSizingCardProps> = ({ profile, onCha
                 </label>
                 <select
                   value={plan.destinationPot}
-                  onChange={(e) => updatePlan({ destinationPot: e.target.value as 'isa' | 'gia' | 'cash' | 'sipp' })}
+                  onChange={(e) => updatePlan({ destinationPot: e.target.value as 'isa' | 'gia' | 'cash' | 'cash_isa' })}
                   className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-shadow text-slate-900 dark:text-white font-medium appearance-none"
                 >
                   <option value="isa">Stocks & Shares ISA</option>
+                  <option value="cash_isa">Cash ISA</option>
                   <option value="gia">General Investment Account (GIA)</option>
                   <option value="cash">Cash Savings Account</option>
-                  <option value="sipp">Self-Invested Personal Pension (SIPP)</option>
                 </select>
               </div>
 

@@ -91,6 +91,16 @@ export const NAV_STRUCTURE: TabGroup[] = [
     ],
   },
   {
+    id: 'mortgage',
+    label: 'Housing Strategy',
+    icon: Home,
+    description: 'Mortgage payoff & right-sizing / downsizing strategy',
+    cards: [
+      { id: 'card-mortgage-debt', label: 'Mortgage & Debt Repayment Strategy' },
+      { id: 'card-right-sizing', label: 'Right-Sizing Your Home' },
+    ],
+  },
+  {
     id: 'strategy_analysis',
     label: 'Strategy Analysis',
     icon: LineChart,
@@ -167,16 +177,6 @@ export const NAV_STRUCTURE: TabGroup[] = [
     description: 'Side-by-side strategy variant comparisons',
     cards: [
       { id: 'card-compare-scorecard', label: 'Scenario Comparison & Scorecard' },
-    ],
-  },
-  {
-    id: 'mortgage',
-    label: 'Housing Strategy',
-    icon: Home,
-    description: 'Mortgage payoff & right-sizing / downsizing strategy',
-    cards: [
-      { id: 'card-mortgage-debt', label: 'Mortgage & Debt Repayment Strategy' },
-      { id: 'card-right-sizing', label: 'Right-Sizing Your Home' },
     ],
   },
   {

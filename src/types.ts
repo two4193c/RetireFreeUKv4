@@ -505,7 +505,7 @@ export interface PropertyDownsizePlan {
   targetNewPropertyCostToday: number; // Cost of the new home in today's money
   sellingCostsPercent: number; // Estate agent and legal fees as % of gross sale (e.g. 1.5)
   stampDutySecondHomeSurcharge: boolean; // Toggle for applying the 3% additional rate SDLT
-  destinationPot: 'isa' | 'gia' | 'cash' | 'sipp'; // Where the net equity is injected
+  destinationPot: 'isa' | 'gia' | 'cash' | 'cash_isa'; // Where the net equity is injected
 }
 
 export interface MortgageDebtConfig {

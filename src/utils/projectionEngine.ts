@@ -353,10 +353,9 @@ function parseAnnuityTypeConfig(type?: string) {
           primaryIsaPot += netEquityReleased;
         } else if (plan.destinationPot === 'cash') {
           primaryCashSavingsPot += netEquityReleased;
-        } else if (plan.destinationPot === 'sipp') {
-          // Add to pension pot. Note: In reality they could claim tax relief if they have relevant UK earnings, 
-          // but for now we simply inject the net cash as a gross top-up to the pension pot.
-          primaryPensionPot += netEquityReleased;
+        } else if (plan.destinationPot === 'cash_isa') {
+          primaryCashIsaPot += netEquityReleased;
+          primaryIsaPot += netEquityReleased;
         } else {
           primaryGiaPot += netEquityReleased;
         }
