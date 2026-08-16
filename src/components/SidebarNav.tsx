@@ -106,7 +106,8 @@ export const NAV_STRUCTURE: TabGroup[] = [
     icon: LineChart,
     description: 'SWR Heatmap Matrix, Dynamic Guardrails, Essential Floor Split, PWR Metric, SWR Trajectory, and Bengen UK/US Benchmarks',
     cards: [
-      { id: 'card-pwr-metric', label: 'Personalized Withdrawal Rate (PWR) Metric' },
+        { id: 'card-god-mode', label: '? God Mode — Dynamic Optimization Cockpit' },
+        { id: 'card-pwr-metric', label: 'Personalized Withdrawal Rate (PWR) Metric' },
       { id: 'card-swr-matrix', label: 'Safe Withdrawal Rate (SWR) Heatmap Matrix' },
       { id: 'card-guardrail-gauge', label: 'Dynamic Guardrail Threshold Gauge' },
       { id: 'card-essential-floor-split', label: 'Essential Floor vs Discretionary Split' },
@@ -727,4 +728,5 @@ export function SidebarNav({
     </>
   );
 }
+
 
