@@ -608,6 +608,20 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
         });
       }
 
+      // 5. Property Right-Sizing Event
+      if (profile.propertyDownsizePlan?.enabled) {
+        const dsAge = profile.propertyDownsizePlan.targetAge;
+        if (dsAge >= profile.currentAge && !sankeyMilestones.find(m => m.age === dsAge)) {
+          sankeyMilestones.push({
+            title: `Milestone 5: Property Right-Sizing Event (Age ${dsAge})`,
+            subtitle: 'Equity released from property downsizing injected into retirement pots',
+            age: dsAge,
+            viewMode: isCouple ? 'split' : 'combined',
+            phaseLabel: `Right-Sizing Event (Age ${dsAge})`,
+          });
+        }
+      }
+
       const totalSankeyPages = sankeyMilestones.length;
       const TOTAL_PAGES = 12 + totalAccumPages + totalDecumPages + totalHistoricPages + totalMortgagePages + totalSankeyPages;
 
