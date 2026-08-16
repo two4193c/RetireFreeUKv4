@@ -301,6 +301,7 @@ function parseAnnuityTypeConfig(type?: string) {
   const activeAnnuityStreams: ActiveAnnuityStream[] = [];
 
   for (let age = safeCurrentAge; age <= effectiveMaxAge; age++) {
+    let propertyDownsizeEquityReleasedThisYear = 0;
     const yearOffset = age - profile.currentAge;
     const inflationFactor = Math.pow(1 + inflation, yearOffset);
     const calendarYear = new Date().getFullYear() + yearOffset;
@@ -347,6 +348,7 @@ function parseAnnuityTypeConfig(type?: string) {
 
       // Inject Equity
       if (netEquityReleased > 0) {
+        propertyDownsizeEquityReleasedThisYear = netEquityReleased;
         const splitRatio = profile.isCouplePlanning && !partnerDead ? 0.5 : 1;
         const primaryShare = netEquityReleased * splitRatio;
         const partnerShare = netEquityReleased - primaryShare;
@@ -1765,6 +1767,7 @@ function parseAnnuityTypeConfig(type?: string) {
         annualContributionTotal: Math.round(primaryPensionContribThisYr + primaryIsaContribThisYr + primaryCashGiaPotContribThisYr + partnerPContribThisYr + partnerIContribThisYr + partnerCContribThisYr),
         oneOffContributionsReceived: Math.round(oneOffInflowsThisYear),
         lifeEventsIncome: Math.round(lifeEventsIncomeThisYear),
+        propertyDownsizeEquityReleased: Math.round(propertyDownsizeEquityReleasedThisYear),
         lifeEventsExpense: Math.round(lifeEventsExpenseThisYear),
         decumulationLifeEventsSummary: decumulationEventSummaries.join(', '),
         annualTaxReliefTotal: Math.round(primaryTaxThisYr.totalPensionTaxRelief + primaryTaxThisYr.lisaGovernmentBonusAnnual + (partnerTaxThisYr ? partnerTaxThisYr.totalPensionTaxRelief + partnerTaxThisYr.lisaGovernmentBonusAnnual : 0)),
@@ -3041,6 +3044,7 @@ function parseAnnuityTypeConfig(type?: string) {
         estimatedInvestmentFees: decumFeesPaid,
         annualContributionTotal: 0,
         lifeEventsIncome: Math.round(lifeEventsIncomeThisYear),
+        propertyDownsizeEquityReleased: Math.round(propertyDownsizeEquityReleasedThisYear),
         lifeEventsExpense: Math.round(lifeEventsExpenseThisYear),
         decumulationLifeEventsSummary: decumulationEventSummaries.join(', '),
         annualTaxReliefTotal: 0,

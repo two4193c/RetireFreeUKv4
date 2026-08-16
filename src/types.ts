@@ -767,6 +767,7 @@ export interface YearProjection {
   oneOffContributionsReceived?: number;
   lifeEventsIncome?: number;
   lifeEventsExpense?: number;
+  propertyDownsizeEquityReleased?: number;
   decumulationLifeEventsSummary?: string;
   annualTaxReliefTotal: number;
   statePensionReceived: number;

@@ -861,6 +861,7 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
       const priIsaDrawdown = p.primaryIsaDrawdown ?? (isCouple ? ((p.isaDrawdown || 0) * 0.5) : (p.isaDrawdown || 0));
       const priCashDrawdown = p.primaryCashDrawdown ?? (isCouple ? ((p.cashDrawdown || 0) * 0.5) : (p.cashDrawdown || 0));
       const priLifeEventsInc = p.lifeEventsIncome || 0;
+      const priDownsizeInc = p.propertyDownsizeEquityReleased ? (isCouple ? p.propertyDownsizeEquityReleased * 0.5 : p.propertyDownsizeEquityReleased) : 0;
       const priTaxPaid = p.primaryTaxPaid ?? (isCouple ? ((p.totalTaxPaid || 0) * 0.5) : (p.totalTaxPaid || 0));
 
       const priGrossTotal =
@@ -870,6 +871,7 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
         priTaxableFixed +
         priTaxFreeFixed +
         priLifeEventsInc +
+        priDownsizeInc +
         priPensionDrawdownTotal +
         priIsaDrawdown +
         priCashDrawdown;
@@ -887,6 +889,7 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
       const partIsaDrawdown = isCouple ? (p.partnerIsaDrawdown || 0) : 0;
       const partCashDrawdown = isCouple ? (p.partnerCashDrawdown || 0) : 0;
       const partLifeEventsInc = 0;
+      const partDownsizeInc = isCouple && p.propertyDownsizeEquityReleased ? p.propertyDownsizeEquityReleased * 0.5 : 0;
       const partTaxPaid = isCouple ? (p.partnerTaxPaid || 0) : 0;
 
       const partGrossTotal =
@@ -896,6 +899,7 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
         partTaxableFixed +
         partTaxFreeFixed +
         partLifeEventsInc +
+        partDownsizeInc +
         partPensionDrawdownTotal +
         partIsaDrawdown +
         partCashDrawdown;
@@ -923,7 +927,7 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
         const partSpendable = Math.max(0, partNetTotal - partMortgageAlloc);
         const totalSpendable = priSpendable + partSpendable;
 
-        const annualExcess = p.annualIncomeExcess || 0;
+        const annualExcess = (p.annualIncomeExcess || 0) + (p.propertyDownsizeEquityReleased || 0);
         const reinvestSurplus = Math.min(totalSpendable, annualExcess);
         const priReinvest = totalSpendable > 0 ? (priSpendable / totalSpendable) * reinvestSurplus : 0;
         const partReinvest = totalSpendable > 0 ? (partSpendable / totalSpendable) * reinvestSurplus : 0;
@@ -1024,14 +1028,26 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
         }
         if (priLifeEventsInc > 0) {
           nodes.push({
-            id: 'pri_life_events',
+            id: 'pri_life_event',
             label: `${primaryName} Life Event`,
-            sublabel: p.decumulationLifeEventsSummary || 'Downsizing / Lump Sum',
+            sublabel: p.decumulationLifeEventsSummary || 'Capital Injection',
             amount: priLifeEventsInc,
             color: '#06b6d4',
             category: 'source',
             column: 0,
             icon: Sparkles,
+          });
+        }
+        if (priDownsizeInc > 0) {
+          nodes.push({
+            id: 'pri_downsize',
+            label: `${primaryName} Right-Sizing`,
+            sublabel: 'Equity Released',
+            amount: priDownsizeInc,
+            color: '#d97706',
+            category: 'source',
+            column: 0,
+            icon: Home,
           });
         }
 
@@ -1139,7 +1155,8 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
         if (priPensionDrawdownTotal > 0) links.push({ sourceId: 'pri_pension_dd', targetId: 'pri_retire_hub', amount: priPensionDrawdownTotal, color: '#10b981' });
         if (priIsaDrawdown > 0) links.push({ sourceId: 'pri_isa_dd', targetId: 'pri_retire_hub', amount: priIsaDrawdown, color: '#6366f1' });
         if (priCashDrawdown > 0) links.push({ sourceId: 'pri_cash_dd', targetId: 'pri_retire_hub', amount: priCashDrawdown, color: '#f59e0b' });
-        if (priLifeEventsInc > 0) links.push({ sourceId: 'pri_life_events', targetId: 'pri_retire_hub', amount: priLifeEventsInc, color: '#06b6d4' });
+        if (priLifeEventsInc > 0) links.push({ sourceId: 'pri_life_event', targetId: 'pri_retire_hub', amount: priLifeEventsInc, color: '#06b6d4' });
+        if (priDownsizeInc > 0) links.push({ sourceId: 'pri_downsize', targetId: 'pri_retire_hub', amount: priDownsizeInc, color: '#d97706' });
 
         nodes.push({
           id: 'part_retire_hub',
@@ -1301,6 +1318,7 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
       let taxableFixed = (p.taxableFixedIncomeReceived || 0);
       let taxFreeFixed = (p.taxFreeFixedIncomeReceived || 0);
       let lifeEventsInc = (p.lifeEventsIncome || 0);
+      let downsizeInc = (p.propertyDownsizeEquityReleased || 0);
 
       let pensionDrawdownTaxable = (p.pensionDrawdownTaxable || 0);
       let pensionDrawdownTaxFree = (p.pensionDrawdownTaxFree || 0);
@@ -1323,6 +1341,7 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
         isaDrawdown = priIsaDrawdown;
         cashDrawdown = priCashDrawdown;
         lifeEventsInc = priLifeEventsInc;
+        downsizeInc = priDownsizeInc;
         totalTaxPaid = priTaxPaid;
         curMortgageShare = isCouple ? mortgagePaymentAnnual * 0.5 : mortgagePaymentAnnual;
       } else if (activeViewMode === 'partner') {
@@ -1337,6 +1356,7 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
         isaDrawdown = partIsaDrawdown;
         cashDrawdown = partCashDrawdown;
         lifeEventsInc = 0;
+        downsizeInc = partDownsizeInc;
         totalTaxPaid = partTaxPaid;
         curMortgageShare = mortgagePaymentAnnual * 0.5;
       }
@@ -1348,6 +1368,7 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
         taxableFixed +
         taxFreeFixed +
         lifeEventsInc +
+        downsizeInc +
         pensionDrawdownTotal +
         isaDrawdown +
         cashDrawdown;
@@ -1356,8 +1377,8 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
 
       // Allocation of net retirement cash
       const annualExcess = activeViewMode === 'combined'
-        ? (p.annualIncomeExcess || 0)
-        : (isCouple ? ((p.annualIncomeExcess || 0) * 0.5) : (p.annualIncomeExcess || 0));
+        ? ((p.annualIncomeExcess || 0) + (p.propertyDownsizeEquityReleased || 0))
+        : (isCouple ? (((p.annualIncomeExcess || 0) + (p.propertyDownsizeEquityReleased || 0)) * 0.5) : ((p.annualIncomeExcess || 0) + (p.propertyDownsizeEquityReleased || 0)));
       const shortfall = activeViewMode === 'combined'
         ? (p.incomeShortfall || 0)
         : (isCouple ? ((p.incomeShortfall || 0) * 0.5) : (p.incomeShortfall || 0));
@@ -1488,6 +1509,19 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
         });
       }
 
+      if (downsizeInc > 0) {
+        nodes.push({
+          id: 'downsize_equity',
+          label: 'Right-Sizing',
+          sublabel: 'Equity Released',
+          amount: downsizeInc,
+          color: '#d97706', // amber-600
+          category: 'source',
+          column: 0,
+          icon: Home,
+        });
+      }
+
       // Column 1: Gross Inflows Hub
       const hubRetireLabel = activeViewMode === 'combined'
         ? 'Total Gross Income & Drawdowns'
@@ -1513,6 +1547,7 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
       if (isaDrawdown > 0) links.push({ sourceId: 'isa_drawdown', targetId: 'gross_retirement_hub', amount: isaDrawdown, color: '#6366f1' });
       if (cashDrawdown > 0) links.push({ sourceId: 'cash_drawdown', targetId: 'gross_retirement_hub', amount: cashDrawdown, color: '#f59e0b' });
       if (lifeEventsInc > 0) links.push({ sourceId: 'life_events_inflow', targetId: 'gross_retirement_hub', amount: lifeEventsInc, color: '#06b6d4' });
+      if (downsizeInc > 0) links.push({ sourceId: 'downsize_equity', targetId: 'gross_retirement_hub', amount: downsizeInc, color: '#d97706' });
 
       // Column 2: Tax Deductions vs Net Cash
       if (totalTaxPaid > 0) {
