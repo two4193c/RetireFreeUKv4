@@ -85,6 +85,7 @@ export function disableMaximizedSpend(profile: UserProfile): UserProfile {
 
   const baselineTarget = profile.maximizedSpendConfig.baselineTargetAnnualIncome;
   const baselinePhases = profile.maximizedSpendConfig.baselineSpendingPhases;
+  const baseOpts = profile.maximizedSpendConfig.baselineDrawdownOptions;
 
   return {
     ...profile,
@@ -92,6 +93,19 @@ export function disableMaximizedSpend(profile: UserProfile): UserProfile {
       baselineTarget !== undefined ? baselineTarget : profile.targetRetirementIncomeAnnual,
     spendingPhases:
       baselinePhases !== undefined ? baselinePhases : profile.spendingPhases,
+    ...(baseOpts ? {
+      incomeProductOption: baseOpts.incomeProductOption !== undefined ? baseOpts.incomeProductOption : profile.incomeProductOption,
+      annuityAllocationPercent: baseOpts.annuityAllocationPercent !== undefined ? baseOpts.annuityAllocationPercent : profile.annuityAllocationPercent,
+      annuityPurchaseAge: baseOpts.annuityPurchaseAge !== undefined ? baseOpts.annuityPurchaseAge : profile.annuityPurchaseAge,
+      annuityRatePercent: baseOpts.annuityRatePercent !== undefined ? baseOpts.annuityRatePercent : profile.annuityRatePercent,
+      annuityType: baseOpts.annuityType !== undefined ? baseOpts.annuityType : profile.annuityType,
+      annuityDurationOption: baseOpts.annuityDurationOption !== undefined ? baseOpts.annuityDurationOption : profile.annuityDurationOption,
+      annuityDurationUntilAge: baseOpts.annuityDurationUntilAge !== undefined ? baseOpts.annuityDurationUntilAge : profile.annuityDurationUntilAge,
+      reinvestExcessDrawdown: baseOpts.reinvestExcessDrawdown !== undefined ? baseOpts.reinvestExcessDrawdown : profile.reinvestExcessDrawdown,
+      actualSpendingTargetAnnual: baseOpts.actualSpendingTargetAnnual !== undefined ? baseOpts.actualSpendingTargetAnnual : profile.actualSpendingTargetAnnual,
+      annuityExcessReinvestOption: baseOpts.annuityExcessReinvestOption !== undefined ? baseOpts.annuityExcessReinvestOption : profile.annuityExcessReinvestOption,
+      reinvestDestinationPot: baseOpts.reinvestDestinationPot !== undefined ? baseOpts.reinvestDestinationPot : profile.reinvestDestinationPot,
+    } : {}),
     maximizedSpendConfig: {
       ...profile.maximizedSpendConfig,
       enabled: false,
@@ -371,6 +385,19 @@ export function createCandidateProfile(
     spendingPhases: maxPhases,
     baselineTargetAnnualIncome,
     baselineSpendingPhases,
+    baselineDrawdownOptions: profile.maximizedSpendConfig?.baselineDrawdownOptions || {
+      incomeProductOption: profile.incomeProductOption,
+      annuityAllocationPercent: profile.annuityAllocationPercent,
+      annuityPurchaseAge: profile.annuityPurchaseAge,
+      annuityRatePercent: profile.annuityRatePercent,
+      annuityType: profile.annuityType,
+      annuityDurationOption: profile.annuityDurationOption,
+      annuityDurationUntilAge: profile.annuityDurationUntilAge,
+      reinvestExcessDrawdown: profile.reinvestExcessDrawdown,
+      actualSpendingTargetAnnual: profile.actualSpendingTargetAnnual,
+      annuityExcessReinvestOption: profile.annuityExcessReinvestOption,
+      reinvestDestinationPot: profile.reinvestDestinationPot,
+    },
     reinvestExcessDrawdown: isReinvestExcess,
     actualSpendingTargetAnnual: actualSpendingTarget,
     reinvestDestinationPot: reinvestDestination,

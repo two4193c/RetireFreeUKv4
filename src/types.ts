@@ -221,6 +221,19 @@ export interface MaximizedSpendConfig {
   };
   baselineTargetAnnualIncome?: number;
   baselineSpendingPhases?: SpendingPhasesConfig;
+  baselineDrawdownOptions?: {
+    incomeProductOption?: IncomeProductOption;
+    annuityAllocationPercent?: number;
+    annuityPurchaseAge?: number;
+    annuityRatePercent?: number;
+    annuityType?: AnnuityType;
+    annuityDurationOption?: AnnuityDurationOption;
+    annuityDurationUntilAge?: number;
+    reinvestExcessDrawdown?: boolean;
+    actualSpendingTargetAnnual?: number;
+    annuityExcessReinvestOption?: 'stocks_and_shares_isa' | 'cash_isa' | 'gia' | 'cash' | 'cash_savings' | 'none';
+    reinvestDestinationPot?: 'isa' | 'gia' | 'cash';
+  };
   reinvestExcessDrawdown?: boolean;
   actualSpendingTargetAnnual?: number;
   reinvestDestinationPot?: 'isa' | 'gia' | 'cash';
