@@ -9,7 +9,8 @@ import {
   Home, 
   ShieldCheck,
   CheckCircle2,
-  XCircle
+  Lock,
+  Download
 } from 'lucide-react';
 
 export const FeaturesGuideCard: React.FC = () => {
@@ -23,80 +24,111 @@ export const FeaturesGuideCard: React.FC = () => {
           <span>App Features & Capabilities</span>
         </div>
         <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-          Feature Comparison & Capabilities
+          Comprehensive Feature List
         </h2>
         <p className="text-sm text-slate-500 dark:text-slate-400 max-w-3xl leading-relaxed">
-          RetireFree UK uniquely occupies the intersection of consumer DIY tools, adviser-grade software, and global FIRE calculators: providing adviser-depth tax modelling in a real-time reactive UI—at zero cost.
+          RetireFree UK provides adviser-depth tax modelling and financial planning in a fast, real-time reactive interface. Explore the full range of features available to help you build and stress-test your retirement plan.
         </p>
       </div>
 
-      {/* Feature Matrix */}
+      {/* Security & Data Privacy Banner */}
+      <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 dark:from-emerald-950/40 dark:via-teal-950/40 dark:to-emerald-950/40 border border-emerald-200 dark:border-emerald-800/80 space-y-3">
+        <div className="flex items-center gap-2 font-extrabold text-emerald-900 dark:text-emerald-200 text-sm">
+          <Lock className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+          <span>100% Local, Private & Secure</span>
+        </div>
+        <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+          <strong>Your financial data never leaves your device.</strong> RetireFree UK is a fully local application. We do not use remote databases, cloud servers, or tracking cookies to store your inputs. All calculations happen securely and instantly directly within your own browser.
+        </p>
+        <div className="flex items-center gap-2 pt-2 border-t border-emerald-200/50 dark:border-emerald-800/50">
+          <Download className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+          <p className="text-xs text-slate-700 dark:text-slate-300">
+            <strong>Cross-Device Portability:</strong> Use the secure JSON Export/Import feature (found in the settings menu) to save your plan to a local file. This allows you to safely transfer your data between your phone, tablet, and desktop without ever relying on the cloud.
+          </p>
+        </div>
+      </div>
+
+      {/* Feature List Table */}
       <div className="space-y-4">
         <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
           <Calculator className="w-5 h-5 text-indigo-500" />
-          Competitive Feature Matrix
+          Application Capabilities
         </h3>
         
-        <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700/80">
+        <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700/80">
           <table className="w-full text-left text-xs sm:text-sm">
             <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-700 dark:text-slate-300">
               <tr>
-                <th className="px-4 py-3 font-bold border-b border-slate-200 dark:border-slate-700/80">Feature / Capability</th>
-                <th className="px-4 py-3 font-black text-indigo-600 dark:text-indigo-400 bg-indigo-50/50 dark:bg-indigo-900/10 border-b border-slate-200 dark:border-slate-700/80">RetireFree UK</th>
-                <th className="px-4 py-3 font-semibold border-b border-slate-200 dark:border-slate-700/80">UK DIY (e.g. RetireEasy)</th>
-                <th className="px-4 py-3 font-semibold border-b border-slate-200 dark:border-slate-700/80">B2B Adviser (e.g. Voyant)</th>
-                <th className="px-4 py-3 font-semibold border-b border-slate-200 dark:border-slate-700/80">US FIRE (e.g. ProjectionLab)</th>
+                <th className="px-4 py-3 font-bold border-b border-slate-200 dark:border-slate-700/80 w-1/3">Feature</th>
+                <th className="px-4 py-3 font-bold border-b border-slate-200 dark:border-slate-700/80">Description</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
               <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
-                <td className="px-4 py-3 font-medium">UK Income Tax (PAYE, NI, ISA)</td>
-                <td className="px-4 py-3 bg-indigo-50/20 dark:bg-indigo-900/5"><CheckCircle2 className="w-4 h-4 text-emerald-500 inline mr-1"/> Full Bands</td>
-                <td className="px-4 py-3"><CheckCircle2 className="w-4 h-4 text-emerald-500 inline mr-1"/> Basic</td>
-                <td className="px-4 py-3"><CheckCircle2 className="w-4 h-4 text-emerald-500 inline mr-1"/> Full</td>
-                <td className="px-4 py-3"><XCircle className="w-4 h-4 text-amber-500 inline mr-1"/> Manual/Generic</td>
+                <td className="px-4 py-3 font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0"/> UK Income Tax Modelling
+                </td>
+                <td className="px-4 py-3 leading-relaxed">Fully models PAYE income tax bands, Personal Allowance tapering, Dividend Tax, Capital Gains Tax, and PCLS/UFPLS tax-free pension rules.</td>
               </tr>
               <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
-                <td className="px-4 py-3 font-medium">State Pension & Triple Lock</td>
-                <td className="px-4 py-3 bg-indigo-50/20 dark:bg-indigo-900/5"><CheckCircle2 className="w-4 h-4 text-emerald-500 inline mr-1"/> Advanced</td>
-                <td className="px-4 py-3"><CheckCircle2 className="w-4 h-4 text-emerald-500 inline mr-1"/> Basic</td>
-                <td className="px-4 py-3"><CheckCircle2 className="w-4 h-4 text-emerald-500 inline mr-1"/> Yes</td>
-                <td className="px-4 py-3"><CheckCircle2 className="w-4 h-4 text-emerald-500 inline mr-1"/> Yes</td>
+                <td className="px-4 py-3 font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0"/> National Insurance
+                </td>
+                <td className="px-4 py-3 leading-relaxed">Accurately calculates Class 1 (employee), Class 2, and Class 4 (self-employed) National Insurance contributions.</td>
               </tr>
               <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
-                <td className="px-4 py-3 font-medium">Cash Flow Sankey Diagrams</td>
-                <td className="px-4 py-3 bg-indigo-50/20 dark:bg-indigo-900/5"><CheckCircle2 className="w-4 h-4 text-emerald-500 inline mr-1"/> Interactive</td>
-                <td className="px-4 py-3"><XCircle className="w-4 h-4 text-rose-400 inline mr-1"/> No</td>
-                <td className="px-4 py-3"><XCircle className="w-4 h-4 text-rose-400 inline mr-1"/> No</td>
-                <td className="px-4 py-3"><XCircle className="w-4 h-4 text-rose-400 inline mr-1"/> No</td>
+                <td className="px-4 py-3 font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0"/> ISA & SIPP Wrappers
+                </td>
+                <td className="px-4 py-3 leading-relaxed">Models all primary UK tax wrappers, including Stocks & Shares ISAs, Cash ISAs, LISAs, GIAs, and SIPPs (with proper tax relief logic).</td>
               </tr>
               <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
-                <td className="px-4 py-3 font-medium">Property Downsizing & Stamp Duty</td>
-                <td className="px-4 py-3 bg-indigo-50/20 dark:bg-indigo-900/5"><CheckCircle2 className="w-4 h-4 text-emerald-500 inline mr-1"/> Full Routing</td>
-                <td className="px-4 py-3"><CheckCircle2 className="w-4 h-4 text-amber-500 inline mr-1"/> Lump Sum Only</td>
-                <td className="px-4 py-3"><CheckCircle2 className="w-4 h-4 text-emerald-500 inline mr-1"/> Yes</td>
-                <td className="px-4 py-3"><XCircle className="w-4 h-4 text-amber-500 inline mr-1"/> Manual</td>
+                <td className="px-4 py-3 font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0"/> DB & State Pensions
+                </td>
+                <td className="px-4 py-3 leading-relaxed">Supports multiple Defined Benefit pensions with spousal continuation rules, plus advanced State Pension modelling including NI qualifying years and the Triple Lock.</td>
               </tr>
               <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
-                <td className="px-4 py-3 font-medium">IHT / Estate Planning</td>
-                <td className="px-4 py-3 bg-indigo-50/20 dark:bg-indigo-900/5"><CheckCircle2 className="w-4 h-4 text-emerald-500 inline mr-1"/> April '27 Rules</td>
-                <td className="px-4 py-3"><XCircle className="w-4 h-4 text-rose-400 inline mr-1"/> No</td>
-                <td className="px-4 py-3"><CheckCircle2 className="w-4 h-4 text-emerald-500 inline mr-1"/> Full</td>
-                <td className="px-4 py-3"><XCircle className="w-4 h-4 text-rose-400 inline mr-1"/> No</td>
+                <td className="px-4 py-3 font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0"/> Couple / Dual Planning
+                </td>
+                <td className="px-4 py-3 leading-relaxed">Full split-view modelling showing each partner's individual tax, income, and allocation streams simultaneously for joint household planning.</td>
               </tr>
               <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
-                <td className="px-4 py-3 font-medium">Max Spend Solver</td>
-                <td className="px-4 py-3 bg-indigo-50/20 dark:bg-indigo-900/5"><CheckCircle2 className="w-4 h-4 text-emerald-500 inline mr-1"/> Genetic Algorithm</td>
-                <td className="px-4 py-3"><XCircle className="w-4 h-4 text-rose-400 inline mr-1"/> No</td>
-                <td className="px-4 py-3"><XCircle className="w-4 h-4 text-rose-400 inline mr-1"/> No</td>
-                <td className="px-4 py-3"><XCircle className="w-4 h-4 text-rose-400 inline mr-1"/> No</td>
+                <td className="px-4 py-3 font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0"/> Monte Carlo & SORR
+                </td>
+                <td className="px-4 py-3 leading-relaxed">Runs 1,000 stochastic simulations to map outcome probability cones (P10/P50/P90), plus deterministic stress-testing against historic market crashes (Sequence of Returns Risk).</td>
               </tr>
               <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
-                <td className="px-4 py-3 font-medium">Monthly Cost</td>
-                <td className="px-4 py-3 font-black text-indigo-600 dark:text-indigo-400 bg-indigo-50/20 dark:bg-indigo-900/5">Free</td>
-                <td className="px-4 py-3">~£8 / mo</td>
-                <td className="px-4 py-3">£60+ / mo</td>
-                <td className="px-4 py-3">~$20 / mo</td>
+                <td className="px-4 py-3 font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0"/> Spending Phases
+                </td>
+                <td className="px-4 py-3 leading-relaxed">Models variable spending over time, including the empirical "retirement spending smile" (Go-Go, Slow-Go, No-Go phases) and custom manual phases.</td>
+              </tr>
+              <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
+                <td className="px-4 py-3 font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0"/> IHT & Estate Planning
+                </td>
+                <td className="px-4 py-3 leading-relaxed">Complete Inheritance Tax modelling including the Nil Rate Band, Residence Nil Rate Band, taper relief, and the April 2027 rules bringing pensions into the taxable estate.</td>
+              </tr>
+              <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
+                <td className="px-4 py-3 font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0"/> Annuity Comparison
+                </td>
+                <td className="px-4 py-3 leading-relaxed">Built-in annuity engine to compare flexible drawdown strategies against purchasing a guaranteed income floor.</td>
+              </tr>
+              <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
+                <td className="px-4 py-3 font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0"/> SAYE / Share Schemes
+                </td>
+                <td className="px-4 py-3 leading-relaxed">Dedicated UK Save As You Earn and Share Incentive Plan modelling, including the 90-day ISA transfer tax loophole.</td>
+              </tr>
+              <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
+                <td className="px-4 py-3 font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0"/> Dynamic Guardrails
+                </td>
+                <td className="px-4 py-3 leading-relaxed">Calculates Safe Withdrawal Rates (SWR) dynamically based on current market conditions and dynamically adjusts for inflation.</td>
               </tr>
             </tbody>
           </table>
@@ -110,7 +142,7 @@ export const FeaturesGuideCard: React.FC = () => {
           RetireFree UK Exclusive Features
         </h3>
         <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed mb-4">
-          The following capabilities exist in RetireFree UK and have no direct equivalent in competing UK planning tools.
+          The following advanced capabilities are unique highlights of the RetireFree UK platform.
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
