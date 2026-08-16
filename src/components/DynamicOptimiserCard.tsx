@@ -313,7 +313,7 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
             <Zap className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100">\u26A1 Dynamic Optimiser \u2014 Dynamic Optimization Cockpit</h3>
+            <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100">Dynamic Optimiser — Optimization Cockpit</h3>
             <p className="text-xs text-slate-400 dark:text-slate-500">Set a retirement date to activate the optimization cockpit.</p>
           </div>
         </div>
@@ -337,13 +337,13 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100">\u26A1 Dynamic Optimiser</h3>
+              <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100">Dynamic Optimiser</h3>
               <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-widest bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow-sm">
                 Dynamic Optimization Cockpit
               </span>
               {mcRunning && (
                 <span className="flex items-center gap-1 text-[9px] text-indigo-500 dark:text-indigo-400">
-                  <Dices className="w-3 h-3 animate-spin" /> Running 1,000 sims\u2026
+                  <Dices className="w-3 h-3 animate-spin" /> Running 1,000 sims…
                 </span>
               )}
               {!mcRunning && mcSuccessRate !== undefined && (
@@ -353,7 +353,7 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
               )}
             </div>
             <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
-              1,000-sim stochastic engine \u00B7 Tax matrix \u00B7 Spousal equalisation \u00B7 Radar scoring
+              1,000-sim stochastic engine · Tax matrix · Spousal equalisation · Radar scoring
             </p>
           </div>
         </div>
@@ -394,7 +394,7 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
                   icon={<Users className="w-4 h-4" />}
                   accent="bg-violet-100 dark:bg-violet-950/60 text-violet-600 dark:text-violet-400"
                   label="Couple Income Balance"
-                  value={`\xB1${kpis.coupleBalance!.toFixed(1)}%`}
+                  value={`±${kpis.coupleBalance!.toFixed(1)}%`}
                   sub="avg deviation from 50/50"
                 />
               )}
@@ -417,7 +417,7 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
             <div className="xl:col-span-3">
               <Panel
                 title="Optimal Withdrawal Streamgraph"
-                subtitle="Income split across tax bands each retirement year \u2014 minimise Higher Rate (red)"
+                subtitle="Income split across tax bands each retirement year — minimise Higher Rate (red)"
                 action={
                   <button
                     onClick={(e) => { e.stopPropagation(); setShowMatrix((v) => !v); }}
@@ -440,7 +440,7 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                     <XAxis dataKey="age" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
-                    <YAxis tickFormatter={(v) => `\xA3${Math.round(v/1000)}k`} tick={{ fontSize: 10 }} tickLine={false} axisLine={false} width={52} />
+                    <YAxis tickFormatter={(v) => `£${Math.round(v/1000)}k`} tick={{ fontSize: 10 }} tickLine={false} axisLine={false} width={52} />
                     <Tooltip content={<CurrencyTooltip />} />
                     <Legend wrapperStyle={{ fontSize: 10, paddingTop: 8 }} />
                     <Area type="monotone" dataKey="State Pension"           stackId="1" fill="url(#spG)"  stroke="#8b5cf6" strokeWidth={0} />
@@ -457,10 +457,10 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
             <div className="xl:col-span-2">
               <Panel
                 title="Multi-Objective Plan Score"
-                subtitle="Five-axis optimisation radar \u2014 higher is better on all axes"
+                subtitle="Five-axis optimisation radar — higher is better on all axes"
                 action={
                   mcRunning
-                    ? <span className="text-[9px] text-indigo-500 flex items-center gap-1"><RefreshCw className="w-3 h-3 animate-spin" /> Simulating\u2026</span>
+                    ? <span className="text-[9px] text-indigo-500 flex items-center gap-1"><RefreshCw className="w-3 h-3 animate-spin" /> Simulating…</span>
                     : undefined
                 }
               >
@@ -525,16 +525,16 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
                         <td className="px-2 py-1.5 font-semibold text-slate-600 dark:text-slate-300 sticky left-0 bg-inherit">{r.age}</td>
                         <td className="px-2 py-1.5 text-right text-slate-500">{fmt(r.pGross)}</td>
                         <td className="px-2 py-1.5 text-right text-emerald-600 dark:text-emerald-400">{fmt(r.pPA)}</td>
-                        <td className={`px-2 py-1.5 text-right ${bandCell(r.pBasic, BASIC_CEIL - PA)}`}>{r.pBasic > 0 ? fmt(r.pBasic) : '\u2014'}</td>
-                        <td className={`px-2 py-1.5 text-right ${r.pHigher > 0 ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-slate-300 dark:text-slate-700'}`}>{r.pHigher > 0 ? fmt(r.pHigher) : '\u2014'}</td>
-                        <td className={`px-2 py-1.5 text-right ${r.p60Trap > 0 ? 'text-orange-600 dark:text-orange-400 font-extrabold animate-pulse' : 'text-slate-300 dark:text-slate-700'}`}>{r.p60Trap > 0 ? fmt(r.p60Trap) : '\u2014'}</td>
+                        <td className={`px-2 py-1.5 text-right ${bandCell(r.pBasic, BASIC_CEIL - PA)}`}>{r.pBasic > 0 ? fmt(r.pBasic) : '—'}</td>
+                        <td className={`px-2 py-1.5 text-right ${r.pHigher > 0 ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-slate-300 dark:text-slate-700'}`}>{r.pHigher > 0 ? fmt(r.pHigher) : '—'}</td>
+                        <td className={`px-2 py-1.5 text-right ${r.p60Trap > 0 ? 'text-orange-600 dark:text-orange-400 font-extrabold animate-pulse' : 'text-slate-300 dark:text-slate-700'}`}>{r.p60Trap > 0 ? fmt(r.p60Trap) : '—'}</td>
                         <td className="px-2 py-1.5 text-right text-slate-700 dark:text-slate-300 font-semibold">{fmt(r.pTax)}</td>
                         {isCouple && <>
                           <td className="px-2 py-1.5 text-right text-slate-500 border-l border-slate-100 dark:border-slate-800">{fmt(r.qGross ?? 0)}</td>
                           <td className="px-2 py-1.5 text-right text-emerald-600 dark:text-emerald-400">{fmt(r.qPA ?? 0)}</td>
-                          <td className={`px-2 py-1.5 text-right ${bandCell(r.qBasic ?? 0, BASIC_CEIL - PA)}`}>{(r.qBasic ?? 0) > 0 ? fmt(r.qBasic ?? 0) : '\u2014'}</td>
-                          <td className={`px-2 py-1.5 text-right ${(r.qHigher ?? 0) > 0 ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-slate-300 dark:text-slate-700'}`}>{(r.qHigher ?? 0) > 0 ? fmt(r.qHigher ?? 0) : '\u2014'}</td>
-                          <td className={`px-2 py-1.5 text-right ${(r.q60Trap ?? 0) > 0 ? 'text-orange-600 dark:text-orange-400 font-extrabold animate-pulse' : 'text-slate-300 dark:text-slate-700'}`}>{(r.q60Trap ?? 0) > 0 ? fmt(r.q60Trap ?? 0) : '\u2014'}</td>
+                          <td className={`px-2 py-1.5 text-right ${bandCell(r.qBasic ?? 0, BASIC_CEIL - PA)}`}>{(r.qBasic ?? 0) > 0 ? fmt(r.qBasic ?? 0) : '—'}</td>
+                          <td className={`px-2 py-1.5 text-right ${(r.qHigher ?? 0) > 0 ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-slate-300 dark:text-slate-700'}`}>{(r.qHigher ?? 0) > 0 ? fmt(r.qHigher ?? 0) : '—'}</td>
+                          <td className={`px-2 py-1.5 text-right ${(r.q60Trap ?? 0) > 0 ? 'text-orange-600 dark:text-orange-400 font-extrabold animate-pulse' : 'text-slate-300 dark:text-slate-700'}`}>{(r.q60Trap ?? 0) > 0 ? fmt(r.q60Trap ?? 0) : '—'}</td>
                           <td className="px-2 py-1.5 text-right text-slate-700 dark:text-slate-300 font-semibold">{fmt(r.qTax)}</td>
                         </>}
                         <td className="px-2 py-1.5 text-right font-extrabold text-slate-800 dark:text-slate-100 border-l border-slate-100 dark:border-slate-800">{fmt(r.totalTax)}</td>
@@ -573,8 +573,8 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
             title={isCouple ? 'Spousal Income Equalisation' : 'Tax Band Utilisation'}
             subtitle={
               isCouple
-                ? 'Primary vs Partner net income \u2014 both should stay below the \xA350,270 Higher Rate cliff'
-                : 'Annual income vs Personal Allowance (\xA312,570) and Basic Rate ceiling (\xA350,270)'
+                ? 'Primary vs Partner net income — both should stay below the £50,270 Higher Rate cliff'
+                : 'Annual income vs Personal Allowance (£12,570) and Basic Rate ceiling (£50,270)'
             }
             action={
               isCouple && onChange ? (
@@ -588,7 +588,7 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
                   }`}
                 >
                   {equalising ? (
-                    <><RefreshCw className="w-3 h-3 animate-spin" /> Balancing\u2026</>
+                    <><RefreshCw className="w-3 h-3 animate-spin" /> Balancing…</>
                   ) : equalised ? (
                     <><CheckCircle2 className="w-3 h-3" /> Equalised</>
                   ) : (
@@ -603,11 +603,11 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
                 <LineChart data={incomeData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                   <XAxis dataKey="age" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
-                  <YAxis tickFormatter={(v) => `\xA3${Math.round(v/1000)}k`} tick={{ fontSize: 10 }} tickLine={false} axisLine={false} width={52} />
+                  <YAxis tickFormatter={(v) => `£${Math.round(v/1000)}k`} tick={{ fontSize: 10 }} tickLine={false} axisLine={false} width={52} />
                   <Tooltip content={<CurrencyTooltip />} />
                   <Legend wrapperStyle={{ fontSize: 10, paddingTop: 4 }} />
-                  <ReferenceLine y={BASIC_CEIL} stroke="#ef4444" strokeDasharray="5 4" strokeWidth={1.5} label={{ value: '40% cliff \xA350,270', position: 'insideTopLeft', fontSize: 9, fill: '#ef4444' }} />
-                  <ReferenceLine y={PA}         stroke="#10b981" strokeDasharray="5 4" strokeWidth={1.5} label={{ value: 'PA \xA312,570',          position: 'insideTopLeft', fontSize: 9, fill: '#10b981' }} />
+                  <ReferenceLine y={BASIC_CEIL} stroke="#ef4444" strokeDasharray="5 4" strokeWidth={1.5} label={{ value: '40% cliff £50,270', position: 'insideTopLeft', fontSize: 9, fill: '#ef4444' }} />
+                  <ReferenceLine y={PA}         stroke="#10b981" strokeDasharray="5 4" strokeWidth={1.5} label={{ value: 'PA £12,570',          position: 'insideTopLeft', fontSize: 9, fill: '#10b981' }} />
                   <Line type="monotone" dataKey="Primary" stroke="#6366f1" strokeWidth={2} dot={false} />
                   <Line type="monotone" dataKey="Partner" stroke="#f59e0b" strokeWidth={2} dot={false} strokeDasharray="4 3" />
                 </LineChart>
@@ -615,10 +615,10 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
                 <BarChart data={incomeData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                   <XAxis dataKey="age" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
-                  <YAxis tickFormatter={(v) => `\xA3${Math.round(v/1000)}k`} tick={{ fontSize: 10 }} tickLine={false} axisLine={false} width={52} />
+                  <YAxis tickFormatter={(v) => `£${Math.round(v/1000)}k`} tick={{ fontSize: 10 }} tickLine={false} axisLine={false} width={52} />
                   <Tooltip content={<CurrencyTooltip />} />
-                  <ReferenceLine y={BASIC_CEIL} stroke="#ef4444" strokeDasharray="5 4" strokeWidth={1.5} label={{ value: '40% cliff \xA350,270', position: 'insideTopLeft', fontSize: 9, fill: '#ef4444' }} />
-                  <ReferenceLine y={PA}         stroke="#10b981" strokeDasharray="5 4" strokeWidth={1.5} label={{ value: 'PA \xA312,570',          position: 'insideTopLeft', fontSize: 9, fill: '#10b981' }} />
+                  <ReferenceLine y={BASIC_CEIL} stroke="#ef4444" strokeDasharray="5 4" strokeWidth={1.5} label={{ value: '40% cliff £50,270', position: 'insideTopLeft', fontSize: 9, fill: '#ef4444' }} />
+                  <ReferenceLine y={PA}         stroke="#10b981" strokeDasharray="5 4" strokeWidth={1.5} label={{ value: 'PA £12,570',          position: 'insideTopLeft', fontSize: 9, fill: '#10b981' }} />
                   <Bar dataKey="Income" fill="#6366f1" radius={[3, 3, 0, 0]} maxBarSize={16} />
                 </BarChart>
               )}
@@ -635,10 +635,10 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
                 <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
                 <span>
                   {(kpis?.coupleBalance ?? 99) < 5
-                    ? 'Excellent spousal income equalisation \u2014 both incomes closely balanced.'
+                    ? 'Excellent spousal income equalisation — both incomes closely balanced.'
                     : (kpis?.coupleBalance ?? 99) < 15
-                    ? `Moderate imbalance (\xB1${kpis?.coupleBalance?.toFixed(1)}%). Use Balance Now to switch both members to Tax Optimiser strategy.`
-                    : `Significant income imbalance (\xB1${kpis?.coupleBalance?.toFixed(1)}%). Click Balance Now to equalise income and reduce household tax.`
+                    ? `Moderate imbalance (±${kpis?.coupleBalance?.toFixed(1)}%). Use Balance Now to switch both members to Tax Optimiser strategy.`
+                    : `Significant income imbalance (±${kpis?.coupleBalance?.toFixed(1)}%). Click Balance Now to equalise income and reduce household tax.`
                   }
                 </span>
               </div>
