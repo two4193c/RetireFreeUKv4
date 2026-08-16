@@ -348,14 +348,17 @@ function parseAnnuityTypeConfig(type?: string) {
       // Inject Equity
       if (netEquityReleased > 0) {
         if (plan.destinationPot === 'isa') {
-          // Subject to ISA allowance limits? In reality, it would likely go to GIA if over £20k, but we'll respect the user's toggle.
+          // Add to S&S ISA specifically, as well as the aggregate ISA pot tracking variable
+          primarySsIsaPot += netEquityReleased;
           primaryIsaPot += netEquityReleased;
         } else if (plan.destinationPot === 'cash') {
           primaryCashSavingsPot += netEquityReleased;
+        } else if (plan.destinationPot === 'sipp') {
+          // Add to pension pot. Note: In reality they could claim tax relief if they have relevant UK earnings, 
+          // but for now we simply inject the net cash as a gross top-up to the pension pot.
+          primaryPensionPot += netEquityReleased;
         } else {
           primaryGiaPot += netEquityReleased;
-          // Set cost basis so it's not immediately hit with CGT
-          primaryGiaCostBasis += netEquityReleased;
         }
       }
       
