@@ -20,6 +20,7 @@ import {
   ChevronLeft,
   ChevronRight,
   TrendingUp,
+  TrendingDown,
   Clock,
   Heart,
   Plane,
@@ -30,6 +31,7 @@ import {
   CheckCircle2,
   Filter,
   Trash2,
+  Pencil,
   Info,
   DollarSign,
   Wallet,
@@ -45,7 +47,9 @@ interface MilestoneTimelineCardProps {
   profile: UserProfile;
   pots: InvestmentPots;
   projections: YearProjection[];
-  onChange: (updatedProfile: UserProfile) => void;
+  onChange?: (updatedProfile: UserProfile) => void;
+  onEditEvent?: (eventId: string) => void;
+  isEmbedded?: boolean;
 }
 
 export type MilestoneCategory = 'all' | 'core' | 'pension' | 'property' | 'life_event';
@@ -76,6 +80,8 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
   pots,
   projections,
   onChange,
+  onEditEvent,
+  isEmbedded = false,
 }) => {
   const isCouple = Boolean(profile.isCouplePlanning);
   const currentAge = profile.currentAge || 40;
@@ -305,7 +311,7 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
           age: event.age,
           year: currentYear + (event.age - currentAge),
           color: isIncome ? '#10b981' : '#ec4899', // emerald for inflow, pink for outflow
-          icon: isIncome ? TrendingUp : Plane,
+          icon: isIncome ? TrendingUp : TrendingDown,
           description: `${isIncome ? 'Capital Inflow' : 'One-off Expenditure'} of £${Math.round(event.amount).toLocaleString()} (${event.targetPot || 'General'} pot).`,
           isEditable: true,
           minAge: currentAge,
@@ -488,7 +494,11 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
   }, [minHorizon, maxHorizon, currentAge, currentYear]);
 
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 sm:p-7 shadow-sm space-y-6">
+    <div className={
+      isEmbedded 
+        ? "space-y-6 pt-6 border-t border-slate-200 dark:border-slate-800" 
+        : "bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 sm:p-7 shadow-sm space-y-6"
+    }>
       {/* Header Bar */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-5">
         <div className="flex items-center gap-3.5">
@@ -796,6 +806,16 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
 
             {/* Live Age Stepper Controls & Delete Option */}
             <div className="flex items-center gap-2 self-start sm:self-auto">
+              {activeMilestone.key.startsWith('event_') && onEditEvent && (
+                <button
+                  type="button"
+                  onClick={() => onEditEvent(activeMilestone.key.replace('event_', ''))}
+                  className="p-2 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/60 transition-colors cursor-pointer"
+                  title="Edit Custom Life Event"
+                >
+                  <Pencil className="w-4 h-4" />
+                </button>
+              )}
               {activeMilestone.key.startsWith('event_') && (
                 <button
                   type="button"

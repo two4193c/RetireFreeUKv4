@@ -23,7 +23,6 @@ import { TaxOptimizerCard } from './components/TaxOptimizerCard';
 import { MonthlySavingsRateCard } from './components/MonthlySavingsRateCard';
 import { SpendingPhasesCard } from './components/SpendingPhasesCard';
 import { ProjectionChart } from './components/ProjectionChart';
-import { MilestoneTimelineCard } from './components/MilestoneTimelineCard';
 import { AnnualBreakdownTable } from './components/AnnualBreakdownTable';
 import { MonteCarloCard } from './components/MonteCarloCard';
 import { DrawdownPlanner } from './components/DrawdownPlanner';
@@ -948,7 +947,7 @@ function App() {
                 {appMode === 'advanced' && (
                   <>
                     <div id="card-inputs-lifeevents" className="scroll-mt-24 transition-all duration-300">
-                      <LifeEventsDecumulationCard profile={profile} onChange={handleProfileChange} />
+                      <LifeEventsDecumulationCard profile={profile} pots={pots} projections={projections} onChange={handleProfileChange} />
                     </div>
                     <div id="card-inputs-fees" className="scroll-mt-24 transition-all duration-300">
                       <InvestmentFeesCard profile={profile} onChange={handleProfileChange} />
@@ -1125,14 +1124,6 @@ function App() {
                         pots={pots}
                         taxResult={taxResult}
                         appMode={appMode}
-                      />
-                    </div>
-                    <div id="card-milestone-timeline" className="scroll-mt-24 transition-all duration-300">
-                      <MilestoneTimelineCard
-                        profile={profile}
-                        pots={pots}
-                        projections={projections}
-                        onChange={handleProfileChange}
                       />
                     </div>
                     <div id="card-proj-macro" className="scroll-mt-24 transition-all duration-300">

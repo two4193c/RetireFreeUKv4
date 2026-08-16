@@ -124,7 +124,6 @@ export const NAV_STRUCTURE: TabGroup[] = [
     cards: [
       { id: 'card-proj-chart', label: 'Capital & Income Growth Chart' },
       { id: 'card-cashflow-sankey', label: 'Cash Flow Waterfall & Sankey Diagram' },
-      { id: 'card-milestone-timeline', label: 'Visual Milestone Timeline' },
       { id: 'card-proj-macro', label: 'Economic & Growth Assumptions' },
       { id: 'card-proj-table', label: 'Year-by-Year Cashflow Ledger' },
     ],
@@ -269,7 +268,6 @@ export function getFilteredNavStructure(mode: AppMode = 'basic'): TabGroup[] {
     'card-adv-macro',
     'card-proj-macro',
     'card-cashflow-sankey',
-    'card-milestone-timeline',
     'card-proj-table',
     'card-risk-macro',
     'card-risk-historic',

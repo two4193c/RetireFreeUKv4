@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { UserProfile, DecumulationLifeEvent, LifeEventType, LifeEventPotTarget, ItemOwner } from '../types';
+import { UserProfile, DecumulationLifeEvent, LifeEventType, LifeEventPotTarget, ItemOwner, InvestmentPots, YearProjection } from '../types';
+import { MilestoneTimelineCard } from './MilestoneTimelineCard';
 import { ModalShell } from './ModalShell';
 import {
   Sparkles,
@@ -21,10 +22,13 @@ import {
   Heart,
   HelpCircle,
   Pencil,
+  CreditCard,
 } from 'lucide-react';
 
 interface LifeEventsDecumulationCardProps {
   profile: UserProfile;
+  pots?: InvestmentPots;
+  projections?: YearProjection[];
   onChange: (updatedProfile: UserProfile) => void;
 }
 
@@ -38,6 +42,8 @@ const POT_TARGET_OPTIONS: { value: LifeEventPotTarget; label: string }[] = [
 
 export const LifeEventsDecumulationCard: React.FC<LifeEventsDecumulationCardProps> = ({
   profile,
+  pots,
+  projections,
   onChange,
 }) => {
   const events = profile.decumulationLifeEvents || [];
@@ -47,7 +53,7 @@ export const LifeEventsDecumulationCard: React.FC<LifeEventsDecumulationCardProp
   const [isAdding, setIsAdding] = useState(false);
 
   const openAddModal = (
-    presetType: 'downsizing' | 'inheritance' | 'car' | 'trip' | 'renovation' | 'gift' | 'custom'
+    presetType: 'downsizing' | 'inheritance' | 'car' | 'trip' | 'renovation' | 'gift' | 'debt' | 'custom'
   ) => {
     const ownerToAssign: ItemOwner = isCouple
       ? activeOwnerFilter === 'partner'
@@ -143,18 +149,33 @@ export const LifeEventsDecumulationCard: React.FC<LifeEventsDecumulationCardProp
           description: 'House deposit contribution or grandchild education support',
         };
         break;
+      case 'debt':
+        newEvent = {
+          id: `life_${Date.now()}`,
+          name: 'Debt/Mortgage Payoff',
+          owner: ownerToAssign,
+          type: 'expense',
+          amount: 50000,
+          age: defaultRetAge,
+          targetPot: 'cash_savings',
+          inflationLinked: false,
+          enabled: true,
+          description: 'Lump sum payoff of remaining mortgage or debt balance at retirement',
+        };
+        break;
+      case 'custom':
       default:
         newEvent = {
           id: `life_${Date.now()}`,
-          name: 'Planned Life Event',
+          name: 'Custom Life Event',
           owner: ownerToAssign,
           type: 'expense',
           amount: 10000,
-          age: Math.min(85, defaultRetAge + 3),
+          age: defaultRetAge,
           targetPot: 'cash_savings',
           inflationLinked: true,
           enabled: true,
-          description: 'One-off financial inflow or outlay during retirement',
+          description: '',
         };
     }
 
@@ -267,7 +288,7 @@ export const LifeEventsDecumulationCard: React.FC<LifeEventsDecumulationCardProp
           <Sparkles className="w-3.5 h-3.5 text-purple-500" />
           Quick-Add Planned Life Events
         </span>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-8 gap-2">
           <button
             onClick={() => openAddModal('downsizing')}
             className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 hover:border-emerald-300 dark:hover:border-emerald-800 transition-all text-left flex flex-col justify-between group cursor-pointer"
@@ -336,6 +357,24 @@ export const LifeEventsDecumulationCard: React.FC<LifeEventsDecumulationCardProp
               </span>
               <span className="text-[10px] text-rose-600 dark:text-rose-400 font-semibold">
                 -£15k (Expense)
+              </span>
+            </div>
+          </button>
+
+          <button
+            onClick={() => openAddModal('debt')}
+            className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:bg-rose-50 dark:hover:bg-rose-950/30 hover:border-rose-300 dark:hover:border-rose-800 transition-all text-left flex flex-col justify-between group cursor-pointer"
+          >
+            <div className="flex items-center justify-between w-full text-rose-600 dark:text-rose-400">
+              <CreditCard className="w-4 h-4" />
+              <TrendingDown className="w-3.5 h-3.5" />
+            </div>
+            <div className="mt-2">
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-rose-700 dark:group-hover:text-rose-300 block">
+                Debt Payoff
+              </span>
+              <span className="text-[10px] text-rose-600 dark:text-rose-400 font-semibold">
+                -£50k (Expense)
               </span>
             </div>
           </button>
@@ -649,6 +688,23 @@ export const LifeEventsDecumulationCard: React.FC<LifeEventsDecumulationCardProp
             </div>
           </div>
         </ModalShell>
+      )}
+
+      {pots && projections && (
+        <MilestoneTimelineCard 
+          profile={profile} 
+          pots={pots} 
+          projections={projections} 
+          onChange={onChange} 
+          isEmbedded={true}
+          onEditEvent={(id) => {
+            const ev = profile.decumulationLifeEvents?.find(e => e.id === id);
+            if (ev) {
+              setEditItem(ev);
+              setIsAdding(false);
+            }
+          }}
+        />
       )}
     </div>
   );
