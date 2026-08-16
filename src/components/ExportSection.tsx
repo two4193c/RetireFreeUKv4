@@ -2629,15 +2629,11 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       }      // -------------------------------------------------------------------------
       // SECTION 10a: DYNAMIC OPTIMISER & MULTI-VARIABLE TAX MATRIX
       // -------------------------------------------------------------------------
-      // Ensure Section 10a has sufficient room or starts a clean page
-      if (p3Y > 165) {
-        doc.addPage();
-        curPageNum++;
-        renderPageHeader('Dynamic Optimiser — Multi-Variable Tax Cockpit', curPageNum);
-        p3Y = 24;
-      } else {
-        p3Y += 3;
-      }
+      // Section 10a dedicated page for clean cockpit presentation
+      doc.addPage();
+      curPageNum++;
+      renderPageHeader('Dynamic Optimiser — Multi-Variable Tax Cockpit', curPageNum);
+      p3Y = 24;
 
       const optRetRows = (projections || []).filter((p) => p.isRetired);
       const optTotalGross = optRetRows.reduce((s, r) => s + (r.totalWithdrawalAmount || 0), 0);
@@ -2658,7 +2654,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
 
       const optMcSuccess = mcNormalPrelim?.successRate ?? 85;
 
-      // Section 10a Header
+      // Section 10a Title & Description
       doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(10.5);
@@ -2671,7 +2667,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
 
       p3Y += 7.5;
 
-      // KPI Strip (5 Pill Boxes)
+      // 1. KPI Strip (5 Pill Boxes)
       const optKpis = [
         { label: 'Lifetime Tax Saved', val: `£${Math.round(optTaxSaved).toLocaleString()}`, sub: 'vs 20% flat baseline', color: [245, 158, 11] },
         { label: 'Avg Effective Tax Rate', val: `${optAvgRate.toFixed(1)}%`, sub: 'across retirement', color: [14, 165, 233] },
@@ -2710,14 +2706,14 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
 
       p3Y += kpiPillH + 4;
 
-      // Plan Radar Scorecard & Milestone Streamgraph Breakdown Container
-      const optBoxH = 68;
+      // 2. Scorecard & Visual 5-Axis Spider Radar Chart Box
+      const optBoxH = 70;
       doc.setFillColor(248, 250, 252);
       doc.roundedRect(14, p3Y, 182, optBoxH, 2.5, 2.5, 'F');
       doc.setDrawColor(203, 213, 225);
       doc.roundedRect(14, p3Y, 182, optBoxH, 2.5, 2.5, 'D');
 
-      // Left Column: Multi-Objective Radar Scorecard (Width 74mm)
+      // Left Column: Multi-Objective Plan Scorecard (Width 84mm)
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(7.5);
       doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
@@ -2739,7 +2735,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       ];
 
       radarItems.forEach((ri, rIdx) => {
-        const ry = p3Y + 9 + rIdx * 11.2;
+        const ry = p3Y + 9 + rIdx * 11.4;
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(6.5);
         doc.setTextColor(51, 65, 85);
@@ -2749,45 +2745,143 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(6.5);
         doc.setTextColor(scoreColor[0], scoreColor[1], scoreColor[2]);
-        doc.text(`${ri.score}/100`, 82, ry + 2.5);
+        doc.text(`${ri.score}/100`, 88, ry + 2.5);
 
         // Progress Bar
         doc.setFillColor(226, 232, 240);
-        doc.roundedRect(18, ry + 4, 70, 2.5, 1, 1, 'F');
+        doc.roundedRect(18, ry + 4, 76, 2.5, 1, 1, 'F');
         doc.setFillColor(scoreColor[0], scoreColor[1], scoreColor[2]);
-        doc.roundedRect(18, ry + 4, Math.max(1, (70 * ri.score) / 100), 2.5, 1, 1, 'F');
+        doc.roundedRect(18, ry + 4, Math.max(1, (76 * ri.score) / 100), 2.5, 1, 1, 'F');
 
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(5);
         doc.setTextColor(148, 163, 184);
-        doc.text(ri.desc, 18, ry + 9);
+        doc.text(ri.desc, 18, ry + 9.2);
       });
 
-      // Divider between Left and Right columns
+      // Divider Line between Scorecard and Radar Chart
       doc.setDrawColor(226, 232, 240);
-      doc.line(94, p3Y + 4, 94, p3Y + optBoxH - 4);
+      doc.line(99, p3Y + 4, 99, p3Y + optBoxH - 4);
 
-      // Right Column: Milestone Tax Matrix & Drawdown Distribution (Width 96mm)
+      // Right Column: Visual 5-Axis Spider Radar Chart (Width 97mm)
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(7.5);
       doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
-      doc.text('Key Milestone Tax Matrix Audit', 98, p3Y + 5.5);
+      doc.text('Plan Optimization Radar Chart', 103, p3Y + 5.5);
 
-      // Table Header for Matrix
-      const matThY = p3Y + 8.5;
-      doc.setFillColor(241, 245, 249);
-      doc.rect(98, matThY, 94, 5, 'F');
+      const radarCx = 146;
+      const radarCy = p3Y + 36.5;
+      const radarR = 21; // Radius in mm
+
+      // 5 Angles (in degrees): 0: -90 (Top), 1: -18 (Top-Right), 2: 54 (Bottom-Right), 3: 126 (Bottom-Left), 4: 198 (Top-Left)
+      const radarAngles = [-90, -18, 54, 126, 198];
+      const radarScores = [taxEffScore, longevityScore, ihtScore, volScore, floorScore];
+
+      // Draw concentric pentagon grid rings (25%, 50%, 75%, 100%)
+      const gridLevels = [0.25, 0.5, 0.75, 1.0];
+      doc.setDrawColor(226, 232, 240);
+      doc.setLineWidth(0.25);
+      gridLevels.forEach((gl) => {
+        for (let a = 0; a < 5; a++) {
+          const a1 = (radarAngles[a] * Math.PI) / 180;
+          const a2 = (radarAngles[(a + 1) % 5] * Math.PI) / 180;
+          const x1 = radarCx + gl * radarR * Math.cos(a1);
+          const y1 = radarCy + gl * radarR * Math.sin(a1);
+          const x2 = radarCx + gl * radarR * Math.cos(a2);
+          const y2 = radarCy + gl * radarR * Math.sin(a2);
+          doc.line(x1, y1, x2, y2);
+        }
+      });
+
+      // Draw 5 spoke lines from center to outer ring
+      doc.setDrawColor(203, 213, 225);
+      doc.setLineWidth(0.3);
+      for (let a = 0; a < 5; a++) {
+        const rad = (radarAngles[a] * Math.PI) / 180;
+        const xOuter = radarCx + radarR * Math.cos(rad);
+        const yOuter = radarCy + radarR * Math.sin(rad);
+        doc.line(radarCx, radarCy, xOuter, yOuter);
+      }
+
+      // Calculate user score vertices
+      const scoreVertices = radarScores.map((sc, sIdx) => {
+        const rad = (radarAngles[sIdx] * Math.PI) / 180;
+        const rDist = (radarR * Math.max(5, Math.min(100, sc))) / 100;
+        return {
+          x: radarCx + rDist * Math.cos(rad),
+          y: radarCy + rDist * Math.sin(rad),
+        };
+      });
+
+      // Draw filled radar polygon (using 5 filled triangles from center)
+      doc.setFillColor(224, 231, 255); // Indigo light fill
+      for (let v = 0; v < 5; v++) {
+        const v1 = scoreVertices[v];
+        const v2 = scoreVertices[(v + 1) % 5];
+        doc.triangle(radarCx, radarCy, v1.x, v1.y, v2.x, v2.y, 'F');
+      }
+
+      // Draw radar boundary outline
+      doc.setDrawColor(99, 102, 241);
+      doc.setLineWidth(0.8);
+      for (let v = 0; v < 5; v++) {
+        const v1 = scoreVertices[v];
+        const v2 = scoreVertices[(v + 1) % 5];
+        doc.line(v1.x, v1.y, v2.x, v2.y);
+      }
+
+      // Draw vertex marker dots
+      scoreVertices.forEach((sv) => {
+        doc.setFillColor(99, 102, 241);
+        doc.circle(sv.x, sv.y, 0.9, 'F');
+      });
+
+      // Axis labels & scores around the radar
+      const axisLabels = [
+        { name: 'Tax Efficiency', score: taxEffScore, x: radarCx - 14, y: radarCy - radarR - 2.5 },
+        { name: 'Longevity', score: longevityScore, x: radarCx + radarR + 2, y: radarCy - 6 },
+        { name: 'IHT Pres.', score: ihtScore, x: radarCx + 9, y: radarCy + radarR + 4.5 },
+        { name: 'Volatility', score: volScore, x: radarCx - 26, y: radarCy + radarR + 4.5 },
+        { name: 'Floor', score: floorScore, x: radarCx - radarR - 16, y: radarCy - 6 },
+      ];
+
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(5.5);
-      doc.setTextColor(71, 85, 105);
-      doc.text('Age (Year)', 100, matThY + 3.5);
-      doc.text('Gross Draw', 118, matThY + 3.5);
-      doc.text('0% PA', 137, matThY + 3.5);
-      doc.text('20% Basic', 151, matThY + 3.5);
-      doc.text('40% High', 167, matThY + 3.5);
-      doc.text('Tax Paid', 181, matThY + 3.5);
+      axisLabels.forEach((al) => {
+        doc.setTextColor(71, 85, 105);
+        doc.text(al.name, al.x, al.y);
+        doc.setTextColor(99, 102, 241);
+        doc.text(`(${al.score})`, al.x + doc.getTextWidth(al.name) + 1, al.y);
+      });
 
-      // Milestone rows for matrix
+      p3Y += optBoxH + 4;
+
+      // 3. Milestone Tax Matrix Audit Table Container
+      const matBoxH = 46;
+      doc.setFillColor(248, 250, 252);
+      doc.roundedRect(14, p3Y, 182, matBoxH, 2.5, 2.5, 'F');
+      doc.setDrawColor(203, 213, 225);
+      doc.roundedRect(14, p3Y, 182, matBoxH, 2.5, 2.5, 'D');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.5);
+      doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+      doc.text('Key Milestone Annual Tax Matrix Audit', 18, p3Y + 5.5);
+
+      // Table Header
+      const matThY = p3Y + 8;
+      doc.setFillColor(241, 245, 249);
+      doc.rect(18, matThY, 174, 5, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(5.8);
+      doc.setTextColor(71, 85, 105);
+      doc.text('Age (Year)', 22, matThY + 3.5);
+      doc.text('Gross Draw', 52, matThY + 3.5);
+      doc.text('0% PA (Tax-Free)', 80, matThY + 3.5);
+      doc.text('20% Basic Rate', 112, matThY + 3.5);
+      doc.text('40% Higher Rate', 142, matThY + 3.5);
+      doc.text('Annual Tax Paid', 168, matThY + 3.5);
+
       const auditAges = [
         targetAge,
         Math.min(horizonAge, targetAge + 5),
@@ -2799,10 +2893,10 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       auditAges.forEach((aAge, aIdx) => {
         const aRow = optRetRows.find((r) => r.age === aAge) || optRetRows[Math.min(optRetRows.length - 1, aIdx)];
         if (!aRow) return;
-        const rY = matThY + 5.5 + aIdx * 7.5;
+        const rY = matThY + 5 + aIdx * 6;
         if (aIdx % 2 === 1) {
           doc.setFillColor(248, 250, 252);
-          doc.rect(98, rY - 1, 94, 7, 'F');
+          doc.rect(18, rY - 0.8, 174, 5.8, 'F');
         }
 
         const grossD = aRow.totalWithdrawalAmount || 0;
@@ -2814,48 +2908,52 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(5.8);
         doc.setTextColor(30, 41, 59);
-        doc.text(`Age ${aRow.age} (${aRow.year})`, 100, rY + 3.5);
+        doc.text(`Age ${aRow.age} (${aRow.year})`, 22, rY + 3.5);
 
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(5.5);
+        doc.setFontSize(5.8);
         doc.setTextColor(71, 85, 105);
-        doc.text(`£${Math.round(grossD).toLocaleString()}`, 118, rY + 3.5);
+        doc.text(`£${Math.round(grossD).toLocaleString()}`, 52, rY + 3.5);
 
         doc.setTextColor(16, 185, 129);
-        doc.text(`£${Math.round(paD).toLocaleString()}`, 137, rY + 3.5);
+        doc.text(`£${Math.round(paD).toLocaleString()}`, 80, rY + 3.5);
 
         doc.setTextColor(14, 165, 233);
-        doc.text(basicD > 0 ? `£${Math.round(basicD).toLocaleString()}` : '—', 151, rY + 3.5);
+        doc.text(basicD > 0 ? `£${Math.round(basicD).toLocaleString()}` : '—', 112, rY + 3.5);
 
         doc.setTextColor(highD > 0 ? 225 : 148, highD > 0 ? 29 : 163, highD > 0 ? 72 : 184);
-        doc.text(highD > 0 ? `£${Math.round(highD).toLocaleString()}` : '£0', 167, rY + 3.5);
+        doc.text(highD > 0 ? `£${Math.round(highD).toLocaleString()}` : '£0 (Protected)', 142, rY + 3.5);
 
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(taxPaidD > 0 ? 51 : 16, taxPaidD > 0 ? 65 : 185, taxPaidD > 0 ? 85 : 129);
-        doc.text(`£${Math.round(taxPaidD).toLocaleString()}`, 181, rY + 3.5);
+        doc.text(`£${Math.round(taxPaidD).toLocaleString()}`, 168, rY + 3.5);
       });
 
-      // Streamgraph Color Legend (bottom right)
-      const matLegY = p3Y + optBoxH - 6.5;
+      // Streamgraph Color Legend (bottom)
+      const matLegY = p3Y + matBoxH - 5.5;
       doc.setFontSize(5.2);
       doc.setFont('helvetica', 'bold');
 
       doc.setFillColor(16, 185, 129);
-      doc.rect(98, matLegY, 3.5, 1.8, 'F');
+      doc.rect(22, matLegY, 3.5, 1.8, 'F');
       doc.setTextColor(71, 85, 105);
-      doc.text('0% PA Capture', 103, matLegY + 1.5);
+      doc.text('0% PA Capture', 27, matLegY + 1.5);
 
       doc.setFillColor(14, 165, 233);
-      doc.rect(130, matLegY, 3.5, 1.8, 'F');
-      doc.text('20% Basic Rate', 135, matLegY + 1.5);
+      doc.rect(68, matLegY, 3.5, 1.8, 'F');
+      doc.text('20% Basic Rate', 73, matLegY + 1.5);
 
       doc.setFillColor(239, 68, 68);
-      doc.rect(162, matLegY, 3.5, 1.8, 'F');
-      doc.text('40% Leakage (£0 Goal)', 167, matLegY + 1.5);
+      doc.rect(114, matLegY, 3.5, 1.8, 'F');
+      doc.text('40% Leakage (£0 Goal)', 119, matLegY + 1.5);
 
-      p3Y += optBoxH + 3.5;
+      doc.setFillColor(99, 102, 241);
+      doc.rect(156, matLegY, 3.5, 1.8, 'F');
+      doc.text('Tax-Free ISA Shielding', 161, matLegY + 1.5);
 
-      // Equalisation & Trap Insight Pill
+      p3Y += matBoxH + 3.5;
+
+      // 4. Equalisation & Trap Insight Pill
       const isEqBalanced = (optCoupleBalance ?? 0) < 5;
       const eqBg = isEqBalanced ? [240, 253, 244] : [254, 243, 199];
       const eqBorder = isEqBalanced ? [187, 247, 208] : [253, 230, 138];
