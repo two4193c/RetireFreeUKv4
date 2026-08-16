@@ -522,16 +522,6 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
 
         {/* Action Controls & Category Filters */}
         <div className="flex flex-wrap items-center gap-2">
-          {/* Add Milestone Button */}
-          <button
-            type="button"
-            onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs shadow-indigo-600/20 active:scale-95"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Add Event</span>
-          </button>
-
           {/* Category Tabs */}
           <div className="flex items-center bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200/80 dark:border-slate-700/60 text-xs font-bold text-slate-600 dark:text-slate-400">
             <button
@@ -770,6 +760,18 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
             ))}
           </div>
         </div>
+      </div>
+
+      {/* Add Milestone Button (Moved below timeline chart) */}
+      <div className="flex justify-center -mt-2 mb-4">
+        <button
+          type="button"
+          onClick={() => setIsAddModalOpen(true)}
+          className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold transition-all cursor-pointer shadow-md shadow-indigo-600/20 active:scale-95"
+        >
+          <Plus className="w-4 h-4" />
+          <span>Add Custom Milestone Event</span>
+        </button>
       </div>
 
       {/* Selected Milestone Inspector & Live Stepper Controls */}
