@@ -347,17 +347,31 @@ function parseAnnuityTypeConfig(type?: string) {
 
       // Inject Equity
       if (netEquityReleased > 0) {
+        const splitRatio = profile.isCouplePlanning && !partnerDead ? 0.5 : 1;
+        const primaryShare = netEquityReleased * splitRatio;
+        const partnerShare = netEquityReleased - primaryShare;
+
         if (plan.destinationPot === 'isa') {
           // Add to S&S ISA specifically, as well as the aggregate ISA pot tracking variable
-          primarySsIsaPot += netEquityReleased;
-          primaryIsaPot += netEquityReleased;
+          primarySsIsaPot += primaryShare;
+          primaryIsaPot += primaryShare;
+          if (partnerShare > 0) {
+            partnerSsIsaPot += partnerShare;
+            partnerIsaPot += partnerShare;
+          }
         } else if (plan.destinationPot === 'cash') {
-          primaryCashSavingsPot += netEquityReleased;
+          primaryCashSavingsPot += primaryShare;
+          if (partnerShare > 0) partnerCashSavingsPot += partnerShare;
         } else if (plan.destinationPot === 'cash_isa') {
-          primaryCashIsaPot += netEquityReleased;
-          primaryIsaPot += netEquityReleased;
+          primaryCashIsaPot += primaryShare;
+          primaryIsaPot += primaryShare;
+          if (partnerShare > 0) {
+            partnerCashIsaPot += partnerShare;
+            partnerIsaPot += partnerShare;
+          }
         } else {
-          primaryGiaPot += netEquityReleased;
+          primaryGiaPot += primaryShare;
+          if (partnerShare > 0) partnerGiaPot += partnerShare;
         }
       }
       
