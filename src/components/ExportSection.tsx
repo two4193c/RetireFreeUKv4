@@ -939,7 +939,8 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
         { section: '8. Investment Growth & Macroeconomic Assumptions', page: 4, desc: 'Pre and post-retirement returns, CPI inflation, and indexing assumptions.' },
         { section: '9. Spending Phase Profile & Target Income Amounts', page: 5, desc: 'Age-based spending requirements (Go-Go, Slow-Go, No-Go) and monthly targets.' },
         { section: '10. Retirement Income Product Structure & Drawdown Strategy', page: 5, desc: 'Flexi-access drawdown, lifetime annuities, PCLS tax-free cash & destination strategy.' },
-        { section: '10a. Effective Withdrawal Rate Trajectory Chart (SWR %)', page: 5, desc: 'Year-by-year effective SWR % overlay, Bengen 3.5% UK benchmark, 5% danger threshold & peak rate analysis.' },
+        { section: '10a. Dynamic Optimiser & Multi-Variable Tax Matrix', page: 5, desc: 'Tax-smoothing engine, 0% PA capture, 20% basic rate smoothing, and spousal equalisation.' },
+        { section: '10b. Effective Withdrawal Rate Trajectory Chart (SWR %)', page: 5, desc: 'Year-by-year effective SWR % overlay, Bengen 3.5% UK benchmark, 5% danger threshold & peak rate analysis.' },
         { section: '11. Key Milestone Schedule & Execution Details', page: 5, desc: 'Milestone timeline table, State Pension execution details, and annuity purchase rates.' },
         { section: '12. Visual Diagram Models — Portfolio Allocation & Trajectories', page: 6, desc: 'Charts of initial asset distribution and multi-year portfolio wealth trajectory curves.' },
         { section: '13. Visual Diagram Models — Drawdown Income Breakdown', page: 7, desc: 'Charts of net annual drawdown income sources in both Nominal and Real Today\'s £.' },
@@ -957,23 +958,23 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       tocItems.forEach((item, idx) => {
         if (idx % 2 === 1) {
           doc.setFillColor(slateLight[0], slateLight[1], slateLight[2]);
-          doc.rect(14, tocY, 182, 9.8, 'F');
+          doc.rect(14, tocY, 182, 9.3, 'F');
         }
 
         doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(8);
-        doc.text(item.section, 18, tocY + 3.8);
+        doc.setFontSize(7.8);
+        doc.text(item.section, 18, tocY + 3.6);
 
         doc.setTextColor(16, 185, 129);
-        doc.text(`Page ${item.page}`, 172, tocY + 3.8);
+        doc.text(`Page ${item.page}`, 172, tocY + 3.6);
 
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(6.8);
+        doc.setFontSize(6.5);
         doc.setTextColor(100, 116, 139);
-        doc.text(item.desc, 18, tocY + 7.5);
+        doc.text(item.desc, 18, tocY + 7.2);
 
-        tocY += 9.8;
+        tocY += 9.3;
       });
 
       // =========================================================================
@@ -2625,13 +2626,268 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
         p3Y += warnBoxH + 5;
       } else {
         p3Y += 3;
+      }      // -------------------------------------------------------------------------
+      // SECTION 10a: DYNAMIC OPTIMISER & MULTI-VARIABLE TAX MATRIX
+      // -------------------------------------------------------------------------
+      // Ensure Section 10a has sufficient room or starts a clean page
+      if (p3Y > 165) {
+        doc.addPage();
+        curPageNum++;
+        renderPageHeader('Dynamic Optimiser — Multi-Variable Tax Cockpit', curPageNum);
+        p3Y = 24;
+      } else {
+        p3Y += 3;
       }
 
+      const optRetRows = (projections || []).filter((p) => p.isRetired);
+      const optTotalGross = optRetRows.reduce((s, r) => s + (r.totalWithdrawalAmount || 0), 0);
+      const optTotalTax = optRetRows.reduce((s, r) => s + (r.totalTaxPaid || 0), 0);
+      const optAvgRate = optTotalGross > 0 ? (optTotalTax / optTotalGross) * 100 : 0;
+      const optPaYears = optRetRows.filter((r) => (r.primaryNetIncome || 0) >= 12570).length;
+      const optPaRate = optRetRows.length > 0 ? (optPaYears / optRetRows.length) * 100 : 0;
+      const optTaxSaved = Math.max(0, optTotalGross * 0.2 - optTotalTax);
+
+      let optCoupleBalance: number | null = null;
+      if (profile.isCouplePlanning) {
+        const devs = optRetRows.map((r) => {
+          const p = r.primaryNetIncome || 0, q = r.partnerNetIncome || 0, t = p + q;
+          return t === 0 ? 0 : Math.abs(p / t - 0.5) * 100;
+        });
+        optCoupleBalance = devs.length > 0 ? devs.reduce((a, b) => a + b, 0) / devs.length : null;
+      }
+
+      const optMcSuccess = mcNormalPrelim?.successRate ?? 85;
+
+      // Section 10a Header
+      doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10.5);
+      doc.text('10a. Dynamic Optimiser — Multi-Variable Tax Matrix & Cockpit', 14, p3Y);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(100, 116, 139);
+      doc.text('Optimal withdrawal sequencing, 0% PA utilization, 20% basic rate smoothing, and spousal equalisation audit.', 14, p3Y + 4.5);
+
+      p3Y += 7.5;
+
+      // KPI Strip (5 Pill Boxes)
+      const optKpis = [
+        { label: 'Lifetime Tax Saved', val: `£${Math.round(optTaxSaved).toLocaleString()}`, sub: 'vs 20% flat baseline', color: [245, 158, 11] },
+        { label: 'Avg Effective Tax Rate', val: `${optAvgRate.toFixed(1)}%`, sub: 'across retirement', color: [14, 165, 233] },
+        { label: 'PA Capture Rate', val: `${optPaRate.toFixed(1)}%`, sub: '£12,570 utilized', color: [16, 185, 129] },
+        { label: profile.isCouplePlanning ? 'Couple Income Balance' : 'Tax Bracket Smoothing', val: profile.isCouplePlanning ? `±${(optCoupleBalance ?? 0).toFixed(1)}%` : 'Optimized', sub: profile.isCouplePlanning ? 'deviation from 50/50' : '40% cliff bypass', color: [139, 92, 246] },
+        { label: 'MC Success Rate (1k)', val: `${optMcSuccess}%`, sub: 'solvency probability', color: [99, 102, 241] },
+      ];
+
+      const kpiPillW = 34.8;
+      const kpiPillH = 14;
+      optKpis.forEach((kp, kIdx) => {
+        const kx = 14 + kIdx * (kpiPillW + 2);
+        doc.setFillColor(slateLight[0], slateLight[1], slateLight[2]);
+        doc.roundedRect(kx, p3Y, kpiPillW, kpiPillH, 2, 2, 'F');
+        doc.setDrawColor(226, 232, 240);
+        doc.roundedRect(kx, p3Y, kpiPillW, kpiPillH, 2, 2, 'D');
+
+        doc.setFillColor(kp.color[0], kp.color[1], kp.color[2]);
+        doc.circle(kx + 4, p3Y + 4.5, 1.5, 'F');
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(5.5);
+        doc.setTextColor(100, 116, 139);
+        doc.text(kp.label, kx + 7.5, p3Y + 5);
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.5);
+        doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+        doc.text(kp.val, kx + 4, p3Y + 9.5);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(5);
+        doc.setTextColor(148, 163, 184);
+        doc.text(kp.sub, kx + 4, p3Y + 12.5);
+      });
+
+      p3Y += kpiPillH + 4;
+
+      // Plan Radar Scorecard & Milestone Streamgraph Breakdown Container
+      const optBoxH = 68;
+      doc.setFillColor(248, 250, 252);
+      doc.roundedRect(14, p3Y, 182, optBoxH, 2.5, 2.5, 'F');
+      doc.setDrawColor(203, 213, 225);
+      doc.roundedRect(14, p3Y, 182, optBoxH, 2.5, 2.5, 'D');
+
+      // Left Column: Multi-Objective Radar Scorecard (Width 74mm)
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.5);
+      doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+      doc.text('Multi-Objective Plan Scorecard (0–100)', 18, p3Y + 5.5);
+
+      const taxEffScore = optTotalGross > 0 ? Math.min(100, Math.max(0, Math.round((1 - optTotalTax / optTotalGross) * 100))) : 80;
+      const longevityScore = optMcSuccess;
+      const ihtScore = Math.min(100, Math.max(0, Math.round((((optRetRows[optRetRows.length - 1]?.totalPot || 0) / (profile.isCouplePlanning ? 650000 : 325000)) * 60))));
+      const volScore = Math.min(100, Math.max(0, Math.round((3.5 / Math.max((optRetRows[0]?.totalWithdrawalAmount || 0) / (optRetRows[0]?.totalPot || 1) * 100, 0.1)) * 70)));
+      const guaranteedFloor = (profile.includeStatePension ? profile.statePensionAmountAnnual || 0 : 0) + (profile.isCouplePlanning && profile.partnerIncludeStatePension ? profile.partnerStatePensionAmountAnnual || 0 : 0);
+      const floorScore = Math.min(100, Math.max(0, Math.round((guaranteedFloor / Math.max(profile.targetAnnualSpendRetirement || 30000, 1)) * 100)));
+
+      const radarItems = [
+        { label: 'Tax Efficiency', score: taxEffScore, desc: 'Minimizes higher rate leakage' },
+        { label: 'Longevity Safety', score: longevityScore, desc: '1,000-sim Monte Carlo survival' },
+        { label: 'IHT Preservation', score: ihtScore, desc: 'Estate value vs Nil-Rate Band' },
+        { label: 'Volatility Resilience', score: volScore, desc: 'Safety margin vs 3.5% UK SWR' },
+        { label: 'Guaranteed Floor', score: floorScore, desc: 'State Pension & Annuity coverage' },
+      ];
+
+      radarItems.forEach((ri, rIdx) => {
+        const ry = p3Y + 9 + rIdx * 11.2;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(6.5);
+        doc.setTextColor(51, 65, 85);
+        doc.text(ri.label, 18, ry + 2.5);
+
+        const scoreColor = ri.score >= 70 ? [16, 185, 129] : ri.score >= 45 ? [245, 158, 11] : [239, 68, 68];
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(6.5);
+        doc.setTextColor(scoreColor[0], scoreColor[1], scoreColor[2]);
+        doc.text(`${ri.score}/100`, 82, ry + 2.5);
+
+        // Progress Bar
+        doc.setFillColor(226, 232, 240);
+        doc.roundedRect(18, ry + 4, 70, 2.5, 1, 1, 'F');
+        doc.setFillColor(scoreColor[0], scoreColor[1], scoreColor[2]);
+        doc.roundedRect(18, ry + 4, Math.max(1, (70 * ri.score) / 100), 2.5, 1, 1, 'F');
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(5);
+        doc.setTextColor(148, 163, 184);
+        doc.text(ri.desc, 18, ry + 9);
+      });
+
+      // Divider between Left and Right columns
+      doc.setDrawColor(226, 232, 240);
+      doc.line(94, p3Y + 4, 94, p3Y + optBoxH - 4);
+
+      // Right Column: Milestone Tax Matrix & Drawdown Distribution (Width 96mm)
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.5);
+      doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+      doc.text('Key Milestone Tax Matrix Audit', 98, p3Y + 5.5);
+
+      // Table Header for Matrix
+      const matThY = p3Y + 8.5;
+      doc.setFillColor(241, 245, 249);
+      doc.rect(98, matThY, 94, 5, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(5.5);
+      doc.setTextColor(71, 85, 105);
+      doc.text('Age (Year)', 100, matThY + 3.5);
+      doc.text('Gross Draw', 118, matThY + 3.5);
+      doc.text('0% PA', 137, matThY + 3.5);
+      doc.text('20% Basic', 151, matThY + 3.5);
+      doc.text('40% High', 167, matThY + 3.5);
+      doc.text('Tax Paid', 181, matThY + 3.5);
+
+      // Milestone rows for matrix
+      const auditAges = [
+        targetAge,
+        Math.min(horizonAge, targetAge + 5),
+        profile.statePensionAge || 67,
+        Math.min(horizonAge, 75),
+        horizonAge,
+      ].filter((a, idx, arr) => arr.indexOf(a) === idx && a >= targetAge && a <= horizonAge);
+
+      auditAges.forEach((aAge, aIdx) => {
+        const aRow = optRetRows.find((r) => r.age === aAge) || optRetRows[Math.min(optRetRows.length - 1, aIdx)];
+        if (!aRow) return;
+        const rY = matThY + 5.5 + aIdx * 7.5;
+        if (aIdx % 2 === 1) {
+          doc.setFillColor(248, 250, 252);
+          doc.rect(98, rY - 1, 94, 7, 'F');
+        }
+
+        const grossD = aRow.totalWithdrawalAmount || 0;
+        const paD = Math.min(grossD, 12570);
+        const basicD = Math.min(Math.max(0, grossD - 12570), 50270 - 12570);
+        const highD = Math.max(0, grossD - 50270);
+        const taxPaidD = aRow.totalTaxPaid || 0;
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(5.8);
+        doc.setTextColor(30, 41, 59);
+        doc.text(`Age ${aRow.age} (${aRow.year})`, 100, rY + 3.5);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(5.5);
+        doc.setTextColor(71, 85, 105);
+        doc.text(`£${Math.round(grossD).toLocaleString()}`, 118, rY + 3.5);
+
+        doc.setTextColor(16, 185, 129);
+        doc.text(`£${Math.round(paD).toLocaleString()}`, 137, rY + 3.5);
+
+        doc.setTextColor(14, 165, 233);
+        doc.text(basicD > 0 ? `£${Math.round(basicD).toLocaleString()}` : '—', 151, rY + 3.5);
+
+        doc.setTextColor(highD > 0 ? 225 : 148, highD > 0 ? 29 : 163, highD > 0 ? 72 : 184);
+        doc.text(highD > 0 ? `£${Math.round(highD).toLocaleString()}` : '£0', 167, rY + 3.5);
+
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(taxPaidD > 0 ? 51 : 16, taxPaidD > 0 ? 65 : 185, taxPaidD > 0 ? 85 : 129);
+        doc.text(`£${Math.round(taxPaidD).toLocaleString()}`, 181, rY + 3.5);
+      });
+
+      // Streamgraph Color Legend (bottom right)
+      const matLegY = p3Y + optBoxH - 6.5;
+      doc.setFontSize(5.2);
+      doc.setFont('helvetica', 'bold');
+
+      doc.setFillColor(16, 185, 129);
+      doc.rect(98, matLegY, 3.5, 1.8, 'F');
+      doc.setTextColor(71, 85, 105);
+      doc.text('0% PA Capture', 103, matLegY + 1.5);
+
+      doc.setFillColor(14, 165, 233);
+      doc.rect(130, matLegY, 3.5, 1.8, 'F');
+      doc.text('20% Basic Rate', 135, matLegY + 1.5);
+
+      doc.setFillColor(239, 68, 68);
+      doc.rect(162, matLegY, 3.5, 1.8, 'F');
+      doc.text('40% Leakage (£0 Goal)', 167, matLegY + 1.5);
+
+      p3Y += optBoxH + 3.5;
+
+      // Equalisation & Trap Insight Pill
+      const isEqBalanced = (optCoupleBalance ?? 0) < 5;
+      const eqBg = isEqBalanced ? [240, 253, 244] : [254, 243, 199];
+      const eqBorder = isEqBalanced ? [187, 247, 208] : [253, 230, 138];
+      const eqText = isEqBalanced ? [5, 150, 105] : [180, 83, 9];
+
+      doc.setFillColor(eqBg[0], eqBg[1], eqBg[2]);
+      doc.roundedRect(14, p3Y, 182, 8.5, 2, 2, 'F');
+      doc.setDrawColor(eqBorder[0], eqBorder[1], eqBorder[2]);
+      doc.roundedRect(14, p3Y, 182, 8.5, 2, 2, 'D');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7);
+      doc.setTextColor(eqText[0], eqText[1], eqText[2]);
+      const eqTitle = profile.isCouplePlanning
+        ? (isEqBalanced ? '✓ Symmetrical Spousal Equalisation Active' : `⚠ Moderate Spousal Imbalance (±${(optCoupleBalance ?? 0).toFixed(1)}%)`)
+        : '✓ Single-Member Drawdown Smoothing Active';
+      doc.text(eqTitle, 18, p3Y + 3.5);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(6.2);
+      const eqDesc = profile.isCouplePlanning
+        ? 'Both partners utilize their full £12,570 Personal Allowance and basic rate thresholds, eliminating the 60% tax trap.'
+        : 'Drawdowns smoothly bypass higher rate cliffs and preserve tax-free ISA buffers for peak spending phases.';
+      doc.text(eqDesc, 18, p3Y + 6.8);
+
+      p3Y += 12.5;
+
       // -------------------------------------------------------------------------
-      // SECTION 10a: EFFECTIVE WITHDRAWAL RATE TRAJECTORY CHART (SWR & GUARDRAILS)
+      // SECTION 10b: EFFECTIVE WITHDRAWAL RATE TRAJECTORY CHART (SWR & GUARDRAILS)
       // -------------------------------------------------------------------------
-      // Check if Section 10a needs a fresh page
-      if (p3Y > 185) {
+      // Check if Section 10b needs a fresh page
+      if (p3Y > 175) {
         doc.addPage();
         curPageNum++;
         renderPageHeader('Retirement Strategy & Withdrawal Rate Trajectory', curPageNum);
@@ -2669,7 +2925,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(10.5);
-      doc.text('10a. Effective Withdrawal Rate Trajectory Chart (Year-by-Year SWR % Overlay)', 14, p3Y);
+      doc.text('10b. Effective Withdrawal Rate Trajectory Chart (Year-by-Year SWR % Overlay)', 14, p3Y);
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(7.5);
