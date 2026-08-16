@@ -263,7 +263,7 @@ function App() {
       if (advancedTabs.includes(activeTab)) {
         setActiveTab('inputs');
       }
-      if (docSubTab !== 'user_guide') {
+      if (docSubTab !== 'user_guide' && docSubTab !== 'features_guide') {
         setDocSubTab('user_guide');
       }
     }
