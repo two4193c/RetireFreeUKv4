@@ -1837,23 +1837,48 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       p2Y = drawAssetBreakdownTable(6, `Projected Investment Pot Assets Breakdown at Private Pension Access Age (Age ${primaryAccessAge})`, privateAccessYear, p2Y);
 
       // SECTION 6a: POTENTIAL TAX-FREE LUMP SUM (PCLS & LSA ALLOWANCE) ANALYSIS
-      if (p2Y > 230) {
+      const isCoupleForPcls = Boolean(profile.isCouplePlanning || profile.maritalStatus === 'couple');
+      const boxH = isCoupleForPcls ? 44 : 26;
+
+      if (p2Y + boxH > 275) {
         doc.addPage();
         curPageNum++;
         renderPageHeader('Projected Asset Breakdowns at Key Milestones', curPageNum);
         p2Y = 24;
       }
 
+      const formatPclsTargetPot = (pot?: string, splits?: LumpSumSplit[]) => {
+        if (pot === 'split' && splits && splits.length > 0) {
+          const splitDescs = splits.map((s) => {
+            const pLabel = s.pot === 'stocks_and_shares_isa' ? 'S&S ISA'
+              : s.pot === 'cash_isa' ? 'Cash ISA'
+              : s.pot === 'cash_savings' ? 'Cash'
+              : s.pot === 'gia' ? 'GIA'
+              : 'Spend/Debt';
+            return s.mode === 'percentage' ? `${pLabel} ${s.value}%` : `${pLabel} £${Math.round(s.value).toLocaleString()}`;
+          });
+          return `Split: ${splitDescs.join(', ')}`;
+        }
+        if (pot === 'reinvest_isa' || pot === 'stocks_and_shares_isa') return 'Reinvest S&S ISA';
+        if (pot === 'cash_isa') return 'Reinvest Cash ISA';
+        if (pot === 'cash_savings' || pot === 'cash') return 'Cash Savings Reserve';
+        if (pot === 'clear_mortgage') return 'Clear Mortgage';
+        if (pot === 'spend_clear_debt') return 'Spend / Clear Debt';
+        if (pot === 'lifestyle_spend' || pot === 'lifestyle') return 'Lifestyle Expenditure';
+        return 'Reinvest into ISA';
+      };
+
       const primaryTakeAgePcls = getLumpSumTakeAge(profile);
       const primaryPensionAtTakePcls = getProjectedPensionAtTakeAge(profile, pots, primaryTakeAgePcls, false);
       const primaryMaxPcls = calculateMaxPcls(primaryPensionAtTakePcls, profile);
+      const primaryCrystMode = profile.crystallisationMode === 'phased_tranches' ? 'Phased UFPLS Tranches' : 'Upfront PCLS';
+      const primaryDestStr = formatPclsTargetPot(profile.lumpSumTargetPot, profile.lumpSumSplits);
 
-      const partnerTakeAgePcls = profile.isCouplePlanning ? getPartnerLumpSumTakeAge(profile) : primaryTakeAgePcls;
-      const partnerPensionAtTakePcls = profile.isCouplePlanning ? getProjectedPensionAtTakeAge(profile, pots, partnerTakeAgePcls, true) : 0;
-      const partnerMaxPcls = profile.isCouplePlanning ? calculatePartnerMaxPcls(partnerPensionAtTakePcls, profile) : { maxTaxFreeCash: 0, lsaLimit: 268275, pclsPercent: 25, isCappedByLsa: false };
-
-      const isCoupleForPcls = Boolean(profile.isCouplePlanning);
-      const boxH = isCoupleForPcls ? 25 : 21;
+      const partnerTakeAgePcls = isCoupleForPcls ? getPartnerLumpSumTakeAge(profile) : primaryTakeAgePcls;
+      const partnerPensionAtTakePcls = isCoupleForPcls ? getProjectedPensionAtTakeAge(profile, pots, partnerTakeAgePcls, true) : 0;
+      const partnerMaxPcls = isCoupleForPcls ? calculatePartnerMaxPcls(partnerPensionAtTakePcls, profile) : { maxTaxFreeCash: 0, lsaLimit: 268275, pclsPercent: 25, isCappedByLsa: false };
+      const partnerCrystMode = (profile.partnerCrystallisationMode || profile.crystallisationMode) === 'phased_tranches' ? 'Phased UFPLS Tranches' : 'Upfront PCLS';
+      const partnerDestStr = formatPclsTargetPot(profile.partnerLumpSumTargetPot || profile.lumpSumTargetPot, profile.partnerLumpSumSplits || profile.lumpSumSplits);
 
       doc.setFillColor(254, 243, 199);
       doc.roundedRect(14, p2Y, 182, boxH, 3, 3, 'F');
@@ -1865,24 +1890,94 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       doc.setFontSize(8.5);
       doc.text('6a. Potential Tax-Free Lump Sum (PCLS & LSA Allowance) Analysis', 18, p2Y + 5);
 
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(7.5);
-      doc.setTextColor(51, 65, 85);
+      if (isCoupleForPcls) {
+        // Dual column sub-cards
+        const colW = 85;
+        const subBoxH = 24.5;
+        const subY = p2Y + 7;
 
-      const priPclsStr = `• Primary Member (@ Age ${primaryTakeAgePcls}): Pension Pot £${Math.round(primaryPensionAtTakePcls).toLocaleString()} | Max Tax-Free Cash: £${Math.round(primaryMaxPcls.maxTaxFreeCash).toLocaleString()} ${primaryMaxPcls.isCappedByLsa ? '(Capped by £268.3k LSA)' : '(25% Uncapped)'}`;
-      doc.text(priPclsStr.length > 110 ? priPclsStr.substring(0, 108) + '...' : priPclsStr, 18, p2Y + 10);
+        // Primary Column Box
+        doc.setFillColor(255, 255, 255);
+        doc.roundedRect(18, subY, colW, subBoxH, 2, 2, 'F');
+        doc.setDrawColor(251, 191, 36);
+        doc.roundedRect(18, subY, colW, subBoxH, 2, 2, 'D');
 
-      if (isCouple) {
-        const partPclsStr = `• Partner Member (@ Age ${partnerTakeAgePcls}): Pension Pot £${Math.round(partnerPensionAtTakePcls).toLocaleString()} | Max Tax-Free Cash: £${Math.round(partnerMaxPcls.maxTaxFreeCash).toLocaleString()} ${partnerMaxPcls.isCappedByLsa ? '(Capped by £268.3k LSA)' : '(25% Uncapped)'}`;
-        doc.text(partPclsStr.length > 110 ? partPclsStr.substring(0, 108) + '...' : partPclsStr, 18, p2Y + 14.5);
+        doc.setFontSize(7.5);
         doc.setFont('helvetica', 'bold');
+        doc.setTextColor(30, 41, 59);
+        doc.text(`Primary: ${profile.name || 'Primary'} (Age ${primaryTakeAgePcls})`, 21, subY + 4.5);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(6.5);
+        doc.setTextColor(71, 85, 105);
+        doc.text(`• Pension Pot @ Crystallisation: £${Math.round(primaryPensionAtTakePcls).toLocaleString()}`, 21, subY + 8.5);
+        doc.text(`• Strategy: ${primaryCrystMode} (${primaryMaxPcls.pclsPercent}%)`, 21, subY + 12.5);
+
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(13, 148, 136);
+        doc.text(`• Max Tax-Free Cash: £${Math.round(primaryMaxPcls.maxTaxFreeCash).toLocaleString()}`, 21, subY + 16.5);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(71, 85, 105);
+        const priLsaCapText = primaryMaxPcls.isCappedByLsa
+          ? `• LSA: Capped at £${(primaryMaxPcls.lsaLimit / 1000).toFixed(1)}k`
+          : `• LSA Cap: £${(primaryMaxPcls.lsaLimit / 1000).toFixed(1)}k (Uncapped)`;
+        doc.text(priLsaCapText, 21, subY + 20.5);
+
+        // Partner Column Box
+        const partColX = 18 + colW + 4;
+        doc.setFillColor(255, 255, 255);
+        doc.roundedRect(partColX, subY, colW, subBoxH, 2, 2, 'F');
+        doc.setDrawColor(251, 191, 36);
+        doc.roundedRect(partColX, subY, colW, subBoxH, 2, 2, 'D');
+
+        doc.setFontSize(7.5);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(30, 41, 59);
+        doc.text(`Partner: ${profile.partnerName || 'Partner'} (Age ${partnerTakeAgePcls})`, partColX + 3, subY + 4.5);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(6.5);
+        doc.setTextColor(71, 85, 105);
+        doc.text(`• Pension Pot @ Crystallisation: £${Math.round(partnerPensionAtTakePcls).toLocaleString()}`, partColX + 3, subY + 8.5);
+        doc.text(`• Strategy: ${partnerCrystMode} (${partnerMaxPcls.pclsPercent}%)`, partColX + 3, subY + 12.5);
+
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(13, 148, 136);
+        doc.text(`• Max Tax-Free Cash: £${Math.round(partnerMaxPcls.maxTaxFreeCash).toLocaleString()}`, partColX + 3, subY + 16.5);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(71, 85, 105);
+        const partLsaCapText = partnerMaxPcls.isCappedByLsa
+          ? `• LSA: Capped at £${(partnerMaxPcls.lsaLimit / 1000).toFixed(1)}k`
+          : `• LSA Cap: £${(partnerMaxPcls.lsaLimit / 1000).toFixed(1)}k (Uncapped)`;
+        doc.text(partLsaCapText, partColX + 3, subY + 20.5);
+
+        // Combined Household Strip at bottom of box
+        const combY = p2Y + 33.5;
+        doc.setFillColor(254, 240, 138);
+        doc.roundedRect(18, combY, 174, 6.5, 1, 1, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7);
         doc.setTextColor(4, 120, 87);
-        doc.text(`• Combined Household Tax-Free Lump Sum Available: £${Math.round(primaryMaxPcls.maxTaxFreeCash + partnerMaxPcls.maxTaxFreeCash).toLocaleString()}`, 18, p2Y + 19.5);
+        const totalPcls = Math.round(primaryMaxPcls.maxTaxFreeCash + partnerMaxPcls.maxTaxFreeCash);
+        const totalLsa = primaryMaxPcls.lsaLimit + partnerMaxPcls.lsaLimit;
+        doc.text(`• Combined Household Tax-Free Lump Sum: £${totalPcls.toLocaleString()} | Combined LSA Cap: £${totalLsa.toLocaleString()} (Destinations: ${primaryDestStr} / ${partnerDestStr})`, 21, combY + 4.2);
+
       } else {
+        // Single member full width
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7.5);
+        doc.setTextColor(51, 65, 85);
+        const priPclsStr = `• Primary Member (@ Age ${primaryTakeAgePcls}): Projected Pension Pot £${Math.round(primaryPensionAtTakePcls).toLocaleString()} | Max Tax-Free Cash: £${Math.round(primaryMaxPcls.maxTaxFreeCash).toLocaleString()} ${primaryMaxPcls.isCappedByLsa ? `(Capped by £${(primaryMaxPcls.lsaLimit / 1000).toFixed(1)}k LSA)` : `(${primaryMaxPcls.pclsPercent}% Uncapped)`}`;
+        doc.text(priPclsStr, 18, p2Y + 10);
+
+        doc.setFontSize(7);
+        doc.text(`• Strategy Mode: ${primaryCrystMode} | Destination: ${primaryDestStr}`, 18, p2Y + 15);
+
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(4, 120, 87);
-        const destStr = profile.lumpSumTargetPot === 'reinvest_isa' ? 'Reinvest ISA/Cash' : profile.lumpSumTargetPot === 'clear_mortgage' ? 'Clear Mortgage' : 'Lifestyle Expenditure';
-        doc.text(`• Total Liquid Tax-Free Capital Available: £${Math.round(primaryMaxPcls.maxTaxFreeCash).toLocaleString()} (Destination: ${destStr})`, 18, p2Y + 15.5);
+        doc.text(`• Total Liquid Tax-Free Capital Available: £${Math.round(primaryMaxPcls.maxTaxFreeCash).toLocaleString()} (Personal LSA Allowance: £${primaryMaxPcls.lsaLimit.toLocaleString()})`, 18, p2Y + 20.5);
       }
 
       p2Y += boxH + 6;
