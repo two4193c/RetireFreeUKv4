@@ -35,8 +35,10 @@ import {
   Wallet,
   X,
   Sun,
-  Umbrella,
-  Activity,
+  Compass,
+  HeartHandshake,
+  Zap,
+  Award,
 } from 'lucide-react';
 
 interface MilestoneTimelineCardProps {
@@ -66,7 +68,7 @@ export interface TimelineMilestone {
   type?: 'income' | 'expense' | 'milestone';
   badge?: string;
   owner?: 'primary' | 'partner' | 'joint';
-  level?: number; // 0 = standard upright, 1 = elevated upright, 2 = high upright
+  level?: number;
 }
 
 export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
@@ -108,7 +110,7 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
       year: currentYear,
       color: '#0284c7', // sky-600
       icon: Clock,
-      description: 'Starting point of financial plan and active accumulation.',
+      description: 'Starting point of financial plan and active wealth accumulation.',
       isEditable: false,
       badge: 'Active Now',
       owner: 'primary',
@@ -122,15 +124,15 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
           id: 'ms-mortgage-payoff',
           key: 'mortgage_payoff',
           label: 'Mortgage Cleared',
-          shortLabel: 'Mortgage Paid',
+          shortLabel: 'Mortgage Free',
           category: 'property',
           age: payoffAge,
           year: currentYear + profile.mortgageDebt.remainingTermYears,
           color: '#0ea5e9', // cyan-500
           icon: Home,
-          description: `Mortgage cleared, freeing up £${Math.round(profile.mortgageDebt.monthlyPayment * 12).toLocaleString()}/yr of spendable cash.`,
+          description: `Mortgage term ends, releasing £${Math.round(profile.mortgageDebt.monthlyPayment * 12).toLocaleString()}/yr of debt payments.`,
           isEditable: false,
-          badge: 'Debt Free',
+          badge: 'Debt-Free',
           owner: 'joint',
         });
       }
@@ -141,7 +143,7 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
     list.push({
       id: 'ms-primary-nmpa',
       key: 'primary_nmpa',
-      label: `${profile.name || 'Primary'} Pension Access (NMPA)`,
+      label: `${profile.name || 'Primary'} Pension Access`,
       shortLabel: 'Pension Access',
       category: 'pension',
       age: primaryNmpa,
@@ -163,15 +165,15 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
         id: 'ms-partner-nmpa',
         key: 'partner_nmpa',
         label: `${profile.partnerName || 'Partner'} Pension Access`,
-        shortLabel: 'Partner NMPA',
+        shortLabel: 'Partner Access',
         category: 'pension',
         age: primaryAgeAtPartnerNmpa,
         year: currentYear + (primaryAgeAtPartnerNmpa - currentAge),
         color: '#34d399', // emerald-400
         icon: Coins,
-        description: `${profile.partnerName || 'Partner'} reaches pension access age (${partnerNmpa}). Partner pots accessible.`,
+        description: `${profile.partnerName || 'Partner'} reaches pension access age (${partnerNmpa}). SIPP/DC pots accessible.`,
         isEditable: false,
-        badge: 'Partner Access',
+        badge: 'Partner NMPA',
         owner: 'partner',
       });
     }
@@ -188,11 +190,11 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
       year: currentYear + (targetRetire - currentAge),
       color: '#8b5cf6', // violet-500
       icon: Flag,
-      description: `Primary earner leaves employment and enters decumulation. Active portfolio drawdown begins.`,
+      description: `Primary earner retires and enters decumulation. Active portfolio drawdown begins.`,
       isEditable: true,
       minAge: Math.max(currentAge, 45),
       maxAge: 75,
-      badge: 'Target Retirement',
+      badge: 'Target Retire',
       owner: 'primary',
     });
 
@@ -215,7 +217,7 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
           isEditable: true,
           minAge: Math.max(currentAge, 45),
           maxAge: 75,
-          badge: 'Partner Retirement',
+          badge: 'Partner Retire',
           owner: 'partner',
         });
       }
@@ -298,7 +300,7 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
           id: `ms-event-${event.id}`,
           key: `event_${event.id}`,
           label: event.name,
-          shortLabel: event.name.length > 16 ? `${event.name.substring(0, 14)}...` : event.name,
+          shortLabel: event.name.length > 15 ? `${event.name.substring(0, 13)}...` : event.name,
           category: 'life_event',
           age: event.age,
           year: currentYear + (event.age - currentAge),
@@ -326,7 +328,7 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
       year: currentYear + (maxHorizon - currentAge),
       color: '#ef4444', // rose-500
       icon: Heart,
-      description: `Plan planning horizon age (${maxHorizon}). Terminal legacy wealth evaluated.`,
+      description: `Plan planning horizon age (${maxHorizon}). Terminal wealth evaluated.`,
       isEditable: true,
       minAge: 75,
       maxAge: 105,
@@ -459,16 +461,25 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
   const phase2End = Math.min(maxHorizon, Math.max(phase1End, 72));
   const phase3End = Math.min(maxHorizon, Math.max(phase2End, 82));
 
-  const getPhasePct = (age: number) => {
-    return Math.max(0, Math.min(100, ((age - minHorizon) / totalYearsSpan) * 100));
-  };
+  // Key reference years for background ruler ticks
+  const rulerTicks = useMemo(() => {
+    const ticks: { age: number; year: number; pct: number }[] = [];
+    for (let a = Math.ceil(minHorizon / 10) * 10; a <= maxHorizon; a += 10) {
+      ticks.push({
+        age: a,
+        year: currentYear + (a - currentAge),
+        pct: getPercentPosition(a),
+      });
+    }
+    return ticks;
+  }, [minHorizon, maxHorizon, currentAge, currentYear]);
 
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 sm:p-7 shadow-sm space-y-6">
       {/* Header Bar */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-5">
-        <div className="flex items-center gap-3">
-          <div className="p-3 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 rounded-2xl">
+        <div className="flex items-center gap-3.5">
+          <div className="p-3 bg-linear-to-br from-indigo-500 to-purple-600 text-white rounded-2xl shadow-sm shadow-indigo-500/20">
             <Calendar className="w-6 h-6" />
           </div>
           <div>
@@ -476,12 +487,12 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
               <h3 className="text-lg font-black text-slate-900 dark:text-slate-100">
                 Visual Milestone Timeline
               </h3>
-              <span className="px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider bg-emerald-100 text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-300 rounded-full">
-                Interactive Roadmap
+              <span className="px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300 rounded-full border border-indigo-200 dark:border-indigo-800/60">
+                Interactive Map
               </span>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Click any milestone pin to inspect details or adjust target ages in real-time.
+              Live roadmap of your financial lifecycle. Click pins to inspect cash flow impacts or adjust target dates in real-time.
             </p>
           </div>
         </div>
@@ -492,7 +503,7 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
           <button
             type="button"
             onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs"
+            className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs shadow-indigo-600/20 active:scale-95"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Add Event</span>
@@ -559,10 +570,21 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
         </div>
       </div>
 
-      {/* Main Interactive Timeline Canvas (Restored Clean Map Pin Layout) */}
-      <div className="relative bg-slate-50/70 dark:bg-slate-950/60 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 pt-28 pb-6 px-4 sm:px-6 select-none space-y-6">
-        {/* Central Horizontal Track Line with Upright Pins */}
-        <div className="relative h-2 bg-linear-to-r from-sky-500 via-indigo-500 to-rose-500 rounded-full my-6">
+      {/* Main Interactive Timeline Canvas */}
+      <div className="relative bg-slate-50/70 dark:bg-slate-950/80 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 pt-32 pb-8 px-4 sm:px-8 select-none space-y-8 overflow-hidden shadow-inner">
+        {/* Subtle Background Vertical Ruler Guides */}
+        <div className="absolute inset-0 pointer-events-none">
+          {rulerTicks.map((t) => (
+            <div
+              key={`grid-${t.age}`}
+              style={{ left: `${t.pct}%` }}
+              className="absolute top-0 bottom-0 border-r border-slate-200/40 dark:border-slate-800/40"
+            />
+          ))}
+        </div>
+
+        {/* Central Horizontal Track Line with Upright Map Pins */}
+        <div className="relative h-2.5 bg-linear-to-r from-sky-500 via-indigo-500 via-amber-500 to-rose-500 rounded-full my-6 shadow-sm shadow-indigo-500/20">
           {filteredMilestones.map((m) => {
             const leftPct = getPercentPosition(m.age);
             const isSelected = m.id === activeMilestone.id;
@@ -570,8 +592,8 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
             const lvl = m.level ?? 0;
 
             // Stagger heights so nearby upright pin cards don't collide
-            const cardBottom = lvl === 2 ? 'bottom-16' : lvl === 1 ? 'bottom-10' : 'bottom-6';
-            const stemHeight = lvl === 2 ? 'h-16' : lvl === 1 ? 'h-10' : 'h-6';
+            const cardBottom = lvl === 2 ? 'bottom-20' : lvl === 1 ? 'bottom-12' : 'bottom-6';
+            const stemHeight = lvl === 2 ? 'h-20' : lvl === 1 ? 'h-12' : 'h-6';
 
             return (
               <div
@@ -582,7 +604,7 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
                 {/* Vertical Solid Connector Stalk */}
                 <div
                   style={{ backgroundColor: m.color }}
-                  className={`absolute bottom-2 w-0.5 opacity-80 ${stemHeight} ${
+                  className={`absolute bottom-2.5 w-0.5 opacity-75 transition-all ${stemHeight} ${
                     isSelected ? 'w-1 opacity-100 shadow-sm' : ''
                   }`}
                 />
@@ -591,20 +613,31 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
                 <button
                   type="button"
                   onClick={() => setSelectedMilestoneId(m.id)}
-                  className={`absolute ${cardBottom} px-2.5 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap shadow-md transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${
+                  className={`absolute ${cardBottom} p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap shadow-md transition-all duration-200 cursor-pointer flex flex-col items-center gap-0.5 border ${
                     isSelected
-                      ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 scale-110 ring-2 ring-indigo-500 shadow-lg z-30'
-                      : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:scale-105 z-20'
+                      ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 scale-110 ring-2 ring-indigo-500 shadow-xl border-transparent z-30'
+                      : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-600 hover:scale-105 z-20'
                   }`}
                 >
-                  <span
-                    style={{ backgroundColor: m.color }}
-                    className="w-2 h-2 rounded-full shrink-0"
-                  />
-                  <span>{m.shortLabel}</span>
-                  <span className="font-extrabold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/80 px-1.5 py-0.5 rounded text-[10px] shrink-0">
-                    Age {m.age}
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      style={{ backgroundColor: m.color }}
+                      className="w-2 h-2 rounded-full shrink-0 ring-2 ring-white dark:ring-slate-900"
+                    />
+                    <span className="truncate">{m.shortLabel}</span>
+                  </div>
+                  <span className="font-extrabold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/80 px-1.5 py-0.2 rounded text-[9.5px]">
+                    Age {m.age} • {m.year}
                   </span>
+
+                  {/* Downward Pointer Triangle */}
+                  <div
+                    className={`absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 rotate-45 border-r border-b ${
+                      isSelected
+                        ? 'bg-slate-900 dark:bg-white border-transparent'
+                        : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800'
+                    }`}
+                  />
                 </button>
 
                 {/* Glowing Axis Circular Pin Node */}
@@ -612,9 +645,9 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
                   type="button"
                   onClick={() => setSelectedMilestoneId(m.id)}
                   style={{ backgroundColor: m.color }}
-                  className={`w-6 h-6 rounded-full flex items-center justify-center text-white shadow-md transition-all duration-200 cursor-pointer z-30 ${
+                  className={`w-6 h-6 rounded-full flex items-center justify-center text-white shadow-md transition-all duration-200 cursor-pointer z-30 ring-2 ring-white dark:ring-slate-900 ${
                     isSelected
-                      ? 'scale-125 ring-4 ring-indigo-400/50 dark:ring-indigo-500/70 shadow-lg'
+                      ? 'scale-125 ring-4 ring-indigo-400/50 dark:ring-indigo-500/70 shadow-indigo-500/40 shadow-lg'
                       : 'hover:scale-115'
                   }`}
                   title={`${m.label} (Age ${m.age})`}
@@ -631,58 +664,81 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
           })}
         </div>
 
-        {/* Phase Band (Positioned cleanly BELOW the axis) */}
-        <div className="space-y-3 pt-4">
-          <div className="h-8 w-full rounded-xl overflow-hidden flex shadow-inner border border-slate-200/80 dark:border-slate-700/60 opacity-90">
-            {/* Accumulation */}
-            <div
-              style={{ width: `${Math.max(5, getPhasePct(phase1End) - getPhasePct(minHorizon))}%` }}
-              className="bg-sky-500/20 dark:bg-sky-950/60 border-r border-blue-300/40 dark:border-blue-700/40 flex items-center justify-center px-2"
-            >
-              <span className="text-[10px] font-extrabold text-blue-700 dark:text-blue-300 truncate">
-                Accumulation (Age {minHorizon}–{phase1End})
-              </span>
+        {/* 4 Connected Visual Retirement Phase Cards (Elevated UI) */}
+        <div className="space-y-2 pt-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3">
+            {/* Phase 1: Accumulation */}
+            <div className="p-3 rounded-2xl bg-linear-to-br from-sky-50 to-blue-50/50 dark:from-sky-950/40 dark:to-blue-950/20 border border-sky-200/80 dark:border-sky-800/50 space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-sky-700 dark:text-sky-300">
+                  Accumulation
+                </span>
+                <TrendingUp className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
+              </div>
+              <div className="text-xs font-black text-slate-900 dark:text-slate-100">
+                Ages {minHorizon} – {phase1End}
+              </div>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
+                Active savings &amp; maximum compound growth.
+              </p>
             </div>
 
-            {/* Go-Go Active */}
-            <div
-              style={{ width: `${Math.max(5, getPhasePct(phase2End) - getPhasePct(phase1End))}%` }}
-              className="bg-emerald-500/20 dark:bg-emerald-950/60 border-r border-emerald-300/40 dark:border-emerald-700/40 flex items-center justify-center px-2"
-            >
-              <span className="text-[10px] font-extrabold text-emerald-700 dark:text-emerald-300 truncate">
-                Go-Go Active ({phase1End}–{phase2End})
-              </span>
+            {/* Phase 2: Go-Go Active */}
+            <div className="p-3 rounded-2xl bg-linear-to-br from-emerald-50 to-teal-50/50 dark:from-emerald-950/40 dark:to-teal-950/20 border border-emerald-200/80 dark:border-emerald-800/50 space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
+                  Go-Go Active
+                </span>
+                <Sun className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <div className="text-xs font-black text-slate-900 dark:text-slate-100">
+                Ages {phase1End} – {phase2End}
+              </div>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
+                Peak travel, leisure, bucket lists &amp; lifestyle.
+              </p>
             </div>
 
-            {/* Slow-Go Leisure */}
-            <div
-              style={{ width: `${Math.max(5, getPhasePct(phase3End) - getPhasePct(phase2End))}%` }}
-              className="bg-amber-500/20 dark:bg-amber-950/60 border-r border-amber-300/40 dark:border-amber-700/40 flex items-center justify-center px-2"
-            >
-              <span className="text-[10px] font-extrabold text-amber-700 dark:text-amber-300 truncate">
-                Slow-Go ({phase2End}–{phase3End})
-              </span>
+            {/* Phase 3: Slow-Go Leisure */}
+            <div className="p-3 rounded-2xl bg-linear-to-br from-amber-50 to-orange-50/50 dark:from-amber-950/40 dark:to-orange-950/20 border border-amber-200/80 dark:border-amber-800/50 space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-700 dark:text-amber-300">
+                  Slow-Go Leisure
+                </span>
+                <Compass className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div className="text-xs font-black text-slate-900 dark:text-slate-100">
+                Ages {phase2End} – {phase3End}
+              </div>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
+                Moderate living, local hobbies &amp; reduced spend.
+              </p>
             </div>
 
-            {/* No-Go Elder Care */}
-            <div
-              style={{ width: `${Math.max(5, 100 - getPhasePct(phase3End))}%` }}
-              className="bg-purple-500/20 dark:bg-purple-950/60 flex items-center justify-center px-2"
-            >
-              <span className="text-[10px] font-extrabold text-purple-700 dark:text-purple-300 truncate">
-                No-Go ({phase3End}–{maxHorizon})
-              </span>
+            {/* Phase 4: No-Go Elder Care */}
+            <div className="p-3 rounded-2xl bg-linear-to-br from-purple-50 to-rose-50/50 dark:from-purple-950/40 dark:to-rose-950/20 border border-purple-200/80 dark:border-purple-800/50 space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-purple-700 dark:text-purple-300">
+                  No-Go Care
+                </span>
+                <HeartHandshake className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+              </div>
+              <div className="text-xs font-black text-slate-900 dark:text-slate-100">
+                Ages {phase3End} – {maxHorizon}
+              </div>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
+                Health, comfort, estate preservation &amp; IHT.
+              </p>
             </div>
           </div>
 
           {/* Age Scale Reference Ticks */}
-          <div className="flex justify-between text-[10px] font-bold text-slate-400 dark:text-slate-500 px-1">
-            <span>Age {minHorizon} ({currentYear - (currentAge - minHorizon)})</span>
-            <span>Age 50 ({currentYear + (50 - currentAge)})</span>
-            <span>Age 60 ({currentYear + (60 - currentAge)})</span>
-            <span>Age 70 ({currentYear + (70 - currentAge)})</span>
-            <span>Age 80 ({currentYear + (80 - currentAge)})</span>
-            <span>Age {maxHorizon} ({currentYear + (maxHorizon - currentAge)})</span>
+          <div className="flex justify-between text-[10px] font-bold text-slate-400 dark:text-slate-500 px-1 pt-1">
+            {rulerTicks.map((t) => (
+              <span key={`tick-${t.age}`}>
+                Age {t.age} ({t.year})
+              </span>
+            ))}
           </div>
         </div>
       </div>
@@ -692,10 +748,10 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
         <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-2xl p-5 space-y-5 animate-fade-in">
           {/* Title & Live Controls Row */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/80 dark:border-slate-700/60 pb-4">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3.5">
               <div
                 style={{ backgroundColor: activeMilestone.color }}
-                className="p-3 rounded-2xl text-white shadow-xs"
+                className="p-3 rounded-2xl text-white shadow-sm"
               >
                 <activeMilestone.icon className="w-6 h-6" />
               </div>
@@ -871,7 +927,7 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
                 <div className="flex items-center gap-2.5 min-w-0">
                   <div
                     style={{ backgroundColor: m.color }}
-                    className="p-2 rounded-xl text-white shrink-0"
+                    className="p-2 rounded-xl text-white shrink-0 shadow-2xs"
                   >
                     <IconComponent className="w-4 h-4" />
                   </div>
