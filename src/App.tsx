@@ -1013,17 +1013,6 @@ function App() {
                     appMode={appMode}
                   />
                 </div>
-                {appMode === 'advanced' && (
-                  <div id="card-strat-macro" className="scroll-mt-24 transition-all duration-300">
-                    <MacroSettingsCard profile={profile} onChange={handleProfileChange} />
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Tab 3b: Strategy Analysis (Advanced Mode Only) */}
-            {activeTab === 'strategy_analysis' && (
-              <div className="space-y-6">
                 <div id="card-dynamic-optimiser" className="scroll-mt-24 transition-all duration-300">
                   <DynamicOptimiserCard
                     profile={profile}
@@ -1035,6 +1024,17 @@ function App() {
                     onChange={handleProfileChange}
                   />
                 </div>
+                {appMode === 'advanced' && (
+                  <div id="card-strat-macro" className="scroll-mt-24 transition-all duration-300">
+                    <MacroSettingsCard profile={profile} onChange={handleProfileChange} />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Tab 3b: Strategy Analysis (Advanced Mode Only) */}
+            {activeTab === 'strategy_analysis' && (
+              <div className="space-y-6">
                 <div id="card-pwr-metric" className="scroll-mt-24 transition-all duration-300">
                   <PwrMetricBannerCard profile={profile} pots={pots} projections={projections} />
                 </div>

@@ -87,6 +87,7 @@ export const NAV_STRUCTURE: TabGroup[] = [
     cards: [
       { id: 'card-strat-planner', label: 'Drawdown Strategy Planner' },
       { id: 'card-strat-phases', label: 'Retirement Income Requirement' },
+      { id: 'card-dynamic-optimiser', label: 'Dynamic Optimiser' },
       { id: 'card-strat-macro', label: 'Asset Allocation & Macro Settings' },
     ],
   },
@@ -106,7 +107,6 @@ export const NAV_STRUCTURE: TabGroup[] = [
     icon: LineChart,
     description: 'SWR Heatmap Matrix, Dynamic Guardrails, Essential Floor Split, PWR Metric, SWR Trajectory, and Bengen UK/US Benchmarks',
     cards: [
-        { id: 'card-dynamic-optimiser', label: 'Dynamic Optimiser' },
         { id: 'card-pwr-metric', label: 'Personalized Withdrawal Rate (PWR) Metric' },
       { id: 'card-swr-matrix', label: 'Safe Withdrawal Rate (SWR) Heatmap Matrix' },
       { id: 'card-guardrail-gauge', label: 'Dynamic Guardrail Threshold Gauge' },
