@@ -12,14 +12,14 @@ export const MortgageGuideCard: React.FC = () => {
         <div>
           <div className="flex items-center gap-2">
             <h2 className="font-extrabold text-slate-900 dark:text-white text-lg tracking-tight">
-              Mortgage & Property Debt Strategy Guide
+              Mortgage, Debt & Right-Sizing Guide
             </h2>
             <span className="text-[10px] font-black uppercase tracking-wider bg-indigo-100 dark:bg-indigo-950 text-indigo-800 dark:text-indigo-300 px-2.5 py-1 rounded-full border border-indigo-200 dark:border-indigo-800">
-              Liabilities & Payoff
+              Liabilities & Property
             </span>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Optimizing mortgage overpayments, early payoff using 25% PCLS tax-free cash, and interest savings vs pension investment returns
+            Optimizing mortgage overpayments, early payoff using PCLS tax-free cash, and right-sizing your home to release equity.
           </p>
         </div>
       </div>
@@ -50,9 +50,9 @@ export const MortgageGuideCard: React.FC = () => {
           <div className="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400 font-black flex items-center justify-center text-xs">
             3
           </div>
-          <h3 className="font-bold text-slate-900 dark:text-white text-sm">Loan-to-Value (LTV)</h3>
+          <h3 className="font-bold text-slate-900 dark:text-white text-sm">Right-Sizing & Equity</h3>
           <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-            Track debt reduction to cross key LTV threshold bands (80%, 75%, 60%) to unlock lower remortgage interest rates.
+            Model selling your primary residence to purchase a smaller home, releasing tax-free net equity to bolster your investment portfolios.
           </p>
         </div>
       </div>
@@ -87,6 +87,22 @@ export const MortgageGuideCard: React.FC = () => {
         <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
           Under UK pension rules, you can extract up to 25% of your total pension value tax-free (up to the £268,275 Lump Sum Allowance limit). Many UK retirees use this one-off tax-free lump sum to extinguish remaining mortgage balances on their target retirement date, ensuring zero debt liabilities during decumulation.
         </p>
+      </div>
+
+      {/* Strategy Section 3: Right-Sizing Your Home */}
+      <div className="p-5 bg-amber-50/50 dark:bg-amber-950/30 rounded-2xl border border-amber-200/60 dark:border-amber-800/60 space-y-3">
+        <h3 className="font-bold text-amber-950 dark:text-amber-200 text-sm flex items-center gap-2">
+          <Home className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+          <span>Property Right-Sizing & Equity Release</span>
+        </h3>
+        <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+          Downsizing (or "right-sizing") is a powerful strategy to unlock liquidity from your primary residence. When modeling a property downsize in the Housing Strategy section, consider these factors:
+        </p>
+        <ul className="list-disc pl-5 space-y-1.5 text-slate-600 dark:text-slate-400 text-xs">
+          <li><strong>Primary Residence Relief (PRR):</strong> Selling your main home does not incur Capital Gains Tax.</li>
+          <li><strong>Selling Costs & SDLT:</strong> The net equity released is calculated after deducting remaining mortgage balances, estate agent fees (typically 1-2%), legal fees, and Stamp Duty Land Tax (SDLT) on the new property.</li>
+          <li><strong>Strategic Injection:</strong> Released equity can be injected directly into a Cash ISA, Stocks & Shares ISA (subject to allowances), a General Investment Account (GIA), or even a SIPP to claim further tax relief. If you are modeling as a couple, the engine will automatically split the released equity 50/50 into both partners' accounts.</li>
+        </ul>
       </div>
 
       {/* Key Takeaways */}
