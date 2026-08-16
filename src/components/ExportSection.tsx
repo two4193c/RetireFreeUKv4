@@ -2953,31 +2953,20 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
 
       p3Y += matBoxH + 3.5;
 
-      // 4. Equalisation & Trap Insight Pill
-      const isEqBalanced = (optCoupleBalance ?? 0) < 5;
-      const eqBg = isEqBalanced ? [240, 253, 244] : [254, 243, 199];
-      const eqBorder = isEqBalanced ? [187, 247, 208] : [253, 230, 138];
-      const eqText = isEqBalanced ? [5, 150, 105] : [180, 83, 9];
-
-      doc.setFillColor(eqBg[0], eqBg[1], eqBg[2]);
+      // 4. Tax-Smoothing & 60% Trap Mitigation Insight Pill
+      doc.setFillColor(240, 253, 244);
       doc.roundedRect(14, p3Y, 182, 8.5, 2, 2, 'F');
-      doc.setDrawColor(eqBorder[0], eqBorder[1], eqBorder[2]);
+      doc.setDrawColor(187, 247, 208);
       doc.roundedRect(14, p3Y, 182, 8.5, 2, 2, 'D');
 
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(7);
-      doc.setTextColor(eqText[0], eqText[1], eqText[2]);
-      const eqTitle = profile.isCouplePlanning
-        ? (isEqBalanced ? '✓ Symmetrical Spousal Equalisation Active' : `⚠ Moderate Spousal Imbalance (±${(optCoupleBalance ?? 0).toFixed(1)}%)`)
-        : '✓ Single-Member Drawdown Smoothing Active';
-      doc.text(eqTitle, 18, p3Y + 3.5);
+      doc.setTextColor(5, 150, 105);
+      doc.text('✓ Multi-Band Drawdown Smoothing & Tax Trap Shielding Active', 18, p3Y + 3.5);
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(6.2);
-      const eqDesc = profile.isCouplePlanning
-        ? 'Both partners utilize their full £12,570 Personal Allowance and basic rate thresholds, eliminating the 60% tax trap.'
-        : 'Drawdowns smoothly bypass higher rate cliffs and preserve tax-free ISA buffers for peak spending phases.';
-      doc.text(eqDesc, 18, p3Y + 6.8);
+      doc.text('Drawdowns capture the £12,570 Personal Allowance, smooth across the 20% basic rate band, and preserve tax-free ISAs for discretionary spending.', 18, p3Y + 6.8);
 
       p3Y += 12.5;
 
