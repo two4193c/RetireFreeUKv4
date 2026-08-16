@@ -338,20 +338,33 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
 
     const sorted = list.sort((a, b) => a.age - b.age);
 
-    // Stagger heights so adjacent pins never collide (Level 0 = standard, Level 1 = elevated, Level 2 = high)
-    let lastAgeByLevel = [-100, -100, -100];
+    // Exact non-overlapping level assignment algorithm:
+    // Finds the lowest vertical level (0..4) that has at least 7 years of horizontal separation
+    const minClearanceYears = 7;
+    const lastAgeByLevel = [-100, -100, -100, -100, -100];
+
     return sorted.map((m) => {
-      let assignedLevel = 0;
-      for (let lvl = 0; lvl < 3; lvl++) {
-        if (m.age - lastAgeByLevel[lvl] >= 6) {
-          assignedLevel = lvl;
+      let chosenLevel = 0;
+      let maxSep = -1;
+      let fallbackLevel = 0;
+
+      for (let lvl = 0; lvl < 5; lvl++) {
+        const sep = m.age - lastAgeByLevel[lvl];
+        if (sep >= minClearanceYears) {
+          chosenLevel = lvl;
           break;
-        } else if (lvl === 2) {
-          assignedLevel = 2;
+        }
+        if (sep > maxSep) {
+          maxSep = sep;
+          fallbackLevel = lvl;
+        }
+        if (lvl === 4) {
+          chosenLevel = fallbackLevel;
         }
       }
-      lastAgeByLevel[assignedLevel] = m.age;
-      return { ...m, level: assignedLevel };
+
+      lastAgeByLevel[chosenLevel] = m.age;
+      return { ...m, level: chosenLevel };
     });
   }, [profile, currentAge, currentYear, maxHorizon, isCouple]);
 
@@ -571,7 +584,7 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
       </div>
 
       {/* Main Interactive Timeline Canvas */}
-      <div className="relative bg-slate-50/70 dark:bg-slate-950/80 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 pt-32 pb-8 px-4 sm:px-8 select-none space-y-8 overflow-hidden shadow-inner">
+      <div className="relative bg-slate-50/70 dark:bg-slate-950/80 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 pt-56 pb-8 px-4 sm:px-8 select-none space-y-8 overflow-hidden shadow-inner">
         {/* Subtle Background Vertical Ruler Guides */}
         <div className="absolute inset-0 pointer-events-none">
           {rulerTicks.map((t) => (
@@ -591,9 +604,9 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
             const IconComponent = m.icon;
             const lvl = m.level ?? 0;
 
-            // Stagger heights so nearby upright pin cards don't collide
-            const cardBottom = lvl === 2 ? 'bottom-20' : lvl === 1 ? 'bottom-12' : 'bottom-6';
-            const stemHeight = lvl === 2 ? 'h-20' : lvl === 1 ? 'h-12' : 'h-6';
+            // Exact pixel-perfect vertical clearances (48px separation between each level)
+            const bottomPx = 18 + lvl * 48;
+            const stemHeightPx = 18 + lvl * 48;
 
             return (
               <div
@@ -603,8 +616,11 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
               >
                 {/* Vertical Solid Connector Stalk */}
                 <div
-                  style={{ backgroundColor: m.color }}
-                  className={`absolute bottom-2.5 w-0.5 opacity-75 transition-all ${stemHeight} ${
+                  style={{
+                    backgroundColor: m.color,
+                    height: `${stemHeightPx}px`,
+                  }}
+                  className={`absolute bottom-2.5 w-0.5 opacity-80 transition-all ${
                     isSelected ? 'w-1 opacity-100 shadow-sm' : ''
                   }`}
                 />
@@ -613,7 +629,10 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
                 <button
                   type="button"
                   onClick={() => setSelectedMilestoneId(m.id)}
-                  className={`absolute ${cardBottom} p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap shadow-md transition-all duration-200 cursor-pointer flex flex-col items-center gap-0.5 border ${
+                  style={{
+                    bottom: `${bottomPx}px`,
+                  }}
+                  className={`absolute p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap shadow-md transition-all duration-200 cursor-pointer flex flex-col items-center gap-0.5 border ${
                     isSelected
                       ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 scale-110 ring-2 ring-indigo-500 shadow-xl border-transparent z-30'
                       : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-600 hover:scale-105 z-20'
@@ -624,7 +643,7 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
                       style={{ backgroundColor: m.color }}
                       className="w-2 h-2 rounded-full shrink-0 ring-2 ring-white dark:ring-slate-900"
                     />
-                    <span className="truncate">{m.shortLabel}</span>
+                    <span className="truncate max-w-[130px]">{m.shortLabel}</span>
                   </div>
                   <span className="font-extrabold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/80 px-1.5 py-0.2 rounded text-[9.5px]">
                     Age {m.age} • {m.year}
