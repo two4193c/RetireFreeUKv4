@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   UserProfile,
   InvestmentPots,
@@ -34,6 +34,9 @@ import {
   DollarSign,
   Wallet,
   X,
+  Sun,
+  Umbrella,
+  Activity,
 } from 'lucide-react';
 
 interface MilestoneTimelineCardProps {
@@ -63,13 +66,7 @@ export interface TimelineMilestone {
   type?: 'income' | 'expense' | 'milestone';
   badge?: string;
   owner?: 'primary' | 'partner' | 'joint';
-}
-
-interface PositionedMilestone extends TimelineMilestone {
-  anchorX: number; // Pixel X position on the axis
-  labelX: number;  // Pixel X position for the callout card
-  labelY: number;  // Pixel Y position for the callout card
-  level: number;   // 0 (lowest top), 1 (mid top), 2 (highest top)
+  level?: number; // 0 = standard upright, 1 = elevated upright, 2 = high upright
 }
 
 export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
@@ -85,9 +82,6 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
   const minHorizon = Math.min(currentAge, 35);
   const totalYearsSpan = Math.max(1, maxHorizon - minHorizon);
 
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [containerWidth, setContainerWidth] = useState<number>(900);
-
   const [activeCategory, setActiveCategory] = useState<MilestoneCategory>('all');
   const [selectedMilestoneId, setSelectedMilestoneId] = useState<string>('ms-target-retire');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -98,26 +92,6 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
   const [newEventType, setNewEventType] = useState<LifeEventType>('expense');
   const [newEventAmount, setNewEventAmount] = useState(15000);
   const [newEventOwner, setNewEventOwner] = useState<'primary' | 'partner'>('primary');
-
-  // Measure container width responsively
-  useEffect(() => {
-    const updateWidth = () => {
-      if (containerRef.current) {
-        setContainerWidth(containerRef.current.clientWidth);
-      }
-    };
-    updateWidth();
-
-    const resizeObserver = new ResizeObserver(() => {
-      updateWidth();
-    });
-
-    if (containerRef.current) {
-      resizeObserver.observe(containerRef.current);
-    }
-
-    return () => resizeObserver.disconnect();
-  }, []);
 
   // Derive all milestones
   const allMilestones: TimelineMilestone[] = useMemo(() => {
@@ -360,7 +334,23 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
       owner: 'joint',
     });
 
-    return list.sort((a, b) => a.age - b.age);
+    const sorted = list.sort((a, b) => a.age - b.age);
+
+    // Stagger heights so adjacent pins never collide (Level 0 = standard, Level 1 = elevated, Level 2 = high)
+    let lastAgeByLevel = [-100, -100, -100];
+    return sorted.map((m) => {
+      let assignedLevel = 0;
+      for (let lvl = 0; lvl < 3; lvl++) {
+        if (m.age - lastAgeByLevel[lvl] >= 6) {
+          assignedLevel = lvl;
+          break;
+        } else if (lvl === 2) {
+          assignedLevel = 2;
+        }
+      }
+      lastAgeByLevel[assignedLevel] = m.age;
+      return { ...m, level: assignedLevel };
+    });
   }, [profile, currentAge, currentYear, maxHorizon, isCouple]);
 
   // Filtered milestones based on category
@@ -368,86 +358,6 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
     if (activeCategory === 'all') return allMilestones;
     return allMilestones.filter((m) => m.category === activeCategory);
   }, [allMilestones, activeCategory]);
-
-  // COLLISION RESOLUTION ALGORITHM FOR ZERO OVERLAP:
-  // We distribute labels across 3 vertical levels in the top zone.
-  // We calculate exact pixel positions and resolve any horizontal conflicts.
-  const positionedMilestones = useMemo<PositionedMilestone[]>(() => {
-    const padX = 24;
-    const usableWidth = Math.max(300, containerWidth - padX * 2);
-    const labelCardWidth = 118; // approx width of badge in px
-    const minCardGap = 8;       // minimum gap between cards
-
-    // Level Y positions from the axis (going upwards)
-    // Level 0: 38px above axis
-    // Level 1: 82px above axis
-    // Level 2: 126px above axis
-    const levelYOffsets = [38, 82, 126];
-
-    // Compute ideal anchor X for each milestone
-    const rawPositioned: PositionedMilestone[] = filteredMilestones.map((m) => {
-      const pct = Math.max(0, Math.min(1, (m.age - minHorizon) / totalYearsSpan));
-      const anchorX = padX + pct * usableWidth;
-      return {
-        ...m,
-        anchorX,
-        labelX: anchorX - labelCardWidth / 2,
-        labelY: 38,
-        level: 0,
-      };
-    });
-
-    // Sort by anchorX
-    rawPositioned.sort((a, b) => a.anchorX - b.anchorX);
-
-    // Multi-pass Level Assignment & Horizontal Shift
-    const rows: PositionedMilestone[][] = [[], [], []];
-
-    rawPositioned.forEach((m) => {
-      // Find the best row that has space or minimum overlap
-      let assignedRow = 0;
-      let minRowConflict = Infinity;
-
-      for (let r = 0; r < 3; r++) {
-        const lastInRow = rows[r][rows[r].length - 1];
-        if (!lastInRow) {
-          assignedRow = r;
-          break;
-        }
-        const distance = m.anchorX - (lastInRow.labelX + labelCardWidth);
-        if (distance >= minCardGap) {
-          assignedRow = r;
-          break;
-        } else {
-          const overlap = (lastInRow.labelX + labelCardWidth + minCardGap) - m.anchorX;
-          if (overlap < minRowConflict) {
-            minRowConflict = overlap;
-            assignedRow = r;
-          }
-        }
-      }
-
-      // Assign to row
-      m.level = assignedRow;
-      m.labelY = levelYOffsets[assignedRow];
-
-      // If overlapping with previous card in this row, shift right
-      const lastCardInRow = rows[assignedRow][rows[assignedRow].length - 1];
-      if (lastCardInRow) {
-        const minAllowedX = lastCardInRow.labelX + labelCardWidth + minCardGap;
-        if (m.labelX < minAllowedX) {
-          m.labelX = minAllowedX;
-        }
-      }
-
-      // Clamp within container
-      m.labelX = Math.max(padX / 2, Math.min(containerWidth - labelCardWidth - padX / 2, m.labelX));
-
-      rows[assignedRow].push(m);
-    });
-
-    return rawPositioned;
-  }, [filteredMilestones, containerWidth, minHorizon, totalYearsSpan]);
 
   const activeMilestone = useMemo(() => {
     return (
@@ -537,20 +447,21 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
     });
   };
 
+  // Helper for percentage position on timeline
+  const getPercentPosition = (age: number) => {
+    const pct = ((age - minHorizon) / totalYearsSpan) * 100;
+    return Math.max(3, Math.min(97, pct));
+  };
+
   // Retirement phases definitions for background bands
   const targetRetireAge = profile.targetRetirementAge || 60;
   const phase1End = targetRetireAge;
   const phase2End = Math.min(maxHorizon, Math.max(phase1End, 72));
   const phase3End = Math.min(maxHorizon, Math.max(phase2End, 82));
 
-  // Helper for phase width %
   const getPhasePct = (age: number) => {
     return Math.max(0, Math.min(100, ((age - minHorizon) / totalYearsSpan) * 100));
   };
-
-  // SVG Canvas dimensions
-  const canvasHeight = 220; // top labels zone + axis
-  const axisY = 175;        // Y coordinate of the central axis line
 
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 sm:p-7 shadow-sm space-y-6">
@@ -566,11 +477,11 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
                 Visual Milestone Timeline
               </h3>
               <span className="px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider bg-emerald-100 text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-300 rounded-full">
-                Collision-Free Roadmap
+                Interactive Roadmap
               </span>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Interactive life milestones mapped across retirement phases. Live steppers instantly recalculate your forecast.
+              Click any milestone pin to inspect details or adjust target ages in real-time.
             </p>
           </div>
         </div>
@@ -648,131 +559,87 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
         </div>
       </div>
 
-      {/* Main Collision-Free Interactive Timeline Canvas */}
-      <div
-        ref={containerRef}
-        className="relative bg-slate-50/70 dark:bg-slate-950/60 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 p-4 sm:p-5 select-none space-y-3"
-      >
-        {/* SVG Canvas for Axis & Leader Stems */}
-        <div style={{ height: `${canvasHeight}px` }} className="relative w-full overflow-hidden">
-          <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ height: `${canvasHeight}px` }}>
-            <defs>
-              <linearGradient id="axisGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#0284c7" stopOpacity="0.8" />
-                <stop offset="35%" stopColor="#8b5cf6" stopOpacity="0.8" />
-                <stop offset="70%" stopColor="#f59e0b" stopOpacity="0.8" />
-                <stop offset="100%" stopColor="#ef4444" stopOpacity="0.8" />
-              </linearGradient>
-            </defs>
-
-            {/* Central Axis Line */}
-            <line
-              x1="20"
-              y1={axisY}
-              x2={containerWidth - 20}
-              y2={axisY}
-              stroke="url(#axisGrad)"
-              strokeWidth="4"
-              strokeLinecap="round"
-            />
-
-            {/* SVG Connector Stalks (from label bottom to axis node) */}
-            {positionedMilestones.map((m) => {
-              const isSelected = m.id === activeMilestone.id;
-              const cardBottomY = axisY - m.labelY;
-              const cardCenterX = m.labelX + 59; // half of 118px card width
-
-              // Draw smooth bezier curve or stepped stalk
-              const midY = (cardBottomY + axisY) / 2;
-              const pathData = `M ${cardCenterX} ${cardBottomY} C ${cardCenterX} ${midY}, ${m.anchorX} ${midY}, ${m.anchorX} ${axisY}`;
-
-              return (
-                <path
-                  key={`stem-${m.id}`}
-                  d={pathData}
-                  fill="none"
-                  stroke={m.color}
-                  strokeWidth={isSelected ? '2.5' : '1.5'}
-                  strokeDasharray={isSelected ? 'none' : '3,3'}
-                  opacity={isSelected ? 1 : 0.65}
-                  className="transition-all duration-200"
-                />
-              );
-            })}
-          </svg>
-
-          {/* HTML Positioned Callout Badges (Top Zone) */}
-          {positionedMilestones.map((m) => {
+      {/* Main Interactive Timeline Canvas (Restored Clean Map Pin Layout) */}
+      <div className="relative bg-slate-50/70 dark:bg-slate-950/60 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 pt-28 pb-6 px-4 sm:px-6 select-none space-y-6">
+        {/* Central Horizontal Track Line with Upright Pins */}
+        <div className="relative h-2 bg-linear-to-r from-sky-500 via-indigo-500 to-rose-500 rounded-full my-6">
+          {filteredMilestones.map((m) => {
+            const leftPct = getPercentPosition(m.age);
             const isSelected = m.id === activeMilestone.id;
-            const topY = axisY - m.labelY - 28; // 28px card height
+            const IconComponent = m.icon;
+            const lvl = m.level ?? 0;
+
+            // Stagger heights so nearby upright pin cards don't collide
+            const cardBottom = lvl === 2 ? 'bottom-16' : lvl === 1 ? 'bottom-10' : 'bottom-6';
+            const stemHeight = lvl === 2 ? 'h-16' : lvl === 1 ? 'h-10' : 'h-6';
 
             return (
-              <button
-                key={`badge-${m.id}`}
-                type="button"
-                onClick={() => setSelectedMilestoneId(m.id)}
-                style={{
-                  left: `${m.labelX}px`,
-                  top: `${topY}px`,
-                  width: '118px',
-                }}
-                className={`absolute h-7 px-2 rounded-xl text-[10px] font-bold whitespace-nowrap shadow-xs transition-all duration-200 cursor-pointer flex items-center justify-between z-20 ${
-                  isSelected
-                    ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 scale-105 ring-2 ring-indigo-500 shadow-md'
-                    : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 hover:scale-102'
-                }`}
+              <div
+                key={m.id}
+                style={{ left: `${leftPct}%` }}
+                className="absolute top-1/2 -translate-x-1/2 flex flex-col items-center z-10"
               >
-                <div className="flex items-center gap-1.5 min-w-0">
+                {/* Vertical Solid Connector Stalk */}
+                <div
+                  style={{ backgroundColor: m.color }}
+                  className={`absolute bottom-2 w-0.5 opacity-80 ${stemHeight} ${
+                    isSelected ? 'w-1 opacity-100 shadow-sm' : ''
+                  }`}
+                />
+
+                {/* Upright Milestone Card Tag */}
+                <button
+                  type="button"
+                  onClick={() => setSelectedMilestoneId(m.id)}
+                  className={`absolute ${cardBottom} px-2.5 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap shadow-md transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${
+                    isSelected
+                      ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 scale-110 ring-2 ring-indigo-500 shadow-lg z-30'
+                      : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:scale-105 z-20'
+                  }`}
+                >
                   <span
                     style={{ backgroundColor: m.color }}
                     className="w-2 h-2 rounded-full shrink-0"
                   />
-                  <span className="truncate">{m.shortLabel}</span>
-                </div>
-                <span className="font-extrabold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/80 px-1 py-0.5 rounded text-[9px] shrink-0 ml-1">
-                  {m.age}
+                  <span>{m.shortLabel}</span>
+                  <span className="font-extrabold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/80 px-1.5 py-0.5 rounded text-[10px] shrink-0">
+                    Age {m.age}
+                  </span>
+                </button>
+
+                {/* Glowing Axis Circular Pin Node */}
+                <button
+                  type="button"
+                  onClick={() => setSelectedMilestoneId(m.id)}
+                  style={{ backgroundColor: m.color }}
+                  className={`w-6 h-6 rounded-full flex items-center justify-center text-white shadow-md transition-all duration-200 cursor-pointer z-30 ${
+                    isSelected
+                      ? 'scale-125 ring-4 ring-indigo-400/50 dark:ring-indigo-500/70 shadow-lg'
+                      : 'hover:scale-115'
+                  }`}
+                  title={`${m.label} (Age ${m.age})`}
+                >
+                  <IconComponent className="w-3.5 h-3.5" />
+                </button>
+
+                {/* Year Label below node */}
+                <span className="absolute top-4 text-[9px] font-bold text-slate-400 dark:text-slate-500 whitespace-nowrap">
+                  {m.year}
                 </span>
-              </button>
-            );
-          })}
-
-          {/* HTML Interactive Axis Pin Nodes */}
-          {positionedMilestones.map((m) => {
-            const isSelected = m.id === activeMilestone.id;
-            const IconComponent = m.icon;
-
-            return (
-              <button
-                key={`node-${m.id}`}
-                type="button"
-                onClick={() => setSelectedMilestoneId(m.id)}
-                style={{
-                  left: `${m.anchorX}px`,
-                  top: `${axisY}px`,
-                  backgroundColor: m.color,
-                }}
-                className={`absolute -translate-x-1/2 -translate-y-1/2 rounded-full flex items-center justify-center text-white shadow-md transition-all duration-200 cursor-pointer z-30 ${
-                  isSelected
-                    ? 'w-7 h-7 scale-120 ring-4 ring-indigo-400/50 dark:ring-indigo-500/70 shadow-lg'
-                    : 'w-5 h-5 hover:scale-115'
-                }`}
-                title={`${m.label} (Age ${m.age})`}
-              >
-                <IconComponent className={isSelected ? 'w-4 h-4' : 'w-3 h-3'} />
-              </button>
+              </div>
             );
           })}
         </div>
 
-        {/* Retirement Phases Band (Cleanly Positioned BELOW the Axis) */}
-        <div className="space-y-1 pt-1">
-          <div className="h-7 w-full rounded-xl overflow-hidden flex shadow-inner border border-slate-200/80 dark:border-slate-700/60 opacity-90">
+        {/* Phase Band (Positioned cleanly BELOW the axis) */}
+        <div className="space-y-3 pt-4">
+          <div className="h-8 w-full rounded-xl overflow-hidden flex shadow-inner border border-slate-200/80 dark:border-slate-700/60 opacity-90">
             {/* Accumulation */}
             <div
               style={{ width: `${Math.max(5, getPhasePct(phase1End) - getPhasePct(minHorizon))}%` }}
-              className="bg-sky-500/20 dark:bg-sky-950/60 border-r border-blue-300/40 dark:border-blue-700/40 flex items-center justify-center px-1"
+              className="bg-sky-500/20 dark:bg-sky-950/60 border-r border-blue-300/40 dark:border-blue-700/40 flex items-center justify-center px-2"
             >
-              <span className="text-[9px] font-extrabold text-blue-700 dark:text-blue-300 truncate">
+              <span className="text-[10px] font-extrabold text-blue-700 dark:text-blue-300 truncate">
                 Accumulation (Age {minHorizon}–{phase1End})
               </span>
             </div>
@@ -780,9 +647,9 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
             {/* Go-Go Active */}
             <div
               style={{ width: `${Math.max(5, getPhasePct(phase2End) - getPhasePct(phase1End))}%` }}
-              className="bg-emerald-500/20 dark:bg-emerald-950/60 border-r border-emerald-300/40 dark:border-emerald-700/40 flex items-center justify-center px-1"
+              className="bg-emerald-500/20 dark:bg-emerald-950/60 border-r border-emerald-300/40 dark:border-emerald-700/40 flex items-center justify-center px-2"
             >
-              <span className="text-[9px] font-extrabold text-emerald-700 dark:text-emerald-300 truncate">
+              <span className="text-[10px] font-extrabold text-emerald-700 dark:text-emerald-300 truncate">
                 Go-Go Active ({phase1End}–{phase2End})
               </span>
             </div>
@@ -790,9 +657,9 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
             {/* Slow-Go Leisure */}
             <div
               style={{ width: `${Math.max(5, getPhasePct(phase3End) - getPhasePct(phase2End))}%` }}
-              className="bg-amber-500/20 dark:bg-amber-950/60 border-r border-amber-300/40 dark:border-amber-700/40 flex items-center justify-center px-1"
+              className="bg-amber-500/20 dark:bg-amber-950/60 border-r border-amber-300/40 dark:border-amber-700/40 flex items-center justify-center px-2"
             >
-              <span className="text-[9px] font-extrabold text-amber-700 dark:text-amber-300 truncate">
+              <span className="text-[10px] font-extrabold text-amber-700 dark:text-amber-300 truncate">
                 Slow-Go ({phase2End}–{phase3End})
               </span>
             </div>
@@ -800,16 +667,16 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
             {/* No-Go Elder Care */}
             <div
               style={{ width: `${Math.max(5, 100 - getPhasePct(phase3End))}%` }}
-              className="bg-purple-500/20 dark:bg-purple-950/60 flex items-center justify-center px-1"
+              className="bg-purple-500/20 dark:bg-purple-950/60 flex items-center justify-center px-2"
             >
-              <span className="text-[9px] font-extrabold text-purple-700 dark:text-purple-300 truncate">
+              <span className="text-[10px] font-extrabold text-purple-700 dark:text-purple-300 truncate">
                 No-Go ({phase3End}–{maxHorizon})
               </span>
             </div>
           </div>
 
           {/* Age Scale Reference Ticks */}
-          <div className="flex justify-between text-[10px] font-bold text-slate-400 dark:text-slate-500 px-1 pt-1">
+          <div className="flex justify-between text-[10px] font-bold text-slate-400 dark:text-slate-500 px-1">
             <span>Age {minHorizon} ({currentYear - (currentAge - minHorizon)})</span>
             <span>Age 50 ({currentYear + (50 - currentAge)})</span>
             <span>Age 60 ({currentYear + (60 - currentAge)})</span>
