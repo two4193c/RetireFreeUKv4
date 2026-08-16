@@ -701,6 +701,7 @@ export function computeCashFlowSankeyData(
     const priIsaDrawdown = p.primaryIsaDrawdown ?? (isCouple ? ((p.isaDrawdown || 0) * 0.5) : (p.isaDrawdown || 0));
     const priCashDrawdown = p.primaryCashDrawdown ?? (isCouple ? ((p.cashDrawdown || 0) * 0.5) : (p.cashDrawdown || 0));
     const priLifeEventsInc = p.lifeEventsIncome || 0;
+    const priDownsizeInc = p.propertyDownsizeEquityReleased ? (isCouple ? p.propertyDownsizeEquityReleased * 0.5 : p.propertyDownsizeEquityReleased) : 0;
     const priTaxPaid = p.primaryTaxPaid ?? (isCouple ? ((p.totalTaxPaid || 0) * 0.5) : (p.totalTaxPaid || 0));
 
     const priGrossTotal =
@@ -710,6 +711,7 @@ export function computeCashFlowSankeyData(
       priTaxableFixed +
       priTaxFreeFixed +
       priLifeEventsInc +
+      priDownsizeInc +
       priPensionDrawdownTotal +
       priIsaDrawdown +
       priCashDrawdown;
@@ -727,6 +729,7 @@ export function computeCashFlowSankeyData(
     const partIsaDrawdown = isCouple ? (p.partnerIsaDrawdown || 0) : 0;
     const partCashDrawdown = isCouple ? (p.partnerCashDrawdown || 0) : 0;
     const partLifeEventsInc = 0;
+    const partDownsizeInc = isCouple && p.propertyDownsizeEquityReleased ? p.propertyDownsizeEquityReleased * 0.5 : 0;
     const partTaxPaid = isCouple ? (p.partnerTaxPaid || 0) : 0;
 
     const partGrossTotal =
@@ -736,6 +739,7 @@ export function computeCashFlowSankeyData(
       partTaxableFixed +
       partTaxFreeFixed +
       partLifeEventsInc +
+      partDownsizeInc +
       partPensionDrawdownTotal +
       partIsaDrawdown +
       partCashDrawdown;
@@ -760,7 +764,7 @@ export function computeCashFlowSankeyData(
       const partSpendable = Math.max(0, partNetTotal - partMortgageAlloc);
       const totalSpendable = priSpendable + partSpendable;
 
-      const annualExcess = p.annualIncomeExcess || 0;
+      const annualExcess = (p.annualIncomeExcess || 0) + (p.propertyDownsizeEquityReleased || 0);
       const reinvestSurplus = Math.min(totalSpendable, annualExcess);
       const priReinvest = totalSpendable > 0 ? (priSpendable / totalSpendable) * reinvestSurplus : 0;
       const partReinvest = totalSpendable > 0 ? (partSpendable / totalSpendable) * reinvestSurplus : 0;
@@ -867,6 +871,17 @@ export function computeCashFlowSankeyData(
           column: 0,
         });
       }
+      if (priDownsizeInc > 0) {
+        nodes.push({
+          id: 'pri_downsize',
+          label: `${primaryName} Right-Sizing`,
+          sublabel: 'Equity Released',
+          amount: priDownsizeInc,
+          color: '#d97706',
+          category: 'source',
+          column: 0,
+        });
+      }
 
       // Column 0: Partner Retirement Sources
       if (partStatePension > 0) {
@@ -946,6 +961,17 @@ export function computeCashFlowSankeyData(
           column: 0,
         });
       }
+      if (partDownsizeInc > 0) {
+        nodes.push({
+          id: 'part_downsize',
+          label: `${partnerName} Right-Sizing`,
+          sublabel: 'Equity Released',
+          amount: partDownsizeInc,
+          color: '#d97706',
+          category: 'source',
+          column: 0,
+        });
+      }
 
       // Column 1: Gross Inflow Hubs
       nodes.push({
@@ -965,6 +991,7 @@ export function computeCashFlowSankeyData(
       if (priIsaDrawdown > 0) links.push({ sourceId: 'pri_isa_dd', targetId: 'pri_retire_hub', amount: priIsaDrawdown, color: '#6366f1' });
       if (priCashDrawdown > 0) links.push({ sourceId: 'pri_cash_dd', targetId: 'pri_retire_hub', amount: priCashDrawdown, color: '#f59e0b' });
       if (priLifeEventsInc > 0) links.push({ sourceId: 'pri_life_events', targetId: 'pri_retire_hub', amount: priLifeEventsInc, color: '#06b6d4' });
+      if (priDownsizeInc > 0) links.push({ sourceId: 'pri_downsize', targetId: 'pri_retire_hub', amount: priDownsizeInc, color: '#d97706' });
 
       nodes.push({
         id: 'part_retire_hub',
@@ -982,6 +1009,7 @@ export function computeCashFlowSankeyData(
       if (partPensionDrawdownTotal > 0) links.push({ sourceId: 'part_pension_dd', targetId: 'part_retire_hub', amount: partPensionDrawdownTotal, color: '#34d399' });
       if (partIsaDrawdown > 0) links.push({ sourceId: 'part_isa_dd', targetId: 'part_retire_hub', amount: partIsaDrawdown, color: '#818cf8' });
       if (partCashDrawdown > 0) links.push({ sourceId: 'part_cash_dd', targetId: 'part_retire_hub', amount: partCashDrawdown, color: '#fbbf24' });
+      if (partDownsizeInc > 0) links.push({ sourceId: 'part_downsize', targetId: 'part_retire_hub', amount: partDownsizeInc, color: '#d97706' });
 
       // Column 2: Tax Deductions & Spendable Hubs
       if (priTaxPaid > 0) {
@@ -1141,6 +1169,7 @@ export function computeCashFlowSankeyData(
     let isaDrawdown = p.isaDrawdown || 0;
     let cashDrawdown = p.cashDrawdown || 0;
     let lifeEventsInc = p.lifeEventsIncome || 0;
+    let downsizeInc = p.propertyDownsizeEquityReleased || 0;
     let totalTaxPaid = p.totalTaxPaid || 0;
     let netRetirementIncome = p.netRetirementIncome || 0;
     let shortfall = p.incomeShortfall || 0;
@@ -1158,6 +1187,7 @@ export function computeCashFlowSankeyData(
         isaDrawdown = priIsaDrawdown;
         cashDrawdown = priCashDrawdown;
         lifeEventsInc = priLifeEventsInc;
+        downsizeInc = priDownsizeInc;
         totalTaxPaid = priTaxPaid;
         netRetirementIncome = priNetTotal;
       } else if (activeViewMode === 'partner') {
@@ -1172,6 +1202,7 @@ export function computeCashFlowSankeyData(
         isaDrawdown = partIsaDrawdown;
         cashDrawdown = partCashDrawdown;
         lifeEventsInc = partLifeEventsInc;
+        downsizeInc = partDownsizeInc;
         totalTaxPaid = partTaxPaid;
         netRetirementIncome = partNetTotal;
       }
@@ -1186,6 +1217,7 @@ export function computeCashFlowSankeyData(
       pensionDrawdownTotal +
       isaDrawdown +
       cashDrawdown +
+      downsizeInc +
       lifeEventsInc;
 
     const personMortgageShare = (isCouple && (activeViewMode === 'primary' || activeViewMode === 'partner'))
@@ -1194,7 +1226,9 @@ export function computeCashFlowSankeyData(
     const mortgageAlloc = Math.min(netRetirementIncome, personMortgageShare);
     const spendableAfterMortgage = Math.max(0, netRetirementIncome - mortgageAlloc);
 
-    const annualExcess = p.annualIncomeExcess || 0;
+    const annualExcess = activeViewMode === 'combined'
+      ? ((p.annualIncomeExcess || 0) + (p.propertyDownsizeEquityReleased || 0))
+      : (isCouple ? (((p.annualIncomeExcess || 0) + (p.propertyDownsizeEquityReleased || 0)) * 0.5) : ((p.annualIncomeExcess || 0) + (p.propertyDownsizeEquityReleased || 0)));
     let reinvestSurplus = Math.min(spendableAfterMortgage, annualExcess);
     let availableForLiving = Math.max(0, spendableAfterMortgage - reinvestSurplus);
 
@@ -1300,6 +1334,17 @@ export function computeCashFlowSankeyData(
         column: 0,
       });
     }
+    if (downsizeInc > 0) {
+      nodes.push({
+        id: 'downsize_equity',
+        label: 'Right-Sizing Equity',
+        sublabel: 'Equity released from home',
+        amount: downsizeInc,
+        color: '#d97706',
+        category: 'source',
+        column: 0,
+      });
+    }
 
     // Column 1 Hub: Gross Hub
     nodes.push({
@@ -1319,6 +1364,7 @@ export function computeCashFlowSankeyData(
     if (isaDrawdown > 0) links.push({ sourceId: 'isa_drawdown', targetId: 'gross_retire_hub', amount: isaDrawdown, color: '#6366f1' });
     if (cashDrawdown > 0) links.push({ sourceId: 'cash_drawdown', targetId: 'gross_retire_hub', amount: cashDrawdown, color: '#f59e0b' });
     if (lifeEventsInc > 0) links.push({ sourceId: 'life_events_inflow', targetId: 'gross_retire_hub', amount: lifeEventsInc, color: '#06b6d4' });
+    if (downsizeInc > 0) links.push({ sourceId: 'downsize_equity', targetId: 'gross_retire_hub', amount: downsizeInc, color: '#d97706' });
 
     // Column 2: Tax Deductions
     if (totalTaxPaid > 0) {
