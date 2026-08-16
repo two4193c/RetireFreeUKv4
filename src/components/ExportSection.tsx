@@ -610,7 +610,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
 
       // 5. Property Right-Sizing Event
       if (profile.propertyDownsizePlan?.enabled) {
-        const dsAge = profile.propertyDownsizePlan.targetAge;
+        const dsAge = profile.propertyDownsizePlan.downsizeAge;
         if (dsAge >= profile.currentAge && !sankeyMilestones.find(m => m.age === dsAge)) {
           sankeyMilestones.push({
             title: `Milestone 5: Property Right-Sizing Event (Age ${dsAge})`,
