@@ -188,7 +188,7 @@ export const NAV_STRUCTURE: TabGroup[] = [
     icon: Layers,
     description: 'Custom tax overrides, return assumptions & advanced settings',
     cards: [
-      { id: 'card-advanced-settings', label: 'Advanced Settings' },
+      { id: 'card-advanced-settings', label: 'Assumption Settings' },
       { id: 'card-adv-macro', label: 'Asset Allocation & Macro Settings' },
     ],
   },
