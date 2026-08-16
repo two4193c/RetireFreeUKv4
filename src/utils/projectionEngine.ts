@@ -13,6 +13,7 @@ import {
   computeIncomeTaxOnAmount,
   allocateLumpSumToPots,
   calculatePSAAndSavingsTax,
+  calculateUKStampDuty,
 } from './ukTaxEngine';
 import {
   PERSONAL_ALLOWANCE,
@@ -250,6 +251,10 @@ export function generateProjections(
   let primaryCumulativeTaxFreeDrawn = 0;
   let partnerCumulativeTaxFreeDrawn = 0;
 
+  // Property Downsizing Tracker
+  let currentPropertyValue = profile.propertyDownsizePlan?.enabled ? profile.propertyDownsizePlan.currentPropertyValue : 0;
+  let hasDownsized = false;
+
   const isScottishTax = profile.taxRegion === 'scotland';
   const isPartnerScottishTax = (profile.partnerTaxRegion || profile.taxRegion) === 'scotland';
   const indexTaxBands = profile.indexTaxBands ?? true;
@@ -308,6 +313,53 @@ function parseAnnuityTypeConfig(type?: string) {
       ? age + ((profile.partnerCurrentAge ?? profile.currentAge) - profile.currentAge)
       : age;
     const partnerCanAccessPension = partnerAge >= partnerPensionAccessAge || partnerCrystallisedPot > 0 || (isPhasedPartner && (profile.partnerCrystallisationTranches || profile.crystallisationTranches || []).some((t) => t.enabled && t.age <= partnerAge && t.owner === 'partner'));
+
+    // Property Downsizing Event
+    if (profile.propertyDownsizePlan?.enabled && !hasDownsized && age >= profile.propertyDownsizePlan.downsizeAge) {
+      const plan = profile.propertyDownsizePlan;
+      
+      // Calculate SDLT on the new property (inflated to today's nominal terms using general inflation)
+      const targetNewPropertyCostNominal = plan.targetNewPropertyCostToday * inflationFactor;
+      const stampDuty = calculateUKStampDuty(targetNewPropertyCostNominal, plan.stampDutySecondHomeSurcharge);
+      
+      // Calculate selling costs on the current property
+      const sellingCosts = currentPropertyValue * (plan.sellingCostsPercent / 100);
+      
+      // Deduct any outstanding mortgage balance if the user opted to NOT pay it off at retirement, OR if downsize age is BEFORE retirement
+      let outstandingMortgageToClear = 0;
+      if (profile.mortgage?.enabled) {
+        // Find remaining balance. The mortgage module is normally handled in insights or manually via spending,
+        // but here we must capture the snapshot of remaining principal.
+        // Assuming the user's spending target already accounts for mortgage payments, we just need to settle the principal.
+        // Since we don't have a live mortgage tracker in the loop yet, we'll estimate the remaining balance linearly.
+        const monthsPassed = (age - profile.currentAge) * 12;
+        const totalTermMonths = (profile.mortgage.remainingTermYears * 12) + (profile.mortgage.remainingTermMonths || 0);
+        if (monthsPassed < totalTermMonths && !(profile.mortgage.payoffAtRetirement && age >= profile.targetRetirementAge)) {
+           // Basic linear approximation of remaining principal for the downsize snapshot
+           const ratioRemaining = 1 - (monthsPassed / totalTermMonths);
+           outstandingMortgageToClear = profile.mortgage.currentBalance * ratioRemaining;
+        }
+      }
+
+      // Calculate Net Equity
+      const netEquityReleased = currentPropertyValue - outstandingMortgageToClear - targetNewPropertyCostNominal - stampDuty - sellingCosts;
+
+      // Inject Equity
+      if (netEquityReleased > 0) {
+        if (plan.destinationPot === 'isa') {
+          // Subject to ISA allowance limits? In reality, it would likely go to GIA if over £20k, but we'll respect the user's toggle.
+          primaryIsaPot += netEquityReleased;
+        } else if (plan.destinationPot === 'cash') {
+          primaryCashSavingsPot += netEquityReleased;
+        } else {
+          primaryGiaPot += netEquityReleased;
+          // Set cost basis so it's not immediately hit with CGT
+          primaryGiaCostBasis += netEquityReleased;
+        }
+      }
+      
+      hasDownsized = true;
+    }
 
     // Partner Mortality Inheritance
     if (profile.isCouplePlanning && !partnerDead && partnerAge >= (profile.partnerLifeExpectancyAge || 95)) {
@@ -3011,6 +3063,11 @@ function parseAnnuityTypeConfig(type?: string) {
         depletionAge,
         canAccessPension,
       });
+    }
+
+    // Compound property value for the next year
+    if (profile.propertyDownsizePlan?.enabled && !hasDownsized) {
+      currentPropertyValue *= (1 + (profile.propertyDownsizePlan.expectedAnnualGrowthRate / 100));
     }
   }
 

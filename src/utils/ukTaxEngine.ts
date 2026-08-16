@@ -1550,4 +1550,51 @@ export function calculateCapitalGainsTax(
   };
 }
 
+/**
+ * Calculates UK Stamp Duty Land Tax (SDLT)
+ * Standard rates for 2024/25:
+ * £0 - £250,000 : 0%
+ * £250,001 - £925,000 : 5%
+ * £925,001 - £1,500,000 : 10%
+ * Over £1,500,000 : 12%
+ * Second Home Surcharge adds 3% to all bands.
+ */
+export function calculateUKStampDuty(propertyValue: number, isSecondHome: boolean = false): number {
+  if (propertyValue <= 0) return 0;
+
+  const surcharge = isSecondHome ? 0.03 : 0;
+  let tax = 0;
+
+  // Band 1: 0 - 250,000 (0% or 3%)
+  const band1Limit = 250000;
+  const band1Rate = 0.0 + surcharge;
+  const band1Taxable = Math.min(propertyValue, band1Limit);
+  tax += band1Taxable * band1Rate;
+
+  // Band 2: 250,001 - 925,000 (5% or 8%)
+  const band2Limit = 925000;
+  const band2Rate = 0.05 + surcharge;
+  if (propertyValue > band1Limit) {
+    const band2Taxable = Math.min(propertyValue - band1Limit, band2Limit - band1Limit);
+    tax += band2Taxable * band2Rate;
+  }
+
+  // Band 3: 925,001 - 1,500,000 (10% or 13%)
+  const band3Limit = 1500000;
+  const band3Rate = 0.10 + surcharge;
+  if (propertyValue > band2Limit) {
+    const band3Taxable = Math.min(propertyValue - band2Limit, band3Limit - band2Limit);
+    tax += band3Taxable * band3Rate;
+  }
+
+  // Band 4: Over 1,500,000 (12% or 15%)
+  const band4Rate = 0.12 + surcharge;
+  if (propertyValue > band3Limit) {
+    const band4Taxable = propertyValue - band3Limit;
+    tax += band4Taxable * band4Rate;
+  }
+
+  return tax;
+}
+
 

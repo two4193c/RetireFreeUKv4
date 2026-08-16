@@ -413,6 +413,9 @@ export interface UserProfile {
   // Mortgage & Property Debt Module Settings
   mortgage?: MortgageDebtConfig;
 
+  // Property Downsizing & Equity Release Module Settings
+  propertyDownsizePlan?: PropertyDownsizePlan;
+
   // Asset Allocation Split for Accumulation & Decumulation
   assetAllocationSplit?: AssetAllocationSplit;
 
@@ -492,6 +495,17 @@ export interface LumpSumOverpayment {
   amount: number; // £ lump sum
   source?: 'cash_savings' | 'isa' | 'pension_lump_sum' | 'custom';
   enabled: boolean;
+}
+
+export interface PropertyDownsizePlan {
+  enabled: boolean;
+  currentPropertyValue: number; // e.g. 650000
+  expectedAnnualGrowthRate: number; // e.g. 2.5 (%)
+  downsizeAge: number; // Age at which they sell (must be >= currentAge)
+  targetNewPropertyCostToday: number; // Cost of the new home in today's money
+  sellingCostsPercent: number; // Estate agent and legal fees as % of gross sale (e.g. 1.5)
+  stampDutySecondHomeSurcharge: boolean; // Toggle for applying the 3% additional rate SDLT
+  destinationPot: 'isa' | 'gia' | 'cash'; // Where the net equity is injected
 }
 
 export interface MortgageDebtConfig {

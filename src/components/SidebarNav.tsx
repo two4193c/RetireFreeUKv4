@@ -172,11 +172,12 @@ export const NAV_STRUCTURE: TabGroup[] = [
   },
   {
     id: 'mortgage',
-    label: 'Mortgage',
+    label: 'Housing Strategy',
     icon: Home,
-    description: 'Mortgage payoff & debt clearance strategy',
+    description: 'Mortgage payoff & right-sizing / downsizing strategy',
     cards: [
       { id: 'card-mortgage-debt', label: 'Mortgage & Debt Repayment Strategy' },
+      { id: 'card-right-sizing', label: 'Right-Sizing Your Home' },
     ],
   },
   {

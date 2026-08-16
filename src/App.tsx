@@ -77,6 +77,7 @@ import { SwrTrajectoryChart } from './components/SwrTrajectoryChart';
 import { SwrUkUsBenchmarkCard } from './components/SwrUkUsBenchmarkCard';
 import { AccumulationLedgerCard } from './components/AccumulationLedgerCard';
 import { MortgageDebtCard } from './components/MortgageDebtCard';
+import { RightSizingCard } from './components/RightSizingCard';
 import { LifeEventsDecumulationCard } from './components/LifeEventsDecumulationCard';
 import { InvestmentFeesCard } from './components/InvestmentFeesCard';
 import { CashFlowSankeyCard } from './components/CashFlowSankeyCard';
@@ -1203,11 +1204,14 @@ function App() {
               </div>
             )}
 
-            {/* Tab 9: Mortgage Debt */}
+            {/* Tab 9: Housing Strategy */}
             {activeTab === 'mortgage' && (
               <div className="space-y-6">
                 <div id="card-mortgage-debt" className="scroll-mt-24 transition-all duration-300">
                   <MortgageDebtCard profile={profile} onChange={handleProfileChange} />
+                </div>
+                <div id="card-right-sizing" className="scroll-mt-24 transition-all duration-300">
+                  <RightSizingCard profile={profile} onChange={handleProfileChange} />
                 </div>
               </div>
             )}
