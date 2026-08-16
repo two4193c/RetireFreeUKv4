@@ -86,7 +86,7 @@ import { PlanManagementCard } from './components/PlanManagementCard';
 import { Sparkles, ArrowUpRight, RotateCcw, Pencil, X, Check, LayoutDashboard, Wallet, Percent, LineChart, Shield, Landmark, Download, ArrowRightLeft, TrendingUp, Home, Trash2, AlertTriangle, BookOpen, Award, Scale, Heart, Users, Briefcase, Flame, ShieldAlert, Smile } from 'lucide-react';
 import { SidebarNav } from './components/SidebarNav';
 import { PlanErrorBoundary } from './components/PlanErrorBoundary';
-import { GodModeCard } from './components/GodModeCard';
+import { DynamicOptimiserCard } from './components/DynamicOptimiserCard';
 
 const STORAGE_KEY = 'uk_retirement_planner_scenarios_v2';
 const THEME_STORAGE_KEY = 'retireready_theme_v1';
@@ -1024,8 +1024,8 @@ function App() {
             {/* Tab 3b: Strategy Analysis (Advanced Mode Only) */}
             {activeTab === 'strategy_analysis' && (
               <div className="space-y-6">
-                <div id="card-god-mode" className="scroll-mt-24 transition-all duration-300">
-                  <GodModeCard
+                <div id="card-dynamic-optimiser" className="scroll-mt-24 transition-all duration-300">
+                  <DynamicOptimiserCard
                     profile={profile}
                     pots={pots}
                     taxResult={taxResult}

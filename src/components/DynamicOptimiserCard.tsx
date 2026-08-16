@@ -50,7 +50,7 @@ const pct = (n: number) => `${n.toFixed(1)}%`;
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
 // ─── Props ────────────────────────────────────────────────────────────────────
-interface GodModeCardProps {
+interface DynamicOptimiserCardProps {
   profile: UserProfile;
   pots: InvestmentPots;
   taxResult: TaxCalculationResult;
@@ -141,7 +141,7 @@ const bandCell = (v: number, threshold: number) => {
 };
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
-export const GodModeCard: React.FC<GodModeCardProps> = ({
+export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
   profile, pots, taxResult, projections, appMode: _appMode = 'advanced', onRunStressTest, onChange,
 }) => {
   const [expanded, setExpanded] = useState(true);
@@ -313,7 +313,7 @@ export const GodModeCard: React.FC<GodModeCardProps> = ({
             <Zap className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100">\u26A1 God Mode \u2014 Dynamic Optimization Cockpit</h3>
+            <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100">\u26A1 Dynamic Optimiser \u2014 Dynamic Optimization Cockpit</h3>
             <p className="text-xs text-slate-400 dark:text-slate-500">Set a retirement date to activate the optimization cockpit.</p>
           </div>
         </div>
@@ -337,7 +337,7 @@ export const GodModeCard: React.FC<GodModeCardProps> = ({
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100">\u26A1 God Mode</h3>
+              <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100">\u26A1 Dynamic Optimiser</h3>
               <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-widest bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow-sm">
                 Dynamic Optimization Cockpit
               </span>
@@ -651,4 +651,4 @@ export const GodModeCard: React.FC<GodModeCardProps> = ({
   );
 };
 
-export default GodModeCard;
+export default DynamicOptimiserCard;
