@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { DashboardTab } from '../App';
-import { PlannerScenario, AppMode } from '../types';
+import { DashboardTab, PlannerScenario, AppMode } from '../types';
 import {
   Wallet,
   TrendingUp,

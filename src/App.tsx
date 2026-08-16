@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, Component, ErrorInfo, ReactNode } from 'react';
-import { PlannerScenario, UserProfile, InvestmentPots, DrawdownStrategy, AppMode } from './types';
+import { PlannerScenario, UserProfile, InvestmentPots, DrawdownStrategy, AppMode, DashboardTab } from './types';
 import { STRATEGY_DEFINITIONS } from './components/QuickDrawdownStrategyBar';
 import { DEFAULT_PROFILE, DEFAULT_POTS, DEFAULT_PARTNER_POTS, PRESET_SCENARIOS, sanitizePots, sanitizeProfile, createBlankScenario } from './utils/defaultData';
 import { NewPlanModal } from './components/NewPlanModal';
@@ -88,8 +88,6 @@ import { PlanErrorBoundary } from './components/PlanErrorBoundary';
 
 const STORAGE_KEY = 'uk_retirement_planner_scenarios_v2';
 const THEME_STORAGE_KEY = 'retireready_theme_v1';
-
-export type DashboardTab = 'plan_management' | 'inputs' | 'accumulation_review' | 'strategy' | 'strategy_analysis' | 'projections' | 'risk' | 'estate' | 'overview' | 'output' | 'compare' | 'mortgage' | 'advanced_settings' | 'documentation';
 
 interface AppErrorBoundaryProps {
   children: ReactNode;

@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { PlannerScenario } from '../types';
+import { DashboardTab, PlannerScenario } from '../types';
 import { ChevronDown, Check, Plus, FolderKanban } from 'lucide-react';
-import { DashboardTab } from '../App';
 
 interface HeaderProps {
   scenarios: PlannerScenario[];
