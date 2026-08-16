@@ -112,6 +112,7 @@ export const NAV_STRUCTURE: TabGroup[] = [
       { id: 'card-essential-floor-split', label: 'Essential Floor vs Discretionary Split' },
       { id: 'card-swr-trajectory-chart', label: 'Effective Withdrawal Rate Trajectory Chart' },
       { id: 'card-swr-uk-us-benchmark', label: 'Bengen (US) vs UK Return Benchmark' },
+      { id: 'card-ai-advisor', label: 'AI Tax & Pension Advisor' },
     ],
   },
   {
@@ -181,11 +182,11 @@ export const NAV_STRUCTURE: TabGroup[] = [
   },
   {
     id: 'advanced_settings',
-    label: 'Advanced',
+    label: 'Assumptions',
     icon: Layers,
-    description: 'Custom parameters & advanced settings',
+    description: 'Custom tax overrides, return assumptions & advanced settings',
     cards: [
-      { id: 'card-advanced-settings', label: 'Advanced Settings & AI Advisor' },
+      { id: 'card-advanced-settings', label: 'Advanced Settings' },
       { id: 'card-adv-macro', label: 'Asset Allocation & Macro Settings' },
     ],
   },
@@ -678,7 +679,7 @@ export function SidebarNav({
                 }`}
               >
                 <SlidersHorizontal className="w-3 h-3" />
-                <span>Advanced</span>
+                <span>Assumptions</span>
               </button>
             </div>
           )}
