@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { DashboardTab, PlannerScenario } from '../types';
-import { ChevronDown, Check, Plus, FolderKanban } from 'lucide-react';
+import { ChevronDown, Check, Plus, FolderKanban, Save } from 'lucide-react';
 
 interface HeaderProps {
   scenarios: PlannerScenario[];
@@ -26,6 +26,7 @@ export const Header: React.FC<HeaderProps> = ({
   activeScenarioId,
   onSelectScenario,
   onNewScenario,
+  onSaveScenario,
   onOpenManagePlans,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -47,8 +48,8 @@ export const Header: React.FC<HeaderProps> = ({
     <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 sticky top-0 z-30 shadow-xs min-h-[3.5rem] h-auto py-1.5 transition-colors">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-full flex items-center justify-between gap-3">
         
-        {/* Active Plan Selector Dropdown */}
-        <div className="relative py-1 min-w-0 flex-1 max-w-xl" ref={dropdownRef}>
+        {/* Active Plan Selector Dropdown with Save Action */}
+        <div className="relative py-1 min-w-0 flex-1 max-w-xl flex items-center gap-2" ref={dropdownRef}>
           <button
             type="button"
             onClick={() => setIsOpen(!isOpen)}
@@ -72,6 +73,23 @@ export const Header: React.FC<HeaderProps> = ({
 
             <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0 ${isOpen ? 'rotate-180' : ''}`} />
           </button>
+
+          {/* Quick Save Action Icon Button */}
+          {onSaveScenario && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onSaveScenario();
+              }}
+              className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 hover:border-emerald-400 transition-all shadow-2xs hover:shadow-xs cursor-pointer group shrink-0"
+              title={`Save Plan ("${activeScenario ? activeScenario.name : 'Active Plan'}")`}
+              aria-label="Save active plan"
+            >
+              <Save className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600 dark:text-emerald-400 transition-transform group-hover:scale-110" />
+              <span className="hidden sm:inline text-xs font-bold">Save</span>
+            </button>
+          )}
 
           {/* Dropdown Menu */}
           {isOpen && (

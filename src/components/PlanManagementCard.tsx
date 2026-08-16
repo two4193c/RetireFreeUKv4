@@ -212,7 +212,8 @@ export const PlanManagementCard: React.FC<PlanManagementCardProps> = ({
                           {s.name}
                         </h4>
                         {isActive && (
-                          <span className="px-2.5 py-0.5 bg-emerald-600 text-white text-[10px] font-extrabold uppercase tracking-wider rounded-md">
+                          <span className="px-2.5 py-0.5 bg-emerald-600 text-white text-[10px] font-extrabold uppercase tracking-wider rounded-md flex items-center gap-1">
+                            <Save className="w-3 h-3" />
                             Active Plan
                           </span>
                         )}
