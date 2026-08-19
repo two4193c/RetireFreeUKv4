@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { UserProfile, InvestmentPots, YearProjection, UKTaxResult, PlannerScenario, CrystallisationTranche, LumpSumSplit } from '../types';
-import { DEFAULT_PARTNER_POTS, DEFAULT_POTS, DEFAULT_MORTGAGE, sanitizePots } from '../utils/defaultData';
+import { DEFAULT_PARTNER_POTS, DEFAULT_POTS, DEFAULT_MORTGAGE, DEFAULT_INVESTMENT_FEES, DEFAULT_SINGLE_POT_FEE, sanitizePots } from '../utils/defaultData';
+import { calculateGiltLadder } from '../utils/giltLadderEngine';
 import { jsPDF } from 'jspdf';
 import { FileText, Download, Printer, CheckCircle2, Sparkles, ShieldCheck, ArrowUpRight, Table, PieChart, Image as ImageIcon, BarChart3, Upload, FileJson, FileSpreadsheet } from 'lucide-react';
 import { getProjectedPensionAtTakeAge, getPensionAccessAge, getPartnerPensionAccessAge, calculateUKTax, calculatePartnerUKTax, calculateMaxPcls, calculatePartnerMaxPcls, getLumpSumTakeAge, getPartnerLumpSumTakeAge } from '../utils/ukTaxEngine';
@@ -936,12 +937,12 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
         { section: '6. Projected Assets Breakdown at Private Pension Access Age', page: 4, desc: `Capital balances at private pension access age (Age ${primaryAccessAge}).` },
         { section: '6a. Potential Tax-Free Lump Sum (PCLS & LSA Allowance) Analysis', page: 4, desc: 'Tax-free cash entitlement (PCLS), LSA allowance caps, and lump sum extraction strategy.' },
         { section: '7. Projected Assets Breakdown at State Pension Access Age', page: 4, desc: `Capital balances at state pension access age (Age ${primarySpaAge}).` },
-        { section: '8. Investment Growth & Macroeconomic Assumptions', page: 4, desc: 'Pre and post-retirement returns, CPI inflation, and indexing assumptions.' },
+        { section: '8. Investment Growth, Platform/Adviser Fees & Macro Assumptions', page: 4, desc: 'Pre and post-retirement returns, CPI inflation, platform & adviser fee drag model and pot-level fee breakdown.' },
         { section: '9. Spending Phase Profile & Target Income Amounts', page: 5, desc: 'Age-based spending requirements (Go-Go, Slow-Go, No-Go) and monthly targets.' },
         { section: '10. Retirement Income Product Structure & Drawdown Strategy', page: 5, desc: 'Flexi-access drawdown, lifetime annuities, PCLS tax-free cash & destination strategy.' },
         { section: '10a. Dynamic Optimiser & Multi-Variable Tax Matrix', page: 5, desc: 'Tax-smoothing engine, 0% PA capture, 20% basic rate smoothing, and spousal equalisation.' },
         { section: '10b. Effective Withdrawal Rate Trajectory Chart (SWR %)', page: 5, desc: 'Year-by-year effective SWR % overlay, Bengen 3.5% UK benchmark, 5% danger threshold & peak rate analysis.' },
-        { section: '11. Key Milestone Schedule & Execution Details', page: 5, desc: 'Milestone timeline table, State Pension execution details, and annuity purchase rates.' },
+        { section: '11. Key Milestone Schedule, Gilt Ladder & Annuity Details', page: 5, desc: 'Milestone timeline table, State Pension execution, UK Gilt Ladder portfolio details & Annuity purchase rates.' },
         { section: '12. Visual Diagram Models — Portfolio Allocation & Trajectories', page: 6, desc: 'Charts of initial asset distribution and multi-year portfolio wealth trajectory curves.' },
         { section: '13. Visual Diagram Models — Drawdown Income Breakdown', page: 7, desc: 'Charts of net annual drawdown income sources in both Nominal and Real Today\'s £.' },
         { section: '14. Visual Diagram Models — Deficit Risk & Legal Guidance Notice', page: 8, desc: 'Shortfall/surplus analysis and regulatory financial planning guidance disclaimers.' },
@@ -1988,43 +1989,216 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       p2Y = drawAssetBreakdownTable(7, `Projected Investment Pot Assets Breakdown at State Pension Access Age (Age ${primarySpaAge})`, statePensionYear, p2Y);
 
       // SECTION 8: INVESTMENT RETURNS & MACROECONOMIC GROWTH ASSUMPTIONS
-      p2Y += 14;
+      p2Y += 10;
+      if (p2Y > 195) {
+        doc.addPage();
+        curPageNum++;
+        renderPageHeader('Investment Returns, Fees & Macro Assumptions', curPageNum);
+        p2Y = 24;
+      }
+
       const realPre = (macroPre - macroInf).toFixed(1);
       const realPost = (macroPost - macroInf).toFixed(1);
 
       doc.setFillColor(248, 250, 252);
-      doc.roundedRect(14, p2Y, 182, 28, 3, 3, 'F');
+      doc.roundedRect(14, p2Y, 182, 23, 3, 3, 'F');
       doc.setDrawColor(226, 232, 240);
-      doc.roundedRect(14, p2Y, 182, 28, 3, 3, 'D');
+      doc.roundedRect(14, p2Y, 182, 23, 3, 3, 'D');
 
       doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(10);
-      doc.text('8. Investment Returns & Macroeconomic Growth Assumptions', 18, p2Y + 7);
+      doc.setFontSize(9.5);
+      doc.text('8. Investment Returns & Macroeconomic Growth Assumptions', 18, p2Y + 6.5);
 
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8);
+      doc.setFontSize(7.5);
       doc.setTextColor(51, 65, 85);
 
       doc.setFont('helvetica', 'bold');
-      doc.text('Pre-Retirement Return:', 18, p2Y + 14);
+      doc.text('Pre-Retirement Return:', 18, p2Y + 13);
       doc.setFont('helvetica', 'normal');
-      doc.text(`${macroPre}% p.a. (+${realPre}% p.a. real growth)`, 60, p2Y + 14);
+      doc.text(`${macroPre}% p.a. (+${realPre}% p.a. real growth)`, 58, p2Y + 13);
 
       doc.setFont('helvetica', 'bold');
-      doc.text('Post-Retirement Return:', 18, p2Y + 21);
+      doc.text('Post-Retirement Return:', 18, p2Y + 18.5);
       doc.setFont('helvetica', 'normal');
-      doc.text(`${macroPost}% p.a. (+${realPost}% p.a. real growth)`, 60, p2Y + 21);
+      doc.text(`${macroPost}% p.a. (+${realPost}% p.a. real growth)`, 58, p2Y + 18.5);
 
       doc.setFont('helvetica', 'bold');
-      doc.text('Expected Annual Inflation:', 115, p2Y + 14);
+      doc.text('Expected Annual Inflation:', 112, p2Y + 13);
       doc.setFont('helvetica', 'normal');
-      doc.text(`${macroInf}% p.a. CPI`, 160, p2Y + 14);
+      doc.text(`${macroInf}% p.a. CPI`, 154, p2Y + 13);
 
       doc.setFont('helvetica', 'bold');
-      doc.text('Spending & Pension Indexing:', 115, p2Y + 21);
+      doc.text('Spending & Pension Indexing:', 112, p2Y + 18.5);
       doc.setFont('helvetica', 'normal');
-      doc.text(`CPI Indexed @ ${macroInf}%/yr`, 160, p2Y + 21);
+      doc.text(`CPI Indexed @ ${macroInf}%/yr`, 154, p2Y + 18.5);
+
+      p2Y += 26;
+
+      // SECTION 8a: INVESTMENT, PLATFORM & ADVISER FEES & LIFETIME FEE DRAG ANALYSIS
+      const feeConfig = profile.investmentFees || DEFAULT_INVESTMENT_FEES;
+      const isFeeEnabled = Boolean(feeConfig.enabled);
+      const isPerPotFees = Boolean(feeConfig.perPotFeesEnabled);
+      const globalPlatformFee = feeConfig.platformFeePercent ?? 0.25;
+      const globalFundFee = feeConfig.fundFeePercent ?? 0.40;
+      const globalAdvisorFee = feeConfig.advisorFeePercent ?? 0.00;
+      const globalTotalFee = globalPlatformFee + globalFundFee + globalAdvisorFee;
+
+      interface PdfPotFeeRow {
+        name: string;
+        owner: string;
+        balance: number;
+        platform: number;
+        fund: number;
+        advisor: number;
+        total: number;
+        dragPounds: number;
+      }
+
+      const feePots: PdfPotFeeRow[] = [];
+      const addFeePotRow = (potName: string, ownerName: string, balance: number, ownerKey: 'primary' | 'partner', potKey: 'workplacePension' | 'sipp' | 'stocksAndSharesIsa' | 'cashIsa' | 'gia') => {
+        if (balance <= 0) return;
+        const potOverride = (isPerPotFees && feeConfig[ownerKey === 'partner' ? 'partnerPots' : 'primaryPots']?.[potKey]);
+        const plat = potOverride?.platformFeePercent !== undefined ? potOverride.platformFeePercent : globalPlatformFee;
+        const fnd = potOverride?.fundFeePercent !== undefined ? potOverride.fundFeePercent : globalFundFee;
+        const adv = potOverride?.advisorFeePercent !== undefined ? potOverride.advisorFeePercent : globalAdvisorFee;
+        const tot = isFeeEnabled ? (plat + fnd + adv) : 0;
+        const drag = Math.round(balance * (tot / 100));
+        feePots.push({ name: potName, owner: ownerName, balance, platform: plat, fund: fnd, advisor: adv, total: tot, dragPounds: drag });
+      };
+
+      addFeePotRow('Workplace Pension', primaryName, profile.workplacePensionBalance || 0, 'primary', 'workplacePension');
+      addFeePotRow('SIPP (Personal Pension)', primaryName, profile.sippBalance || 0, 'primary', 'sipp');
+      addFeePotRow('Stocks & Shares ISA', primaryName, profile.stocksAndSharesIsaBalance || 0, 'primary', 'stocksAndSharesIsa');
+      addFeePotRow('Cash ISA', primaryName, profile.cashIsaBalance || 0, 'primary', 'cashIsa');
+      addFeePotRow('GIA (General Inv.)', primaryName, profile.giaBalance || 0, 'primary', 'gia');
+
+      if (profile.isCouplePlanning) {
+        addFeePotRow('Workplace Pension', partnerName || 'Partner', profile.partnerWorkplacePensionBalance || 0, 'partner', 'workplacePension');
+        addFeePotRow('SIPP (Personal Pension)', partnerName || 'Partner', profile.partnerSippBalance || 0, 'partner', 'sipp');
+        addFeePotRow('Stocks & Shares ISA', partnerName || 'Partner', profile.partnerIsaBalance || 0, 'partner', 'stocksAndSharesIsa');
+        addFeePotRow('Cash ISA', partnerName || 'Partner', profile.partnerCashIsaBalance || 0, 'partner', 'cashIsa');
+        addFeePotRow('GIA (General Inv.)', partnerName || 'Partner', profile.partnerGiaBalance || 0, 'partner', 'gia');
+      }
+
+      const totalFeeInvestedPots = feePots.reduce((sum, p) => sum + p.balance, 0);
+      const totalAnnualFeeDragPounds = feePots.reduce((sum, p) => sum + p.dragPounds, 0);
+      const weightedAvgFeePercent = totalFeeInvestedPots > 0 ? (totalAnnualFeeDragPounds / totalFeeInvestedPots) * 100 : (isFeeEnabled ? globalTotalFee : 0);
+
+      // Estimate 30-year compounded fee drag impact
+      const rPre = (macroPre / 100);
+      const rNet = Math.max(0, rPre - (weightedAvgFeePercent / 100));
+      const yearsDrag = Math.min(40, Math.max(15, horizonAge - currentAge));
+      const compGrossMult = Math.pow(1 + rPre, yearsDrag);
+      const compNetMult = Math.pow(1 + rNet, yearsDrag);
+      const estimatedCompoundedDragPounds = Math.round(totalFeeInvestedPots * Math.max(0, compGrossMult - compNetMult));
+
+      const feeBoxH = 22 + (Math.max(1, feePots.length) * 4.8) + 9;
+      if (p2Y + feeBoxH > 275) {
+        doc.addPage();
+        curPageNum++;
+        renderPageHeader('Investment, Platform & Adviser Fees Analysis', curPageNum);
+        p2Y = 24;
+      }
+
+      doc.setFillColor(248, 250, 252);
+      doc.roundedRect(14, p2Y, 182, feeBoxH, 2.5, 2.5, 'F');
+      doc.setDrawColor(226, 232, 240);
+      doc.roundedRect(14, p2Y, 182, feeBoxH, 2.5, 2.5, 'D');
+
+      // Title & Status
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9.5);
+      doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+      doc.text('8a. Investment, Platform & Ongoing Adviser Fees Drag Analysis', 18, p2Y + 6.5);
+
+      // Status pill
+      const feePillBg = isFeeEnabled ? [240, 253, 244] : [241, 245, 249];
+      const feePillBorder = isFeeEnabled ? [187, 247, 208] : [203, 213, 225];
+      const feePillText = isFeeEnabled ? [22, 101, 52] : [100, 116, 139];
+      const feeStatusLabel = isFeeEnabled
+        ? (isPerPotFees ? 'Active (Granular Per-Pot Overrides)' : 'Active (Global Fee Drag Applied)')
+        : 'Inactive (0.00% Baseline Model)';
+
+      doc.setFillColor(feePillBg[0], feePillBg[1], feePillBg[2]);
+      doc.roundedRect(130, p2Y + 2.5, 62, 5, 1, 1, 'F');
+      doc.setDrawColor(feePillBorder[0], feePillBorder[1], feePillBorder[2]);
+      doc.roundedRect(130, p2Y + 2.5, 62, 5, 1, 1, 'D');
+      doc.setFontSize(6.2);
+      doc.setTextColor(feePillText[0], feePillText[1], feePillText[2]);
+      doc.text(feeStatusLabel, 132, p2Y + 5.8);
+
+      // Fee Global Rates KPI Strip
+      let fBoxY = p2Y + 8.5;
+      doc.setFillColor(255, 255, 255);
+      doc.roundedRect(18, fBoxY, 174, 7.5, 1.5, 1.5, 'F');
+      doc.setDrawColor(226, 232, 240);
+      doc.roundedRect(18, fBoxY, 174, 7.5, 1.5, 1.5, 'D');
+
+      doc.setFontSize(6.8);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(51, 65, 85);
+      doc.text(`Platform Fee: ${globalPlatformFee.toFixed(2)}%`, 21, fBoxY + 4.8);
+      doc.text(`Fund OCF / AMC: ${globalFundFee.toFixed(2)}%`, 58, fBoxY + 4.8);
+      doc.text(`Adviser Fee: ${globalAdvisorFee.toFixed(2)}%`, 100, fBoxY + 4.8);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(185, 28, 28);
+      doc.text(`Total Baseline TER: ${globalTotalFee.toFixed(2)}% p.a.`, 138, fBoxY + 4.8);
+
+      // Pot-by-Pot Fee Table
+      fBoxY += 9.5;
+      doc.setFillColor(30, 41, 59);
+      doc.rect(18, fBoxY, 174, 5, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(6.8);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Pot / Account Wrapper', 21, fBoxY + 3.5);
+      doc.text('Member', 66, fBoxY + 3.5);
+      doc.text('Platform %', 92, fBoxY + 3.5);
+      doc.text('Fund %', 110, fBoxY + 3.5);
+      doc.text('Adviser %', 126, fBoxY + 3.5);
+      doc.text('Total Fee %', 144, fBoxY + 3.5);
+      doc.text('Annual Drag (£/yr)', 166, fBoxY + 3.5);
+
+      fBoxY += 5;
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(51, 65, 85);
+      doc.setFontSize(6.8);
+
+      if (feePots.length === 0) {
+        doc.text('No active investment pots configured.', 21, fBoxY + 3.5);
+        fBoxY += 4.8;
+      } else {
+        feePots.forEach((pot, pIdx) => {
+          if (pIdx % 2 === 1) {
+            doc.setFillColor(241, 245, 249);
+            doc.rect(18, fBoxY, 174, 4.8, 'F');
+          }
+          doc.text(pot.name, 21, fBoxY + 3.5);
+          doc.text(pot.owner, 66, fBoxY + 3.5);
+          doc.text(`${pot.platform.toFixed(2)}%`, 92, fBoxY + 3.5);
+          doc.text(`${pot.fund.toFixed(2)}%`, 110, fBoxY + 3.5);
+          doc.text(`${pot.advisor.toFixed(2)}%`, 126, fBoxY + 3.5);
+          doc.setFont('helvetica', 'bold');
+          doc.text(`${pot.total.toFixed(2)}%`, 144, fBoxY + 3.5);
+          doc.setTextColor(185, 28, 28);
+          doc.text(pot.dragPounds > 0 ? `£${pot.dragPounds.toLocaleString()}/yr` : '£0/yr', 166, fBoxY + 3.5);
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(51, 65, 85);
+          fBoxY += 4.8;
+        });
+      }
+
+      // Summary Drag & Compound Impact Footnote
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(6.8);
+      doc.setTextColor(185, 28, 28);
+      doc.text(`• Total Initial Annual Fee Drag: £${totalAnnualFeeDragPounds.toLocaleString()}/yr (Weighted Avg: ${weightedAvgFeePercent.toFixed(2)}% p.a.)`, 18, fBoxY + 3.5);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(6.2);
+      doc.setTextColor(100, 116, 139);
+      doc.text(`  Projected Compounded Growth Drag over ${yearsDrag} Years: ~£${estimatedCompoundedDragPounds.toLocaleString()} in reduced terminal wealth.`, 18, fBoxY + 7);
 
       // =========================================================================
       // PAGE 5: SPENDING PHASES, RETIREMENT INCOME PRODUCTS & MILESTONES
@@ -3571,6 +3745,114 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
 
           p3Y += boxH + 8;
         }
+      }
+
+      // UK GILT LADDER DETAILS SUMMARY CALLOUT BOX & TABLE (IF GILT LADDER PURCHASED)
+      if (profile.giltLadderConfig?.enabled) {
+        const gConf = profile.giltLadderConfig;
+        const gPurAge = gConf.purchaseAge ?? gConf.startAge ?? targetAge;
+        const gPurProj = (projections || []).find((p) => p.age === gPurAge) || retirementYear;
+        const gPurYear = gPurProj.year || (new Date().getFullYear() + Math.max(0, gPurAge - currentAge));
+        const gPotsObj = sanitizePots(pots, DEFAULT_POTS);
+        const gSummary = calculateGiltLadder(gConf, profile, gPotsObj);
+
+        // Check if Gilt Ladder box fits on current page
+        const numRungs = Math.min(gSummary.rungs.length, 12);
+        const giltBoxH = 25 + (numRungs * 5.2) + 7;
+        if (p3Y + giltBoxH > 275) {
+          doc.addPage();
+          curPageNum++;
+          renderPageHeader('Key Milestone UK Gilt Ladder Portfolio Schedule', curPageNum);
+          p3Y = 24;
+        }
+
+        // Draw Emerald Themed Container Box
+        doc.setFillColor(236, 253, 245); // Emerald-50 tint
+        doc.roundedRect(14, p3Y, 182, giltBoxH, 2.5, 2.5, 'F');
+        doc.setDrawColor(167, 243, 208); // Emerald-200 border
+        doc.roundedRect(14, p3Y, 182, giltBoxH, 2.5, 2.5, 'D');
+
+        // Header Title & Badges
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.5);
+        doc.setTextColor(5, 150, 105);
+        doc.text('Key Milestone UK Gilt Ladder Strategy (0% CGT Liability Matching Portfolio)', 18, p3Y + 5.5);
+
+        // Summary KPI Strip inside box
+        let gBoxY = p3Y + 8.5;
+        doc.setFillColor(255, 255, 255);
+        doc.roundedRect(18, gBoxY, 174, 8.5, 1.5, 1.5, 'F');
+        doc.setDrawColor(209, 250, 229);
+        doc.roundedRect(18, gBoxY, 174, 8.5, 1.5, 1.5, 'D');
+
+        doc.setFontSize(6.8);
+        doc.setTextColor(51, 65, 85);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Purchase Age: Age ${gPurAge} (${gPurYear})`, 21, gBoxY + 3.8);
+        doc.text(`Duration: ${gConf.durationYears || 5} Years (Ages ${gPurAge + 1} - ${gPurAge + (gConf.durationYears || 5)})`, 68, gBoxY + 3.8);
+        const fundSrcLabel = gConf.fundingSource === 'gia' ? 'GIA (Max 0% CGT Benefit)' : (gConf.fundingSource || 'GIA').toUpperCase();
+        doc.text(`Funding Pot: ${fundSrcLabel}`, 130, gBoxY + 3.8);
+
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(5, 150, 105);
+        doc.text(`Upfront Cost: £${Math.round(gSummary.totalUpfrontCost).toLocaleString()}`, 21, gBoxY + 7.2);
+        doc.setTextColor(30, 64, 175);
+        const totPayout = gSummary.totalPayoutDelivered ?? gSummary.totalGuaranteedPayout ?? 0;
+        doc.text(`Total Payout: £${Math.round(totPayout).toLocaleString()}`, 68, gBoxY + 7.2);
+        doc.setTextColor(126, 34, 206);
+        const totTaxFreeGain = gSummary.totalTaxFreeCapitalGains ?? gSummary.totalTaxFreeGain ?? 0;
+        doc.text(`0% CGT Gain: £${Math.round(totTaxFreeGain).toLocaleString()}`, 115, gBoxY + 7.2);
+        doc.setTextColor(51, 65, 85);
+        const effYield = gSummary.effectiveAnnualYieldPercent ?? gSummary.blendedNetYieldPercent ?? 0;
+        doc.text(`Yield: ${effYield.toFixed(2)}% YTM`, 155, gBoxY + 7.2);
+
+        // Table Header
+        gBoxY += 10.5;
+        doc.setFillColor(5, 150, 105);
+        doc.rect(18, gBoxY, 174, 5, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(6.8);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Maturity Age (Year)', 21, gBoxY + 3.5);
+        doc.text('Gilt Issue & Coupon', 58, gBoxY + 3.5);
+        doc.text('Benchmark Price', 104, gBoxY + 3.5);
+        doc.text('Upfront Cost (£)', 128, gBoxY + 3.5);
+        doc.text('Nominal Payout (£)', 150, gBoxY + 3.5);
+        doc.text('Tax-Free Gain (£)', 172, gBoxY + 3.5);
+
+        gBoxY += 5;
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(51, 65, 85);
+        doc.setFontSize(6.8);
+
+        gSummary.rungs.slice(0, 12).forEach((rung, rIdx) => {
+          if (rIdx % 2 === 1) {
+            doc.setFillColor(240, 253, 244);
+            doc.rect(18, gBoxY, 174, 5.2, 'F');
+          }
+          doc.text(`Age ${rung.age} (${rung.year})`, 21, gBoxY + 3.6);
+          const gName = rung.giltName.length > 24 ? rung.giltName.substring(0, 22) + '..' : rung.giltName;
+          doc.text(gName, 58, gBoxY + 3.6);
+          doc.text(`£${rung.cleanPrice.toFixed(2)} / £100`, 104, gBoxY + 3.6);
+          doc.text(`£${Math.round(rung.purchaseCost).toLocaleString()}`, 128, gBoxY + 3.6);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(5, 150, 105);
+          doc.text(`£${Math.round(rung.totalNetPayout).toLocaleString()}`, 150, gBoxY + 3.6);
+          doc.setTextColor(126, 34, 206);
+          const rungGain = rung.taxFreeCapitalGain ?? rung.taxFreeGain ?? 0;
+          doc.text(`+£${Math.round(rungGain).toLocaleString()}`, 172, gBoxY + 3.6);
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(51, 65, 85);
+          gBoxY += 5.2;
+        });
+
+        // Statutory note at bottom of box
+        doc.setFont('helvetica', 'italic');
+        doc.setFontSize(6.2);
+        doc.setTextColor(100, 116, 139);
+        doc.text('• TCGA 1992 s.115 Statutory Exemption: Capital gains on UK Gilts are 100% exempt from CGT. Low-coupon gilts purchased below par yield tax-free gains.', 18, gBoxY + 3.2);
+
+        p3Y += giltBoxH + 6;
       }
 
       // =========================================================================
@@ -6289,7 +6571,65 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
           }
         }
 
-        // 10. Custom Decumulation Events
+        // 10. UK Gilt Ladder Purchase
+        if (profile.giltLadderConfig?.enabled) {
+          const gPurchaseAge = profile.giltLadderConfig.purchaseAge ?? profile.giltLadderConfig.startAge ?? targetRetireAgeVal;
+          const gDur = profile.giltLadderConfig.durationYears || 5;
+          const gAmt = profile.giltLadderConfig.targetAnnualIncome || 25000;
+          pdfMilestones.push({
+            label: 'UK Gilt Ladder Purchase',
+            shortLabel: 'Gilt Ladder',
+            age: gPurchaseAge,
+            year: baseYear + (gPurchaseAge - curAge),
+            color: [5, 150, 105],
+            category: 'Pension',
+            impact: `Purchase ${gDur}-yr UK Gilt ladder (£${Math.round(gAmt).toLocaleString()}/yr 0% CGT payout from age ${gPurchaseAge + 1})`,
+            owner: profile.name || 'Primary',
+            level: 2,
+          });
+        }
+
+        // 11. Defined Benefit (DB) Pensions Start
+        (profile.dbPensions || []).filter(db => db.enabled && db.annualIncome > 0).forEach(db => {
+          const isPart = db.owner === 'partner';
+          const pOff = isPart ? (profile.partnerCurrentAge || curAge) - curAge : 0;
+          const pAgeAtDb = db.startAge - pOff;
+          pdfMilestones.push({
+            label: `${db.name || 'DB Pension'} Start`,
+            shortLabel: db.name && db.name.length > 14 ? db.name.substring(0, 12) + '..' : (db.name || 'DB Pension'),
+            age: pAgeAtDb,
+            year: baseYear + (pAgeAtDb - curAge),
+            color: [37, 99, 235],
+            category: 'Pension',
+            impact: `Guaranteed £${Math.round(db.annualIncome).toLocaleString()}/yr DB pension commences`,
+            owner: isPart ? (profile.partnerName || 'Partner') : (profile.name || 'Primary'),
+            level: 1,
+          });
+        });
+
+        // 12. Annuity Purchase
+        const hasAnnuityExport =
+          profile.incomeProductOption === 'annuity' ||
+          profile.incomeProductOption === 'hybrid' ||
+          (profile.annuityFloorMode && profile.annuityFloorMode !== 'none');
+
+        if (hasAnnuityExport) {
+          const annPurchaseAge = profile.annuityPurchaseAge || profile.annuityFloorAge || targetRetireAgeVal;
+          const annAllocPct = profile.annuityAllocationPercent || (profile.incomeProductOption === 'hybrid' ? 50 : 100);
+          pdfMilestones.push({
+            label: `${profile.name || 'Primary'} Annuity Purchase`,
+            shortLabel: 'Annuity Purchase',
+            age: annPurchaseAge,
+            year: baseYear + (annPurchaseAge - curAge),
+            color: [217, 119, 6],
+            category: 'Pension',
+            impact: `Purchase guaranteed lifetime annuity (${annAllocPct}% of pension pot)`,
+            owner: profile.name || 'Primary',
+            level: 2,
+          });
+        }
+
+        // 13. Custom Decumulation Events
         (profile.decumulationLifeEvents || []).filter(e => e.enabled).forEach(ev => {
           pdfMilestones.push({
             label: ev.name,
@@ -6304,7 +6644,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
           });
         });
 
-        // 11. Life Expectancy Horizon
+        // 14. Life Expectancy Horizon
         pdfMilestones.push({
           label: 'Planning Horizon',
           shortLabel: 'Horizon',

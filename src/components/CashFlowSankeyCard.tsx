@@ -1875,7 +1875,7 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
 
   // Quick milestone age jumps
   const milestoneAges = useMemo(() => {
-    const ages: { age: number; label: string; type: 'current' | 'retire' | 'spa' | 'late' }[] = [
+    const ages: { age: number; label: string; type: 'current' | 'retire' | 'spa' | 'late' | 'gilt' | 'db' | 'annuity' }[] = [
       { age: profile.currentAge, label: `Now (${profile.currentAge})`, type: 'current' },
     ];
 
@@ -1883,16 +1883,36 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
       ages.push({ age: profile.targetRetirementAge, label: `Retire (${profile.targetRetirementAge})`, type: 'retire' });
     }
 
+    if (profile.giltLadderConfig?.enabled) {
+      const gAge = profile.giltLadderConfig.purchaseAge ?? profile.giltLadderConfig.startAge ?? profile.targetRetirementAge;
+      if (gAge && !ages.some((a) => a.age === gAge)) {
+        ages.push({ age: gAge, label: `Gilt Buy (${gAge})`, type: 'gilt' });
+      }
+    }
+
+    (profile.dbPensions || []).filter((db) => db.enabled && db.annualIncome > 0).forEach((db) => {
+      if (db.startAge && !ages.some((a) => a.age === db.startAge)) {
+        ages.push({ age: db.startAge, label: `DB Start (${db.startAge})`, type: 'db' });
+      }
+    });
+
+    const hasAnnuity =
+      profile.incomeProductOption === 'annuity' ||
+      profile.incomeProductOption === 'hybrid' ||
+      (profile.annuityFloorMode && profile.annuityFloorMode !== 'none');
+    if (hasAnnuity) {
+      const annAge = profile.annuityPurchaseAge || profile.annuityFloorAge || profile.targetRetirementAge || 65;
+      if (annAge && !ages.some((a) => a.age === annAge)) {
+        ages.push({ age: annAge, label: `Annuity (${annAge})`, type: 'annuity' });
+      }
+    }
+
     const spa = profile.statePensionAge || 67;
-    if (spa && spa !== profile.targetRetirementAge && spa !== profile.currentAge) {
+    if (spa && !ages.some((a) => a.age === spa)) {
       ages.push({ age: spa, label: `State Pension (${spa})`, type: 'spa' });
     }
 
-    if (profile.targetRetirementAge && profile.targetRetirementAge + 10 < 100) {
-      const midRetire = profile.targetRetirementAge + 10;
-      ages.push({ age: midRetire, label: `Age ${midRetire}`, type: 'late' });
-    }
-
+    ages.sort((a, b) => a.age - b.age);
     return ages;
   }, [profile]);
 

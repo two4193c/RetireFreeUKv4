@@ -41,6 +41,7 @@ import {
   HeartHandshake,
   Zap,
   Award,
+  Banknote,
 } from 'lucide-react';
 
 interface MilestoneTimelineCardProps {
@@ -297,7 +298,137 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
       }
     }
 
-    // 10. Custom Decumulation Life Events
+    // 10. UK Gilt Ladder Purchase (if enabled)
+    if (profile.giltLadderConfig?.enabled) {
+      const gPurchaseAge = profile.giltLadderConfig.purchaseAge ?? profile.giltLadderConfig.startAge ?? targetRetire;
+      const gDuration = profile.giltLadderConfig.durationYears || 5;
+      const gTarget = profile.giltLadderConfig.targetAnnualIncome || 25000;
+      list.push({
+        id: 'ms-gilt-ladder',
+        key: 'gilt_purchase',
+        label: 'UK Gilt Ladder Purchase',
+        shortLabel: 'Gilt Ladder',
+        category: 'pension',
+        age: gPurchaseAge,
+        year: currentYear + (gPurchaseAge - currentAge),
+        color: '#059669', // emerald-600
+        icon: Banknote,
+        description: `Deploy capital into a ${gDuration}-year UK Gilt Ladder portfolio (£${Math.round(gTarget).toLocaleString()}/yr net income from age ${gPurchaseAge + 1} to ${gPurchaseAge + gDuration}). 0% Capital Gains Tax.`,
+        isEditable: true,
+        minAge: Math.max(currentAge, 50),
+        maxAge: 80,
+        badge: 'Gilt Purchase',
+        owner: 'primary',
+      });
+    }
+
+    // 11. Defined Benefit (DB) Pensions Start Dates
+    (profile.dbPensions || [])
+      .filter((db) => db.enabled && db.annualIncome > 0)
+      .forEach((db, idx) => {
+        const isPartner = db.owner === 'partner';
+        const partnerOffset = isPartner ? (profile.partnerCurrentAge || currentAge) - currentAge : 0;
+        const primaryAgeAtStart = db.startAge - partnerOffset;
+        list.push({
+          id: `ms-db-pension-${db.id || idx}`,
+          key: `db_pension_${db.id || idx}`,
+          label: `${db.name || 'Defined Benefit Pension'}`,
+          shortLabel: db.name && db.name.length > 15 ? `${db.name.substring(0, 13)}...` : (db.name || 'DB Pension'),
+          category: 'pension',
+          age: primaryAgeAtStart,
+          year: currentYear + (primaryAgeAtStart - currentAge),
+          color: '#2563eb', // blue-600
+          icon: Building,
+          description: `Guaranteed Defined Benefit pension commences, paying £${Math.round(db.annualIncome).toLocaleString()}/yr${db.taxFreeLumpSum ? ` with £${Math.round(db.taxFreeLumpSum).toLocaleString()} tax-free lump sum` : ''}${db.inflationLinked ? ' (CPI inflation-linked)' : ' (fixed)'}.`,
+          isEditable: true,
+          minAge: Math.max(currentAge, 50),
+          maxAge: 75,
+          badge: 'DB Pension',
+          owner: db.owner || 'primary',
+        });
+      });
+
+    // 12. Guaranteed Annuity Purchase (Primary)
+    const hasPrimaryAnnuity =
+      profile.incomeProductOption === 'annuity' ||
+      profile.incomeProductOption === 'hybrid' ||
+      (profile.annuityFloorMode && profile.annuityFloorMode !== 'none');
+
+    if (hasPrimaryAnnuity) {
+      const annAge = profile.annuityPurchaseAge || profile.annuityFloorAge || targetRetire;
+      const annRate = profile.annuityRatePercent || 6.0;
+      const annAlloc = profile.annuityAllocationPercent || (profile.incomeProductOption === 'hybrid' ? 50 : 100);
+      list.push({
+        id: 'ms-annuity-purchase',
+        key: 'annuity_purchase',
+        label: `${profile.name || 'Primary'} Annuity Purchase`,
+        shortLabel: 'Annuity Purchase',
+        category: 'pension',
+        age: annAge,
+        year: currentYear + (annAge - currentAge),
+        color: '#d97706', // amber-600
+        icon: ShieldCheck,
+        description: `Purchase guaranteed lifetime annuity (${annAlloc}% of pension pot at ${annRate}% benchmark rate) securing stable lifetime floor income.`,
+        isEditable: true,
+        minAge: Math.max(currentAge, 55),
+        maxAge: 85,
+        badge: 'Annuity',
+        owner: 'primary',
+      });
+    }
+
+    // Annuity Tranches (if custom tranches defined)
+    (profile.annuityTranches || [])
+      .filter((t) => t.enabled)
+      .forEach((tranche, idx) => {
+        const isPartner = tranche.owner === 'partner';
+        const partnerOffset = isPartner ? (profile.partnerCurrentAge || currentAge) - currentAge : 0;
+        const primaryAgeAtPurchase = tranche.purchaseAge - partnerOffset;
+        list.push({
+          id: `ms-annuity-tranche-${tranche.id || idx}`,
+          key: `annuity_tranche_${tranche.id || idx}`,
+          label: `${tranche.name || 'Annuity Tranche'}`,
+          shortLabel: tranche.name && tranche.name.length > 15 ? `${tranche.name.substring(0, 13)}...` : (tranche.name || 'Annuity Tranche'),
+          category: 'pension',
+          age: primaryAgeAtPurchase,
+          year: currentYear + (primaryAgeAtPurchase - currentAge),
+          color: '#b45309', // amber-700
+          icon: ShieldCheck,
+          description: `Purchase guaranteed annuity tranche (${tranche.allocationPercent}% of pension pot at age ${tranche.purchaseAge}).`,
+          isEditable: true,
+          minAge: Math.max(currentAge, 55),
+          maxAge: 85,
+          badge: 'Annuity Tranche',
+          owner: tranche.owner || 'primary',
+        });
+      });
+
+    // Partner Annuity (if couple mode and partner has annuity enabled)
+    if (isCouple && (profile.partnerIncomeProductOption === 'annuity' || profile.partnerIncomeProductOption === 'hybrid')) {
+      const partnerRetire = profile.partnerTargetRetirementAge || targetRetire;
+      const partnerAnnAge = profile.partnerAnnuityPurchaseAge || partnerRetire;
+      const partnerOffset = (profile.partnerCurrentAge || currentAge) - currentAge;
+      const primaryAgeAtPartnerAnn = partnerAnnAge - partnerOffset;
+      list.push({
+        id: 'ms-partner-annuity-purchase',
+        key: 'partner_annuity_purchase',
+        label: `${profile.partnerName || 'Partner'} Annuity Purchase`,
+        shortLabel: 'Partner Annuity',
+        category: 'pension',
+        age: primaryAgeAtPartnerAnn,
+        year: currentYear + (primaryAgeAtPartnerAnn - currentAge),
+        color: '#f59e0b', // amber-500
+        icon: ShieldCheck,
+        description: `${profile.partnerName || 'Partner'} purchases guaranteed lifetime annuity (${profile.partnerAnnuityAllocationPercent || 100}% of partner pension pot).`,
+        isEditable: true,
+        minAge: Math.max(currentAge, 55),
+        maxAge: 85,
+        badge: 'Partner Annuity',
+        owner: 'partner',
+      });
+    }
+
+    // 13. Custom Decumulation Life Events
     (profile.decumulationLifeEvents || [])
       .filter((e) => e.enabled)
       .forEach((event) => {
@@ -323,7 +454,7 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
         });
       });
 
-    // 11. Life Expectancy Horizon
+    // 14. Life Expectancy Horizon
     list.push({
       id: 'ms-horizon',
       key: 'horizon',
@@ -422,13 +553,57 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
       const partnerOffset = (profile.partnerCurrentAge || currentAge) - currentAge;
       onChange({ ...profile, partnerStatePensionAge: clampedAge + partnerOffset });
     } else if (milestone.key === 'horizon') {
-      onChange({ ...profile, lifeExpectancyAge: clampedAge });
+      if (onChange) onChange({ ...profile, lifeExpectancyAge: clampedAge });
+    } else if (milestone.key === 'gilt_purchase') {
+      if (onChange && profile.giltLadderConfig) {
+        onChange({
+          ...profile,
+          giltLadderConfig: {
+            ...profile.giltLadderConfig,
+            purchaseAge: clampedAge,
+            startAge: clampedAge,
+          },
+        });
+      }
+    } else if (milestone.key.startsWith('db_pension_')) {
+      const dbId = milestone.key.replace('db_pension_', '');
+      const updatedDb = (profile.dbPensions || []).map((db, idx) => {
+        if (db.id === dbId || String(idx) === dbId) {
+          const isPartner = db.owner === 'partner';
+          const partnerOffset = isPartner ? (profile.partnerCurrentAge || currentAge) - currentAge : 0;
+          return { ...db, startAge: clampedAge + partnerOffset };
+        }
+        return db;
+      });
+      if (onChange) onChange({ ...profile, dbPensions: updatedDb });
+    } else if (milestone.key === 'annuity_purchase') {
+      if (onChange) {
+        onChange({
+          ...profile,
+          annuityPurchaseAge: clampedAge,
+          annuityFloorAge: profile.annuityFloorAge ? clampedAge : undefined,
+        });
+      }
+    } else if (milestone.key === 'partner_annuity_purchase') {
+      const partnerOffset = (profile.partnerCurrentAge || currentAge) - currentAge;
+      if (onChange) onChange({ ...profile, partnerAnnuityPurchaseAge: clampedAge + partnerOffset });
+    } else if (milestone.key.startsWith('annuity_tranche_')) {
+      const trancheId = milestone.key.replace('annuity_tranche_', '');
+      const updatedTranches = (profile.annuityTranches || []).map((t, idx) => {
+        if (t.id === trancheId || String(idx) === trancheId) {
+          const isPartner = t.owner === 'partner';
+          const partnerOffset = isPartner ? (profile.partnerCurrentAge || currentAge) - currentAge : 0;
+          return { ...t, purchaseAge: clampedAge + partnerOffset };
+        }
+        return t;
+      });
+      if (onChange) onChange({ ...profile, annuityTranches: updatedTranches });
     } else if (milestone.key.startsWith('event_')) {
       const eventId = milestone.key.replace('event_', '');
       const updatedEvents = (profile.decumulationLifeEvents || []).map((e) =>
         e.id === eventId ? { ...e, age: clampedAge } : e
       );
-      onChange({ ...profile, decumulationLifeEvents: updatedEvents });
+      if (onChange) onChange({ ...profile, decumulationLifeEvents: updatedEvents });
     }
   };
 
