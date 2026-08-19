@@ -853,6 +853,8 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
       const priStatePension = p.primaryStatePensionReceived ?? p.statePensionReceived ?? 0;
       const priDbPension = p.primaryDbPensionIncomeReceived ?? p.dbPensionIncomeReceived ?? 0;
       const priAnnuity = p.primaryAnnuityIncomeReceived ?? p.annuityIncomeReceived ?? 0;
+      const priGiltIncome = p.giltLadderIncomeReceived || 0;
+      const priGiltCapital = p.giltLadderCapitalAllocated || 0;
       const priTaxableFixed = p.primaryTaxableFixedIncomeReceived ?? (isCouple ? ((p.taxableFixedIncomeReceived || 0) * 0.5) : (p.taxableFixedIncomeReceived || 0));
       const priTaxFreeFixed = p.primaryTaxFreeFixedIncomeReceived ?? (isCouple ? ((p.taxFreeFixedIncomeReceived || 0) * 0.5) : (p.taxFreeFixedIncomeReceived || 0));
       const priPensionDrawdownTaxable = p.primaryPensionDrawdownTaxable ?? (isCouple ? ((p.pensionDrawdownTaxable || 0) * 0.5) : (p.pensionDrawdownTaxable || 0));
@@ -868,6 +870,8 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
         priStatePension +
         priDbPension +
         priAnnuity +
+        priGiltIncome +
+        priGiltCapital +
         priTaxableFixed +
         priTaxFreeFixed +
         priLifeEventsInc +
@@ -881,6 +885,8 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
       const partStatePension = isCouple ? (p.partnerStatePensionReceived || 0) : 0;
       const partDbPension = isCouple ? (p.partnerDbPensionIncomeReceived || 0) : 0;
       const partAnnuity = isCouple ? (p.partnerAnnuityIncomeReceived || 0) : 0;
+      const partGiltIncome = 0;
+      const partGiltCapital = 0;
       const partTaxableFixed = isCouple ? (p.partnerTaxableFixedIncomeReceived || 0) : 0;
       const partTaxFreeFixed = isCouple ? (p.partnerTaxFreeFixedIncomeReceived || 0) : 0;
       const partPensionDrawdownTaxable = isCouple ? (p.partnerPensionDrawdownTaxable || 0) : 0;
@@ -896,6 +902,8 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
         partStatePension +
         partDbPension +
         partAnnuity +
+        partGiltIncome +
+        partGiltCapital +
         partTaxableFixed +
         partTaxFreeFixed +
         partLifeEventsInc +
@@ -932,7 +940,8 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
         const priReinvest = totalSpendable > 0 ? (priSpendable / totalSpendable) * reinvestSurplus : 0;
         const partReinvest = totalSpendable > 0 ? (partSpendable / totalSpendable) * reinvestSurplus : 0;
 
-        const availableLiving = Math.max(0, totalSpendable - reinvestSurplus);
+        const totalGiltCapital = priGiltCapital + partGiltCapital;
+        const availableLiving = Math.max(0, totalSpendable - reinvestSurplus - totalGiltCapital);
         const essentialLiving = Math.min(availableLiving, inflatedEssentialTarget);
         const priEssential = availableLiving > 0 ? (priSpendable / totalSpendable) * essentialLiving : 0;
         const partEssential = availableLiving > 0 ? (partSpendable / totalSpendable) * essentialLiving : 0;
@@ -976,6 +985,30 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
             category: 'source',
             column: 0,
             icon: Sparkles,
+          });
+        }
+        if (priGiltIncome > 0) {
+          nodes.push({
+            id: 'pri_gilt_ladder_income',
+            label: `${primaryName} UK Gilt Income`,
+            sublabel: '0% CGT Maturing Gilts & Coupons',
+            amount: priGiltIncome,
+            color: '#10b981', // emerald-500
+            category: 'source',
+            column: 0,
+            icon: ShieldCheck,
+          });
+        }
+        if (priGiltCapital > 0) {
+          nodes.push({
+            id: 'pri_gilt_capital_src',
+            label: `${primaryName} Pot Capital for Gilts`,
+            sublabel: `Bond Allocation (${profile.giltLadderConfig?.fundingSource?.toUpperCase() || 'GIA'})`,
+            amount: priGiltCapital,
+            color: '#0d9488', // teal-600
+            category: 'source',
+            column: 0,
+            icon: Coins,
           });
         }
         if (priTaxableFixed + priTaxFreeFixed > 0) {
@@ -1151,6 +1184,8 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
         if (priStatePension > 0) links.push({ sourceId: 'pri_state_pension', targetId: 'pri_retire_hub', amount: priStatePension, color: '#8b5cf6' });
         if (priDbPension > 0) links.push({ sourceId: 'pri_db_pension', targetId: 'pri_retire_hub', amount: priDbPension, color: '#0284c7' });
         if (priAnnuity > 0) links.push({ sourceId: 'pri_annuity', targetId: 'pri_retire_hub', amount: priAnnuity, color: '#ec4899' });
+        if (priGiltIncome > 0) links.push({ sourceId: 'pri_gilt_ladder_income', targetId: 'pri_retire_hub', amount: priGiltIncome, color: '#10b981' });
+        if (priGiltCapital > 0) links.push({ sourceId: 'pri_gilt_capital_src', targetId: 'pri_retire_hub', amount: priGiltCapital, color: '#0d9488' });
         if (priTaxableFixed + priTaxFreeFixed > 0) links.push({ sourceId: 'pri_fixed', targetId: 'pri_retire_hub', amount: priTaxableFixed + priTaxFreeFixed, color: '#0d9488' });
         if (priPensionDrawdownTotal > 0) links.push({ sourceId: 'pri_pension_dd', targetId: 'pri_retire_hub', amount: priPensionDrawdownTotal, color: '#10b981' });
         if (priIsaDrawdown > 0) links.push({ sourceId: 'pri_isa_dd', targetId: 'pri_retire_hub', amount: priIsaDrawdown, color: '#6366f1' });
@@ -1228,6 +1263,20 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
         links.push({ sourceId: 'part_retire_hub', targetId: 'part_net_spendable', amount: partNetTotal, color: '#06b6d4' });
 
         // Column 3: Outgoing Allocations
+        if (priGiltCapital > 0) {
+          nodes.push({
+            id: 'pri_gilt_capital_alloc',
+            label: `${primaryName} Gilt Ladder Purchase`,
+            sublabel: 'Capital deployed to acquire UK Treasury Gilts',
+            amount: priGiltCapital,
+            color: '#0d9488',
+            category: 'allocation',
+            column: 3,
+            icon: ShieldCheck,
+          });
+          links.push({ sourceId: 'pri_net_spendable', targetId: 'pri_gilt_capital_alloc', amount: priGiltCapital, color: '#0d9488' });
+        }
+
         if (totalMortgageAlloc > 0) {
           nodes.push({
             id: 'retirement_mortgage',
@@ -1299,7 +1348,7 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
           links,
           metrics: {
             taxRateEffective: totalGrossRetire > 0 ? (totalTaxPaid / totalGrossRetire) * 100 : 0,
-            guaranteedFloor: priStatePension + priDbPension + priAnnuity + partStatePension + partDbPension + partAnnuity,
+            guaranteedFloor: priStatePension + priDbPension + priAnnuity + priGiltIncome + partStatePension + partDbPension + partAnnuity,
             portfolioDrawdown: priPensionDrawdownTotal + priIsaDrawdown + priCashDrawdown + partPensionDrawdownTotal + partIsaDrawdown + partCashDrawdown,
             netIncome: totalNetRetire,
             essentialSpend: essentialLiving,
@@ -1315,6 +1364,8 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
       let statePension = (p.statePensionReceived || 0);
       let dbPension = (p.dbPensionIncomeReceived || 0);
       let annuity = (p.annuityIncomeReceived || 0);
+      let giltIncome = activeViewMode === 'partner' ? 0 : (p.giltLadderIncomeReceived || 0);
+      let giltCapital = activeViewMode === 'partner' ? 0 : (p.giltLadderCapitalAllocated || 0);
       let taxableFixed = (p.taxableFixedIncomeReceived || 0);
       let taxFreeFixed = (p.taxFreeFixedIncomeReceived || 0);
       let lifeEventsInc = (p.lifeEventsIncome || 0);
@@ -1333,6 +1384,8 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
         statePension = priStatePension;
         dbPension = priDbPension;
         annuity = priAnnuity;
+        giltIncome = priGiltIncome;
+        giltCapital = priGiltCapital;
         taxableFixed = priTaxableFixed;
         taxFreeFixed = priTaxFreeFixed;
         pensionDrawdownTaxable = priPensionDrawdownTaxable;
@@ -1348,6 +1401,8 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
         statePension = partStatePension;
         dbPension = partDbPension;
         annuity = partAnnuity;
+        giltIncome = 0;
+        giltCapital = 0;
         taxableFixed = partTaxableFixed;
         taxFreeFixed = partTaxFreeFixed;
         pensionDrawdownTaxable = partPensionDrawdownTaxable;
@@ -1365,6 +1420,8 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
         statePension +
         dbPension +
         annuity +
+        giltIncome +
+        giltCapital +
         taxableFixed +
         taxFreeFixed +
         lifeEventsInc +
@@ -1388,10 +1445,10 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
       const spendableAfterMortgage = Math.max(0, netRetirementIncome - mortgageAlloc);
 
       let reinvestSurplus = annualExcess;
-      let availableForLiving = Math.max(0, spendableAfterMortgage - reinvestSurplus);
+      let availableForLiving = Math.max(0, spendableAfterMortgage - reinvestSurplus - giltCapital);
 
-      if (availableForLiving <= 0 && spendableAfterMortgage > 0) {
-        availableForLiving = spendableAfterMortgage;
+      if (availableForLiving <= 0 && (spendableAfterMortgage - giltCapital) > 0) {
+        availableForLiving = spendableAfterMortgage - giltCapital;
         reinvestSurplus = 0;
       }
 
@@ -1441,6 +1498,32 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
           category: 'source',
           column: 0,
           icon: Sparkles,
+        });
+      }
+
+      if (giltIncome > 0) {
+        nodes.push({
+          id: 'gilt_ladder_income',
+          label: activeViewMode !== 'combined' ? `${currentPersonName} UK Gilt Income` : 'UK Gilt Ladder Income',
+          sublabel: '0% CGT Maturing Gilts & Coupons (TCGA 1992 s.115)',
+          amount: giltIncome,
+          color: '#10b981', // emerald-500
+          category: 'source',
+          column: 0,
+          icon: ShieldCheck,
+        });
+      }
+
+      if (giltCapital > 0) {
+        nodes.push({
+          id: 'gilt_ladder_capital_src',
+          label: activeViewMode !== 'combined' ? `${currentPersonName} Pot Capital for Gilts` : 'Pot Capital for Gilt Ladder',
+          sublabel: `Upfront Bond Portfolio Funding (${profile.giltLadderConfig?.fundingSource?.toUpperCase() || 'GIA'})`,
+          amount: giltCapital,
+          color: '#0d9488', // teal-600
+          category: 'source',
+          column: 0,
+          icon: Coins,
         });
       }
 
@@ -1542,6 +1625,8 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
       if (statePension > 0) links.push({ sourceId: 'state_pension', targetId: 'gross_retirement_hub', amount: statePension, color: '#8b5cf6' });
       if (dbPension > 0) links.push({ sourceId: 'db_pension', targetId: 'gross_retirement_hub', amount: dbPension, color: '#0284c7' });
       if (annuity > 0) links.push({ sourceId: 'annuity_income', targetId: 'gross_retirement_hub', amount: annuity, color: '#ec4899' });
+      if (giltIncome > 0) links.push({ sourceId: 'gilt_ladder_income', targetId: 'gross_retirement_hub', amount: giltIncome, color: '#10b981' });
+      if (giltCapital > 0) links.push({ sourceId: 'gilt_ladder_capital_src', targetId: 'gross_retirement_hub', amount: giltCapital, color: '#0d9488' });
       if (taxableFixed + taxFreeFixed > 0) links.push({ sourceId: 'fixed_other_income', targetId: 'gross_retirement_hub', amount: taxableFixed + taxFreeFixed, color: '#0d9488' });
       if (pensionDrawdownTotal > 0) links.push({ sourceId: 'pension_drawdown', targetId: 'gross_retirement_hub', amount: pensionDrawdownTotal, color: '#10b981' });
       if (isaDrawdown > 0) links.push({ sourceId: 'isa_drawdown', targetId: 'gross_retirement_hub', amount: isaDrawdown, color: '#6366f1' });
@@ -1577,6 +1662,20 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
       links.push({ sourceId: 'gross_retirement_hub', targetId: 'net_spendable_hub', amount: netRetirementIncome, color: '#10b981' });
 
       // Column 3: Final Outgoing Allocations
+      if (giltCapital > 0) {
+        nodes.push({
+          id: 'gilt_ladder_capital_alloc',
+          label: 'UK Gilt Ladder Bond Purchase',
+          sublabel: 'Capital deployed to acquire UK Treasury Gilts portfolio',
+          amount: giltCapital,
+          color: '#0d9488',
+          category: 'allocation',
+          column: 3,
+          icon: ShieldCheck,
+        });
+        links.push({ sourceId: 'net_spendable_hub', targetId: 'gilt_ladder_capital_alloc', amount: giltCapital, color: '#0d9488' });
+      }
+
       if (mortgageAlloc > 0) {
         nodes.push({
           id: 'retirement_mortgage',
@@ -1644,7 +1743,7 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
         links,
         metrics: {
           taxRateEffective: totalGrossRetirementInflows > 0 ? (totalTaxPaid / totalGrossRetirementInflows) * 100 : 0,
-          guaranteedFloor: statePension + dbPension + annuity,
+          guaranteedFloor: statePension + dbPension + annuity + giltIncome,
           portfolioDrawdown: pensionDrawdownTotal + isaDrawdown + cashDrawdown,
           netIncome: netRetirementIncome,
           essentialSpend: essentialLiving,
