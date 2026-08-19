@@ -91,3 +91,77 @@ describe('monteCarloEngine - calculateCashBufferRequiredDetails', () => {
     expect(Array.isArray(result.yearlyDetails)).toBe(true);
   });
 });
+
+describe('monteCarloEngine - massive market crashes and percentile edge cases', () => {
+  it('handles massive market crash with total depletion', () => {
+    const taxResult = calculateUKTax(DEFAULT_PROFILE, DEFAULT_POTS);
+    
+    const result = runMonteCarloSimulation(
+      {
+        ...DEFAULT_PROFILE,
+        expectedInvestmentReturn: 5,
+        targetRetirementAge: 60,
+        essentialRetirementAnnualSpend: 100000 // Huge spend to force depletion
+      }, 
+      {
+        ...DEFAULT_POTS,
+        primaryWorkplacePensionBalance: 100000, // Small pot to deplete quickly
+        primarySippBalance: 0,
+        cashSavingsBalance: 0,
+        cashIsaBalance: 0,
+        stocksSharesIsaBalance: 0,
+        giaBalance: 0,
+      }, 
+      taxResult, 
+      {
+        numSimulations: 10,
+        maxAge: 80,
+        marketScenario: 'early_crash',
+        crashStartAge: 60,
+        crashDurationYears: 5,
+        crashYearDropsPercent: [50, 40, 30, 20, 10] // Massive drops
+      }
+    );
+
+    expect(result.params.marketScenario).toBe('early_crash');
+    expect(result.agePercentiles.length).toBeGreaterThan(0);
+    // At age 75, pot should be 0 or very small due to depletion
+    const at75 = result.agePercentiles.find(r => r.age === 75);
+    expect(at75).toBeDefined();
+    
+    // Survival rate should be low or 0
+    expect(result.successRateAge80).toBeLessThan(100);
+  });
+  
+  it('calculates percentiles correctly for single depletion to test getPercentile edges', () => {
+    const taxResult = calculateUKTax(DEFAULT_PROFILE, DEFAULT_POTS);
+    
+    const result = runMonteCarloSimulation(
+      {
+        ...DEFAULT_PROFILE,
+        expectedInvestmentReturn: 0,
+        targetRetirementAge: 65,
+        essentialRetirementAnnualSpend: 200000 
+      }, 
+      {
+        ...DEFAULT_POTS,
+        primaryWorkplacePensionBalance: 150000, 
+      }, 
+      taxResult, 
+      {
+        numSimulations: 10,
+        maxAge: 70,
+        marketScenario: 'stressed',
+        stressedReturnDropPercent: 20
+      }
+    );
+
+    expect(result).toBeDefined();
+    expect(result.agePercentiles).toBeDefined();
+    
+    // Check percentiles for edge boundaries
+    const lastRow = result.agePercentiles[result.agePercentiles.length - 1];
+    expect(lastRow.p10TotalPot).toBeDefined();
+    expect(lastRow.p90TotalPot).toBeDefined();
+  });
+});

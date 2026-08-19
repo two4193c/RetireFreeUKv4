@@ -1274,10 +1274,14 @@ export function computeCashFlowSankeyData(
       ? ((p.annualIncomeExcess || 0) + (p.propertyDownsizeEquityReleased || 0))
       : (isCouple ? (((p.annualIncomeExcess || 0) + (p.propertyDownsizeEquityReleased || 0)) * 0.5) : ((p.annualIncomeExcess || 0) + (p.propertyDownsizeEquityReleased || 0)));
     let reinvestSurplus = Math.min(spendableAfterMortgage, annualExcess);
-    let availableForLiving = Math.max(0, spendableAfterMortgage - reinvestSurplus);
+    let lifeEventsExpense = p.lifeEventsExpense || 0;
+    if (activeViewMode === 'primary') lifeEventsExpense = p.primaryLifeEventsExpense || (isCouple ? lifeEventsExpense * 0.5 : lifeEventsExpense);
+    if (activeViewMode === 'partner') lifeEventsExpense = p.partnerLifeEventsExpense || (isCouple ? lifeEventsExpense * 0.5 : 0);
+    
+    let availableForLiving = Math.max(0, spendableAfterMortgage - reinvestSurplus - lifeEventsExpense);
 
-    if (availableForLiving <= 0 && spendableAfterMortgage > 0) {
-      availableForLiving = spendableAfterMortgage;
+    if (availableForLiving <= 0 && spendableAfterMortgage - lifeEventsExpense > 0) {
+      availableForLiving = spendableAfterMortgage - lifeEventsExpense;
       reinvestSurplus = 0;
     }
 
@@ -1460,6 +1464,18 @@ export function computeCashFlowSankeyData(
         column: 3,
       });
       links.push({ sourceId: 'net_spendable_hub', targetId: 'retirement_mortgage', amount: mortgageAlloc, color: '#0ea5e9' });
+    }
+    if (lifeEventsExpense > 0) {
+      nodes.push({
+        id: 'life_events_expense',
+        label: 'Life Events Capital',
+        sublabel: p.decumulationLifeEventsSummary || 'One-off capital expenses',
+        amount: lifeEventsExpense,
+        color: '#f59e0b',
+        category: 'allocation',
+        column: 3,
+      });
+      links.push({ sourceId: 'net_spendable_hub', targetId: 'life_events_expense', amount: lifeEventsExpense, color: '#f59e0b' });
     }
     if (essentialLiving > 0) {
       const isFloorMet = availableForLiving >= inflatedEssentialTarget;

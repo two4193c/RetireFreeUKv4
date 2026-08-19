@@ -400,4 +400,134 @@ describe('projectionEngine - generateProjections', () => {
     expect(Math.abs((row60!.primaryIsaPot + row60!.partnerIsaPot) - row60!.isaPot)).toBeLessThanOrEqual(1);
     expect(Math.abs((row60!.primaryGiaPot + row60!.primaryCashSavingsPot) - row60!.primaryCashGiaPot)).toBeLessThanOrEqual(1);
   });
+
+  it('triggers specific annuity purchases and state pension at specified ages', () => {
+    const profile: any = {
+      ...DEFAULT_PROFILE,
+      currentAge: 60,
+      targetRetirementAge: 60,
+      lifeExpectancyAge: 85,
+      includeStatePension: true,
+      statePensionAge: 68,
+      statePensionAmountAnnual: 10000,
+      incomeProductOption: 'annuity',
+      annuityAllocationPercent: 50,
+      annuityPurchaseAge: 65,
+      annuityType: 'level_single',
+      annuityRatePercent: 5.0,
+      targetRetirementIncomeAnnual: 40000,
+    };
+    const pots: any = {
+      ...DEFAULT_POTS,
+      workplacePensionBalance: 200000,
+    };
+
+    const rows = generateProjections(profile, pots);
+    const row64 = rows.find((r) => r.age === 64)!;
+    const row65 = rows.find((r) => r.age === 65)!;
+    const row67 = rows.find((r) => r.age === 67)!;
+    const row68 = rows.find((r) => r.age === 68)!;
+
+    // Annuity check
+    expect(row64.annuityIncomeReceived || 0).toBe(0);
+    expect(row65.annuityCapitalAllocated).toBeGreaterThan(0);
+    expect(row65.annuityIncomeReceived).toBeGreaterThan(0);
+
+    // State pension check
+    expect(row67.statePensionReceived || 0).toBe(0);
+    expect(row68.statePensionReceived).toBeGreaterThan(0);
+  });
+
+  it('handles complex partner decumulation overlapping with different retirement ages', () => {
+    const partnerPots: any = {
+      ...DEFAULT_POTS,
+      workplacePensionBalance: 100000,
+      workplacePensionMonthlyEmployee: 500,
+      workplacePensionMonthlyEmployeeType: 'fixed',
+    };
+    const profile: any = {
+      ...DEFAULT_PROFILE,
+      currentAge: 50,
+      targetRetirementAge: 65,
+      lifeExpectancyAge: 85,
+      isCouplePlanning: true,
+      partnerCurrentAge: 55,
+      partnerTargetRetirementAge: 60,
+      partnerPots,
+      targetRetirementIncomeAnnual: 40000,
+      grossAnnualSalary: 50000,
+    };
+    const pots: any = {
+      ...DEFAULT_POTS,
+      workplacePensionBalance: 100000,
+      workplacePensionMonthlyEmployee: 500,
+      workplacePensionMonthlyEmployeeType: 'fixed',
+    };
+
+    const rows = generateProjections(profile, pots);
+    const primary55 = rows.find((r) => r.age === 55)!;
+
+    const primary54 = rows.find((r) => r.age === 54)!;
+    
+    // Primary is accumulating
+    expect(primary55.primaryTotalPot).toBeGreaterThan(primary54.primaryTotalPot);
+    
+    expect(primary55).toBeDefined();
+    
+    const primary65 = rows.find((r) => r.age === 65)!; // Primary retires here
+    expect(primary65).toBeDefined();
+  });
+
+  it('processes custom milestone life events with partner assignment and complex overlaps', () => {
+    const profile: any = {
+      ...DEFAULT_PROFILE,
+      currentAge: 60,
+      targetRetirementAge: 60,
+      lifeExpectancyAge: 85,
+      isCouplePlanning: true,
+      partnerCurrentAge: 60,
+      partnerTargetRetirementAge: 60,
+      targetRetirementIncomeAnnual: 30000,
+      decumulationLifeEvents: [
+        {
+          id: '1',
+          name: 'Primary Expense',
+          type: 'expense',
+          amount: 30000,
+          age: 62,
+          owner: 'primary',
+          targetPot: 'cash_savings',
+          enabled: true,
+        },
+        {
+          id: '2',
+          name: 'Partner Income',
+          type: 'income',
+          amount: 50000,
+          age: 64,
+          owner: 'partner',
+          targetPot: 'cash_savings',
+          enabled: true,
+        }
+      ],
+    };
+    const pots: any = {
+      ...DEFAULT_POTS,
+      workplacePensionBalance: 500000,
+      cashSavingsBalance: 100000,
+    };
+    
+    const rows = generateProjections(profile, pots);
+    
+    const row62 = rows.find((r) => r.age === 62)!;
+    expect(row62.primaryLifeEventsExpense).toBeGreaterThan(0);
+    expect(row62.partnerLifeEventsExpense || 0).toBe(0);
+    expect(row62.lifeEventsExpense).toBe(row62.primaryLifeEventsExpense);
+
+    const row64 = rows.find((r) => r.age === 64)!;
+    expect(row64.partnerLifeEventsIncome).toBeGreaterThan(0);
+    expect(row64.primaryLifeEventsIncome || 0).toBe(0);
+    expect(row64.lifeEventsIncome).toBe(row64.partnerLifeEventsIncome);
+  });
 });
+
