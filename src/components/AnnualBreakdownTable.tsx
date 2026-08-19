@@ -133,6 +133,10 @@ export const AnnualBreakdownTable: React.FC<AnnualBreakdownTableProps> = ({
       'Phase',
       'Plan Status',
       'Ending Pot (£)',
+      'Pension Pot (£)',
+      'ISA Pot (£)',
+      'Cash & GIA Pot (£)',
+      'Gilt Ladder Pot (£)',
       'Estimated Growth (£)',
       'Total Withdrawals (£)',
       'Tax on Withdrawals (£)',
@@ -142,6 +146,7 @@ export const AnnualBreakdownTable: React.FC<AnnualBreakdownTableProps> = ({
       'State Pension (£)',
       'DB Pension (£)',
       'Annuity Payout (£)',
+      'Gilt Payout (£)',
       'Contributions (£)',
     ];
 
@@ -155,6 +160,10 @@ export const AnnualBreakdownTable: React.FC<AnnualBreakdownTableProps> = ({
         p.isRetired ? 'Retirement' : 'Accumulation',
         p.isRetired ? ((p.incomeShortfall || 0) > 0 ? 'Plan Failure' : 'On Track') : 'Accumulating',
         Math.round(p.totalPot * scale),
+        Math.round((p.pensionPot || 0) * scale),
+        Math.round((p.isaPot || 0) * scale),
+        Math.round((p.cashGiaPot || 0) * scale),
+        Math.round((p.giltLadderPot || 0) * scale),
         Math.round((p.estimatedPotGrowth || 0) * scale),
         Math.round((p.totalWithdrawalAmount || 0) * scale),
         Math.round((p.taxOnWithdrawal || 0) * scale),
@@ -164,6 +173,7 @@ export const AnnualBreakdownTable: React.FC<AnnualBreakdownTableProps> = ({
         Math.round((p.statePensionReceived || 0) * scale),
         Math.round((p.dbPensionIncomeReceived || 0) * scale),
         Math.round((p.annuityIncomeReceived || 0) * scale),
+        Math.round((p.giltLadderIncomeReceived || 0) * scale),
         Math.round((p.annualContributionTotal || 0) * scale),
       ].join(',');
     });
@@ -494,11 +504,27 @@ export const AnnualBreakdownTable: React.FC<AnnualBreakdownTableProps> = ({
                               🌸 Annuity Active ({formatCurrency(p.annuityIncomeReceived, adjustInflation, yearOffset)}/yr)
                             </span>
                           ) : null}
+                          {p.giltLadderPurchasedThisYear ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-black text-teal-700 dark:text-teal-300 bg-teal-100 dark:bg-teal-950 px-2 py-0.5 rounded-md border border-teal-300 dark:border-teal-800">
+                              🏛️ Gilt Ladder ({formatCurrency(p.giltLadderPot || 0, adjustInflation, yearOffset)} Pot)
+                            </span>
+                          ) : (p.giltLadderIncomeReceived || 0) > 0 ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/70 px-2 py-0.5 rounded-md border border-teal-200 dark:border-teal-800/60">
+                              🏛️ Gilt Payout (+{formatCurrency(p.giltLadderIncomeReceived, adjustInflation, yearOffset)})
+                            </span>
+                          ) : null}
                         </div>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/80 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800/60">
-                          <span>Accumulation</span>
-                        </span>
+                        <div className="flex flex-col gap-1">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/80 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800/60">
+                            <span>Accumulation</span>
+                          </span>
+                          {p.giltLadderPurchasedThisYear && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-black text-teal-700 dark:text-teal-300 bg-teal-100 dark:bg-teal-950 px-2 py-0.5 rounded-md border border-teal-300 dark:border-teal-800">
+                              🏛️ Gilt Ladder ({formatCurrency(p.giltLadderPot || 0, adjustInflation, yearOffset)} Pot)
+                            </span>
+                          )}
+                        </div>
                       )}
                     </td>
 
@@ -512,7 +538,7 @@ export const AnnualBreakdownTable: React.FC<AnnualBreakdownTableProps> = ({
                       +{(p.estimatedPotGrowth || 0) > 0 ? formatCurrency(p.estimatedPotGrowth, adjustInflation, yearOffset) : '£0'}
                     </td>
 
-                    {/* Total Withdrawals & Annuity Income */}
+                    {/* Total Withdrawals & Annuity / Gilt Income */}
                     <td className="py-3 px-3.5 text-right font-extrabold whitespace-nowrap">
                       {p.isRetired ? (
                         <div className="flex flex-col text-right">
@@ -526,7 +552,12 @@ export const AnnualBreakdownTable: React.FC<AnnualBreakdownTableProps> = ({
                               +{formatCurrency(p.annuityIncomeReceived, adjustInflation, yearOffset)} (Annuity)
                             </span>
                           )}
-                          {p.totalWithdrawalAmount === 0 && (p.annuityIncomeReceived || 0) === 0 && (
+                          {(p.giltLadderIncomeReceived || 0) > 0 && (
+                            <span className="text-teal-600 dark:text-teal-400 text-[11px] font-bold">
+                              +{formatCurrency(p.giltLadderIncomeReceived, adjustInflation, yearOffset)} (Gilt Payout)
+                            </span>
+                          )}
+                          {p.totalWithdrawalAmount === 0 && (p.annuityIncomeReceived || 0) === 0 && (p.giltLadderIncomeReceived || 0) === 0 && (
                             <span className="text-slate-300 dark:text-slate-600">-</span>
                           )}
                         </div>
@@ -686,7 +717,7 @@ export const AnnualBreakdownTable: React.FC<AnnualBreakdownTableProps> = ({
                       Total £{(showTaxBreakdownModal.totalPot || 0).toLocaleString()}
                     </span>
                   </div>
-                  <div className="grid grid-cols-3 gap-2 pt-1 text-[11px]">
+                  <div className={`grid ${(showTaxBreakdownModal.giltLadderPot || 0) > 0 ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3'} gap-2 pt-1 text-[11px]`}>
                     <div className="bg-white dark:bg-slate-900 p-2 rounded-xl border border-slate-200 dark:border-slate-800">
                       <div className="text-slate-400 font-bold">Pension</div>
                       <div className="font-bold text-slate-800 dark:text-slate-200 mt-0.5">
@@ -717,8 +748,37 @@ export const AnnualBreakdownTable: React.FC<AnnualBreakdownTableProps> = ({
                         £{(showTaxBreakdownModal.cashGiaPot || 0).toLocaleString()}
                       </div>
                     </div>
+                    {(showTaxBreakdownModal.giltLadderPot || 0) > 0 && (
+                      <div className="bg-white dark:bg-slate-900 p-2 rounded-xl border border-teal-200 dark:border-teal-800">
+                        <div className="text-teal-600 dark:text-teal-400 font-bold">🏛️ Gilts</div>
+                        <div className="font-bold text-teal-700 dark:text-teal-300 mt-0.5">
+                          £{(showTaxBreakdownModal.giltLadderPot || 0).toLocaleString()}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
+
+                {/* Gilt Ladder Purchase Event */}
+                {(showTaxBreakdownModal.giltLadderCapitalAllocated || 0) > 0 && (
+                  <div className="p-3 bg-teal-50 dark:bg-teal-950/70 border border-teal-200 dark:border-teal-800/80 rounded-2xl text-teal-900 dark:text-teal-100 space-y-1 shadow-xs">
+                    <div className="font-extrabold text-xs flex items-center justify-between text-teal-800 dark:text-teal-200">
+                      <span className="flex items-center gap-1.5">
+                        <span>🏛️ UK Gilt Ladder Purchase</span>
+                      </span>
+                      <span className="text-[10px] font-bold bg-teal-200/80 dark:bg-teal-900 px-2 py-0.5 rounded-md">
+                        Capital Allocated
+                      </span>
+                    </div>
+                    <div className="text-xs flex justify-between pt-1">
+                      <span className="text-slate-600 dark:text-slate-400">Total Purchase Cost:</span>
+                      <span className="font-bold">£{(showTaxBreakdownModal.giltLadderCapitalAllocated || 0).toLocaleString()}</span>
+                    </div>
+                    <div className="text-[10px] text-teal-700 dark:text-teal-300">
+                      Purchased sovereign UK gilts maturing annually (exempt from UK Capital Gains Tax).
+                    </div>
+                  </div>
+                )}
 
                 {/* Crystallisation Event Highlight Card */}
                 {((showTaxBreakdownModal.crystallisedThisYear || 0) > 0 || (showTaxBreakdownModal.pclsTaxFreeDrawnThisYear || 0) > 0) && (
@@ -791,6 +851,15 @@ export const AnnualBreakdownTable: React.FC<AnnualBreakdownTableProps> = ({
                           <span className="text-slate-500 dark:text-slate-400 font-medium">Guaranteed Annuity Income:</span>
                           <span className="font-bold text-pink-600 dark:text-pink-400">
                             £{(showTaxBreakdownModal.annuityIncomeReceived || 0).toLocaleString()}
+                          </span>
+                        </div>
+                      )}
+
+                      {(showTaxBreakdownModal.giltLadderIncomeReceived || 0) > 0 && (
+                        <div className="py-2 flex justify-between items-center">
+                          <span className="text-slate-500 dark:text-slate-400 font-medium">🏛️ UK Gilt Ladder Payout (0% CGT):</span>
+                          <span className="font-bold text-teal-600 dark:text-teal-400">
+                            +£{(showTaxBreakdownModal.giltLadderIncomeReceived || 0).toLocaleString()}
                           </span>
                         </div>
                       )}

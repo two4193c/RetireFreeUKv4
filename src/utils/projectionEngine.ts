@@ -1836,11 +1836,14 @@ function parseAnnuityTypeConfig(type?: string) {
       }
       cashSavingsPot = primaryCashSavingsPot + partnerCashSavingsPot;
       cashGiaPot = primaryCashGiaPot + partnerCashGiaPot;
-      const totalPot = Math.max(0, pensionPot + isaPot + cashGiaPot);
+      const currentGiltPotBalance = isGiltLadderEnabled && giltLadderSummary && giltLadderPurchased
+        ? giltLadderSummary.rungs.filter((r) => r.age > age).reduce((sum, r) => sum + r.purchaseCost, 0)
+        : 0;
+      const totalPot = Math.max(0, pensionPot + isaPot + cashGiaPot + currentGiltPotBalance);
       const totalTaxPaid = Math.round((primaryTaxThisYr.totalIncomeTax || 0) + (primaryTaxThisYr.totalNationalInsurance || 0) + accumSavingsTax + aaChargePrimary + aaChargePartner);
 
       processLifeEventsThisYear();
-      const finalTotalPot = Math.max(0, pensionPot + isaPot + cashGiaPot);
+      const finalTotalPot = Math.max(0, pensionPot + isaPot + cashGiaPot + currentGiltPotBalance);
 
       projections.push({
         year: calendarYear,
@@ -1867,6 +1870,7 @@ function parseAnnuityTypeConfig(type?: string) {
         cashGiaPot: Math.round(cashGiaPot),
         giaPot: Math.round(giaPot),
         cashSavingsPot: Math.round(cashSavingsPot),
+        giltLadderPot: Math.round(currentGiltPotBalance),
         totalPot: Math.round(finalTotalPot),
 
         primaryPensionPot: Math.round(primaryPensionPot),
@@ -1879,7 +1883,8 @@ function parseAnnuityTypeConfig(type?: string) {
         primaryCashGiaPot: Math.round(primaryCashGiaPot),
         primaryGiaPot: Math.round(primaryGiaPot),
         primaryCashSavingsPot: Math.round(primaryCashSavingsPot),
-        primaryTotalPot: Math.round(primaryPensionPot + primaryIsaPot + primaryCashGiaPot),
+        primaryGiltLadderPot: Math.round(currentGiltPotBalance),
+        primaryTotalPot: Math.round(primaryPensionPot + primaryIsaPot + primaryCashGiaPot + currentGiltPotBalance),
 
         partnerPensionPot: Math.round(partnerPensionPot),
         partnerPensionPotBeforeAnnuity: Math.round(partnerPensionPot),
@@ -3096,8 +3101,15 @@ function parseAnnuityTypeConfig(type?: string) {
         giaPot = primaryGiaPot + partnerGiaPot;
         cashSavingsPot = primaryCashSavingsPot + partnerCashSavingsPot;
         cashGiaPot = giaPot + cashSavingsPot;
-        totalPot = pensionPot + isaPot + cashGiaPot;
+        const currentGiltPotBalance = isGiltLadderEnabled && giltLadderSummary && giltLadderPurchased
+          ? giltLadderSummary.rungs.filter((r) => r.age > age).reduce((sum, r) => sum + r.purchaseCost, 0)
+          : 0;
+        totalPot = pensionPot + isaPot + cashGiaPot + currentGiltPotBalance;
       }
+
+      const decumGiltPotBalance = isGiltLadderEnabled && giltLadderSummary && giltLadderPurchased
+        ? giltLadderSummary.rungs.filter((r) => r.age > age).reduce((sum, r) => sum + r.purchaseCost, 0)
+        : 0;
 
       projections.push({
         year: calendarYear,
@@ -3124,6 +3136,7 @@ function parseAnnuityTypeConfig(type?: string) {
         cashGiaPot: Math.round(cashGiaPot),
         giaPot: Math.round(giaPot),
         cashSavingsPot: Math.round(cashSavingsPot),
+        giltLadderPot: Math.round(decumGiltPotBalance),
         totalPot: Math.round(totalPot),
 
         primaryPensionPot: Math.round(primaryPensionPot),
@@ -3136,7 +3149,8 @@ function parseAnnuityTypeConfig(type?: string) {
         primaryCashGiaPot: Math.round(primaryCashGiaPot),
         primaryGiaPot: Math.round(primaryGiaPot),
         primaryCashSavingsPot: Math.round(primaryCashSavingsPot),
-        primaryTotalPot: Math.round(primaryPensionPot + primaryIsaPot + primaryCashGiaPot),
+        primaryGiltLadderPot: Math.round(decumGiltPotBalance),
+        primaryTotalPot: Math.round(primaryPensionPot + primaryIsaPot + primaryCashGiaPot + decumGiltPotBalance),
 
         partnerPensionPot: Math.round(partnerPensionPot),
         partnerPensionPotBeforeAnnuity,

@@ -772,6 +772,7 @@ export interface YearProjection {
   cashGiaPot: number;
   giaPot?: number;
   cashSavingsPot?: number;
+  giltLadderPot?: number;
   totalPot: number;
 
   // Crystallised vs Uncrystallised Pension Sub-Pots & LSA Tracking
@@ -800,6 +801,7 @@ export interface YearProjection {
   primaryCashGiaPot?: number;
   primaryGiaPot?: number;
   primaryCashSavingsPot?: number;
+  primaryGiltLadderPot?: number;
   primaryTotalPot?: number;
   partnerPensionPot?: number;
   partnerPensionPotBeforeAnnuity?: number;

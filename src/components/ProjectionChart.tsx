@@ -43,6 +43,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
     lisa: 'lisaPot',
     isa: 'isaPot',
     cash: 'cashGiaPot',
+    gilt: 'giltLadderPot',
     total: 'totalPot',
     pensionName: portfolioViewMode === 'combined' ? 'Pension Pot' : portfolioViewMode === 'primary' ? `${profile.name || 'Primary'} Pension` : `${profile.partnerName || 'Partner'} Pension`,
     ssIsaName: portfolioViewMode === 'combined' ? 'Stocks & Shares ISA' : portfolioViewMode === 'primary' ? `${profile.name || 'Primary'} S&S ISA` : `${profile.partnerName || 'Partner'} S&S ISA`,
@@ -50,6 +51,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
     lisaName: portfolioViewMode === 'combined' ? 'Lifetime ISA (LISA)' : portfolioViewMode === 'primary' ? `${profile.name || 'Primary'} LISA` : `${profile.partnerName || 'Partner'} LISA`,
     isaName: portfolioViewMode === 'combined' ? 'ISA Pot (Total)' : portfolioViewMode === 'primary' ? `${profile.name || 'Primary'} ISA Total` : `${profile.partnerName || 'Partner'} ISA Total`,
     cashName: portfolioViewMode === 'combined' ? 'Cash & GIA' : portfolioViewMode === 'primary' ? `${profile.name || 'Primary'} Cash & GIA` : `${profile.partnerName || 'Partner'} Cash & GIA`,
+    giltName: portfolioViewMode === 'combined' ? 'UK Gilt Ladder Pot (0% CGT)' : portfolioViewMode === 'primary' ? `${profile.name || 'Primary'} Gilt Ladder` : `${profile.partnerName || 'Partner'} Gilt Ladder`,
     totalName: portfolioViewMode === 'combined' ? 'Total Portfolio Balance' : portfolioViewMode === 'primary' ? `${profile.name || 'Primary'} Total` : `${profile.partnerName || 'Partner'} Total`,
   };
   const [showAnnuitiesInPotBreakdown, setShowAnnuitiesInPotBreakdown] = useState(true);
@@ -124,6 +126,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
     hasAnySsIsa,
     hasAnyCashIsa,
     hasAnyLisa,
+    hasAnyGilt,
   } = useMemo(() => {
     const maxShortfall = shortfallYears.length > 0
       ? Math.max(...shortfallYears.map((p) => p.incomeShortfall || 0))
@@ -196,6 +199,14 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
         : (p.partnerLisaPot || 0) > 0
     );
 
+    const hasGilt = (portfolioViewMode === 'partner' ? false : (profile.giltLadderConfig?.enabled ?? false)) || projections.some((p) =>
+      portfolioViewMode === 'combined'
+        ? (p.giltLadderPot || 0) > 0
+        : portfolioViewMode === 'primary'
+        ? (p.primaryGiltLadderPot || 0) > 0
+        : false
+    );
+
     return {
       maxAnnualShortfall: maxShortfall,
       totalLifetimeShortfall: totalShortfall,
@@ -230,6 +241,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
       hasAnySsIsa: hasSsIsa,
       hasAnyCashIsa: hasCashIsa,
       hasAnyLisa: hasLisa,
+      hasAnyGilt: hasGilt,
     };
   }, [shortfallYears, profile, adjustInflation, retirementYear, projections, portfolioViewMode, pots]);
 
@@ -382,6 +394,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
       let activeLisaPot = Math.round((p.lisaPot || 0) * scale);
       let activeIsaPot = Math.round(p.isaPot * scale);
       let activeCashGiaPot = Math.round(p.cashGiaPot * scale);
+      let activeGiltLadderPot = Math.round((p.giltLadderPot || 0) * scale);
       let activeTotalPot = Math.round(p.totalPot * scale);
 
       if (portfolioViewMode === 'primary') {
@@ -391,6 +404,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
         activeLisaPot = Math.round((p.primaryLisaPot || 0) * scale);
         activeIsaPot = Math.round((p.primaryIsaPot ?? p.isaPot) * scale);
         activeCashGiaPot = Math.round((p.primaryCashGiaPot ?? p.cashGiaPot) * scale);
+        activeGiltLadderPot = Math.round((p.primaryGiltLadderPot ?? p.giltLadderPot ?? 0) * scale);
         activeTotalPot = Math.round((p.primaryTotalPot ?? p.totalPot) * scale);
       } else if (portfolioViewMode === 'partner') {
         activePensionPot = Math.round((p.partnerPensionPot || 0) * scale);
@@ -399,6 +413,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
         activeLisaPot = Math.round((p.partnerLisaPot || 0) * scale);
         activeIsaPot = Math.round((p.partnerIsaPot || 0) * scale);
         activeCashGiaPot = Math.round((p.partnerCashGiaPot || 0) * scale);
+        activeGiltLadderPot = 0;
         activeTotalPot = Math.round((p.partnerTotalPot || 0) * scale);
       }
 
@@ -414,6 +429,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
         cashIsaPot: activeCashIsaPot,
         lisaPot: activeLisaPot,
         cashGiaPot: activeCashGiaPot,
+        giltLadderPot: activeGiltLadderPot,
         totalPot: activeTotalPot,
 
         primaryPensionPot: Math.round((p.primaryPensionPot ?? p.pensionPot) * scale),
@@ -422,6 +438,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
         primaryCashIsaPot: Math.round((p.primaryCashIsaPot || 0) * scale),
         primaryLisaPot: Math.round((p.primaryLisaPot || 0) * scale),
         primaryCashGiaPot: Math.round((p.primaryCashGiaPot ?? p.cashGiaPot) * scale),
+        primaryGiltLadderPot: Math.round((p.primaryGiltLadderPot ?? p.giltLadderPot ?? 0) * scale),
         primaryTotalPot: Math.round((p.primaryTotalPot ?? p.totalPot) * scale),
 
         partnerPensionPot: Math.round((p.partnerPensionPot || 0) * scale),
@@ -435,6 +452,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
         statePension,
         dbPensionIncome,
         annuityIncome,
+        giltLadderIncome: Math.round((p.giltLadderIncomeReceived || 0) * scale),
         taxableFixedIncome,
         taxFreeFixedIncome,
         pensionDrawdown,
@@ -479,6 +497,13 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
         color: '#ec4899',
         badge: 'Guaranteed Floor',
         type: 'annuity',
+      },
+      {
+        name: 'UK Gilt Ladder Payout (0% CGT)',
+        amount: data.giltLadderIncome || 0,
+        color: '#0d9488',
+        badge: '0% CGT Exempt',
+        type: 'gilt_ladder',
       },
       {
         name: 'Tax-Free Fixed Income',
@@ -1379,6 +1404,10 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                         <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.8} />
                         <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.1} />
                       </linearGradient>
+                      <linearGradient id="giltGradAll" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#0d9488" stopOpacity={0.8} />
+                        <stop offset="95%" stopColor="#0d9488" stopOpacity={0.1} />
+                      </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                     <XAxis dataKey="age" tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
@@ -1431,6 +1460,9 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                       <Area type="monotone" dataKey={potKeys.lisa} name={potKeys.lisaName} stackId="1" stroke="#a855f7" fill="url(#lisaGradAll)" />
                     )}
                     <Area type="monotone" dataKey={potKeys.cash} name={potKeys.cashName} stackId="1" stroke="#f59e0b" fill="url(#cashGradAll)" />
+                    {hasAnyGilt && (
+                      <Area type="monotone" dataKey={potKeys.gilt} name={potKeys.giltName} stackId="1" stroke="#0d9488" fill="url(#giltGradAll)" />
+                    )}
                     {hasPurchasedAnnuity && portfolioViewMode === 'combined' && (
                       <Line type="stepAfter" dataKey="annuityIncome" name="🌸 Guaranteed Annuity Floor (£/yr)" stroke="#ec4899" strokeWidth={3} strokeDasharray="5 5" dot={false} />
                     )}
@@ -1492,6 +1524,9 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                       <Line type="monotone" dataKey={potKeys.lisa} name={potKeys.lisaName} stroke="#a855f7" strokeWidth={2.5} dot={false} />
                     )}
                     <Line type="monotone" dataKey={potKeys.cash} name={potKeys.cashName} stroke="#f59e0b" strokeWidth={2.5} dot={false} />
+                    {hasAnyGilt && (
+                      <Line type="monotone" dataKey={potKeys.gilt} name={potKeys.giltName} stroke="#0d9488" strokeWidth={2.5} dot={false} />
+                    )}
                     {hasPurchasedAnnuity && portfolioViewMode === 'combined' && (
                       <Line type="stepAfter" dataKey="annuityIncome" name="🌸 Guaranteed Annuity Floor (£/yr)" stroke="#ec4899" strokeWidth={2.5} strokeDasharray="5 5" dot={false} />
                     )}
@@ -1665,6 +1700,10 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                           <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.8} />
                           <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.1} />
                         </linearGradient>
+                        <linearGradient id="giltGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#0d9488" stopOpacity={0.8} />
+                          <stop offset="95%" stopColor="#0d9488" stopOpacity={0.1} />
+                        </linearGradient>
                       </defs>
 
                       <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" strokeOpacity={0.5} />
@@ -1720,6 +1759,18 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                                   <span>Cash/GIA:</span>
                                   <span className="font-bold">£{(data[potKeys.cash] || 0).toLocaleString()}</span>
                                 </div>
+                                {data[potKeys.gilt] > 0 && (
+                                  <div className="flex justify-between text-teal-600 dark:text-teal-400 font-semibold">
+                                    <span>🏛️ Gilt Ladder Pot:</span>
+                                    <span className="font-bold">£{(data[potKeys.gilt] || 0).toLocaleString()}</span>
+                                  </div>
+                                )}
+                                {data.giltLadderIncome > 0 && (
+                                  <div className="flex justify-between text-teal-700 dark:text-teal-300 font-bold">
+                                    <span>🏛️ Gilt Payout Received:</span>
+                                    <span className="font-bold">+£{(data.giltLadderIncome || 0).toLocaleString()} (0% CGT)</span>
+                                  </div>
+                                )}
                                 <div className="flex justify-between font-extrabold text-slate-900 dark:text-white pt-1 border-t border-slate-100 dark:border-slate-800">
                                   <span>Total Pot:</span>
                                   <span>£{(data[potKeys.total] || 0).toLocaleString()}</span>
@@ -1850,6 +1901,9 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                         <Area type="monotone" dataKey={potKeys.lisa} name={potKeys.lisaName} stackId="1" stroke="#a855f7" fill="url(#lisaGradient)" />
                       )}
                       <Area type="monotone" dataKey={potKeys.cash} name="Cash & GIA" stackId="1" stroke="#f59e0b" fill="url(#cashGradient)" />
+                      {hasAnyGilt && (
+                        <Area type="monotone" dataKey={potKeys.gilt} name={potKeys.giltName} stackId="1" stroke="#0d9488" fill="url(#giltGradient)" />
+                      )}
                       {hasPurchasedAnnuity && (
                         <Line type="stepAfter" dataKey="annuityIncome" name="🌸 Guaranteed Annuity Floor (£/yr)" stroke="#ec4899" strokeWidth={3} strokeDasharray="5 5" dot={false} />
                       )}
@@ -1914,6 +1968,18 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                                   <span>Cash / GIA:</span>
                                   <span className="font-bold">£{(data[potKeys.cash] || 0).toLocaleString()}</span>
                                 </div>
+                                {data[potKeys.gilt] > 0 && (
+                                  <div className="flex justify-between text-teal-600 dark:text-teal-400 font-semibold">
+                                    <span>🏛️ Gilt Ladder Pot:</span>
+                                    <span className="font-bold">£{(data[potKeys.gilt] || 0).toLocaleString()}</span>
+                                  </div>
+                                )}
+                                {data.giltLadderIncome > 0 && (
+                                  <div className="flex justify-between text-teal-700 dark:text-teal-300 font-bold">
+                                    <span>🏛️ Gilt Payout Received:</span>
+                                    <span className="font-bold">+£{(data.giltLadderIncome || 0).toLocaleString()} (0% CGT)</span>
+                                  </div>
+                                )}
                                 {data.annuityIncome > 0 && (
                                   <div className="flex justify-between text-pink-600 dark:text-pink-400 font-extrabold pt-1 border-t border-slate-100 dark:border-slate-800">
                                     <span>🌸 Guaranteed Annuity Floor:</span>
@@ -2041,6 +2107,9 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                         <Line type="monotone" dataKey={potKeys.lisa} name={potKeys.lisaName} stroke="#a855f7" strokeWidth={2.5} dot={false} />
                       )}
                       <Line type="monotone" dataKey={potKeys.cash} name="Cash & GIA" stroke="#f59e0b" strokeWidth={2.5} dot={false} />
+                      {hasAnyGilt && (
+                        <Line type="monotone" dataKey={potKeys.gilt} name={potKeys.giltName} stroke="#0d9488" strokeWidth={2.5} dot={false} />
+                      )}
                       {hasPurchasedAnnuity && (
                         <Line type="stepAfter" dataKey="annuityIncome" name="🌸 Guaranteed Annuity Floor (£/yr)" stroke="#ec4899" strokeWidth={2.5} strokeDasharray="5 5" dot={false} />
                       )}
@@ -2058,6 +2127,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                     <Bar dataKey="statePension" name="State Pension" stackId="a" fill="#8b5cf6" />
                     <Bar dataKey="dbPensionIncome" name="Defined Benefit (DB) Pension" stackId="a" fill="#d97706" />
                     <Bar dataKey="annuityIncome" name="Guaranteed Annuity Income" stackId="a" fill="#ec4899" />
+                    <Bar dataKey="giltLadderIncome" name="UK Gilt Ladder Payout (0% CGT)" stackId="a" fill="#0d9488" />
                     <Bar dataKey="taxFreeFixedIncome" name="Tax-Free Fixed Income (e.g. PIP)" stackId="a" fill="#14b8a6" />
                     <Bar dataKey="taxableFixedIncome" name="Taxable Fixed Income (e.g. Rental)" stackId="a" fill="#2563eb" />
                     <Bar dataKey="pensionDrawdownTaxFree" name="Pension Drawdown (Tax-Free)" stackId="a" fill="#34d399" />
