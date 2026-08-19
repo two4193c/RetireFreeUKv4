@@ -260,7 +260,7 @@ export function generateProjections(
   const giltLadderConfig = profile.giltLadderConfig;
   const isGiltLadderEnabled = Boolean(giltLadderConfig && giltLadderConfig.enabled);
   const giltLadderSummary = isGiltLadderEnabled
-    ? calculateGiltLadder({ ...giltLadderConfig!, owner: 'primary' }, profile, pots)
+    ? calculateGiltLadder({ ...giltLadderConfig!, owner: 'primary' }, profile, cleanPots)
     : null;
   let giltLadderPurchased = false;
 
@@ -681,7 +681,7 @@ function parseAnnuityTypeConfig(type?: string) {
     const dbPensionIncomeReceived = primaryDbPensionReceived + partnerDbPensionReceived;
 
     // Add annual regular monthly contributions for current year into pots prior to custom lump sums and transfers
-    const primaryTaxThisYr = calculateUKTax(profile, pots, false, age);
+    const primaryTaxThisYr = calculateUKTax(profile, cleanPots, false, age);
     const partnerAgeForYr = profile.isCouplePlanning
       ? age + ((profile.partnerCurrentAge ?? profile.currentAge) - profile.currentAge)
       : undefined;
