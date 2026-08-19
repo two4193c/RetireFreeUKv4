@@ -114,6 +114,8 @@ export function computePlanInsights(
   const targetIncome = profile.targetRetirementIncomeAnnual || 35000;
   const priSpaAge = profile.statePensionAge || 67;
   const priAccessAge = getPensionAccessAge(profile);
+  const primaryName = profile.name || 'Primary';
+  const partnerName = profile.partnerName || 'Partner';
 
   const cleanPots = sanitizePots(pots, DEFAULT_POTS);
   const cleanPartnerPots = sanitizePots(profile.partnerPots, DEFAULT_PARTNER_POTS);
@@ -276,11 +278,28 @@ export function computePlanInsights(
 
     milestones.push({
       type: 'state_pension',
-      title: `State Pension Inflection (Age ${priSpaAge})`,
+      title: `${isCouple ? `${primaryName} ` : ''}State Pension Inflection (Age ${priSpaAge})`,
       age: priSpaAge,
-      summary: `State Pension injects £${Math.round(priStatePension).toLocaleString()}/yr of guaranteed, triple-lock income.`,
+      summary: `${isCouple ? `${primaryName}'s ` : ''}State Pension injects £${Math.round(priStatePension).toLocaleString()}/yr of guaranteed, triple-lock income.`,
       detail: `At age ${priSpaAge}, private pot withdrawal dependency drops by ${dropPct > 0 ? `${dropPct}%` : 'a substantial margin'}, dramatically reducing sequence-of-returns vulnerability for remaining retirement.`,
       badge: `+£${Math.round(priStatePension).toLocaleString()}/yr Guaranteed`,
+      badgeColor: 'emerald',
+    });
+  }
+
+  // Milestone B2: Partner State Pension Commencement
+  if (isCouple && (profile.partnerIncludeStatePension ?? true) && partStatePension > 0) {
+    const partSpaAge = profile.partnerStatePensionAge || 67;
+    const partnerAgeDiff = (profile.partnerCurrentAge ?? profile.currentAge) - profile.currentAge;
+    const primaryAgeAtPartSpa = partSpaAge - partnerAgeDiff;
+
+    milestones.push({
+      type: 'state_pension',
+      title: `${partnerName} State Pension Inflection (${partnerName} Age ${partSpaAge})`,
+      age: primaryAgeAtPartSpa,
+      summary: `${partnerName}'s State Pension commences, injecting £${Math.round(partStatePension).toLocaleString()}/yr of guaranteed, triple-lock income into the household.`,
+      detail: `When ${partnerName} reaches age ${partSpaAge} (${primaryName} age ${primaryAgeAtPartSpa}), the additional guaranteed pension provides household stability and reduces reliance on private drawdown assets.`,
+      badge: `+£${Math.round(partStatePension).toLocaleString()}/yr Guaranteed`,
       badgeColor: 'emerald',
     });
   }

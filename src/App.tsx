@@ -951,7 +951,7 @@ function App() {
                       <LifeEventsDecumulationCard profile={profile} pots={pots} projections={projections} onChange={handleProfileChange} />
                     </div>
                     <div id="card-inputs-fees" className="scroll-mt-24 transition-all duration-300">
-                      <InvestmentFeesCard profile={profile} onChange={handleProfileChange} />
+                      <InvestmentFeesCard profile={profile} pots={pots} onChange={handleProfileChange} />
                     </div>
                   </>
                 )}
@@ -1039,7 +1039,7 @@ function App() {
                 )}
                 {appMode === 'advanced' && (
                   <div id="card-strat-macro" className="scroll-mt-24 transition-all duration-300">
-                    <MacroSettingsCard profile={profile} onChange={handleProfileChange} />
+                    <MacroSettingsCard profile={profile} pots={pots} onChange={handleProfileChange} />
                   </div>
                 )}
               </div>

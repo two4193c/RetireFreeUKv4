@@ -72,6 +72,7 @@ export interface GiltLadderSummary {
 
 export interface GiltLadderConfig {
   enabled: boolean;
+  owner?: ItemOwner; // 'primary' | 'partner'
   purchaseAge?: number;
   startAge?: number;
   endAge?: number;
@@ -79,6 +80,7 @@ export interface GiltLadderConfig {
   targetAnnualIncome: number; // £/year net income required
   fundingSource: GiltFundingSource;
   giltType?: GiltSelectionType;
+  strategyMode?: 'low_coupon_cgt' | 'benchmark_yield' | 'custom_yield';
   customYieldPercent?: number; // e.g. 4.3%
   taxBracketOverride?: GiltTaxBracket;
   inflationLinked?: boolean;
@@ -497,6 +499,7 @@ export interface UserProfile {
 
   // UK Gilt Ladder & Liability Matching Portfolio
   giltLadderConfig?: GiltLadderConfig;
+  partnerGiltLadderConfig?: GiltLadderConfig;
 }
 
 export interface SinglePotFeeConfig {
@@ -813,11 +816,15 @@ export interface YearProjection {
   partnerCashGiaPot?: number;
   partnerGiaPot?: number;
   partnerCashSavingsPot?: number;
+  partnerGiltLadderPot?: number;
   partnerTotalPot?: number;
   // Primary vs Partner Income & Drawdown Breakdown
   primaryStatePensionReceived?: number;
   primaryDbPensionIncomeReceived?: number;
   primaryAnnuityIncomeReceived?: number;
+  primaryGiltLadderIncomeReceived?: number;
+  primaryGiltLadderCapitalAllocated?: number;
+  primaryGiltLadderPurchasedThisYear?: boolean;
   primaryTaxableFixedIncomeReceived?: number;
   primaryTaxFreeFixedIncomeReceived?: number;
   primaryPensionDrawdown?: number;
@@ -830,6 +837,9 @@ export interface YearProjection {
   partnerStatePensionReceived?: number;
   partnerDbPensionIncomeReceived?: number;
   partnerAnnuityIncomeReceived?: number;
+  partnerGiltLadderIncomeReceived?: number;
+  partnerGiltLadderCapitalAllocated?: number;
+  partnerGiltLadderPurchasedThisYear?: boolean;
   partnerTaxableFixedIncomeReceived?: number;
   partnerTaxFreeFixedIncomeReceived?: number;
   partnerPensionDrawdown?: number;
@@ -845,6 +855,10 @@ export interface YearProjection {
   oneOffContributionsReceived?: number;
   lifeEventsIncome?: number;
   lifeEventsExpense?: number;
+  primaryLifeEventsIncome?: number;
+  primaryLifeEventsExpense?: number;
+  partnerLifeEventsIncome?: number;
+  partnerLifeEventsExpense?: number;
   propertyDownsizeEquityReleased?: number;
   decumulationLifeEventsSummary?: string;
   annualTaxReliefTotal: number;

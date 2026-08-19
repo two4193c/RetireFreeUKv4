@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
-import { UserProfile, InvestmentFeeConfig, PerPersonPotFees, SinglePotFeeConfig } from '../types';
+import { UserProfile, InvestmentPots, InvestmentFeeConfig, PerPersonPotFees, SinglePotFeeConfig } from '../types';
 import { DEFAULT_INVESTMENT_FEES, DEFAULT_SINGLE_POT_FEE } from '../utils/defaultData';
 import { getTotalFeePercent, getPotFeePercent } from '../utils/assetAllocation';
 import { Receipt, User, Users, Sliders, Layers, Sparkles } from 'lucide-react';
 
 interface InvestmentFeesCardProps {
   profile: UserProfile;
+  pots?: InvestmentPots;
   onChange: (updatedProfile: UserProfile) => void;
 }
 
-export const InvestmentFeesCard: React.FC<InvestmentFeesCardProps> = ({ profile, onChange }) => {
+export const InvestmentFeesCard: React.FC<InvestmentFeesCardProps> = ({ profile, pots, onChange }) => {
   const feeConfig: InvestmentFeeConfig = profile.investmentFees || DEFAULT_INVESTMENT_FEES;
   const isEnabled = Boolean(feeConfig.enabled);
   const perPotFeesEnabled = Boolean(feeConfig.perPotFeesEnabled);
@@ -79,43 +80,59 @@ export const InvestmentFeesCard: React.FC<InvestmentFeesCardProps> = ({ profile,
     }
   };
 
+  // Balances
+  const primaryWorkplaceBal = pots?.workplacePensionBalance ?? profile.workplacePensionBalance ?? 0;
+  const primarySippBal = pots?.sippBalance ?? profile.sippBalance ?? 0;
+  const primaryIsaBal = pots?.stocksAndSharesIsaBalance ?? profile.stocksAndSharesIsaBalance ?? 0;
+  const primaryCashIsaBal = pots?.cashIsaBalance ?? profile.cashIsaBalance ?? 0;
+  const primaryGiaBal = pots?.giaBalance ?? profile.giaBalance ?? 0;
+
+  const partnerPotsObj = profile.partnerPots;
+  const partnerWorkplaceBal = partnerPotsObj?.workplacePensionBalance ?? profile.partnerWorkplacePensionBalance ?? 0;
+  const partnerSippBal = partnerPotsObj?.sippBalance ?? profile.partnerSippBalance ?? 0;
+  const partnerIsaBal = partnerPotsObj?.stocksAndSharesIsaBalance ?? profile.partnerIsaBalance ?? 0;
+  const partnerCashIsaBal = partnerPotsObj?.cashIsaBalance ?? profile.partnerCashIsaBalance ?? 0;
+  const partnerGiaBal = partnerPotsObj?.giaBalance ?? profile.partnerGiaBalance ?? 0;
+
   // Calculate annual drag for all pots
   const calculatePotDragPounds = (balance: number, feePercent: number) => Math.round((balance || 0) * (feePercent / 100));
 
   const primaryWorkplaceFee = getPotFeePercent(feeConfig, 'primary', 'workplacePension');
   const primarySippFee = getPotFeePercent(feeConfig, 'primary', 'sipp');
   const primaryIsaFee = getPotFeePercent(feeConfig, 'primary', 'stocksAndSharesIsa');
+  const primaryCashIsaFee = getPotFeePercent(feeConfig, 'primary', 'cashIsa');
   const primaryGiaFee = getPotFeePercent(feeConfig, 'primary', 'gia');
 
   const partnerWorkplaceFee = getPotFeePercent(feeConfig, 'partner', 'workplacePension');
   const partnerSippFee = getPotFeePercent(feeConfig, 'partner', 'sipp');
   const partnerIsaFee = getPotFeePercent(feeConfig, 'partner', 'stocksAndSharesIsa');
+  const partnerCashIsaFee = getPotFeePercent(feeConfig, 'partner', 'cashIsa');
   const partnerGiaFee = getPotFeePercent(feeConfig, 'partner', 'gia');
 
-  const primaryWorkplaceDrag = calculatePotDragPounds(profile.workplacePensionBalance || 0, primaryWorkplaceFee);
-  const primarySippDrag = calculatePotDragPounds(profile.sippBalance || 0, primarySippFee);
-  const primaryIsaDrag = calculatePotDragPounds(profile.stocksAndSharesIsaBalance || 0, primaryIsaFee);
-  const primaryGiaDrag = calculatePotDragPounds(profile.giaBalance || 0, primaryGiaFee);
+  const primaryWorkplaceDrag = calculatePotDragPounds(primaryWorkplaceBal, primaryWorkplaceFee);
+  const primarySippDrag = calculatePotDragPounds(primarySippBal, primarySippFee);
+  const primaryIsaDrag = calculatePotDragPounds(primaryIsaBal, primaryIsaFee);
+  const primaryCashIsaDrag = calculatePotDragPounds(primaryCashIsaBal, primaryCashIsaFee);
+  const primaryGiaDrag = calculatePotDragPounds(primaryGiaBal, primaryGiaFee);
 
-  const partnerWorkplaceDrag = profile.isCouplePlanning ? calculatePotDragPounds(profile.partnerWorkplacePensionBalance || 0, partnerWorkplaceFee) : 0;
-  const partnerSippDrag = profile.isCouplePlanning ? calculatePotDragPounds(profile.partnerSippBalance || 0, partnerSippFee) : 0;
-  const partnerIsaDrag = profile.isCouplePlanning ? calculatePotDragPounds(profile.partnerIsaBalance || 0, partnerIsaFee) : 0;
-  const partnerGiaDrag = profile.isCouplePlanning ? calculatePotDragPounds(profile.partnerGiaBalance || 0, partnerGiaFee) : 0;
+  const partnerWorkplaceDrag = profile.isCouplePlanning ? calculatePotDragPounds(partnerWorkplaceBal, partnerWorkplaceFee) : 0;
+  const partnerSippDrag = profile.isCouplePlanning ? calculatePotDragPounds(partnerSippBal, partnerSippFee) : 0;
+  const partnerIsaDrag = profile.isCouplePlanning ? calculatePotDragPounds(partnerIsaBal, partnerIsaFee) : 0;
+  const partnerCashIsaDrag = profile.isCouplePlanning ? calculatePotDragPounds(partnerCashIsaBal, partnerCashIsaFee) : 0;
+  const partnerGiaDrag = profile.isCouplePlanning ? calculatePotDragPounds(partnerGiaBal, partnerGiaFee) : 0;
 
   const totalAnnualFeeDragPounds =
-    primaryWorkplaceDrag + primarySippDrag + primaryIsaDrag + primaryGiaDrag +
-    partnerWorkplaceDrag + partnerSippDrag + partnerIsaDrag + partnerGiaDrag;
+    primaryWorkplaceDrag + primarySippDrag + primaryIsaDrag + primaryCashIsaDrag + primaryGiaDrag +
+    partnerWorkplaceDrag + partnerSippDrag + partnerIsaDrag + partnerCashIsaDrag + partnerGiaDrag;
 
   const totalInvestedPots =
-    (profile.workplacePensionBalance || 0) +
-    (profile.sippBalance || 0) +
-    (profile.stocksAndSharesIsaBalance || 0) +
-    (profile.giaBalance || 0) +
+    primaryWorkplaceBal +
+    primarySippBal +
+    primaryIsaBal +
+    primaryCashIsaBal +
+    primaryGiaBal +
     (profile.isCouplePlanning
-      ? (profile.partnerWorkplacePensionBalance || 0) +
-        (profile.partnerSippBalance || 0) +
-        (profile.partnerIsaBalance || 0) +
-        (profile.partnerGiaBalance || 0)
+      ? partnerWorkplaceBal + partnerSippBal + partnerIsaBal + partnerCashIsaBal + partnerGiaBal
       : 0);
 
   const averageOverallFeePercent = totalInvestedPots > 0 ? (totalAnnualFeeDragPounds / totalInvestedPots) * 100 : globalFeePercent;
@@ -129,35 +146,35 @@ export const InvestmentFeesCard: React.FC<InvestmentFeesCardProps> = ({ profile,
       label: 'Workplace Pension',
       icon: '💼',
       desc: 'Employer workplace scheme platform & fund fees (often capped at 0.75% or discounted).',
-      balance: activePersonTab === 'primary' ? (profile.workplacePensionBalance || 0) : (profile.partnerWorkplacePensionBalance || 0),
+      balance: activePersonTab === 'primary' ? primaryWorkplaceBal : partnerWorkplaceBal,
     },
     {
       key: 'sipp',
       label: 'SIPP (Personal Pension)',
       icon: '🏛️',
       desc: 'Self-Invested Personal Pension platform admin, underlying fund OCF, and adviser fees.',
-      balance: activePersonTab === 'primary' ? (profile.sippBalance || 0) : (profile.partnerSippBalance || 0),
+      balance: activePersonTab === 'primary' ? primarySippBal : partnerSippBal,
     },
     {
       key: 'stocksAndSharesIsa',
       label: 'Stocks & Shares ISA',
       icon: '📈',
       desc: 'S&S ISA custody charge and fund OCF / AMC.',
-      balance: activePersonTab === 'primary' ? (profile.stocksAndSharesIsaBalance || 0) : (profile.partnerIsaBalance || 0),
+      balance: activePersonTab === 'primary' ? primaryIsaBal : partnerIsaBal,
     },
     {
       key: 'cashIsa',
       label: 'Cash ISA',
       icon: '💵',
       desc: 'Cash ISA account charges (usually 0.00% unless managed).',
-      balance: activePersonTab === 'primary' ? (profile.cashIsaBalance || 0) : (profile.partnerCashIsaBalance || 0),
+      balance: activePersonTab === 'primary' ? primaryCashIsaBal : partnerCashIsaBal,
     },
     {
       key: 'gia',
       label: 'General Investment Account (GIA)',
       icon: '🏢',
       desc: 'Taxable investment account custody and fund management charges.',
-      balance: activePersonTab === 'primary' ? (profile.giaBalance || 0) : (profile.partnerGiaBalance || 0),
+      balance: activePersonTab === 'primary' ? primaryGiaBal : partnerGiaBal,
     },
   ];
 

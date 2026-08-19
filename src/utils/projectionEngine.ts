@@ -256,13 +256,20 @@ export function generateProjections(
   let currentPropertyValue = profile.propertyDownsizePlan?.enabled ? profile.propertyDownsizePlan.currentPropertyValue : 0;
   let hasDownsized = false;
 
-  // Gilt Ladder Setup & Tracking
+  // Gilt Ladder Setup & Tracking (Primary & Partner)
   const giltLadderConfig = profile.giltLadderConfig;
   const isGiltLadderEnabled = Boolean(giltLadderConfig && giltLadderConfig.enabled);
   const giltLadderSummary = isGiltLadderEnabled
-    ? calculateGiltLadder(giltLadderConfig!, profile, pots)
+    ? calculateGiltLadder({ ...giltLadderConfig!, owner: 'primary' }, profile, pots)
     : null;
   let giltLadderPurchased = false;
+
+  const partnerGiltLadderConfig = profile.isCouplePlanning ? profile.partnerGiltLadderConfig : undefined;
+  const isPartnerGiltLadderEnabled = Boolean(profile.isCouplePlanning && partnerGiltLadderConfig && partnerGiltLadderConfig.enabled);
+  const partnerGiltLadderSummary = isPartnerGiltLadderEnabled
+    ? calculateGiltLadder({ ...partnerGiltLadderConfig!, owner: 'partner' }, profile, partnerPots)
+    : null;
+  let partnerGiltLadderPurchased = false;
 
   const isScottishTax = profile.taxRegion === 'scotland';
   const isPartnerScottishTax = (profile.partnerTaxRegion || profile.taxRegion) === 'scotland';
@@ -1360,33 +1367,38 @@ function parseAnnuityTypeConfig(type?: string) {
 
       const annuityIncomeThisYear = primaryAnnuityIncomeThisYear + partnerAnnuityIncomeThisYear;
 
-      // 4. Gilt Ladder Execution & Income Calculation
-      let giltLadderIncomeThisYear = 0;
-      let giltLadderCapitalAllocatedThisYear = 0;
-      let giltLadderPurchasedThisYear = false;
+      // 4. Gilt Ladder Execution & Income Calculation (Primary & Partner)
+      let primaryGiltLadderIncomeThisYear = 0;
+      let primaryGiltLadderCapitalAllocatedThisYear = 0;
+      let primaryGiltLadderPurchasedThisYear = false;
 
+      let partnerGiltLadderIncomeThisYear = 0;
+      let partnerGiltLadderCapitalAllocatedThisYear = 0;
+      let partnerGiltLadderPurchasedThisYear = false;
+
+      // Primary Gilt Ladder Execution
       if (isGiltLadderEnabled && giltLadderSummary && !giltLadderPurchased) {
         const giltPurchaseAge = Math.max(profile.currentAge, giltLadderConfig!.purchaseAge || giltLadderConfig!.startAge || profile.targetRetirementAge);
         if (age >= giltPurchaseAge) {
           let upfrontCost = giltLadderSummary.totalUpfrontCost;
-          giltLadderCapitalAllocatedThisYear = upfrontCost;
+          primaryGiltLadderCapitalAllocatedThisYear = upfrontCost;
           giltLadderPurchased = true;
-          giltLadderPurchasedThisYear = true;
+          primaryGiltLadderPurchasedThisYear = true;
 
           const source = giltLadderConfig!.fundingSource || 'gia';
           if (source === 'gia') {
             const drawPriGia = Math.min(primaryGiaPot, upfrontCost);
             primaryGiaPot -= drawPriGia;
             upfrontCost -= drawPriGia;
-            if (upfrontCost > 0 && profile.isCouplePlanning) {
-              const drawPartGia = Math.min(partnerGiaPot, upfrontCost);
-              partnerGiaPot -= drawPartGia;
-              upfrontCost -= drawPartGia;
-            }
             if (upfrontCost > 0) {
               const drawPriCash = Math.min(primaryCashSavingsPot, upfrontCost);
               primaryCashSavingsPot -= drawPriCash;
               upfrontCost -= drawPriCash;
+            }
+            if (upfrontCost > 0 && profile.isCouplePlanning) {
+              const drawPartGia = Math.min(partnerGiaPot, upfrontCost);
+              partnerGiaPot -= drawPartGia;
+              upfrontCost -= drawPartGia;
             }
             if (upfrontCost > 0 && profile.isCouplePlanning) {
               const drawPartCash = Math.min(partnerCashSavingsPot, upfrontCost);
@@ -1397,15 +1409,15 @@ function parseAnnuityTypeConfig(type?: string) {
             const drawPriSs = Math.min(primarySsIsaPot, upfrontCost);
             primarySsIsaPot -= drawPriSs;
             upfrontCost -= drawPriSs;
-            if (upfrontCost > 0 && profile.isCouplePlanning) {
-              const drawPartSs = Math.min(partnerSsIsaPot, upfrontCost);
-              partnerSsIsaPot -= drawPartSs;
-              upfrontCost -= drawPartSs;
-            }
             if (upfrontCost > 0) {
               const drawPriCashIsa = Math.min(primaryCashIsaPot, upfrontCost);
               primaryCashIsaPot -= drawPriCashIsa;
               upfrontCost -= drawPriCashIsa;
+            }
+            if (upfrontCost > 0 && profile.isCouplePlanning) {
+              const drawPartSs = Math.min(partnerSsIsaPot, upfrontCost);
+              partnerSsIsaPot -= drawPartSs;
+              upfrontCost -= drawPartSs;
             }
             if (upfrontCost > 0 && profile.isCouplePlanning) {
               const drawPartCashIsa = Math.min(partnerCashIsaPot, upfrontCost);
@@ -1416,15 +1428,15 @@ function parseAnnuityTypeConfig(type?: string) {
             const drawPriCash = Math.min(primaryCashSavingsPot, upfrontCost);
             primaryCashSavingsPot -= drawPriCash;
             upfrontCost -= drawPriCash;
-            if (upfrontCost > 0 && profile.isCouplePlanning) {
-              const drawPartCash = Math.min(partnerCashSavingsPot, upfrontCost);
-              partnerCashSavingsPot -= drawPartCash;
-              upfrontCost -= drawPartCash;
-            }
             if (upfrontCost > 0) {
               const drawPriCashIsa = Math.min(primaryCashIsaPot, upfrontCost);
               primaryCashIsaPot -= drawPriCashIsa;
               upfrontCost -= drawPriCashIsa;
+            }
+            if (upfrontCost > 0 && profile.isCouplePlanning) {
+              const drawPartCash = Math.min(partnerCashSavingsPot, upfrontCost);
+              partnerCashSavingsPot -= drawPartCash;
+              upfrontCost -= drawPartCash;
             }
           } else if (source === 'pension' && canAccessPension) {
             if (primaryCrystallisedPot > 0) {
@@ -1438,26 +1450,160 @@ function parseAnnuityTypeConfig(type?: string) {
               upfrontCost -= drawUncryst;
             }
           } else if (source === 'blended') {
-            const drawGia = Math.min(primaryGiaPot + partnerGiaPot, upfrontCost);
-            const drawPriGia = Math.min(primaryGiaPot, drawGia);
+            const drawPriGia = Math.min(primaryGiaPot, upfrontCost);
             primaryGiaPot -= drawPriGia;
-            partnerGiaPot -= (drawGia - drawPriGia);
-            upfrontCost -= drawGia;
+            upfrontCost -= drawPriGia;
 
             if (upfrontCost > 0) {
-              const drawCash = Math.min(primaryCashSavingsPot + partnerCashSavingsPot, upfrontCost);
-              const drawPriCash = Math.min(primaryCashSavingsPot, drawCash);
+              const drawPriCash = Math.min(primaryCashSavingsPot, upfrontCost);
               primaryCashSavingsPot -= drawPriCash;
-              partnerCashSavingsPot -= (drawCash - drawPriCash);
-              upfrontCost -= drawCash;
+              upfrontCost -= drawPriCash;
             }
 
             if (upfrontCost > 0) {
-              const drawIsa = Math.min(primaryIsaPot + partnerIsaPot, upfrontCost);
-              const drawPriIsa = Math.min(primaryIsaPot, drawIsa);
+              const drawPriIsa = Math.min(primaryIsaPot, upfrontCost);
               primarySsIsaPot = Math.max(0, primarySsIsaPot - drawPriIsa);
-              partnerSsIsaPot = Math.max(0, partnerSsIsaPot - (drawIsa - drawPriIsa));
-              upfrontCost -= drawIsa;
+              upfrontCost -= drawPriIsa;
+            }
+
+            if (upfrontCost > 0 && profile.isCouplePlanning) {
+              const drawPartGia = Math.min(partnerGiaPot, upfrontCost);
+              partnerGiaPot -= drawPartGia;
+              upfrontCost -= drawPartGia;
+            }
+            if (upfrontCost > 0 && profile.isCouplePlanning) {
+              const drawPartCash = Math.min(partnerCashSavingsPot, upfrontCost);
+              partnerCashSavingsPot -= drawPartCash;
+              upfrontCost -= drawPartCash;
+            }
+            if (upfrontCost > 0 && profile.isCouplePlanning) {
+              const drawPartIsa = Math.min(partnerIsaPot, upfrontCost);
+              partnerSsIsaPot = Math.max(0, partnerSsIsaPot - drawPartIsa);
+              upfrontCost -= drawPartIsa;
+            }
+          }
+
+          primaryIsaPot = primarySsIsaPot + primaryCashIsaPot + primaryLisaPot;
+          partnerIsaPot = partnerSsIsaPot + partnerCashIsaPot + partnerLisaPot;
+          primaryPensionPot = primaryUncrystallisedPot + primaryCrystallisedPot;
+          partnerPensionPot = partnerUncrystallisedPot + partnerCrystallisedPot;
+          primaryCashGiaPot = primaryGiaPot + primaryCashSavingsPot;
+          partnerCashGiaPot = partnerGiaPot + partnerCashSavingsPot;
+          pensionPot = primaryPensionPot + partnerPensionPot;
+          isaPot = primaryIsaPot + partnerIsaPot;
+          giaPot = primaryGiaPot + partnerGiaPot;
+          cashSavingsPot = primaryCashSavingsPot + partnerCashSavingsPot;
+          cashGiaPot = giaPot + cashSavingsPot;
+        }
+      }
+
+      // Partner Gilt Ladder Execution
+      if (isPartnerGiltLadderEnabled && partnerGiltLadderSummary && !partnerGiltLadderPurchased) {
+        const partnerGiltPurchaseAge = Math.max(
+          profile.partnerCurrentAge ?? profile.currentAge,
+          partnerGiltLadderConfig!.purchaseAge || partnerGiltLadderConfig!.startAge || (profile.partnerTargetRetirementAge ?? 60)
+        );
+        if (partnerAge >= partnerGiltPurchaseAge) {
+          let upfrontCost = partnerGiltLadderSummary.totalUpfrontCost;
+          partnerGiltLadderCapitalAllocatedThisYear = upfrontCost;
+          partnerGiltLadderPurchased = true;
+          partnerGiltLadderPurchasedThisYear = true;
+
+          const source = partnerGiltLadderConfig!.fundingSource || 'gia';
+          if (source === 'gia') {
+            const drawPartGia = Math.min(partnerGiaPot, upfrontCost);
+            partnerGiaPot -= drawPartGia;
+            upfrontCost -= drawPartGia;
+            if (upfrontCost > 0) {
+              const drawPartCash = Math.min(partnerCashSavingsPot, upfrontCost);
+              partnerCashSavingsPot -= drawPartCash;
+              upfrontCost -= drawPartCash;
+            }
+            if (upfrontCost > 0) {
+              const drawPriGia = Math.min(primaryGiaPot, upfrontCost);
+              primaryGiaPot -= drawPriGia;
+              upfrontCost -= drawPriGia;
+            }
+            if (upfrontCost > 0) {
+              const drawPriCash = Math.min(primaryCashSavingsPot, upfrontCost);
+              primaryCashSavingsPot -= drawPriCash;
+              upfrontCost -= drawPriCash;
+            }
+          } else if (source === 'isa') {
+            const drawPartSs = Math.min(partnerSsIsaPot, upfrontCost);
+            partnerSsIsaPot -= drawPartSs;
+            upfrontCost -= drawPartSs;
+            if (upfrontCost > 0) {
+              const drawPartCashIsa = Math.min(partnerCashIsaPot, upfrontCost);
+              partnerCashIsaPot -= drawPartCashIsa;
+              upfrontCost -= drawPartCashIsa;
+            }
+            if (upfrontCost > 0) {
+              const drawPriSs = Math.min(primarySsIsaPot, upfrontCost);
+              primarySsIsaPot -= drawPriSs;
+              upfrontCost -= drawPriSs;
+            }
+            if (upfrontCost > 0) {
+              const drawPriCashIsa = Math.min(primaryCashIsaPot, upfrontCost);
+              primaryCashIsaPot -= drawPriCashIsa;
+              upfrontCost -= drawPriCashIsa;
+            }
+          } else if (source === 'cash') {
+            const drawPartCash = Math.min(partnerCashSavingsPot, upfrontCost);
+            partnerCashSavingsPot -= drawPartCash;
+            upfrontCost -= drawPartCash;
+            if (upfrontCost > 0) {
+              const drawPartCashIsa = Math.min(partnerCashIsaPot, upfrontCost);
+              partnerCashIsaPot -= drawPartCashIsa;
+              upfrontCost -= drawPartCashIsa;
+            }
+            if (upfrontCost > 0) {
+              const drawPriCash = Math.min(primaryCashSavingsPot, upfrontCost);
+              primaryCashSavingsPot -= drawPriCash;
+              upfrontCost -= drawPriCash;
+            }
+          } else if (source === 'pension' && partnerCanAccessPension) {
+            if (partnerCrystallisedPot > 0) {
+              const drawCryst = Math.min(partnerCrystallisedPot, upfrontCost);
+              partnerCrystallisedPot -= drawCryst;
+              upfrontCost -= drawCryst;
+            }
+            if (upfrontCost > 0 && partnerUncrystallisedPot > 0) {
+              const drawUncryst = Math.min(partnerUncrystallisedPot, upfrontCost);
+              partnerUncrystallisedPot -= drawUncryst;
+              upfrontCost -= drawUncryst;
+            }
+          } else if (source === 'blended') {
+            const drawPartGia = Math.min(partnerGiaPot, upfrontCost);
+            partnerGiaPot -= drawPartGia;
+            upfrontCost -= drawPartGia;
+
+            if (upfrontCost > 0) {
+              const drawPartCash = Math.min(partnerCashSavingsPot, upfrontCost);
+              partnerCashSavingsPot -= drawPartCash;
+              upfrontCost -= drawPartCash;
+            }
+
+            if (upfrontCost > 0) {
+              const drawPartIsa = Math.min(partnerIsaPot, upfrontCost);
+              partnerSsIsaPot = Math.max(0, partnerSsIsaPot - drawPartIsa);
+              upfrontCost -= drawPartIsa;
+            }
+
+            if (upfrontCost > 0) {
+              const drawPriGia = Math.min(primaryGiaPot, upfrontCost);
+              primaryGiaPot -= drawPriGia;
+              upfrontCost -= drawPriGia;
+            }
+            if (upfrontCost > 0) {
+              const drawPriCash = Math.min(primaryCashSavingsPot, upfrontCost);
+              primaryCashSavingsPot -= drawPriCash;
+              upfrontCost -= drawPriCash;
+            }
+            if (upfrontCost > 0) {
+              const drawPriIsa = Math.min(primaryIsaPot, upfrontCost);
+              primarySsIsaPot = Math.max(0, primarySsIsaPot - drawPriIsa);
+              upfrontCost -= drawPriIsa;
             }
           }
 
@@ -1478,9 +1624,20 @@ function parseAnnuityTypeConfig(type?: string) {
       if (isGiltLadderEnabled && giltLadderSummary) {
         const activeRung = giltLadderSummary.rungs.find((r) => r.age === age);
         if (activeRung) {
-          giltLadderIncomeThisYear = activeRung.totalNetPayout;
+          primaryGiltLadderIncomeThisYear = activeRung.totalNetPayout;
         }
       }
+
+      if (isPartnerGiltLadderEnabled && partnerGiltLadderSummary) {
+        const activeRung = partnerGiltLadderSummary.rungs.find((r) => r.age === partnerAge);
+        if (activeRung) {
+          partnerGiltLadderIncomeThisYear = activeRung.totalNetPayout;
+        }
+      }
+
+      const giltLadderIncomeThisYear = primaryGiltLadderIncomeThisYear + partnerGiltLadderIncomeThisYear;
+      const giltLadderCapitalAllocatedThisYear = primaryGiltLadderCapitalAllocatedThisYear + partnerGiltLadderCapitalAllocatedThisYear;
+      const giltLadderPurchasedThisYear = primaryGiltLadderPurchasedThisYear || partnerGiltLadderPurchasedThisYear;
 
 
       // State Pension income (Primary + Partner if couple mode)
@@ -1515,6 +1672,10 @@ function parseAnnuityTypeConfig(type?: string) {
 
       const statePensionReceived = primaryStatePensionReceived + partnerStatePensionReceived;
 
+      let primaryLifeEventsIncomeThisYear = 0;
+      let primaryLifeEventsExpenseThisYear = 0;
+      let partnerLifeEventsIncomeThisYear = 0;
+      let partnerLifeEventsExpenseThisYear = 0;
       let lifeEventsIncomeThisYear = 0;
       let lifeEventsExpenseThisYear = 0;
       const decumulationEventSummaries: string[] = [];
@@ -1535,6 +1696,11 @@ function parseAnnuityTypeConfig(type?: string) {
               const adjustInflationPref = Boolean(profile.adjustForInflation);
 
               if (isIncome) {
+                if (isPartnerEvent) {
+                  partnerLifeEventsIncomeThisYear += eventAmount;
+                } else {
+                  primaryLifeEventsIncomeThisYear += eventAmount;
+                }
                 lifeEventsIncomeThisYear += eventAmount;
                 decumulationEventSummaries.push(`+£${Math.round(eventAmount / (adjustInflationPref ? inflationFactor : 1)).toLocaleString()} ${event.name}`);
 
@@ -1560,6 +1726,11 @@ function parseAnnuityTypeConfig(type?: string) {
                   if (isPartnerEvent) partnerCashSavingsPot += eventAmount; else primaryCashSavingsPot += eventAmount;
                 }
               } else {
+                if (isPartnerEvent) {
+                  partnerLifeEventsExpenseThisYear += eventAmount;
+                } else {
+                  primaryLifeEventsExpenseThisYear += eventAmount;
+                }
                 lifeEventsExpenseThisYear += eventAmount;
                 decumulationEventSummaries.push(`-£${Math.round(eventAmount / (adjustInflationPref ? inflationFactor : 1)).toLocaleString()} ${event.name}`);
 
@@ -3101,15 +3272,23 @@ function parseAnnuityTypeConfig(type?: string) {
         giaPot = primaryGiaPot + partnerGiaPot;
         cashSavingsPot = primaryCashSavingsPot + partnerCashSavingsPot;
         cashGiaPot = giaPot + cashSavingsPot;
-        const currentGiltPotBalance = isGiltLadderEnabled && giltLadderSummary && giltLadderPurchased
+        const priGiltPotBalance = isGiltLadderEnabled && giltLadderSummary && giltLadderPurchased
           ? giltLadderSummary.rungs.filter((r) => r.age > age).reduce((sum, r) => sum + r.purchaseCost, 0)
           : 0;
+        const partGiltPotBalance = isPartnerGiltLadderEnabled && partnerGiltLadderSummary && partnerGiltLadderPurchased
+          ? partnerGiltLadderSummary.rungs.filter((r) => r.age > partnerAge).reduce((sum, r) => sum + r.purchaseCost, 0)
+          : 0;
+        const currentGiltPotBalance = priGiltPotBalance + partGiltPotBalance;
         totalPot = pensionPot + isaPot + cashGiaPot + currentGiltPotBalance;
       }
 
-      const decumGiltPotBalance = isGiltLadderEnabled && giltLadderSummary && giltLadderPurchased
+      const priGiltPotBalance = isGiltLadderEnabled && giltLadderSummary && giltLadderPurchased
         ? giltLadderSummary.rungs.filter((r) => r.age > age).reduce((sum, r) => sum + r.purchaseCost, 0)
         : 0;
+      const partGiltPotBalance = isPartnerGiltLadderEnabled && partnerGiltLadderSummary && partnerGiltLadderPurchased
+        ? partnerGiltLadderSummary.rungs.filter((r) => r.age > partnerAge).reduce((sum, r) => sum + r.purchaseCost, 0)
+        : 0;
+      const decumGiltPotBalance = priGiltPotBalance + partGiltPotBalance;
 
       projections.push({
         year: calendarYear,
@@ -3149,8 +3328,8 @@ function parseAnnuityTypeConfig(type?: string) {
         primaryCashGiaPot: Math.round(primaryCashGiaPot),
         primaryGiaPot: Math.round(primaryGiaPot),
         primaryCashSavingsPot: Math.round(primaryCashSavingsPot),
-        primaryGiltLadderPot: Math.round(decumGiltPotBalance),
-        primaryTotalPot: Math.round(primaryPensionPot + primaryIsaPot + primaryCashGiaPot + decumGiltPotBalance),
+        primaryGiltLadderPot: Math.round(priGiltPotBalance),
+        primaryTotalPot: Math.round(primaryPensionPot + primaryIsaPot + primaryCashGiaPot + priGiltPotBalance),
 
         partnerPensionPot: Math.round(partnerPensionPot),
         partnerPensionPotBeforeAnnuity,
@@ -3162,11 +3341,15 @@ function parseAnnuityTypeConfig(type?: string) {
         partnerCashGiaPot: Math.round(partnerCashGiaPot),
         partnerGiaPot: Math.round(partnerGiaPot),
         partnerCashSavingsPot: Math.round(partnerCashSavingsPot),
-        partnerTotalPot: Math.round(partnerPensionPot + partnerIsaPot + partnerCashGiaPot),
+        partnerGiltLadderPot: Math.round(partGiltPotBalance),
+        partnerTotalPot: Math.round(partnerPensionPot + partnerIsaPot + partnerCashGiaPot + partGiltPotBalance),
 
         primaryStatePensionReceived: Math.round(primaryStatePensionReceived),
         primaryDbPensionIncomeReceived: Math.round(primaryDbPensionReceived),
         primaryAnnuityIncomeReceived: Math.round(primaryAnnuityIncomeThisYear),
+        primaryGiltLadderIncomeReceived: Math.round(primaryGiltLadderIncomeThisYear),
+        primaryGiltLadderCapitalAllocated: Math.round(primaryGiltLadderCapitalAllocatedThisYear),
+        primaryGiltLadderPurchasedThisYear,
         primaryTaxableFixedIncomeReceived: Math.round(primaryTaxableFixedIncomeReceived),
         primaryTaxFreeFixedIncomeReceived: Math.round(primaryTaxFreeFixedIncomeReceived),
         primaryPensionDrawdown: Math.round(primaryPensionDrawdown),
@@ -3174,11 +3357,14 @@ function parseAnnuityTypeConfig(type?: string) {
         primaryPensionDrawdownTaxable: Math.round(priPensionDrawdownTaxable),
         primaryIsaDrawdown: Math.round(primaryIsaDrawdown),
         primaryCashDrawdown: Math.round(primaryCashDrawdown),
-        primaryNetRetirementIncome: Math.round(Math.max(0, primaryGuaranteedTotal + giltLadderIncomeThisYear + primaryPensionDrawdown + primaryIsaDrawdown + primaryCashDrawdown - priTaxRetirement - (profile.isCouplePlanning ? priSavingsTaxNominal : decumSavingsTaxNominal))),
+        primaryNetRetirementIncome: Math.round(Math.max(0, primaryGuaranteedTotal + primaryGiltLadderIncomeThisYear + primaryPensionDrawdown + primaryIsaDrawdown + primaryCashDrawdown - priTaxRetirement - (profile.isCouplePlanning ? priSavingsTaxNominal : decumSavingsTaxNominal))),
 
         partnerStatePensionReceived: Math.round(partnerStatePensionReceived),
         partnerDbPensionIncomeReceived: Math.round(partnerDbPensionReceived),
         partnerAnnuityIncomeReceived: Math.round(partnerAnnuityIncomeThisYear),
+        partnerGiltLadderIncomeReceived: Math.round(partnerGiltLadderIncomeThisYear),
+        partnerGiltLadderCapitalAllocated: Math.round(partnerGiltLadderCapitalAllocatedThisYear),
+        partnerGiltLadderPurchasedThisYear,
         partnerTaxableFixedIncomeReceived: Math.round(partnerTaxableFixedIncomeReceived),
         partnerTaxFreeFixedIncomeReceived: Math.round(partnerTaxFreeFixedIncomeReceived),
         partnerPensionDrawdown: Math.round(partnerPensionDrawdown),
@@ -3186,14 +3372,18 @@ function parseAnnuityTypeConfig(type?: string) {
         partnerPensionDrawdownTaxable: Math.round(partPensionDrawdownTaxable),
         partnerIsaDrawdown: Math.round(partnerIsaDrawdown),
         partnerCashDrawdown: Math.round(partnerCashDrawdown),
-        partnerNetRetirementIncome: Math.round(profile.isCouplePlanning ? Math.max(0, partnerGuaranteedTotal + partnerPensionDrawdown + partnerIsaDrawdown + partnerCashDrawdown - partTaxRetirement - partSavingsTaxNominal) : 0),
+        partnerNetRetirementIncome: Math.round(profile.isCouplePlanning ? Math.max(0, partnerGuaranteedTotal + partnerGiltLadderIncomeThisYear + partnerPensionDrawdown + partnerIsaDrawdown + partnerCashDrawdown - partTaxRetirement - partSavingsTaxNominal) : 0),
 
         estimatedPotGrowth,
         estimatedInvestmentFees: decumFeesPaid,
         annualContributionTotal: 0,
         lifeEventsIncome: Math.round(lifeEventsIncomeThisYear),
-        propertyDownsizeEquityReleased: Math.round(propertyDownsizeEquityReleasedThisYear),
         lifeEventsExpense: Math.round(lifeEventsExpenseThisYear),
+        primaryLifeEventsIncome: Math.round(primaryLifeEventsIncomeThisYear),
+        primaryLifeEventsExpense: Math.round(primaryLifeEventsExpenseThisYear),
+        partnerLifeEventsIncome: Math.round(partnerLifeEventsIncomeThisYear),
+        partnerLifeEventsExpense: Math.round(partnerLifeEventsExpenseThisYear),
+        propertyDownsizeEquityReleased: Math.round(propertyDownsizeEquityReleasedThisYear),
         decumulationLifeEventsSummary: decumulationEventSummaries.join(', '),
         annualTaxReliefTotal: 0,
         statePensionReceived: Math.round(statePensionReceived),
@@ -3217,8 +3407,8 @@ function parseAnnuityTypeConfig(type?: string) {
         totalTaxPaid: Math.round(taxOnWithdrawal + decumSavingsTaxNominal),
         primaryTaxPaid: Math.round(priTaxRetirement + (profile.isCouplePlanning ? priSavingsTaxNominal : decumSavingsTaxNominal)),
         partnerTaxPaid: Math.round(profile.isCouplePlanning ? (partTaxRetirement + partSavingsTaxNominal) : 0),
-        primaryNetIncome: Math.round(Math.max(0, primaryGuaranteedTotal + giltLadderIncomeThisYear + primaryPensionDrawdown + primaryIsaDrawdown + primaryCashDrawdown - priTaxRetirement - (profile.isCouplePlanning ? priSavingsTaxNominal : decumSavingsTaxNominal))),
-        partnerNetIncome: Math.round(profile.isCouplePlanning ? Math.max(0, partnerGuaranteedTotal + partnerPensionDrawdown + partnerIsaDrawdown + partnerCashDrawdown - partTaxRetirement - partSavingsTaxNominal) : 0),
+        primaryNetIncome: Math.round(Math.max(0, primaryGuaranteedTotal + primaryGiltLadderIncomeThisYear + primaryPensionDrawdown + primaryIsaDrawdown + primaryCashDrawdown - priTaxRetirement - (profile.isCouplePlanning ? priSavingsTaxNominal : decumSavingsTaxNominal))),
+        partnerNetIncome: Math.round(profile.isCouplePlanning ? Math.max(0, partnerGuaranteedTotal + partnerGiltLadderIncomeThisYear + partnerPensionDrawdown + partnerIsaDrawdown + partnerCashDrawdown - partTaxRetirement - partSavingsTaxNominal) : 0),
         savingsInterestTax: Math.round(decumSavingsTaxNominal),
         personalSavingsAllowanceUsed: Math.round(decumPsaUsedNominal),
         netRetirementIncome: netRetirementIncomeNominal,

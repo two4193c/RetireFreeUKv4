@@ -1,7 +1,22 @@
-import { AssetAllocationConfig, AssetClassReturns, AssetAllocationSplit, InvestmentFeeConfig, SinglePotFeeConfig } from '../types';
+import { AssetAllocationConfig, AssetClassReturns, AssetAllocationSplit, InvestmentFeeConfig, SinglePotFeeConfig, PerPersonPotFees } from '../types';
 
 export function getTotalFeePercent(fees?: InvestmentFeeConfig): number {
   if (!fees || !fees.enabled) return 0;
+  if (fees.perPotFeesEnabled && fees.primaryPots) {
+    const pots = [
+      fees.primaryPots.workplacePension,
+      fees.primaryPots.sipp,
+      fees.primaryPots.stocksAndSharesIsa,
+      fees.primaryPots.gia,
+    ].filter(Boolean);
+    if (pots.length > 0) {
+      const sum = pots.reduce(
+        (acc, p) => acc + (p?.platformFeePercent ?? 0) + (p?.fundFeePercent ?? 0) + (p?.advisorFeePercent ?? 0),
+        0
+      );
+      return Math.round((sum / pots.length) * 100) / 100;
+    }
+  }
   const platform = fees.platformFeePercent ?? 0;
   const fund = fees.fundFeePercent ?? 0;
   const advisor = fees.advisorFeePercent ?? 0;
@@ -11,19 +26,35 @@ export function getTotalFeePercent(fees?: InvestmentFeeConfig): number {
 export function getPotFeePercent(
   fees?: InvestmentFeeConfig,
   owner: 'primary' | 'partner' = 'primary',
-  potType?: 'workplacePension' | 'sipp' | 'stocksAndSharesIsa' | 'cashIsa' | 'gia' | 'pension'
+  potType?: 'workplacePension' | 'sipp' | 'stocksAndSharesIsa' | 'cashIsa' | 'gia' | 'pension' | 'lisa' | 'cashSavings',
+  pensionBalances?: { workplacePensionBalance?: number; sippBalance?: number }
 ): number {
   if (!fees || !fees.enabled) return 0;
 
   if (fees.perPotFeesEnabled && potType) {
     const personPots = owner === 'partner' ? fees.partnerPots : fees.primaryPots;
     if (personPots) {
-      let potConfig: SinglePotFeeConfig | undefined = undefined;
       if (potType === 'pension') {
-        potConfig = personPots.workplacePension || personPots.sipp;
-      } else {
-        potConfig = personPots[potType];
+        const wpConfig = personPots.workplacePension;
+        const sippConfig = personPots.sipp;
+        const wpFee = wpConfig ? Math.max(0, (wpConfig.platformFeePercent ?? 0) + (wpConfig.fundFeePercent ?? 0) + (wpConfig.advisorFeePercent ?? 0)) : getTotalFeePercent(fees);
+        const sippFee = sippConfig ? Math.max(0, (sippConfig.platformFeePercent ?? 0) + (sippConfig.fundFeePercent ?? 0) + (sippConfig.advisorFeePercent ?? 0)) : getTotalFeePercent(fees);
+
+        if (pensionBalances) {
+          const wpBal = Math.max(0, pensionBalances.workplacePensionBalance || 0);
+          const sippBal = Math.max(0, pensionBalances.sippBalance || 0);
+          const total = wpBal + sippBal;
+          if (total > 0) {
+            return (wpBal * wpFee + sippBal * sippFee) / total;
+          }
+        }
+        if (wpConfig && !sippConfig) return wpFee;
+        if (!wpConfig && sippConfig) return sippFee;
+        return (wpFee + sippFee) / 2;
       }
+
+      const potKey = potType === 'lisa' ? 'stocksAndSharesIsa' : (potType === 'cashSavings' ? 'cashIsa' : potType);
+      const potConfig = personPots[potKey as keyof PerPersonPotFees];
 
       if (potConfig) {
         const platform = potConfig.platformFeePercent ?? 0;

@@ -821,6 +821,15 @@ export const AnnualBreakdownTable: React.FC<AnnualBreakdownTableProps> = ({
                     </span>
                   </div>
 
+                  {(showTaxBreakdownModal.estimatedInvestmentFees || 0) > 0 && (
+                    <div className="py-2 flex justify-between items-center">
+                      <span className="text-slate-500 dark:text-slate-400 font-medium">Investment & Adviser Fees:</span>
+                      <span className="font-extrabold text-rose-600 dark:text-rose-400">
+                        -£{(showTaxBreakdownModal.estimatedInvestmentFees || 0).toLocaleString()}
+                      </span>
+                    </div>
+                  )}
+
                   {showTaxBreakdownModal.isRetired ? (
                     <>
                       <div className="py-2 flex justify-between items-center">

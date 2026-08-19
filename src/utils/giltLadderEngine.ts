@@ -192,12 +192,19 @@ export function calculateGiltLadder(
   profile: UserProfile,
   pots?: InvestmentPots
 ): GiltLadderSummary {
-  const purchaseAge = Math.max(profile.currentAge, config.purchaseAge || config.startAge || profile.targetRetirementAge);
+  const isPartner = config.owner === 'partner';
+  const personCurrentAge = isPartner ? (profile.partnerCurrentAge ?? profile.currentAge) : profile.currentAge;
+  const personRetireAge = isPartner ? (profile.partnerTargetRetirementAge ?? profile.targetRetirementAge ?? 60) : profile.targetRetirementAge;
+  const personStatePensionAge = isPartner ? (profile.partnerStatePensionAge ?? profile.statePensionAge ?? 67) : (profile.statePensionAge || 67);
+  const personSalary = isPartner ? (profile.partnerGrossAnnualSalary ?? 0) : (profile.grossAnnualSalary || 50000);
+  const personDOB = isPartner ? profile.partnerDateOfBirth : profile.dateOfBirth;
+
+  const purchaseAge = Math.max(personCurrentAge, config.purchaseAge || config.startAge || personRetireAge);
   const durationYears = config.durationYears
     ? config.durationYears
     : config.endAge
     ? Math.max(1, config.endAge - purchaseAge)
-    : Math.max(1, Math.min(10, (profile.statePensionAge || 67) - purchaseAge));
+    : Math.max(1, Math.min(10, personStatePensionAge - purchaseAge));
 
   if (durationYears <= 0 || !config.targetAnnualIncome || config.targetAnnualIncome <= 0) {
     return {
@@ -219,14 +226,14 @@ export function calculateGiltLadder(
   }
 
   const currentYear = new Date().getFullYear();
-  const birthYear = profile.dateOfBirth
-    ? new Date(profile.dateOfBirth).getFullYear()
-    : currentYear - profile.currentAge;
+  const birthYear = personDOB
+    ? new Date(personDOB).getFullYear()
+    : currentYear - personCurrentAge;
 
   const couponTaxRate = getCouponTaxRate(
     config.fundingSource,
     config.taxBracketOverride,
-    profile.grossAnnualSalary || 50000
+    personSalary
   );
 
   const inflationRate = (profile.expectedInflationRate || 2.5) / 100;

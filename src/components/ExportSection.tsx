@@ -510,118 +510,215 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       const totalMortgagePages = 1;
 
       // Determine Sankey Milestones for Appendix 5
-      const isCouple = profile.maritalStatus === 'couple';
+      const isCouple = Boolean(profile.isCouplePlanning || profile.maritalStatus === 'couple');
+      const priName = profile.name || 'Primary';
+      const partName = profile.partnerName || 'Partner';
+      const partnerOffset = isCouple ? ((profile.partnerCurrentAge ?? profile.currentAge) - profile.currentAge) : 0;
+      const targetRetireAgeVal = targetAge;
+      const primaryAccessAgeVal = getPensionAccessAge(profile);
+      const partnerAccessAgeVal = isCouple ? getPartnerPensionAccessAge(profile) : primaryAccessAgeVal;
+      const primarySpaVal = profile.statePensionAge || 67;
+      const partnerSpaVal = isCouple ? (profile.partnerStatePensionAge || 67) : primarySpaVal;
+
+      interface RawMilestoneEvent {
+        primaryAge: number;
+        title: string;
+        subtitle: string;
+        phaseLabel: string;
+        priority: number;
+      }
+
+      const rawEvents: RawMilestoneEvent[] = [];
+
+      // 1. Accumulation Phase at Current Age
+      if (profile.currentAge < targetRetireAgeVal) {
+        rawEvents.push({
+          primaryAge: profile.currentAge,
+          title: `Accumulation Cash Flow — Current Age (${profile.currentAge})`,
+          subtitle: isCouple
+            ? 'Household earned income split by earner, statutory UK taxes, workplace pensions & ISA savings'
+            : 'Earned income, income tax, National Insurance, pension contributions & net living allocation',
+          phaseLabel: `Accumulation Phase (Age ${profile.currentAge})`,
+          priority: 1,
+        });
+      }
+
+      // 2. Primary Target Retirement
+      rawEvents.push({
+        primaryAge: targetRetireAgeVal,
+        title: `${isCouple ? `${priName} ` : ''}Target Retirement (Age ${targetRetireAgeVal})`,
+        subtitle: isCouple
+          ? `${priName} reaches target retirement age; initial decumulation drawdown, pot sequencing & tax deductions`
+          : 'Initial retirement drawdown, flexi-access pot withdrawals, income tax & living allocation',
+        phaseLabel: `Retirement Phase (Age ${targetRetireAgeVal})`,
+        priority: 2,
+      });
+
+      // 3. Partner Target Retirement (if couple and different primary age)
+      if (isCouple && profile.partnerTargetRetirementAge) {
+        const pAgeAtPartRet = profile.partnerTargetRetirementAge - partnerOffset;
+        if (pAgeAtPartRet >= profile.currentAge && pAgeAtPartRet <= horizonAge) {
+          rawEvents.push({
+            primaryAge: pAgeAtPartRet,
+            title: `${partName} Target Retirement (${partName} Age ${profile.partnerTargetRetirementAge})`,
+            subtitle: `${partName} reaches target retirement age; dual household decumulation & joint tax optimization`,
+            phaseLabel: `Partner Retirement (${partName} Age ${profile.partnerTargetRetirementAge})`,
+            priority: 3,
+          });
+        }
+      }
+
+      // 4. Primary Pension Access (NMPA)
+      if (primaryAccessAgeVal !== targetRetireAgeVal && primaryAccessAgeVal !== profile.currentAge && primaryAccessAgeVal <= horizonAge) {
+        rawEvents.push({
+          primaryAge: primaryAccessAgeVal,
+          title: `${isCouple ? `${priName} ` : ''}Private Pension Access (NMPA Age ${primaryAccessAgeVal})`,
+          subtitle: `Earliest private pension access milestone — DC pension pot access & 25% PCLS liquidity`,
+          phaseLabel: `Private Pension Access (Age ${primaryAccessAgeVal})`,
+          priority: 4,
+        });
+      }
+
+      // 5. Partner Pension Access (NMPA)
+      if (isCouple) {
+        const pAgeAtPartNmpa = partnerAccessAgeVal - partnerOffset;
+        if (pAgeAtPartNmpa !== primaryAccessAgeVal && pAgeAtPartNmpa >= profile.currentAge && pAgeAtPartNmpa <= horizonAge) {
+          rawEvents.push({
+            primaryAge: pAgeAtPartNmpa,
+            title: `${partName} Private Pension Access (${partName} Age ${partnerAccessAgeVal})`,
+            subtitle: `${partName} reaches private pension access — Partner DC pot liquidity & tax-free cash extraction`,
+            phaseLabel: `Partner Pension Access (${partName} Age ${partnerAccessAgeVal})`,
+            priority: 5,
+          });
+        }
+      }
+
+      // 6. Primary State Pension Start Age
+      if (profile.includeStatePension ?? true) {
+        if (primarySpaVal >= profile.currentAge && primarySpaVal <= horizonAge) {
+          rawEvents.push({
+            primaryAge: primarySpaVal,
+            title: `${isCouple ? `${priName} ` : ''}State Pension Start (Age ${primarySpaVal})`,
+            subtitle: `Guaranteed DWP State Pension commencement (£${Math.round(profile.statePensionAnnualAmount || 11502).toLocaleString()}/yr Triple-Lock floor)`,
+            phaseLabel: `State Pension Age (${primarySpaVal})`,
+            priority: 6,
+          });
+        }
+      }
+
+      // 7. Partner State Pension Start Age
+      if (isCouple && (profile.partnerIncludeStatePension ?? true)) {
+        const pAgeAtPartSpa = partnerSpaVal - partnerOffset;
+        if (pAgeAtPartSpa >= profile.currentAge && pAgeAtPartSpa <= horizonAge) {
+          rawEvents.push({
+            primaryAge: pAgeAtPartSpa,
+            title: `${partName} State Pension Start (${partName} Age ${partnerSpaVal})`,
+            subtitle: `${partName} DWP State Pension commencement (£${Math.round(profile.partnerStatePensionAnnualAmount || 11502).toLocaleString()}/yr guaranteed floor)`,
+            phaseLabel: `Partner State Pension (${partName} Age ${partnerSpaVal})`,
+            priority: 7,
+          });
+        }
+      }
+
+      // 8. Primary UK Gilt Ladder Execution
+      if (profile.giltLadderConfig?.enabled) {
+        const priGiltAge = Math.max(profile.currentAge, profile.giltLadderConfig.purchaseAge ?? profile.giltLadderConfig.startAge ?? targetRetireAgeVal);
+        if (priGiltAge <= horizonAge) {
+          rawEvents.push({
+            primaryAge: priGiltAge,
+            title: `${isCouple ? `${priName} ` : ''}UK Gilt Ladder Purchase (Age ${priGiltAge})`,
+            subtitle: `Capital deployed to purchase a ${profile.giltLadderConfig.durationYears || 5}-year UK Gilt ladder delivering £${Math.round(profile.giltLadderConfig.targetAnnualIncome || 25000).toLocaleString()}/yr fixed income`,
+            phaseLabel: `Gilt Ladder Execution (Age ${priGiltAge})`,
+            priority: 8,
+          });
+        }
+      }
+
+      // 9. Partner UK Gilt Ladder Execution
+      if (isCouple && profile.partnerGiltLadderConfig?.enabled) {
+        const partGiltAge = Math.max(profile.partnerCurrentAge ?? profile.currentAge, profile.partnerGiltLadderConfig.purchaseAge ?? profile.partnerGiltLadderConfig.startAge ?? (profile.partnerTargetRetirementAge ?? 60));
+        const pAgeAtPartGilt = partGiltAge - partnerOffset;
+        if (pAgeAtPartGilt >= profile.currentAge && pAgeAtPartGilt <= horizonAge) {
+          rawEvents.push({
+            primaryAge: pAgeAtPartGilt,
+            title: `${partName} UK Gilt Ladder Purchase (${partName} Age ${partGiltAge})`,
+            subtitle: `Capital deployed for ${partName}'s ${profile.partnerGiltLadderConfig.durationYears || 5}-year UK Gilt ladder delivering £${Math.round(profile.partnerGiltLadderConfig.targetAnnualIncome || 25000).toLocaleString()}/yr fixed income`,
+            phaseLabel: `Partner Gilt Ladder (${partName} Age ${partGiltAge})`,
+            priority: 9,
+          });
+        }
+      }
+
+      // 10. Property Right-Sizing
+      if (profile.propertyDownsizePlan?.enabled) {
+        const dsAge = profile.propertyDownsizePlan.downsizeAge || 68;
+        if (dsAge >= profile.currentAge && dsAge <= horizonAge) {
+          rawEvents.push({
+            primaryAge: dsAge,
+            title: `Property Right-Sizing Event (Age ${dsAge})`,
+            subtitle: `Equity released (£${Math.round(profile.propertyDownsizePlan.expectedReleaseAmount || 0).toLocaleString()}) from property downsizing injected into liquid retirement pots`,
+            phaseLabel: `Right-Sizing Event (Age ${dsAge})`,
+            priority: 10,
+          });
+        }
+      }
+
+      // 11. Custom Decumulation Life Events (Major items)
+      (profile.decumulationLifeEvents || []).filter(e => e.enabled && e.amount > 0).forEach((ev, evIdx) => {
+        const isPart = ev.owner === 'partner';
+        const pAgeAtEv = isPart ? ev.age - partnerOffset : ev.age;
+        if (pAgeAtEv >= profile.currentAge && pAgeAtEv <= horizonAge) {
+          rawEvents.push({
+            primaryAge: pAgeAtEv,
+            title: `${isPart ? `${partName} ` : ''}Life Event: ${ev.name} (${isPart ? `${partName} Age ${ev.age}` : `Age ${ev.age}`})`,
+            subtitle: `${ev.type === 'income' ? 'Lump sum inflow' : 'Major capital expenditure'} of £${Math.round(ev.amount).toLocaleString()} (${ev.targetPot || 'General'} pot)`,
+            phaseLabel: `Life Event (Age ${pAgeAtEv})`,
+            priority: 11 + evIdx,
+          });
+        }
+      });
+
+      // Group raw events by unique primaryAge
+      const groupedByAge = new Map<number, RawMilestoneEvent[]>();
+      rawEvents.forEach((ev) => {
+        const existing = groupedByAge.get(ev.primaryAge) || [];
+        existing.push(ev);
+        groupedByAge.set(ev.primaryAge, existing);
+      });
+
+      // Sort ages ascending
+      const sortedAges = Array.from(groupedByAge.keys()).sort((a, b) => a - b);
+
       const sankeyMilestones: {
         title: string;
         subtitle: string;
         age: number;
         viewMode: 'combined' | 'split' | 'primary' | 'partner';
         phaseLabel: string;
-      }[] = [];
+      }[] = sortedAges.map((age, idx) => {
+        const events = groupedByAge.get(age)!;
+        const milestoneNum = idx + 1;
 
-      // 1. Accumulation Phase at Current Age
-      if (profile.currentAge < targetAge) {
-        sankeyMilestones.push({
-          title: `Milestone 1: Accumulation Cash Flow — Current Age (${profile.currentAge})`,
-          subtitle: isCouple
-            ? 'Household earned income split by earner, statutory UK taxes, workplace pensions & ISA savings'
-            : 'Earned income, income tax, National Insurance, pension contributions & net living allocation',
-          age: profile.currentAge,
-          viewMode: isCouple ? 'split' : 'combined',
-          phaseLabel: `Accumulation Phase (Age ${profile.currentAge})`,
-        });
-      }
-
-      // 2. Target Retirement Age(s)
-      if (isCouple && (profile.partnerTargetRetirementAge && profile.partnerTargetRetirementAge !== targetAge)) {
-        sankeyMilestones.push({
-          title: `Milestone 2a: Retirement Cash Flow — Primary Target Retirement Age (${targetAge})`,
-          subtitle: `${profile.name || 'Primary'} reaches target retirement age; transition into decumulation drawdown`,
-          age: targetAge,
-          viewMode: 'split',
-          phaseLabel: `Retirement Phase (Age ${targetAge})`,
-        });
-        const partnerRetireAge = profile.partnerTargetRetirementAge;
-        sankeyMilestones.push({
-          title: `Milestone 2b: Retirement Cash Flow — Partner Target Retirement Age (${partnerRetireAge})`,
-          subtitle: `${profile.partnerName || 'Partner'} reaches target retirement age; combined household decumulation`,
-          age: partnerRetireAge,
-          viewMode: 'split',
-          phaseLabel: `Retirement Phase (Age ${partnerRetireAge})`,
-        });
-      } else {
-        sankeyMilestones.push({
-          title: `Milestone 2: Retirement Cash Flow — Target Retirement Age (${targetAge})`,
-          subtitle: isCouple
-            ? 'Initial retirement drawdown, pot extraction sequencing, tax deductions & lifestyle allocation (Split View)'
-            : 'Initial retirement drawdown, flexi-access pot withdrawals, income tax & living allocation',
-          age: targetAge,
-          viewMode: isCouple ? 'split' : 'combined',
-          phaseLabel: `Retirement Phase (Age ${targetAge})`,
-        });
-      }
-
-      // 3. Private Pension Access Age(s)
-      const primaryAccessAgeVal = getPensionAccessAge(profile);
-      const partnerAccessAgeVal = isCouple ? getPartnerPensionAccessAge(profile) : primaryAccessAgeVal;
-
-      if (primaryAccessAgeVal !== targetAge && primaryAccessAgeVal !== profile.currentAge) {
-        sankeyMilestones.push({
-          title: `Milestone 3${isCouple && partnerAccessAgeVal !== primaryAccessAgeVal ? 'a' : ''}: Private Pension Access Age (${primaryAccessAgeVal})`,
-          subtitle: `Earliest private pension access milestone (Age ${primaryAccessAgeVal}) — DC pension pot access & PCLS liquidity`,
-          age: primaryAccessAgeVal,
-          viewMode: isCouple ? 'split' : 'combined',
-          phaseLabel: `Private Pension Access (Age ${primaryAccessAgeVal})`,
-        });
-      }
-
-      if (isCouple && partnerAccessAgeVal !== primaryAccessAgeVal && partnerAccessAgeVal !== targetAge && partnerAccessAgeVal !== profile.currentAge) {
-        sankeyMilestones.push({
-          title: `Milestone 3b: Partner Private Pension Access Age (${partnerAccessAgeVal})`,
-          subtitle: `${profile.partnerName || 'Partner'} reaches private pension access (Age ${partnerAccessAgeVal})`,
-          age: partnerAccessAgeVal,
-          viewMode: 'split',
-          phaseLabel: `Partner Private Pension Access (Age ${partnerAccessAgeVal})`,
-        });
-      }
-
-      // 4. State Pension Start Age(s)
-      const primarySpaVal = profile.statePensionAge || 67;
-      const partnerSpaVal = isCouple ? (profile.partnerStatePensionAge || 67) : primarySpaVal;
-
-      if (primarySpaVal !== targetAge && primarySpaVal !== primaryAccessAgeVal && primarySpaVal !== profile.currentAge) {
-        sankeyMilestones.push({
-          title: `Milestone 4${isCouple && partnerSpaVal !== primarySpaVal ? 'a' : ''}: State Pension Start Age (${primarySpaVal})`,
-          subtitle: `Guaranteed DWP State Pension commencement (Age ${primarySpaVal}) reducing reliance on flexible pot drawdown`,
-          age: primarySpaVal,
-          viewMode: isCouple ? 'split' : 'combined',
-          phaseLabel: `State Pension Age (${primarySpaVal})`,
-        });
-      }
-
-      if (isCouple && partnerSpaVal !== primarySpaVal && partnerSpaVal !== targetAge && partnerSpaVal !== partnerAccessAgeVal && partnerSpaVal !== profile.currentAge) {
-        sankeyMilestones.push({
-          title: `Milestone 4b: Partner State Pension Start Age (${partnerSpaVal})`,
-          subtitle: `${profile.partnerName || 'Partner'} DWP State Pension commencement (Age ${partnerSpaVal})`,
-          age: partnerSpaVal,
-          viewMode: 'split',
-          phaseLabel: `Partner State Pension Age (${partnerSpaVal})`,
-        });
-      }
-
-      // 5. Property Right-Sizing Event
-      if (profile.propertyDownsizePlan?.enabled) {
-        const dsAge = profile.propertyDownsizePlan.downsizeAge;
-        if (dsAge >= profile.currentAge && !sankeyMilestones.find(m => m.age === dsAge)) {
-          sankeyMilestones.push({
-            title: `Milestone 5: Property Right-Sizing Event (Age ${dsAge})`,
-            subtitle: 'Equity released from property downsizing injected into retirement pots',
-            age: dsAge,
-            viewMode: isCouple ? 'split' : 'combined',
-            phaseLabel: `Right-Sizing Event (Age ${dsAge})`,
-          });
+        let title = `Milestone ${milestoneNum}: `;
+        if (events.length === 1) {
+          title += events[0].title;
+        } else {
+          // Multi-event combined title
+          const mainTitles = events.map(e => e.title.replace(/\s*\(.*?\)\s*/g, '').trim());
+          title += `${mainTitles.join(' & ')} (Age ${age})`;
         }
-      }
+
+        const subtitle = events.map(e => e.subtitle).join(' • ');
+        const phaseLabel = events[0].phaseLabel;
+
+        return {
+          title,
+          subtitle,
+          age,
+          viewMode: isCouple ? 'split' : 'combined',
+          phaseLabel,
+        };
+      });
 
       const totalSankeyPages = sankeyMilestones.length;
       const totalTimelinePages = 1;
@@ -6420,7 +6517,6 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
         }[] = [];
 
         const curAge = profile.currentAge || 40;
-        const targetRetireAgeVal = profile.targetRetirementAge || 60;
         const maxLifeAge = profile.lifeExpectancyAge || 90;
         const minAgeSpan = Math.min(curAge, 35);
         const totalSpanYears = Math.max(1, maxLifeAge - minAgeSpan);
@@ -6493,8 +6589,8 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
         pdfMilestones.push({
           label: `${profile.name || 'Primary'} Target Retirement`,
           shortLabel: 'Retirement',
-          age: targetRetireAgeVal,
-          year: baseYear + (targetRetireAgeVal - curAge),
+          age: targetAge,
+          year: baseYear + (targetAge - curAge),
           color: [139, 92, 246],
           category: 'Core',
           impact: 'Active employment ceases; decumulation drawdown begins',
@@ -6506,7 +6602,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
         if (isCouple && profile.partnerTargetRetirementAge) {
           const partOff = (profile.partnerCurrentAge || curAge) - curAge;
           const pAgeAtPartRet = profile.partnerTargetRetirementAge - partOff;
-          if (pAgeAtPartRet !== targetRetireAgeVal) {
+          if (pAgeAtPartRet !== targetAge) {
             pdfMilestones.push({
               label: `${profile.partnerName || 'Partner'} Target Retirement`,
               shortLabel: 'Partner Retire',
@@ -6552,32 +6648,30 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
         });
 
         // 9. Partner State Pension
-        if (isCouple) {
+        if (isCouple && (profile.partnerIncludeStatePension ?? true)) {
           const partSpa = profile.partnerStatePensionAge || 67;
           const partOff = (profile.partnerCurrentAge || curAge) - curAge;
           const pAgeAtPartSpa = partSpa - partOff;
-          if (pAgeAtPartSpa !== pSpa) {
-            pdfMilestones.push({
-              label: `${profile.partnerName || 'Partner'} State Pension`,
-              shortLabel: 'Partner State Pen.',
-              age: pAgeAtPartSpa,
-              year: baseYear + (pAgeAtPartSpa - curAge),
-              color: [129, 140, 248],
-              category: 'Pension',
-              impact: 'Partner DWP State Pension floor commences',
-              owner: profile.partnerName || 'Partner',
-              level: 3,
-            });
-          }
+          pdfMilestones.push({
+            label: `${profile.partnerName || 'Partner'} State Pension`,
+            shortLabel: 'Partner State Pen.',
+            age: pAgeAtPartSpa,
+            year: baseYear + (pAgeAtPartSpa - curAge),
+            color: [129, 140, 248],
+            category: 'Pension',
+            impact: 'Partner DWP State Pension floor commences',
+            owner: profile.partnerName || 'Partner',
+            level: 3,
+          });
         }
 
-        // 10. UK Gilt Ladder Purchase
+        // 10. UK Gilt Ladder Purchase (Primary)
         if (profile.giltLadderConfig?.enabled) {
-          const gPurchaseAge = profile.giltLadderConfig.purchaseAge ?? profile.giltLadderConfig.startAge ?? targetRetireAgeVal;
+          const gPurchaseAge = profile.giltLadderConfig.purchaseAge ?? profile.giltLadderConfig.startAge ?? targetAge;
           const gDur = profile.giltLadderConfig.durationYears || 5;
           const gAmt = profile.giltLadderConfig.targetAnnualIncome || 25000;
           pdfMilestones.push({
-            label: 'UK Gilt Ladder Purchase',
+            label: `${isCouple ? `${profile.name || 'Primary'} ` : ''}UK Gilt Ladder Purchase`,
             shortLabel: 'Gilt Ladder',
             age: gPurchaseAge,
             year: baseYear + (gPurchaseAge - curAge),
@@ -6586,6 +6680,26 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
             impact: `Purchase ${gDur}-yr UK Gilt ladder (£${Math.round(gAmt).toLocaleString()}/yr 0% CGT payout from age ${gPurchaseAge + 1})`,
             owner: profile.name || 'Primary',
             level: 2,
+          });
+        }
+
+        // 10b. UK Gilt Ladder Purchase (Partner)
+        if (isCouple && profile.partnerGiltLadderConfig?.enabled) {
+          const partGPurchaseAge = profile.partnerGiltLadderConfig.purchaseAge ?? profile.partnerGiltLadderConfig.startAge ?? (profile.partnerTargetRetirementAge ?? 60);
+          const partOff = (profile.partnerCurrentAge || curAge) - curAge;
+          const pAgeAtPartGilt = partGPurchaseAge - partOff;
+          const gDur = profile.partnerGiltLadderConfig.durationYears || 5;
+          const gAmt = profile.partnerGiltLadderConfig.targetAnnualIncome || 25000;
+          pdfMilestones.push({
+            label: `${profile.partnerName || 'Partner'} UK Gilt Ladder Purchase`,
+            shortLabel: 'Partner Gilt',
+            age: pAgeAtPartGilt,
+            year: baseYear + (pAgeAtPartGilt - curAge),
+            color: [5, 150, 105],
+            category: 'Pension',
+            impact: `Purchase ${gDur}-yr UK Gilt ladder (£${Math.round(gAmt).toLocaleString()}/yr 0% CGT payout from ${profile.partnerName || 'Partner'} age ${partGPurchaseAge + 1})`,
+            owner: profile.partnerName || 'Partner',
+            level: 3,
           });
         }
 
@@ -6607,14 +6721,14 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
           });
         });
 
-        // 12. Annuity Purchase
+        // 12. Annuity Purchase (Primary)
         const hasAnnuityExport =
           profile.incomeProductOption === 'annuity' ||
           profile.incomeProductOption === 'hybrid' ||
           (profile.annuityFloorMode && profile.annuityFloorMode !== 'none');
 
         if (hasAnnuityExport) {
-          const annPurchaseAge = profile.annuityPurchaseAge || profile.annuityFloorAge || targetRetireAgeVal;
+          const annPurchaseAge = profile.annuityPurchaseAge || profile.annuityFloorAge || targetAge;
           const annAllocPct = profile.annuityAllocationPercent || (profile.incomeProductOption === 'hybrid' ? 50 : 100);
           pdfMilestones.push({
             label: `${profile.name || 'Primary'} Annuity Purchase`,
@@ -6629,17 +6743,43 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
           });
         }
 
+        // 12b. Annuity Purchase (Partner)
+        const hasPartAnnuityExport = isCouple && (
+          profile.partnerIncomeProductOption === 'annuity' ||
+          profile.partnerIncomeProductOption === 'hybrid'
+        );
+        if (hasPartAnnuityExport) {
+          const partAnnPurchaseAge = profile.partnerAnnuityPurchaseAge || (profile.partnerTargetRetirementAge ?? 60);
+          const partOff = (profile.partnerCurrentAge || curAge) - curAge;
+          const pAgeAtPartAnn = partAnnPurchaseAge - partOff;
+          const partAnnAllocPct = profile.partnerAnnuityAllocationPercent || (profile.partnerIncomeProductOption === 'hybrid' ? 50 : 100);
+          pdfMilestones.push({
+            label: `${profile.partnerName || 'Partner'} Annuity Purchase`,
+            shortLabel: 'Partner Annuity',
+            age: pAgeAtPartAnn,
+            year: baseYear + (pAgeAtPartAnn - curAge),
+            color: [217, 119, 6],
+            category: 'Pension',
+            impact: `Purchase guaranteed lifetime annuity (${partAnnAllocPct}% of partner pension pot)`,
+            owner: profile.partnerName || 'Partner',
+            level: 3,
+          });
+        }
+
         // 13. Custom Decumulation Events
         (profile.decumulationLifeEvents || []).filter(e => e.enabled).forEach(ev => {
+          const isPart = ev.owner === 'partner';
+          const partOff = isPart ? ((profile.partnerCurrentAge || curAge) - curAge) : 0;
+          const pAgeAtEv = ev.age - partOff;
           pdfMilestones.push({
-            label: ev.name,
+            label: `${isPart ? `${profile.partnerName || 'Partner'}: ` : ''}${ev.name}`,
             shortLabel: ev.name.length > 15 ? ev.name.substring(0, 13) + '..' : ev.name,
-            age: ev.age,
-            year: baseYear + (ev.age - curAge),
+            age: pAgeAtEv,
+            year: baseYear + (pAgeAtEv - curAge),
             color: ev.type === 'income' ? [16, 185, 129] : [236, 72, 153],
             category: 'Life Event',
             impact: `${ev.type === 'income' ? '+' : '-'}£${Math.round(ev.amount).toLocaleString()} (${ev.targetPot || 'General'} pot)`,
-            owner: ev.owner === 'partner' ? (profile.partnerName || 'Partner') : (profile.name || 'Primary'),
+            owner: isPart ? (profile.partnerName || 'Partner') : (profile.name || 'Primary'),
             level: 1,
           });
         });

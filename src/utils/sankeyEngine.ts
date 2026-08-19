@@ -693,7 +693,7 @@ export function computeCashFlowSankeyData(
     const priStatePension = p.primaryStatePensionReceived ?? p.statePensionReceived ?? 0;
     const priDbPension = p.primaryDbPensionIncomeReceived ?? p.dbPensionIncomeReceived ?? 0;
     const priAnnuity = p.primaryAnnuityIncomeReceived ?? p.annuityIncomeReceived ?? 0;
-    const priGiltLadder = p.giltLadderIncomeReceived ?? 0;
+    const priGiltLadder = p.primaryGiltLadderIncomeReceived ?? (isCouple ? ((p.giltLadderIncomeReceived || 0) * 0.5) : (p.giltLadderIncomeReceived || 0));
     const priTaxableFixed = p.primaryTaxableFixedIncomeReceived ?? (isCouple ? ((p.taxableFixedIncomeReceived || 0) * 0.5) : (p.taxableFixedIncomeReceived || 0));
     const priTaxFreeFixed = p.primaryTaxFreeFixedIncomeReceived ?? (isCouple ? ((p.taxFreeFixedIncomeReceived || 0) * 0.5) : (p.taxFreeFixedIncomeReceived || 0));
     const priPensionDrawdownTaxable = p.primaryPensionDrawdownTaxable ?? (isCouple ? ((p.pensionDrawdownTaxable || 0) * 0.5) : (p.pensionDrawdownTaxable || 0));
@@ -701,7 +701,7 @@ export function computeCashFlowSankeyData(
     const priPensionDrawdownTotal = p.primaryPensionDrawdown ?? (priPensionDrawdownTaxable + priPensionDrawdownTaxFree);
     const priIsaDrawdown = p.primaryIsaDrawdown ?? (isCouple ? ((p.isaDrawdown || 0) * 0.5) : (p.isaDrawdown || 0));
     const priCashDrawdown = p.primaryCashDrawdown ?? (isCouple ? ((p.cashDrawdown || 0) * 0.5) : (p.cashDrawdown || 0));
-    const priLifeEventsInc = p.lifeEventsIncome || 0;
+    const priLifeEventsInc = p.primaryLifeEventsIncome ?? (isCouple ? ((p.lifeEventsIncome || 0) * 0.5) : (p.lifeEventsIncome || 0));
     const priDownsizeInc = p.propertyDownsizeEquityReleased ? (isCouple ? p.propertyDownsizeEquityReleased * 0.5 : p.propertyDownsizeEquityReleased) : 0;
     const priTaxPaid = p.primaryTaxPaid ?? (isCouple ? ((p.totalTaxPaid || 0) * 0.5) : (p.totalTaxPaid || 0));
 
@@ -723,6 +723,7 @@ export function computeCashFlowSankeyData(
     const partStatePension = isCouple ? (p.partnerStatePensionReceived || 0) : 0;
     const partDbPension = isCouple ? (p.partnerDbPensionIncomeReceived || 0) : 0;
     const partAnnuity = isCouple ? (p.partnerAnnuityIncomeReceived || 0) : 0;
+    const partGiltLadder = isCouple ? (p.partnerGiltLadderIncomeReceived || 0) : 0;
     const partTaxableFixed = isCouple ? (p.partnerTaxableFixedIncomeReceived || 0) : 0;
     const partTaxFreeFixed = isCouple ? (p.partnerTaxFreeFixedIncomeReceived || 0) : 0;
     const partPensionDrawdownTaxable = isCouple ? (p.partnerPensionDrawdownTaxable || 0) : 0;
@@ -730,7 +731,7 @@ export function computeCashFlowSankeyData(
     const partPensionDrawdownTotal = isCouple ? (p.partnerPensionDrawdown ?? (partPensionDrawdownTaxable + partPensionDrawdownTaxFree)) : 0;
     const partIsaDrawdown = isCouple ? (p.partnerIsaDrawdown || 0) : 0;
     const partCashDrawdown = isCouple ? (p.partnerCashDrawdown || 0) : 0;
-    const partLifeEventsInc = 0;
+    const partLifeEventsInc = isCouple ? (p.partnerLifeEventsIncome ?? 0) : 0;
     const partDownsizeInc = isCouple && p.propertyDownsizeEquityReleased ? p.propertyDownsizeEquityReleased * 0.5 : 0;
     const partTaxPaid = isCouple ? (p.partnerTaxPaid || 0) : 0;
 
@@ -738,6 +739,7 @@ export function computeCashFlowSankeyData(
       partStatePension +
       partDbPension +
       partAnnuity +
+      partGiltLadder +
       partTaxableFixed +
       partTaxFreeFixed +
       partLifeEventsInc +
@@ -930,6 +932,17 @@ export function computeCashFlowSankeyData(
           column: 0,
         });
       }
+      if (partGiltLadder > 0) {
+        nodes.push({
+          id: 'part_gilt_ladder',
+          label: `${partnerName} Gilt Ladder`,
+          sublabel: 'Maturing Gilts & Net Coupons',
+          amount: partGiltLadder,
+          color: '#059669',
+          category: 'source',
+          column: 0,
+        });
+      }
       if (partTaxableFixed + partTaxFreeFixed > 0) {
         nodes.push({
           id: 'part_fixed',
@@ -970,6 +983,17 @@ export function computeCashFlowSankeyData(
           sublabel: 'Cash & GIA Capital',
           amount: partCashDrawdown,
           color: '#fbbf24',
+          category: 'source',
+          column: 0,
+        });
+      }
+      if (partLifeEventsInc > 0) {
+        nodes.push({
+          id: 'part_life_events',
+          label: `${partnerName} Life Event`,
+          sublabel: p.decumulationLifeEventsSummary || 'Downsizing / Lump Sum',
+          amount: partLifeEventsInc,
+          color: '#06b6d4',
           category: 'source',
           column: 0,
         });
@@ -1019,10 +1043,12 @@ export function computeCashFlowSankeyData(
       if (partStatePension > 0) links.push({ sourceId: 'part_state_pension', targetId: 'part_retire_hub', amount: partStatePension, color: '#a855f7' });
       if (partDbPension > 0) links.push({ sourceId: 'part_db_pension', targetId: 'part_retire_hub', amount: partDbPension, color: '#38bdf8' });
       if (partAnnuity > 0) links.push({ sourceId: 'part_annuity', targetId: 'part_retire_hub', amount: partAnnuity, color: '#f472b6' });
+      if (partGiltLadder > 0) links.push({ sourceId: 'part_gilt_ladder', targetId: 'part_retire_hub', amount: partGiltLadder, color: '#059669' });
       if (partTaxableFixed + partTaxFreeFixed > 0) links.push({ sourceId: 'part_fixed', targetId: 'part_retire_hub', amount: partTaxableFixed + partTaxFreeFixed, color: '#2dd4bf' });
       if (partPensionDrawdownTotal > 0) links.push({ sourceId: 'part_pension_dd', targetId: 'part_retire_hub', amount: partPensionDrawdownTotal, color: '#34d399' });
       if (partIsaDrawdown > 0) links.push({ sourceId: 'part_isa_dd', targetId: 'part_retire_hub', amount: partIsaDrawdown, color: '#818cf8' });
       if (partCashDrawdown > 0) links.push({ sourceId: 'part_cash_dd', targetId: 'part_retire_hub', amount: partCashDrawdown, color: '#fbbf24' });
+      if (partLifeEventsInc > 0) links.push({ sourceId: 'part_life_events', targetId: 'part_retire_hub', amount: partLifeEventsInc, color: '#06b6d4' });
       if (partDownsizeInc > 0) links.push({ sourceId: 'part_downsize', targetId: 'part_retire_hub', amount: partDownsizeInc, color: '#d97706' });
 
       // Column 2: Tax Deductions & Spendable Hubs
@@ -1210,7 +1236,7 @@ export function computeCashFlowSankeyData(
         statePension = partStatePension;
         dbPension = partDbPension;
         annuity = partAnnuity;
-        giltLadder = 0;
+        giltLadder = partGiltLadder;
         taxableFixed = partTaxableFixed;
         taxFreeFixed = partTaxFreeFixed;
         pensionDrawdownTaxable = partPensionDrawdownTaxable;

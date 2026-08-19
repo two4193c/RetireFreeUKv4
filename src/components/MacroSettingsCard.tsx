@@ -1,5 +1,5 @@
 import React from 'react';
-import { UserProfile, PerPersonPotAllocations, PotReturnOverrides, AssetAllocationSplit } from '../types';
+import { UserProfile, InvestmentPots, PerPersonPotAllocations, PotReturnOverrides, AssetAllocationSplit } from '../types';
 import { DEFAULT_POT_RETURN_OVERRIDES, DEFAULT_ASSET_ALLOCATION_SPLIT } from '../utils/defaultData';
 import { calculateWeightedAssetReturn } from '../utils/assetAllocation';
 import { InvestmentFeesCard } from './InvestmentFeesCard';
@@ -7,10 +7,11 @@ import { TrendingUp, Percent, Flame, Sparkles, Shield, RotateCcw, Sliders, Layer
 
 interface MacroSettingsCardProps {
   profile: UserProfile;
+  pots?: InvestmentPots;
   onChange: (updatedProfile: UserProfile) => void;
 }
 
-export const MacroSettingsCard: React.FC<MacroSettingsCardProps> = ({ profile, onChange }) => {
+export const MacroSettingsCard: React.FC<MacroSettingsCardProps> = ({ profile, pots, onChange }) => {
   const preReturn = profile.expectedInvestmentReturn ?? 6.5;
   const postReturn = profile.postRetirementReturn ?? 4.5;
   const inflation = profile.expectedInflationRate ?? 2.5;
@@ -824,7 +825,7 @@ export const MacroSettingsCard: React.FC<MacroSettingsCardProps> = ({ profile, o
       </div>
 
       {/* Investment, Platform & Adviser Fees Section */}
-      <InvestmentFeesCard profile={profile} onChange={onChange} />
+      <InvestmentFeesCard profile={profile} pots={pots} onChange={onChange} />
 
     </div>
   );
