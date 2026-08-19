@@ -8,7 +8,7 @@ import { FileText, Download, Printer, CheckCircle2, Sparkles, ShieldCheck, Arrow
 import { getProjectedPensionAtTakeAge, getPensionAccessAge, getPartnerPensionAccessAge, calculateUKTax, calculatePartnerUKTax, calculateMaxPcls, calculatePartnerMaxPcls, getLumpSumTakeAge, getPartnerLumpSumTakeAge } from '../utils/ukTaxEngine';
 import { runMonteCarloSimulation } from '../utils/monteCarloEngine';
 import { runHistoricSimulation } from '../utils/historicModelingEngine';
-import { getTargetIncomeForAge } from '../utils/projectionEngine';
+import { getTargetIncomeForAge, generateProjections } from '../utils/projectionEngine';
 import { generatePlanNarrative } from '../utils/pdfNarrativeGenerator';
 import { computePlanInsights } from '../utils/planInsightsEngine';
 import { generateFormulaExcelWorkbook } from '../utils/excelFormulaExporter';
@@ -66,6 +66,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
         'ISA Pot (£)',
         'Cash/GIA Pot (£)',
         'Total Portfolio (£)',
+        'Estimated Investment & Adviser Fees (£)',
         'State Pension (£)',
         'DB Pension (£)',
         'Annuity Payout (£)',
@@ -86,6 +87,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
         p.isaPot || 0,
         p.cashGiaPot || 0,
         p.totalPot || 0,
+        p.estimatedInvestmentFees || 0,
         p.statePensionReceived || 0,
         p.dbPensionIncomeReceived || 0,
         p.annuityIncomeReceived || 0,
@@ -2154,9 +2156,16 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       }
 
       const feePots: PdfPotFeeRow[] = [];
-      const addFeePotRow = (potName: string, ownerName: string, balance: number, ownerKey: 'primary' | 'partner', potKey: 'workplacePension' | 'sipp' | 'stocksAndSharesIsa' | 'cashIsa' | 'gia') => {
+      const addFeePotRow = (
+        potName: string,
+        ownerName: string,
+        balance: number,
+        ownerKey: 'primary' | 'partner',
+        potKey: 'workplacePension' | 'sipp' | 'stocksAndSharesIsa' | 'cashIsa' | 'gia' | 'lisa' | 'cashSavings'
+      ) => {
         if (balance <= 0) return;
-        const potOverride = (isPerPotFees && feeConfig[ownerKey === 'partner' ? 'partnerPots' : 'primaryPots']?.[potKey]);
+        const mappedPotKey = potKey === 'lisa' ? 'stocksAndSharesIsa' : potKey === 'cashSavings' ? 'cashIsa' : potKey;
+        const potOverride = (isPerPotFees && feeConfig[ownerKey === 'partner' ? 'partnerPots' : 'primaryPots']?.[mappedPotKey]);
         const plat = potOverride?.platformFeePercent !== undefined ? potOverride.platformFeePercent : globalPlatformFee;
         const fnd = potOverride?.fundFeePercent !== undefined ? potOverride.fundFeePercent : globalFundFee;
         const adv = potOverride?.advisorFeePercent !== undefined ? potOverride.advisorFeePercent : globalAdvisorFee;
@@ -2165,18 +2174,22 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
         feePots.push({ name: potName, owner: ownerName, balance, platform: plat, fund: fnd, advisor: adv, total: tot, dragPounds: drag });
       };
 
-      addFeePotRow('Workplace Pension', primaryName, profile.workplacePensionBalance || 0, 'primary', 'workplacePension');
-      addFeePotRow('SIPP (Personal Pension)', primaryName, profile.sippBalance || 0, 'primary', 'sipp');
-      addFeePotRow('Stocks & Shares ISA', primaryName, profile.stocksAndSharesIsaBalance || 0, 'primary', 'stocksAndSharesIsa');
-      addFeePotRow('Cash ISA', primaryName, profile.cashIsaBalance || 0, 'primary', 'cashIsa');
-      addFeePotRow('GIA (General Inv.)', primaryName, profile.giaBalance || 0, 'primary', 'gia');
+      addFeePotRow('Workplace Pension', primaryName, pots?.workplacePensionBalance ?? profile.workplacePensionBalance ?? 0, 'primary', 'workplacePension');
+      addFeePotRow('SIPP (Personal Pension)', primaryName, pots?.sippBalance ?? profile.sippBalance ?? 0, 'primary', 'sipp');
+      addFeePotRow('Stocks & Shares ISA', primaryName, pots?.stocksAndSharesIsaBalance ?? profile.stocksAndSharesIsaBalance ?? 0, 'primary', 'stocksAndSharesIsa');
+      addFeePotRow('Lifetime ISA (LISA)', primaryName, pots?.lisaBalance ?? profile.lisaBalance ?? 0, 'primary', 'lisa');
+      addFeePotRow('Cash ISA', primaryName, pots?.cashIsaBalance ?? profile.cashIsaBalance ?? 0, 'primary', 'cashIsa');
+      addFeePotRow('GIA (General Inv.)', primaryName, pots?.giaBalance ?? profile.giaBalance ?? 0, 'primary', 'gia');
+      addFeePotRow('Cash Savings', primaryName, pots?.cashSavingsBalance ?? profile.cashSavingsBalance ?? 0, 'primary', 'cashSavings');
 
       if (profile.isCouplePlanning) {
-        addFeePotRow('Workplace Pension', partnerName || 'Partner', profile.partnerWorkplacePensionBalance || 0, 'partner', 'workplacePension');
-        addFeePotRow('SIPP (Personal Pension)', partnerName || 'Partner', profile.partnerSippBalance || 0, 'partner', 'sipp');
-        addFeePotRow('Stocks & Shares ISA', partnerName || 'Partner', profile.partnerIsaBalance || 0, 'partner', 'stocksAndSharesIsa');
-        addFeePotRow('Cash ISA', partnerName || 'Partner', profile.partnerCashIsaBalance || 0, 'partner', 'cashIsa');
-        addFeePotRow('GIA (General Inv.)', partnerName || 'Partner', profile.partnerGiaBalance || 0, 'partner', 'gia');
+        addFeePotRow('Workplace Pension', partnerName || 'Partner', profile.partnerPots?.workplacePensionBalance ?? profile.partnerWorkplacePensionBalance ?? 0, 'partner', 'workplacePension');
+        addFeePotRow('SIPP (Personal Pension)', partnerName || 'Partner', profile.partnerPots?.sippBalance ?? profile.partnerSippBalance ?? 0, 'partner', 'sipp');
+        addFeePotRow('Stocks & Shares ISA', partnerName || 'Partner', profile.partnerPots?.stocksAndSharesIsaBalance ?? profile.partnerIsaBalance ?? 0, 'partner', 'stocksAndSharesIsa');
+        addFeePotRow('Lifetime ISA (LISA)', partnerName || 'Partner', profile.partnerPots?.lisaBalance ?? 0, 'partner', 'lisa');
+        addFeePotRow('Cash ISA', partnerName || 'Partner', profile.partnerPots?.cashIsaBalance ?? profile.partnerCashIsaBalance ?? 0, 'partner', 'cashIsa');
+        addFeePotRow('GIA (General Inv.)', partnerName || 'Partner', profile.partnerPots?.giaBalance ?? profile.partnerGiaBalance ?? 0, 'partner', 'gia');
+        addFeePotRow('Cash Savings', partnerName || 'Partner', profile.partnerPots?.cashSavingsBalance ?? 0, 'partner', 'cashSavings');
       }
 
       const totalFeeInvestedPots = feePots.reduce((sum, p) => sum + p.balance, 0);
@@ -2191,18 +2204,60 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       const compNetMult = Math.pow(1 + rNet, yearsDrag);
       const estimatedCompoundedDragPounds = Math.round(totalFeeInvestedPots * Math.max(0, compGrossMult - compNetMult));
 
-      const feeBoxH = 22 + (Math.max(1, feePots.length) * 4.8) + 9;
-      if (p2Y + feeBoxH > 275) {
+      // Calculate baseline (0% fees) and active projections trajectory for the visual chart
+      const baselineProfile: UserProfile = {
+        ...profile,
+        investmentFees: {
+          ...feeConfig,
+          enabled: false,
+        },
+      };
+      const baselineProjs = generateProjections(baselineProfile, pots);
+      const activeProjs = isFeeEnabled ? (projections && projections.length > 0 ? projections : generateProjections(profile, pots)) : baselineProjs;
+
+      const feeTrajectory = (activeProjs || []).map((p, idx) => {
+        const baseP = baselineProjs[idx] || p;
+        const grossPot = Math.max(0, Math.round(baseP.totalPot || 0));
+        const netPot = Math.max(0, Math.round(p.totalPot || 0));
+        const dragGap = Math.max(0, grossPot - netPot);
+        const annualFee = Math.max(0, Math.round(p.estimatedInvestmentFees || 0));
+        return {
+          age: p.age,
+          grossPot,
+          netPot,
+          dragGap,
+          annualFee,
+        };
+      });
+
+      const retPoint = feeTrajectory.find((t) => t.age === targetAge) || feeTrajectory[0];
+      const endPoint = feeTrajectory[feeTrajectory.length - 1] || retPoint;
+
+      const terminalGross = endPoint?.grossPot || 0;
+      const terminalNet = endPoint?.netPot || 0;
+      const terminalDragPounds = Math.max(0, terminalGross - terminalNet);
+      const terminalDragPct = terminalGross > 0 ? (terminalDragPounds / terminalGross) * 100 : 0;
+
+      const retirementGross = retPoint?.grossPot || 0;
+      const retirementNet = retPoint?.netPot || 0;
+      const retirementDragPounds = Math.max(0, retirementGross - retirementNet);
+      const retirementDragPct = retirementGross > 0 ? (retirementDragPounds / retirementGross) * 100 : 0;
+
+      const feeTableBoxH = 22 + (Math.max(1, feePots.length) * 4.8) + 9;
+      const feeChartH = 58;
+      const totalSection8aH = feeTableBoxH + feeChartH + 4;
+
+      if (p2Y + totalSection8aH > 275) {
         doc.addPage();
         curPageNum++;
-        renderPageHeader('Investment, Platform & Adviser Fees Analysis', curPageNum);
+        renderPageHeader('Investment Returns, Fees & Macro Assumptions', curPageNum);
         p2Y = 24;
       }
 
       doc.setFillColor(248, 250, 252);
-      doc.roundedRect(14, p2Y, 182, feeBoxH, 2.5, 2.5, 'F');
+      doc.roundedRect(14, p2Y, 182, feeTableBoxH, 2.5, 2.5, 'F');
       doc.setDrawColor(226, 232, 240);
-      doc.roundedRect(14, p2Y, 182, feeBoxH, 2.5, 2.5, 'D');
+      doc.roundedRect(14, p2Y, 182, feeTableBoxH, 2.5, 2.5, 'D');
 
       // Title & Status
       doc.setFont('helvetica', 'bold');
@@ -2296,6 +2351,191 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       doc.setFontSize(6.2);
       doc.setTextColor(100, 116, 139);
       doc.text(`  Projected Compounded Growth Drag over ${yearsDrag} Years: ~£${estimatedCompoundedDragPounds.toLocaleString()} in reduced terminal wealth.`, 18, fBoxY + 7);
+
+      // =========================================================================
+      // VECTOR CHART: COMPOUNDED WEALTH TRAJECTORY (GROSS VS NET OF FEES)
+      // =========================================================================
+      const fChartY = p2Y + feeTableBoxH + 4;
+      doc.setFillColor(248, 250, 252);
+      doc.roundedRect(14, fChartY, 182, feeChartH, 2.5, 2.5, 'F');
+      doc.setDrawColor(226, 232, 240);
+      doc.roundedRect(14, fChartY, 182, feeChartH, 2.5, 2.5, 'D');
+
+      // Chart Header
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8.5);
+      doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+      doc.text('Visual Model: Compounded Wealth Trajectory (Gross 0.00% Baseline vs Net of All Fees)', 18, fChartY + 5.5);
+
+      // Mini KPI badges strip inside chart
+      const cKpiW = 56;
+      const chartKpis = [
+        { label: 'Initial Annual Drag', val: `£${totalAnnualFeeDragPounds.toLocaleString()}/yr`, col: [225, 29, 72] },
+        { label: `Retirement Gap (Age ${targetAge})`, val: `-£${Math.round(retirementDragPounds).toLocaleString()} (-${retirementDragPct.toFixed(1)}%)`, col: [217, 119, 6] },
+        { label: 'Terminal Wealth Drag', val: `-£${Math.round(terminalDragPounds).toLocaleString()} (-${terminalDragPct.toFixed(1)}%)`, col: [79, 70, 229] },
+      ];
+
+      chartKpis.forEach((kp, i) => {
+        const kx = 18 + i * (cKpiW + 3);
+        doc.setFillColor(255, 255, 255);
+        doc.roundedRect(kx, fChartY + 8, cKpiW, 6, 1, 1, 'F');
+        doc.setDrawColor(226, 232, 240);
+        doc.roundedRect(kx, fChartY + 8, cKpiW, 6, 1, 1, 'D');
+        doc.setFontSize(5.2);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(100, 116, 139);
+        doc.text(kp.label + ':', kx + 2, fChartY + 11.8);
+        doc.setFontSize(6.2);
+        doc.setTextColor(kp.col[0], kp.col[1], kp.col[2]);
+        doc.text(kp.val, kx + 26, fChartY + 11.8);
+      });
+
+      // Chart Plotting Metrics
+      const cLeft = 32;
+      const cRight = 188;
+      const cWidth = cRight - cLeft;
+      const cTop = fChartY + 17;
+      const cBottom = fChartY + 45;
+      const cHeight = cBottom - cTop;
+
+      const maxPotVal = Math.max(1, ...feeTrajectory.map((t) => Math.max(t.grossPot, t.netPot)));
+
+      // Y-axis gridlines & scale labels
+      doc.setDrawColor(226, 232, 240);
+      doc.setFontSize(6);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100, 116, 139);
+
+      const fYSteps = [1.0, 0.66, 0.33, 0];
+      fYSteps.forEach((sPct) => {
+        const sy = cTop + (1 - sPct) * cHeight;
+        doc.line(cLeft, sy, cRight, sy);
+        const sVal = maxPotVal * sPct;
+        const fmtVal = sVal >= 1000000 ? `£${(sVal / 1000000).toFixed(1)}M` : `£${Math.round(sVal / 1000)}k`;
+        doc.text(fmtVal, 16, sy + 1.5);
+      });
+
+      // X-axis age progression mapping
+      const minAge = feeTrajectory[0]?.age || currentAge;
+      const maxAge = feeTrajectory[feeTrajectory.length - 1]?.age || horizonAge;
+      const ageSpan = Math.max(1, maxAge - minAge);
+
+      const getTrajectoryX = (age: number) => {
+        const pct = Math.max(0, Math.min(1, (age - minAge) / ageSpan));
+        return cLeft + pct * cWidth;
+      };
+
+      const getTrajectoryY = (val: number) => {
+        const pct = Math.max(0, Math.min(1, val / maxPotVal));
+        return cBottom - pct * cHeight;
+      };
+
+      // X-Axis Milestone Ticks
+      const fMilestones = [minAge, profile.pensionAccessAge || 57, targetAge, profile.statePensionAge || 67, 75, maxAge];
+      const uniqueFMilestones = Array.from(new Set(fMilestones)).filter((a) => a >= minAge && a <= maxAge).sort((a, b) => a - b);
+      uniqueFMilestones.forEach((mAge) => {
+        const tx = getTrajectoryX(mAge);
+        doc.line(tx, cBottom, tx, cBottom + 1.8);
+        doc.text(`Age ${mAge}`, tx - 4.5, cBottom + 4.5);
+      });
+
+      // Vertical dashed line for Retirement Age
+      if (targetAge >= minAge && targetAge <= maxAge) {
+        const retX = getTrajectoryX(targetAge);
+        doc.setDrawColor(245, 158, 11);
+        doc.setLineWidth(0.3);
+        for (let dy = cTop; dy < cBottom; dy += 2.5) {
+          doc.line(retX, dy, retX, Math.min(dy + 1.5, cBottom));
+        }
+        doc.setFontSize(5);
+        doc.setTextColor(217, 119, 6);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Retirement (Age ${targetAge})`, retX - 9, cTop - 1.2);
+      }
+
+      // Draw Trajectory Curves & Shading
+      if (feeTrajectory.length > 1) {
+        // Draw Shaded Gap between Gross and Net
+        doc.setFillColor(254, 226, 226); // Soft rose tint
+        for (let i = 0; i < feeTrajectory.length - 1; i++) {
+          const pt1 = feeTrajectory[i];
+          const pt2 = feeTrajectory[i + 1];
+          const x1 = getTrajectoryX(pt1.age);
+          const x2 = getTrajectoryX(pt2.age);
+          const yg1 = getTrajectoryY(pt1.grossPot);
+          const yn1 = getTrajectoryY(pt1.netPot);
+          const yg2 = getTrajectoryY(pt2.grossPot);
+          const yn2 = getTrajectoryY(pt2.netPot);
+
+          if (yn1 > yg1 || yn2 > yg2) {
+            doc.triangle(x1, yg1, x2, yg2, x2, yn2, 'F');
+            doc.triangle(x1, yg1, x2, yn2, x1, yn1, 'F');
+          }
+        }
+
+        // Draw Gross Wealth Line (Emerald)
+        doc.setDrawColor(16, 185, 129);
+        doc.setLineWidth(0.65);
+        for (let i = 0; i < feeTrajectory.length - 1; i++) {
+          const pt1 = feeTrajectory[i];
+          const pt2 = feeTrajectory[i + 1];
+          doc.line(getTrajectoryX(pt1.age), getTrajectoryY(pt1.grossPot), getTrajectoryX(pt2.age), getTrajectoryY(pt2.grossPot));
+        }
+
+        // Draw Net Wealth Line (Indigo)
+        doc.setDrawColor(79, 70, 229);
+        doc.setLineWidth(0.85);
+        for (let i = 0; i < feeTrajectory.length - 1; i++) {
+          const pt1 = feeTrajectory[i];
+          const pt2 = feeTrajectory[i + 1];
+          doc.line(getTrajectoryX(pt1.age), getTrajectoryY(pt1.netPot), getTrajectoryX(pt2.age), getTrajectoryY(pt2.netPot));
+        }
+
+        // Milestone point circles
+        [retPoint, endPoint].forEach((pt) => {
+          if (pt) {
+            const px = getTrajectoryX(pt.age);
+            doc.setFillColor(16, 185, 129);
+            doc.circle(px, getTrajectoryY(pt.grossPot), 0.7, 'F');
+            doc.setFillColor(79, 70, 229);
+            doc.circle(px, getTrajectoryY(pt.netPot), 0.7, 'F');
+          }
+        });
+      }
+
+      // Legend Strip at Bottom of Chart
+      const lgY = fChartY + 51.5;
+      doc.setFontSize(6.2);
+      doc.setFont('helvetica', 'bold');
+
+      // Gross legend
+      doc.setDrawColor(16, 185, 129);
+      doc.setLineWidth(0.8);
+      doc.line(20, lgY + 1.2, 26, lgY + 1.2);
+      doc.setFillColor(16, 185, 129);
+      doc.circle(23, lgY + 1.2, 0.6, 'F');
+      doc.setTextColor(16, 185, 129);
+      doc.text('Gross Wealth (0.00% Fees Baseline)', 28, lgY + 2.2);
+
+      // Net legend
+      doc.setDrawColor(79, 70, 229);
+      doc.setLineWidth(1.0);
+      doc.line(82, lgY + 1.2, 88, lgY + 1.2);
+      doc.setFillColor(79, 70, 229);
+      doc.circle(85, lgY + 1.2, 0.6, 'F');
+      doc.setTextColor(79, 70, 229);
+      doc.text('Net Wealth (With Platform, Fund & Adviser Charges)', 90, lgY + 2.2);
+
+      // Shaded Drag legend
+      doc.setFillColor(254, 226, 226);
+      doc.rect(156, lgY, 3.5, 2.5, 'F');
+      doc.setDrawColor(225, 29, 72);
+      doc.rect(156, lgY, 3.5, 2.5, 'D');
+      doc.setTextColor(225, 29, 72);
+      doc.text('Compounded Fee Drag Area', 161, lgY + 2.2);
+
+      // Advance p2Y by the total section height
+      p2Y += totalSection8aH;
 
       // =========================================================================
       // PAGE 5: SPENDING PHASES, RETIREMENT INCOME PRODUCTS & MILESTONES
@@ -3528,24 +3768,38 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       doc.setTextColor(51, 65, 85);
       doc.setFontSize(7.5);
 
+      const partCurAge = profile.partnerCurrentAge ?? currentAge;
       const priPurAge = isPriAnnuity ? Math.max(profile.pensionAccessAge || 57, profile.annuityPurchaseAge || (profile.targetRetirementAge || 60)) : undefined;
       const partPurAge = (profile.isCouplePlanning && isPartAnnuity) ? Math.max(profile.partnerPensionAccessAge || 57, profile.partnerAnnuityPurchaseAge || (profile.partnerTargetRetirementAge || targetAge)) : undefined;
       const priStateAge = profile.statePensionAge || 67;
       const partStateAge = profile.isCouplePlanning ? (profile.partnerStatePensionAge || profile.statePensionAge || 67) : undefined;
+      const priAccessAge = profile.pensionAccessAge || 57;
+      const partAccessAge = profile.isCouplePlanning ? (profile.partnerPensionAccessAge || 57) : undefined;
+      const partRetAge = profile.isCouplePlanning ? (profile.partnerTargetRetirementAge || targetAge) : undefined;
+
+      // Map partner milestone ages to primary projection ages so partner milestones appear accurately
+      const priAgeAtPartState = partStateAge !== undefined ? currentAge + (partStateAge - partCurAge) : undefined;
+      const priAgeAtPartPur = partPurAge !== undefined ? currentAge + (partPurAge - partCurAge) : undefined;
+      const priAgeAtPartAccess = partAccessAge !== undefined ? currentAge + (partAccessAge - partCurAge) : undefined;
+      const priAgeAtPartRet = partRetAge !== undefined ? currentAge + (partRetAge - partCurAge) : undefined;
 
       const milestoneAgesSet = new Set([
         currentAge,
-        profile.pensionAccessAge || 57,
+        priAccessAge,
         targetAge,
         priStateAge,
-        ...(partStateAge !== undefined ? [partStateAge] : []),
+        ...(priAgeAtPartAccess !== undefined ? [priAgeAtPartAccess] : []),
+        ...(priAgeAtPartRet !== undefined ? [priAgeAtPartRet] : []),
+        ...(priAgeAtPartState !== undefined ? [priAgeAtPartState] : []),
         ...(priPurAge !== undefined ? [priPurAge] : []),
-        ...(partPurAge !== undefined ? [partPurAge] : []),
+        ...(priAgeAtPartPur !== undefined ? [priAgeAtPartPur] : []),
         75,
         horizonAge
       ]);
 
-      const milestoneYears = (projections || []).filter((p) => milestoneAgesSet.has(p.age)).sort((a, b) => a.age - b.age);
+      const milestoneYears = (projections || [])
+        .filter((p) => milestoneAgesSet.has(p.age))
+        .sort((a, b) => a.age - b.age);
 
       milestoneYears.forEach((p, idx) => {
         if (idx % 2 === 1) {

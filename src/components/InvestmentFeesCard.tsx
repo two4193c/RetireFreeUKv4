@@ -1,8 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
+import {
+  ResponsiveContainer,
+  ComposedChart,
+  Area,
+  Line,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  CartesianGrid,
+  ReferenceLine,
+} from 'recharts';
 import { UserProfile, InvestmentPots, InvestmentFeeConfig, PerPersonPotFees, SinglePotFeeConfig } from '../types';
 import { DEFAULT_INVESTMENT_FEES, DEFAULT_SINGLE_POT_FEE } from '../utils/defaultData';
 import { getTotalFeePercent, getPotFeePercent } from '../utils/assetAllocation';
-import { Receipt, User, Users, Sliders, Layers, Sparkles } from 'lucide-react';
+import { generateProjections } from '../utils/projectionEngine';
+import {
+  Receipt,
+  User,
+  Users,
+  Sliders,
+  Layers,
+  Sparkles,
+  TrendingDown,
+  BarChart3,
+  LineChart as LineChartIcon,
+  AlertCircle,
+  ArrowDownRight,
+  ShieldCheck,
+  PieChart,
+  Wallet,
+} from 'lucide-react';
 
 interface InvestmentFeesCardProps {
   profile: UserProfile;
@@ -16,6 +46,7 @@ export const InvestmentFeesCard: React.FC<InvestmentFeesCardProps> = ({ profile,
   const perPotFeesEnabled = Boolean(feeConfig.perPotFeesEnabled);
 
   const [activePersonTab, setActivePersonTab] = useState<'primary' | 'partner'>('primary');
+  const [chartViewMode, setChartViewMode] = useState<'trajectory' | 'breakdown'>('trajectory');
 
   const preReturn = profile.expectedInvestmentReturn ?? 6.5;
   const postReturn = profile.postRetirementReturn ?? 4.5;
@@ -84,15 +115,19 @@ export const InvestmentFeesCard: React.FC<InvestmentFeesCardProps> = ({ profile,
   const primaryWorkplaceBal = pots?.workplacePensionBalance ?? profile.workplacePensionBalance ?? 0;
   const primarySippBal = pots?.sippBalance ?? profile.sippBalance ?? 0;
   const primaryIsaBal = pots?.stocksAndSharesIsaBalance ?? profile.stocksAndSharesIsaBalance ?? 0;
+  const primaryLisaBal = pots?.lisaBalance ?? profile.lisaBalance ?? 0;
   const primaryCashIsaBal = pots?.cashIsaBalance ?? profile.cashIsaBalance ?? 0;
   const primaryGiaBal = pots?.giaBalance ?? profile.giaBalance ?? 0;
+  const primaryCashSavingsBal = pots?.cashSavingsBalance ?? profile.cashSavingsBalance ?? 0;
 
   const partnerPotsObj = profile.partnerPots;
   const partnerWorkplaceBal = partnerPotsObj?.workplacePensionBalance ?? profile.partnerWorkplacePensionBalance ?? 0;
   const partnerSippBal = partnerPotsObj?.sippBalance ?? profile.partnerSippBalance ?? 0;
   const partnerIsaBal = partnerPotsObj?.stocksAndSharesIsaBalance ?? profile.partnerIsaBalance ?? 0;
+  const partnerLisaBal = partnerPotsObj?.lisaBalance ?? 0;
   const partnerCashIsaBal = partnerPotsObj?.cashIsaBalance ?? profile.partnerCashIsaBalance ?? 0;
   const partnerGiaBal = partnerPotsObj?.giaBalance ?? profile.partnerGiaBalance ?? 0;
+  const partnerCashSavingsBal = partnerPotsObj?.cashSavingsBalance ?? 0;
 
   // Calculate annual drag for all pots
   const calculatePotDragPounds = (balance: number, feePercent: number) => Math.round((balance || 0) * (feePercent / 100));
@@ -100,39 +135,49 @@ export const InvestmentFeesCard: React.FC<InvestmentFeesCardProps> = ({ profile,
   const primaryWorkplaceFee = getPotFeePercent(feeConfig, 'primary', 'workplacePension');
   const primarySippFee = getPotFeePercent(feeConfig, 'primary', 'sipp');
   const primaryIsaFee = getPotFeePercent(feeConfig, 'primary', 'stocksAndSharesIsa');
+  const primaryLisaFee = getPotFeePercent(feeConfig, 'primary', 'stocksAndSharesIsa');
   const primaryCashIsaFee = getPotFeePercent(feeConfig, 'primary', 'cashIsa');
   const primaryGiaFee = getPotFeePercent(feeConfig, 'primary', 'gia');
+  const primaryCashSavingsFee = getPotFeePercent(feeConfig, 'primary', 'cashIsa');
 
   const partnerWorkplaceFee = getPotFeePercent(feeConfig, 'partner', 'workplacePension');
   const partnerSippFee = getPotFeePercent(feeConfig, 'partner', 'sipp');
   const partnerIsaFee = getPotFeePercent(feeConfig, 'partner', 'stocksAndSharesIsa');
+  const partnerLisaFee = getPotFeePercent(feeConfig, 'partner', 'stocksAndSharesIsa');
   const partnerCashIsaFee = getPotFeePercent(feeConfig, 'partner', 'cashIsa');
   const partnerGiaFee = getPotFeePercent(feeConfig, 'partner', 'gia');
+  const partnerCashSavingsFee = getPotFeePercent(feeConfig, 'partner', 'cashIsa');
 
   const primaryWorkplaceDrag = calculatePotDragPounds(primaryWorkplaceBal, primaryWorkplaceFee);
   const primarySippDrag = calculatePotDragPounds(primarySippBal, primarySippFee);
   const primaryIsaDrag = calculatePotDragPounds(primaryIsaBal, primaryIsaFee);
+  const primaryLisaDrag = calculatePotDragPounds(primaryLisaBal, primaryLisaFee);
   const primaryCashIsaDrag = calculatePotDragPounds(primaryCashIsaBal, primaryCashIsaFee);
   const primaryGiaDrag = calculatePotDragPounds(primaryGiaBal, primaryGiaFee);
+  const primaryCashSavingsDrag = calculatePotDragPounds(primaryCashSavingsBal, primaryCashSavingsFee);
 
   const partnerWorkplaceDrag = profile.isCouplePlanning ? calculatePotDragPounds(partnerWorkplaceBal, partnerWorkplaceFee) : 0;
   const partnerSippDrag = profile.isCouplePlanning ? calculatePotDragPounds(partnerSippBal, partnerSippFee) : 0;
   const partnerIsaDrag = profile.isCouplePlanning ? calculatePotDragPounds(partnerIsaBal, partnerIsaFee) : 0;
+  const partnerLisaDrag = profile.isCouplePlanning ? calculatePotDragPounds(partnerLisaBal, partnerLisaFee) : 0;
   const partnerCashIsaDrag = profile.isCouplePlanning ? calculatePotDragPounds(partnerCashIsaBal, partnerCashIsaFee) : 0;
   const partnerGiaDrag = profile.isCouplePlanning ? calculatePotDragPounds(partnerGiaBal, partnerGiaFee) : 0;
+  const partnerCashSavingsDrag = profile.isCouplePlanning ? calculatePotDragPounds(partnerCashSavingsBal, partnerCashSavingsFee) : 0;
 
   const totalAnnualFeeDragPounds =
-    primaryWorkplaceDrag + primarySippDrag + primaryIsaDrag + primaryCashIsaDrag + primaryGiaDrag +
-    partnerWorkplaceDrag + partnerSippDrag + partnerIsaDrag + partnerCashIsaDrag + partnerGiaDrag;
+    primaryWorkplaceDrag + primarySippDrag + primaryIsaDrag + primaryLisaDrag + primaryCashIsaDrag + primaryGiaDrag + primaryCashSavingsDrag +
+    partnerWorkplaceDrag + partnerSippDrag + partnerIsaDrag + partnerLisaDrag + partnerCashIsaDrag + partnerGiaDrag + partnerCashSavingsDrag;
 
   const totalInvestedPots =
     primaryWorkplaceBal +
     primarySippBal +
     primaryIsaBal +
+    primaryLisaBal +
     primaryCashIsaBal +
     primaryGiaBal +
+    primaryCashSavingsBal +
     (profile.isCouplePlanning
-      ? partnerWorkplaceBal + partnerSippBal + partnerIsaBal + partnerCashIsaBal + partnerGiaBal
+      ? partnerWorkplaceBal + partnerSippBal + partnerIsaBal + partnerLisaBal + partnerCashIsaBal + partnerGiaBal + partnerCashSavingsBal
       : 0);
 
   const averageOverallFeePercent = totalInvestedPots > 0 ? (totalAnnualFeeDragPounds / totalInvestedPots) * 100 : globalFeePercent;
@@ -178,8 +223,139 @@ export const InvestmentFeesCard: React.FC<InvestmentFeesCardProps> = ({ profile,
     },
   ];
 
+  // Fee Drag Trajectory & Impact Analytics (Comparative Projections)
+  const { trajectoryData, potBreakdownData, kpis } = useMemo(() => {
+    // 1. Gross Baseline Projections (0% Fees)
+    const baselineProfile: UserProfile = {
+      ...profile,
+      investmentFees: {
+        ...feeConfig,
+        enabled: false,
+      },
+    };
+    const baselineProjs = generateProjections(baselineProfile, pots);
+
+    // 2. Active Projections (With Fees Deducted)
+    const activeProjs = isEnabled
+      ? generateProjections(profile, pots)
+      : baselineProjs;
+
+    let cumulativeDragSum = 0;
+    let totalLifetimeFeePayments = 0;
+
+    const trajectory = (activeProjs || []).map((p, idx) => {
+      const baseP = baselineProjs[idx] || p;
+      const grossPot = Math.max(0, Math.round(baseP.totalPot || 0));
+      const netPot = Math.max(0, Math.round(p.totalPot || 0));
+      const annualFee = Math.max(0, Math.round(p.estimatedInvestmentFees || 0));
+      const potGap = Math.max(0, grossPot - netPot);
+
+      totalLifetimeFeePayments += annualFee;
+      cumulativeDragSum = potGap;
+
+      return {
+        age: p.age,
+        year: p.year,
+        grossPot,
+        netPot,
+        dragGap: potGap,
+        annualFee,
+        isRetired: p.isRetired,
+      };
+    });
+
+    // Retirement milestone
+    const targetAge = profile.targetRetirementAge || 60;
+    const retPoint = trajectory.find((t) => t.age === targetAge) || trajectory[0];
+    const endPoint = trajectory[trajectory.length - 1] || retPoint;
+
+    const terminalGross = endPoint?.grossPot || 0;
+    const terminalNet = endPoint?.netPot || 0;
+    const terminalDragPounds = Math.max(0, terminalGross - terminalNet);
+    const terminalDragPercent = terminalGross > 0 ? (terminalDragPounds / terminalGross) * 100 : 0;
+
+    const retirementGross = retPoint?.grossPot || 0;
+    const retirementNet = retPoint?.netPot || 0;
+    const retirementDragPounds = Math.max(0, retirementGross - retirementNet);
+    const retirementDragPercent = retirementGross > 0 ? (retirementDragPounds / retirementGross) * 100 : 0;
+
+    // Pot breakdown dataset for bar chart
+    const breakdown = [
+      {
+        name: 'Workplace Pension',
+        primaryDrag: primaryWorkplaceDrag,
+        partnerDrag: partnerWorkplaceDrag,
+        primaryFee: primaryWorkplaceFee,
+        partnerFee: partnerWorkplaceFee,
+        totalDrag: primaryWorkplaceDrag + partnerWorkplaceDrag,
+      },
+      {
+        name: 'SIPP (Pension)',
+        primaryDrag: primarySippDrag,
+        partnerDrag: partnerSippDrag,
+        primaryFee: primarySippFee,
+        partnerFee: partnerSippFee,
+        totalDrag: primarySippDrag + partnerSippDrag,
+      },
+      {
+        name: 'Stocks & Shares ISA',
+        primaryDrag: primaryIsaDrag,
+        partnerDrag: partnerIsaDrag,
+        primaryFee: primaryIsaFee,
+        partnerFee: partnerIsaFee,
+        totalDrag: primaryIsaDrag + partnerIsaDrag,
+      },
+      {
+        name: 'Lifetime ISA',
+        primaryDrag: primaryLisaDrag,
+        partnerDrag: partnerLisaDrag,
+        primaryFee: primaryLisaFee,
+        partnerFee: partnerLisaFee,
+        totalDrag: primaryLisaDrag + partnerLisaDrag,
+      },
+      {
+        name: 'GIA (Taxable)',
+        primaryDrag: primaryGiaDrag,
+        partnerDrag: partnerGiaDrag,
+        primaryFee: primaryGiaFee,
+        partnerFee: partnerGiaFee,
+        totalDrag: primaryGiaDrag + partnerGiaDrag,
+      },
+      {
+        name: 'Cash / Savings',
+        primaryDrag: primaryCashIsaDrag + primaryCashSavingsDrag,
+        partnerDrag: partnerCashIsaDrag + partnerCashSavingsDrag,
+        primaryFee: primaryCashIsaFee,
+        partnerFee: partnerCashIsaFee,
+        totalDrag: primaryCashIsaDrag + primaryCashSavingsDrag + partnerCashIsaDrag + partnerCashSavingsDrag,
+      },
+    ].filter((item) => item.totalDrag > 0 || totalInvestedPots === 0);
+
+    return {
+      trajectoryData: trajectory,
+      potBreakdownData: breakdown,
+      kpis: {
+        terminalGross,
+        terminalNet,
+        terminalDragPounds,
+        terminalDragPercent,
+        retirementGross,
+        retirementNet,
+        retirementDragPounds,
+        retirementDragPercent,
+        totalLifetimeFeePayments,
+      },
+    };
+  }, [profile, pots, feeConfig, isEnabled, totalInvestedPots, primaryWorkplaceDrag, primarySippDrag, primaryIsaDrag, primaryLisaDrag, primaryCashIsaDrag, primaryGiaDrag, primaryCashSavingsDrag, partnerWorkplaceDrag, partnerSippDrag, partnerIsaDrag, partnerLisaDrag, partnerCashIsaDrag, partnerGiaDrag, partnerCashSavingsDrag, primaryWorkplaceFee, primarySippFee, primaryIsaFee, primaryLisaFee, primaryCashIsaFee, primaryGiaFee, partnerWorkplaceFee, partnerSippFee, partnerIsaFee, partnerLisaFee, partnerCashIsaFee, partnerGiaFee]);
+
+  const formatPounds = (val: number) => {
+    if (Math.abs(val) >= 1000000) return `£${(val / 1000000).toFixed(2)}M`;
+    if (Math.abs(val) >= 1000) return `£${(val / 1000).toFixed(0)}k`;
+    return `£${Math.round(val)}`;
+  };
+
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-xs space-y-5 transition-colors">
+    <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-xs space-y-6 transition-colors">
       {/* Header & Toggle */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
         <div className="flex items-center gap-3.5">
@@ -192,11 +368,11 @@ export const InvestmentFeesCard: React.FC<InvestmentFeesCardProps> = ({ profile,
                 Investment, Platform & Adviser Fees
               </h3>
               <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-950 text-indigo-800 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
-                Fee Drag Model
+                Fee Drag Model & Visualiser
               </span>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Account for the compound drag of platform custody, fund management (OCF/AMC), and ongoing financial advice fees.
+              Quantify and visualise the compound drag of platform custody, fund management (OCF/AMC), and ongoing adviser fees.
             </p>
           </div>
         </div>
@@ -213,7 +389,253 @@ export const InvestmentFeesCard: React.FC<InvestmentFeesCardProps> = ({ profile,
       </div>
 
       {isEnabled ? (
-        <div className="space-y-5">
+        <div className="space-y-6">
+          {/* ========================================================================= */}
+          {/* VISUALISATION SECTION: COMPARATIVE TRAJECTORY & DRAG BREAKDOWN */}
+          {/* ========================================================================= */}
+          <div className="p-4 sm:p-5 bg-gradient-to-br from-slate-50 via-indigo-50/20 to-slate-50 dark:from-slate-800/60 dark:via-indigo-950/20 dark:to-slate-800/60 rounded-2xl border border-indigo-100 dark:border-indigo-900/50 space-y-4">
+            {/* Visualiser Header & View Switcher */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200/60 dark:border-slate-700/60">
+              <div className="flex items-center gap-2">
+                <TrendingDown className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                <h4 className="text-xs font-extrabold text-slate-900 dark:text-slate-100">
+                  Interactive Fee Drag Impact Visualiser
+                </h4>
+                <span className="text-[10px] px-2 py-0.5 font-bold rounded-md bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800/60">
+                  Gross 0% vs Net Comparison
+                </span>
+              </div>
+
+              <div className="inline-flex p-0.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shrink-0 self-start sm:self-auto">
+                <button
+                  type="button"
+                  onClick={() => setChartViewMode('trajectory')}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                    chartViewMode === 'trajectory'
+                      ? 'bg-indigo-600 text-white shadow-xs'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  <LineChartIcon className="w-3.5 h-3.5" />
+                  Growth Trajectory (Gross vs Net)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setChartViewMode('breakdown')}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                    chartViewMode === 'breakdown'
+                      ? 'bg-indigo-600 text-white shadow-xs'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  <BarChart3 className="w-3.5 h-3.5" />
+                  Pot-by-Pot Annual Drag (£/yr)
+                </button>
+              </div>
+            </div>
+
+            {/* KPI Cards Strip */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700/80 space-y-1">
+                <span className="text-[10px] font-extrabold uppercase text-slate-400 block tracking-wider">
+                  Initial Annual Drag
+                </span>
+                <p className="text-sm font-black text-rose-600 dark:text-rose-400">
+                  -£{totalAnnualFeeDragPounds.toLocaleString()}/yr
+                </p>
+                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block">
+                  Weighted Avg: {averageOverallFeePercent.toFixed(2)}% p.a.
+                </span>
+              </div>
+
+              <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700/80 space-y-1">
+                <span className="text-[10px] font-extrabold uppercase text-slate-400 block tracking-wider">
+                  Retirement Pot Drag
+                </span>
+                <p className="text-sm font-black text-amber-600 dark:text-amber-400">
+                  -£{Math.round(kpis.retirementDragPounds).toLocaleString()}
+                </p>
+                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block">
+                  -{kpis.retirementDragPercent.toFixed(1)}% at Age {profile.targetRetirementAge || 60}
+                </span>
+              </div>
+
+              <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700/80 space-y-1">
+                <span className="text-[10px] font-extrabold uppercase text-slate-400 block tracking-wider">
+                  Terminal Wealth Drag
+                </span>
+                <p className="text-sm font-black text-indigo-600 dark:text-indigo-400">
+                  -£{Math.round(kpis.terminalDragPounds).toLocaleString()}
+                </p>
+                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block">
+                  -{kpis.terminalDragPercent.toFixed(1)}% compounded loss
+                </span>
+              </div>
+
+              <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700/80 space-y-1">
+                <span className="text-[10px] font-extrabold uppercase text-slate-400 block tracking-wider">
+                  Total Fees Deducted
+                </span>
+                <p className="text-sm font-black text-slate-800 dark:text-slate-200">
+                  £{Math.round(kpis.totalLifetimeFeePayments).toLocaleString()}
+                </p>
+                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block">
+                  Cumulative across life
+                </span>
+              </div>
+            </div>
+
+            {/* Visualiser Chart Area */}
+            <div className="w-full h-64 bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
+              {chartViewMode === 'trajectory' ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={trajectoryData} margin={{ top: 10, right: 15, left: 10, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" className="dark:stroke-slate-800" vertical={false} />
+                    <XAxis
+                      dataKey="age"
+                      tickFormatter={(age) => `Age ${age}`}
+                      tick={{ fontSize: 10, fill: '#64748b' }}
+                      axisLine={{ stroke: '#cbd5e1' }}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      tickFormatter={formatPounds}
+                      tick={{ fontSize: 10, fill: '#64748b' }}
+                      axisLine={false}
+                      tickLine={false}
+                      width={55}
+                    />
+                    <Tooltip
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          const data = payload[0].payload;
+                          const gapPct = data.grossPot > 0 ? ((data.dragGap / data.grossPot) * 100).toFixed(1) : '0.0';
+                          return (
+                            <div className="p-3 bg-slate-900 text-white rounded-xl shadow-xl border border-slate-800 text-xs space-y-1.5">
+                              <div className="flex items-center justify-between gap-4 font-bold border-b border-slate-800 pb-1">
+                                <span>Age {data.age} ({data.year})</span>
+                                <span className={data.isRetired ? 'text-indigo-400' : 'text-emerald-400'}>
+                                  {data.isRetired ? 'Retirement Phase' : 'Accumulation Phase'}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between gap-4">
+                                <span className="text-emerald-400 font-medium">Gross Pot (0% Baseline):</span>
+                                <span className="font-bold">£{data.grossPot.toLocaleString()}</span>
+                              </div>
+                              <div className="flex items-center justify-between gap-4">
+                                <span className="text-indigo-400 font-medium">Net Pot (After Fees):</span>
+                                <span className="font-bold">£{data.netPot.toLocaleString()}</span>
+                              </div>
+                              <div className="flex items-center justify-between gap-4 pt-1 border-t border-slate-800 font-bold text-rose-400">
+                                <span>Compounded Fee Drag:</span>
+                                <span>-£{data.dragGap.toLocaleString()} (-{gapPct}%)</span>
+                              </div>
+                              <div className="flex items-center justify-between gap-4 text-slate-400 text-[10px]">
+                                <span>Annual Fee Paid in Year:</span>
+                                <span>£{data.annualFee.toLocaleString()}/yr</span>
+                              </div>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Legend
+                      wrapperStyle={{ fontSize: '11px', paddingTop: '4px' }}
+                      formatter={(val) => {
+                        if (val === 'grossPot') return <span className="text-emerald-700 dark:text-emerald-400 font-bold">Gross Pot (0% Baseline)</span>;
+                        if (val === 'netPot') return <span className="text-indigo-700 dark:text-indigo-400 font-bold">Net Pot (With Fees)</span>;
+                        return val;
+                      }}
+                    />
+                    <ReferenceLine
+                      x={profile.targetRetirementAge || 60}
+                      stroke="#f59e0b"
+                      strokeDasharray="3 3"
+                      label={{ value: `Retire (Age ${profile.targetRetirementAge || 60})`, fill: '#d97706', fontSize: 10, position: 'top' }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="grossPot"
+                      fill="#10b981"
+                      fillOpacity={0.12}
+                      stroke="#10b981"
+                      strokeWidth={2}
+                      name="grossPot"
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="netPot"
+                      fill="#6366f1"
+                      fillOpacity={0.25}
+                      stroke="#4f46e5"
+                      strokeWidth={2.5}
+                      name="netPot"
+                    />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={potBreakdownData} margin={{ top: 10, right: 15, left: 10, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" className="dark:stroke-slate-800" vertical={false} />
+                    <XAxis
+                      dataKey="name"
+                      tick={{ fontSize: 9.5, fill: '#64748b' }}
+                      axisLine={{ stroke: '#cbd5e1' }}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      tickFormatter={(v) => `£${v}`}
+                      tick={{ fontSize: 10, fill: '#64748b' }}
+                      axisLine={false}
+                      tickLine={false}
+                      width={50}
+                    />
+                    <Tooltip
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          const data = payload[0].payload;
+                          return (
+                            <div className="p-3 bg-slate-900 text-white rounded-xl shadow-xl border border-slate-800 text-xs space-y-1.5">
+                              <span className="font-bold block border-b border-slate-800 pb-1">{data.name}</span>
+                              <div className="flex items-center justify-between gap-4 text-indigo-400">
+                                <span>{profile.name || 'Primary'} Drag:</span>
+                                <span className="font-bold">£{data.primaryDrag.toLocaleString()}/yr ({data.primaryFee.toFixed(2)}%)</span>
+                              </div>
+                              {profile.isCouplePlanning && (
+                                <div className="flex items-center justify-between gap-4 text-purple-400">
+                                  <span>{profile.partnerName || 'Partner'} Drag:</span>
+                                  <span className="font-bold">£{data.partnerDrag.toLocaleString()}/yr ({data.partnerFee.toFixed(2)}%)</span>
+                                </div>
+                              )}
+                              <div className="flex items-center justify-between gap-4 pt-1 border-t border-slate-800 font-black text-rose-400">
+                                <span>Total Account Drag:</span>
+                                <span>£{data.totalDrag.toLocaleString()}/yr</span>
+                              </div>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Legend
+                      wrapperStyle={{ fontSize: '11px', paddingTop: '4px' }}
+                      formatter={(val) => {
+                        if (val === 'primaryDrag') return <span className="text-indigo-600 dark:text-indigo-400 font-bold">{profile.name || 'Primary'} Annual Drag (£/yr)</span>;
+                        if (val === 'partnerDrag') return <span className="text-purple-600 dark:text-purple-400 font-bold">{profile.partnerName || 'Partner'} Annual Drag (£/yr)</span>;
+                        return val;
+                      }}
+                    />
+                    <Bar dataKey="primaryDrag" fill="#4f46e5" radius={[4, 4, 0, 0]} name="primaryDrag" />
+                    {profile.isCouplePlanning && (
+                      <Bar dataKey="partnerDrag" fill="#a855f7" radius={[4, 4, 0, 0]} name="partnerDrag" />
+                    )}
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </div>
+
           {/* Mode Selector: Uniform vs Per-Pot & Person */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200/80 dark:border-slate-700/80">
             <div className="space-y-0.5">
@@ -542,7 +964,7 @@ export const InvestmentFeesCard: React.FC<InvestmentFeesCardProps> = ({ profile,
         </div>
       ) : (
         <div className="p-3.5 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 text-center text-xs text-slate-500 dark:text-slate-400">
-          Fee drag modeling is currently disabled. Enable to subtract platform, fund, and adviser charges from net pot growth.
+          Fee drag modeling is currently disabled. Enable to subtract platform, fund, and adviser charges from net pot growth and view comparative wealth trajectory visualisations.
         </div>
       )}
     </div>
