@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { UserProfile, InvestmentPots, GiltLadderConfig, GiltLadderFundingSource, GiltLadderSummary } from '../types';
+import { UserProfile, InvestmentPots, GiltLadderConfig, GiltLadderFundingSource, GiltLadderSummary, YearProjection } from '../types';
 import { calculateGiltLadder, UK_GILT_DATABASE } from '../utils/giltLadderEngine';
 import {
   ShieldCheck,
@@ -22,6 +22,7 @@ import {
 interface GiltLadderCardProps {
   profile: UserProfile;
   pots: InvestmentPots;
+  projections?: YearProjection[];
   onChange: (updatedProfile: UserProfile) => void;
   accentColor?: 'emerald' | 'indigo' | 'amber';
 }
@@ -29,6 +30,7 @@ interface GiltLadderCardProps {
 export const GiltLadderCard: React.FC<GiltLadderCardProps> = ({
   profile,
   pots,
+  projections,
   onChange,
   accentColor = 'emerald',
 }) => {
@@ -36,7 +38,7 @@ export const GiltLadderCard: React.FC<GiltLadderCardProps> = ({
   const [showEducationalModal, setShowEducationalModal] = useState(false);
 
   const defaultStartAge = profile.targetRetirementAge || 60;
-  const defaultAnnualIncome = profile.desiredRetirementIncomeAnnual || 25000;
+  const defaultAnnualIncome = profile.targetRetirementIncomeAnnual || 25000;
 
   const currentConfig: GiltLadderConfig = useMemo(() => {
     return (

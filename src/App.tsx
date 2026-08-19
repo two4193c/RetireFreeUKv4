@@ -26,6 +26,7 @@ import { ProjectionChart } from './components/ProjectionChart';
 import { AnnualBreakdownTable } from './components/AnnualBreakdownTable';
 import { MonteCarloCard } from './components/MonteCarloCard';
 import { DrawdownPlanner } from './components/DrawdownPlanner';
+import { GiltLadderCard } from './components/GiltLadderCard';
 import { ExportSection } from './components/ExportSection';
 import { ScenarioComparer } from './components/ScenarioComparer';
 import { MacroSettingsCard } from './components/MacroSettingsCard';
@@ -1026,6 +1027,16 @@ function App() {
                     onChange={handleProfileChange}
                   />
                 </div>
+                {appMode === 'advanced' && (
+                  <div id="card-strat-gilt-ladder" className="scroll-mt-24 transition-all duration-300">
+                    <GiltLadderCard
+                      profile={profile}
+                      pots={pots}
+                      projections={projections}
+                      onChange={handleProfileChange}
+                    />
+                  </div>
+                )}
                 {appMode === 'advanced' && (
                   <div id="card-strat-macro" className="scroll-mt-24 transition-all duration-300">
                     <MacroSettingsCard profile={profile} onChange={handleProfileChange} />

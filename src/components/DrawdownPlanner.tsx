@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { UserProfile, LsaProtectionType, IncomeProductOption, AnnuityType, AnnuityDurationOption, AnnuityTranche, InvestmentPots, YearProjection, LumpSumSplit, PlannerScenario, DrawdownStrategy, AppMode, CrystallisationMode, CrystallisationTranche } from '../types';
 import { AnnuityPclsTaxAdviceCard } from './AnnuityPclsTaxAdviceCard';
-import { GiltLadderCard } from './GiltLadderCard';
 import { QuickDrawdownStrategyBar } from './QuickDrawdownStrategyBar';
 import { CrystallisationTrancheManager } from './CrystallisationTrancheManager';
 import { DEFAULT_PARTNER_POTS, DEFAULT_POTS, sanitizePots } from '../utils/defaultData';
@@ -511,13 +510,6 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
           </span>
         )}
       </div>
-
-      {/* UK Gilt Ladder Strategy Module */}
-      <GiltLadderCard
-        profile={profile}
-        pots={pots || DEFAULT_POTS}
-        onChange={onChange}
-      />
 
       {/* SECTION 1: Retirement Income Product Strategy */}
       {(activeIncomeOption === 'annuity' || activeIncomeOption === 'hybrid') && (
