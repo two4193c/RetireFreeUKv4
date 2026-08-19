@@ -192,12 +192,12 @@ export function calculateGiltLadder(
   profile: UserProfile,
   pots?: InvestmentPots
 ): GiltLadderSummary {
-  const startAge = Math.max(profile.currentAge, config.startAge || profile.targetRetirementAge);
+  const purchaseAge = Math.max(profile.currentAge, config.purchaseAge || config.startAge || profile.targetRetirementAge);
   const durationYears = config.durationYears
     ? config.durationYears
     : config.endAge
-    ? Math.max(1, config.endAge - startAge + 1)
-    : Math.max(1, Math.min(10, (profile.statePensionAge || 67) - startAge));
+    ? Math.max(1, config.endAge - purchaseAge)
+    : Math.max(1, Math.min(10, (profile.statePensionAge || 67) - purchaseAge));
 
   if (durationYears <= 0 || !config.targetAnnualIncome || config.targetAnnualIncome <= 0) {
     return {
@@ -257,11 +257,12 @@ export function calculateGiltLadder(
 
   const rawRungs: RawRung[] = [];
 
+  // Each rung i matures in consecutive years following purchase (purchaseAge + 1 + i)
   for (let i = 0; i < durationYears; i++) {
-    const age = startAge + i;
+    const age = purchaseAge + 1 + i;
     const year = birthYear + age;
     const targetNetCashflow = isInflationLinked
-      ? Math.round(config.targetAnnualIncome * Math.pow(1 + inflationRate, i))
+      ? Math.round(config.targetAnnualIncome * Math.pow(1 + inflationRate, i + 1))
       : config.targetAnnualIncome;
 
     const giltInfo = getGiltForYear(currentYear, year, config.giltType, defaultYtm);

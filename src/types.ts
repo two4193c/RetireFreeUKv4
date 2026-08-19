@@ -72,7 +72,8 @@ export interface GiltLadderSummary {
 
 export interface GiltLadderConfig {
   enabled: boolean;
-  startAge: number;
+  purchaseAge?: number;
+  startAge?: number;
   endAge?: number;
   durationYears?: number;
   targetAnnualIncome: number; // £/year net income required

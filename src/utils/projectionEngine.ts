@@ -1366,8 +1366,8 @@ function parseAnnuityTypeConfig(type?: string) {
       let giltLadderPurchasedThisYear = false;
 
       if (isGiltLadderEnabled && giltLadderSummary && !giltLadderPurchased) {
-        const giltStartAge = Math.max(profile.currentAge, giltLadderConfig!.startAge || profile.targetRetirementAge);
-        if (age >= giltStartAge) {
+        const giltPurchaseAge = Math.max(profile.currentAge, giltLadderConfig!.purchaseAge || giltLadderConfig!.startAge || profile.targetRetirementAge);
+        if (age >= giltPurchaseAge) {
           let upfrontCost = giltLadderSummary.totalUpfrontCost;
           giltLadderCapitalAllocatedThisYear = upfrontCost;
           giltLadderPurchased = true;

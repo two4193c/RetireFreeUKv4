@@ -37,21 +37,23 @@ export const GiltLadderCard: React.FC<GiltLadderCardProps> = ({
   const [showRungDetails, setShowRungDetails] = useState(false);
   const [showEducationalModal, setShowEducationalModal] = useState(false);
 
-  const defaultStartAge = profile.targetRetirementAge || 60;
+  const defaultPurchaseAge = profile.targetRetirementAge || 60;
   const defaultAnnualIncome = profile.targetRetirementIncomeAnnual || 25000;
 
   const currentConfig: GiltLadderConfig = useMemo(() => {
+    const pAge = profile.giltLadderConfig?.purchaseAge ?? profile.giltLadderConfig?.startAge ?? defaultPurchaseAge;
     return (
       profile.giltLadderConfig || {
         enabled: false,
-        startAge: defaultStartAge,
+        purchaseAge: pAge,
+        startAge: pAge,
         durationYears: 5,
         targetAnnualIncome: defaultAnnualIncome,
         fundingSource: 'gia',
         inflationAdjusted: true,
       }
     );
-  }, [profile.giltLadderConfig, defaultStartAge, defaultAnnualIncome]);
+  }, [profile.giltLadderConfig, defaultPurchaseAge, defaultAnnualIncome]);
 
   const summary: GiltLadderSummary = useMemo(() => {
     return calculateGiltLadder(currentConfig, profile, pots);
@@ -69,6 +71,7 @@ export const GiltLadderCard: React.FC<GiltLadderCardProps> = ({
   };
 
   const isEnabled = currentConfig.enabled;
+  const currentPurchaseAge = currentConfig.purchaseAge ?? currentConfig.startAge ?? defaultPurchaseAge;
 
   const formatGBP = (val: number) =>
     new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(val);
@@ -134,25 +137,25 @@ export const GiltLadderCard: React.FC<GiltLadderCardProps> = ({
         <div className="p-4 sm:p-5 space-y-5">
           {/* Configuration Inputs */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Start Age */}
+            {/* Purchase Age */}
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
-                <span>Start Age</span>
+                <span>Purchase Age</span>
                 <span className="text-emerald-600 dark:text-emerald-400 font-extrabold">
-                  Age {currentConfig.startAge}
+                  Age {currentPurchaseAge}
                 </span>
               </label>
               <input
                 type="range"
-                id="gilt_ladder_start_age"
+                id="gilt_ladder_purchase_age"
                 min={Math.max(50, profile.currentAge)}
                 max={80}
-                value={currentConfig.startAge}
-                onChange={(e) => updateConfig({ startAge: Number(e.target.value) })}
+                value={currentPurchaseAge}
+                onChange={(e) => updateConfig({ purchaseAge: Number(e.target.value), startAge: Number(e.target.value) })}
                 className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-600"
               />
               <span className="text-[10px] text-slate-400 dark:text-slate-500 block">
-                Ladder begins paying at retirement
+                Bonds bought at Age {currentPurchaseAge}; 1st maturity at Age {currentPurchaseAge + 1}
               </span>
             </div>
 
@@ -178,7 +181,7 @@ export const GiltLadderCard: React.FC<GiltLadderCardProps> = ({
                 <option value={15}>15 Years (Full Decumulation)</option>
               </select>
               <span className="text-[10px] text-slate-400 dark:text-slate-500 block">
-                Ages {currentConfig.startAge} to {currentConfig.startAge + currentConfig.durationYears - 1}
+                Maturities: Ages {currentPurchaseAge + 1} to {currentPurchaseAge + (currentConfig.durationYears || 5)}
               </span>
             </div>
 
