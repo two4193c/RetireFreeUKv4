@@ -46,7 +46,7 @@ describe('giltLadderEngine', () => {
 
     // Verify individual rungs
     summary.rungs.forEach((rung, idx) => {
-      expect(rung.age).toBe(60 + idx);
+      expect(rung.age).toBe(61 + idx);
       expect(rung.totalNetPayout).toBeGreaterThanOrEqual(30000);
       expect(rung.maturingPrincipal).toBeGreaterThan(0);
       expect(rung.taxFreeCapitalGain).toBeGreaterThanOrEqual(0);
@@ -111,20 +111,20 @@ describe('projectionEngine Gilt Ladder Integration', () => {
     expect(at60).toBeDefined();
     expect(at60!.giltLadderPurchasedThisYear).toBe(true);
     expect(at60!.giltLadderCapitalAllocated).toBeGreaterThan(0);
-    expect(at60!.giltLadderIncomeReceived).toBeGreaterThanOrEqual(25000);
+    expect(at60!.giltLadderIncomeReceived).toBe(0); // Starts next year
 
     // Verify GIA balance decreased due to upfront purchase
     expect(at60!.giaPot).toBeLessThan(at59!.giaPot);
 
-    // For ages 60 to 64 (5 year duration)
-    for (let age = 60; age < 65; age++) {
+    // For ages 61 to 65 (5 year duration)
+    for (let age = 61; age < 66; age++) {
       const yearRow = rows.find((r) => r.age === age);
       expect(yearRow!.giltLadderIncomeReceived).toBeGreaterThanOrEqual(25000);
     }
 
-    // At age 65 (after ladder expires)
-    const at65 = rows.find((r) => r.age === 65);
-    expect(at65!.giltLadderIncomeReceived).toBe(0);
+    // At age 66 (after ladder expires)
+    const at66 = rows.find((r) => r.age === 66);
+    expect(at66!.giltLadderIncomeReceived).toBe(0);
   });
 
   it('works with Pension / SIPP funding source', () => {
@@ -154,7 +154,10 @@ describe('projectionEngine Gilt Ladder Integration', () => {
 
     expect(at60!.giltLadderPurchasedThisYear).toBe(true);
     expect(at60!.giltLadderCapitalAllocated).toBeGreaterThan(0);
-    expect(at60!.giltLadderIncomeReceived).toBeGreaterThanOrEqual(20000);
+    expect(at60!.giltLadderIncomeReceived).toBe(0);
+    
+    const at61 = rows.find(r => r.age === 61);
+    expect(at61!.giltLadderIncomeReceived).toBeGreaterThanOrEqual(20000);
   });
 
   it('works with ISA funding source', () => {
@@ -183,6 +186,9 @@ describe('projectionEngine Gilt Ladder Integration', () => {
 
     expect(at60!.giltLadderPurchasedThisYear).toBe(true);
     expect(at60!.giltLadderCapitalAllocated).toBeGreaterThan(0);
-    expect(at60!.giltLadderIncomeReceived).toBeGreaterThanOrEqual(20000);
+    expect(at60!.giltLadderIncomeReceived).toBe(0);
+    
+    const at61 = rows.find(r => r.age === 61);
+    expect(at61!.giltLadderIncomeReceived).toBeGreaterThanOrEqual(20000);
   });
 });
