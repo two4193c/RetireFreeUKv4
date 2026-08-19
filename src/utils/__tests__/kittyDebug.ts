@@ -18,5 +18,5 @@ const res = solveMaximizedSpend({
 });
 
 console.log("Max Annual Income:", res.maxAnnualIncome);
-console.log("Feasible:", res.feasible);
-console.log("Depleted Age:", res.depletedAge);
+console.log("Boost Percentage:", res.boostPercentage);
+console.log("Final Pot at Target Age:", res.finalPotAtTargetAge);

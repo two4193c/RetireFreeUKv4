@@ -693,6 +693,7 @@ export function computeCashFlowSankeyData(
     const priStatePension = p.primaryStatePensionReceived ?? p.statePensionReceived ?? 0;
     const priDbPension = p.primaryDbPensionIncomeReceived ?? p.dbPensionIncomeReceived ?? 0;
     const priAnnuity = p.primaryAnnuityIncomeReceived ?? p.annuityIncomeReceived ?? 0;
+    const priGiltLadder = p.giltLadderIncomeReceived ?? 0;
     const priTaxableFixed = p.primaryTaxableFixedIncomeReceived ?? (isCouple ? ((p.taxableFixedIncomeReceived || 0) * 0.5) : (p.taxableFixedIncomeReceived || 0));
     const priTaxFreeFixed = p.primaryTaxFreeFixedIncomeReceived ?? (isCouple ? ((p.taxFreeFixedIncomeReceived || 0) * 0.5) : (p.taxFreeFixedIncomeReceived || 0));
     const priPensionDrawdownTaxable = p.primaryPensionDrawdownTaxable ?? (isCouple ? ((p.pensionDrawdownTaxable || 0) * 0.5) : (p.pensionDrawdownTaxable || 0));
@@ -708,6 +709,7 @@ export function computeCashFlowSankeyData(
       priStatePension +
       priDbPension +
       priAnnuity +
+      priGiltLadder +
       priTaxableFixed +
       priTaxFreeFixed +
       priLifeEventsInc +
@@ -812,6 +814,17 @@ export function computeCashFlowSankeyData(
           sublabel: 'Lifetime Annuity Income',
           amount: priAnnuity,
           color: '#ec4899',
+          category: 'source',
+          column: 0,
+        });
+      }
+      if (priGiltLadder > 0) {
+        nodes.push({
+          id: 'pri_gilt_ladder',
+          label: `${primaryName} Gilt Ladder`,
+          sublabel: 'Maturing Gilts & Net Coupons',
+          amount: priGiltLadder,
+          color: '#059669',
           category: 'source',
           column: 0,
         });
@@ -986,6 +999,7 @@ export function computeCashFlowSankeyData(
       if (priStatePension > 0) links.push({ sourceId: 'pri_state_pension', targetId: 'pri_retire_hub', amount: priStatePension, color: '#8b5cf6' });
       if (priDbPension > 0) links.push({ sourceId: 'pri_db_pension', targetId: 'pri_retire_hub', amount: priDbPension, color: '#0284c7' });
       if (priAnnuity > 0) links.push({ sourceId: 'pri_annuity', targetId: 'pri_retire_hub', amount: priAnnuity, color: '#ec4899' });
+      if (priGiltLadder > 0) links.push({ sourceId: 'pri_gilt_ladder', targetId: 'pri_retire_hub', amount: priGiltLadder, color: '#059669' });
       if (priTaxableFixed + priTaxFreeFixed > 0) links.push({ sourceId: 'pri_fixed', targetId: 'pri_retire_hub', amount: priTaxableFixed + priTaxFreeFixed, color: '#0d9488' });
       if (priPensionDrawdownTotal > 0) links.push({ sourceId: 'pri_pension_dd', targetId: 'pri_retire_hub', amount: priPensionDrawdownTotal, color: '#10b981' });
       if (priIsaDrawdown > 0) links.push({ sourceId: 'pri_isa_dd', targetId: 'pri_retire_hub', amount: priIsaDrawdown, color: '#6366f1' });
@@ -1161,6 +1175,7 @@ export function computeCashFlowSankeyData(
     let statePension = p.statePensionReceived || 0;
     let dbPension = p.dbPensionIncomeReceived || 0;
     let annuity = p.annuityIncomeReceived || 0;
+    let giltLadder = p.giltLadderIncomeReceived || 0;
     let taxableFixed = p.taxableFixedIncomeReceived || 0;
     let taxFreeFixed = p.taxFreeFixedIncomeReceived || 0;
     let pensionDrawdownTaxable = p.pensionDrawdownTaxable || 0;
@@ -1179,6 +1194,7 @@ export function computeCashFlowSankeyData(
         statePension = priStatePension;
         dbPension = priDbPension;
         annuity = priAnnuity;
+        giltLadder = priGiltLadder;
         taxableFixed = priTaxableFixed;
         taxFreeFixed = priTaxFreeFixed;
         pensionDrawdownTaxable = priPensionDrawdownTaxable;
@@ -1194,6 +1210,7 @@ export function computeCashFlowSankeyData(
         statePension = partStatePension;
         dbPension = partDbPension;
         annuity = partAnnuity;
+        giltLadder = 0;
         taxableFixed = partTaxableFixed;
         taxFreeFixed = partTaxFreeFixed;
         pensionDrawdownTaxable = partPensionDrawdownTaxable;
@@ -1212,6 +1229,7 @@ export function computeCashFlowSankeyData(
       statePension +
       dbPension +
       annuity +
+      giltLadder +
       taxableFixed +
       taxFreeFixed +
       pensionDrawdownTotal +
@@ -1275,6 +1293,17 @@ export function computeCashFlowSankeyData(
         sublabel: 'Guaranteed Lifetime Floor',
         amount: annuity,
         color: '#ec4899',
+        category: 'source',
+        column: 0,
+      });
+    }
+    if (giltLadder > 0) {
+      nodes.push({
+        id: 'gilt_ladder_income',
+        label: activeViewMode !== 'combined' ? `${currentPersonName} Gilt Ladder` : 'UK Gilt Ladder Income',
+        sublabel: 'Maturing Gilts & Net Coupons',
+        amount: giltLadder,
+        color: '#059669',
         category: 'source',
         column: 0,
       });
@@ -1359,6 +1388,7 @@ export function computeCashFlowSankeyData(
     if (statePension > 0) links.push({ sourceId: 'state_pension', targetId: 'gross_retire_hub', amount: statePension, color: '#8b5cf6' });
     if (dbPension > 0) links.push({ sourceId: 'db_pension', targetId: 'gross_retire_hub', amount: dbPension, color: '#0284c7' });
     if (annuity > 0) links.push({ sourceId: 'annuity_income', targetId: 'gross_retire_hub', amount: annuity, color: '#ec4899' });
+    if (giltLadder > 0) links.push({ sourceId: 'gilt_ladder_income', targetId: 'gross_retire_hub', amount: giltLadder, color: '#059669' });
     if (taxableFixed + taxFreeFixed > 0) links.push({ sourceId: 'fixed_other_income', targetId: 'gross_retire_hub', amount: taxableFixed + taxFreeFixed, color: '#0d9488' });
     if (pensionDrawdownTotal > 0) links.push({ sourceId: 'pension_drawdown', targetId: 'gross_retire_hub', amount: pensionDrawdownTotal, color: '#10b981' });
     if (isaDrawdown > 0) links.push({ sourceId: 'isa_drawdown', targetId: 'gross_retire_hub', amount: isaDrawdown, color: '#6366f1' });
@@ -1456,7 +1486,7 @@ export function computeCashFlowSankeyData(
       links,
       metrics: {
         taxRateEffective: totalGrossRetirementInflows > 0 ? (totalTaxPaid / totalGrossRetirementInflows) * 100 : 0,
-        guaranteedFloor: statePension + dbPension + annuity,
+        guaranteedFloor: statePension + dbPension + annuity + giltLadder,
         portfolioDrawdown: pensionDrawdownTotal + isaDrawdown + cashDrawdown,
         netIncome: netRetirementIncome,
         essentialSpend: essentialLiving,

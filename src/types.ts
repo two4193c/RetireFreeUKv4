@@ -26,6 +26,65 @@ export type AnnuityType =
 
 export type AnnuityDurationOption = 'lifetime' | 'until_age';
 
+export type GiltFundingSource = 'gia' | 'isa' | 'cash' | 'pension' | 'blended';
+export type GiltLadderFundingSource = GiltFundingSource;
+export type GiltSelectionType = 'low_coupon' | 'benchmark' | 'custom';
+export type GiltTaxBracket = 'auto' | 'basic' | 'higher' | 'additional';
+
+export interface GiltLadderRung {
+  year: number;
+  age: number;
+  giltName: string;
+  isin?: string;
+  maturityDate: string;
+  couponPercent: number;
+  cleanPrice: number;
+  nominalRequired: number;
+  purchaseCost: number;
+  redemptionValue: number;
+  maturingPrincipal?: number;
+  grossCouponIncome: number;
+  netCouponIncome: number;
+  annualCouponCashflow?: number;
+  futureCouponsReceived?: number;
+  totalNetPayout: number;
+  taxFreeGain: number;
+  taxFreeCapitalGain?: number;
+  taxPaid: number;
+}
+
+export interface GiltLadderSummary {
+  totalUpfrontCost: number;
+  totalNominal: number;
+  totalGuaranteedPayout: number;
+  totalPayoutDelivered?: number;
+  totalTaxFreeGain: number;
+  totalTaxFreeCapitalGains?: number;
+  totalTaxPaid: number;
+  taxSavedVsCash: number;
+  blendedNetYieldPercent: number;
+  effectiveAnnualYieldPercent?: number;
+  equivalentGrossYieldPercent: number;
+  durationYears: number;
+  isFundingSufficient?: boolean;
+  rungs: GiltLadderRung[];
+}
+
+export interface GiltLadderConfig {
+  enabled: boolean;
+  startAge: number;
+  endAge?: number;
+  durationYears?: number;
+  targetAnnualIncome: number; // £/year net income required
+  fundingSource: GiltFundingSource;
+  giltType?: GiltSelectionType;
+  customYieldPercent?: number; // e.g. 4.3%
+  taxBracketOverride?: GiltTaxBracket;
+  inflationLinked?: boolean;
+  inflationAdjusted?: boolean;
+  rungs?: GiltLadderRung[];
+}
+
 export type ExcessReinvestOption =
   | 'none'
   | 'cash'
@@ -231,7 +290,7 @@ export interface MaximizedSpendConfig {
     annuityDurationUntilAge?: number;
     reinvestExcessDrawdown?: boolean;
     actualSpendingTargetAnnual?: number;
-    annuityExcessReinvestOption?: 'stocks_and_shares_isa' | 'cash_isa' | 'gia' | 'cash' | 'cash_savings' | 'none';
+    annuityExcessReinvestOption?: ExcessReinvestOption;
     reinvestDestinationPot?: 'isa' | 'gia' | 'cash';
   };
   reinvestExcessDrawdown?: boolean;
@@ -434,6 +493,9 @@ export interface UserProfile {
 
   // Investment, Platform & Adviser Fees (Fee Drag Model)
   investmentFees?: InvestmentFeeConfig;
+
+  // UK Gilt Ladder & Liability Matching Portfolio
+  giltLadderConfig?: GiltLadderConfig;
 }
 
 export interface SinglePotFeeConfig {
@@ -794,6 +856,9 @@ export interface YearProjection {
   annuityIncomeReceived: number;
   annuityCapitalAllocated?: number;
   annuityPurchasedThisYear?: boolean;
+  giltLadderIncomeReceived?: number;
+  giltLadderCapitalAllocated?: number;
+  giltLadderPurchasedThisYear?: boolean;
   isaDrawdown: number;
   cashDrawdown: number;
   totalWithdrawalAmount: number;

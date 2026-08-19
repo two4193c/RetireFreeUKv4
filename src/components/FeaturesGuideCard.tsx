@@ -10,7 +10,8 @@ import {
   ShieldCheck,
   CheckCircle2,
   Lock,
-  Download
+  Download,
+  Banknote
 } from 'lucide-react';
 
 export const FeaturesGuideCard: React.FC = () => {
@@ -120,6 +121,12 @@ export const FeaturesGuideCard: React.FC = () => {
               </tr>
               <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
                 <td className="px-4 py-3 font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0"/> UK Gilt Ladder Strategy
+                </td>
+                <td className="px-4 py-3 leading-relaxed">Construct tailored, default-free UK Government bond ladders (using Debt Management Office gilts) with 0% Capital Gains Tax arbitrage under TCGA 1992 s.115 to eliminate Sequence of Returns Risk for your initial retirement bridge.</td>
+              </tr>
+              <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
+                <td className="px-4 py-3 font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0"/> SAYE / Share Schemes
                 </td>
                 <td className="px-4 py-3 leading-relaxed">Dedicated UK Save As You Earn and Share Incentive Plan modelling, including the 90-day ISA transfer tax loophole.</td>
@@ -182,7 +189,16 @@ export const FeaturesGuideCard: React.FC = () => {
             </p>
           </div>
 
-          <div className="p-4 bg-indigo-50 dark:bg-indigo-900/10 rounded-2xl border border-indigo-200 dark:border-indigo-800/30 space-y-2 md:col-span-2">
+          <div className="p-4 bg-emerald-50 dark:bg-emerald-900/10 rounded-2xl border border-emerald-200 dark:border-emerald-800/30 space-y-2">
+            <h4 className="font-bold text-emerald-900 dark:text-emerald-100 flex items-center gap-2">
+              <Banknote className="w-4 h-4" /> UK Gilt Ladder & 0% CGT Arbitrage
+            </h4>
+            <p className="text-xs text-emerald-800/80 dark:text-emerald-200/80 leading-relaxed">
+              Build custom maturity schedules using real UK Treasury Gilts. Eliminates Sequence of Returns Risk by securing guaranteed annual cashflow with zero Capital Gains Tax under TCGA 1992 s.115.
+            </p>
+          </div>
+
+          <div className="p-4 bg-indigo-50 dark:bg-indigo-900/10 rounded-2xl border border-indigo-200 dark:border-indigo-800/30 space-y-2">
             <h4 className="font-bold text-indigo-900 dark:text-indigo-100 flex items-center gap-2">
               <FileText className="w-4 h-4" /> Live AI-Ready Exports
             </h4>

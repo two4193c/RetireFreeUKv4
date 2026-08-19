@@ -3,7 +3,7 @@ import { UserProfile, InvestmentPots, TaxCalculationResult, YearProjection } fro
 import { calculateMaxPcls, calculatePartnerMaxPcls, getProjectedPensionAtTakeAge, getLumpSumTakeAge, getPartnerLumpSumTakeAge } from '../utils/ukTaxEngine';
 import { STRATEGY_DEFINITIONS } from './QuickDrawdownStrategyBar';
 
-import { User, Heart, TrendingUp, ShieldCheck, Zap, Sparkles } from 'lucide-react';
+import { User, Heart, TrendingUp, ShieldCheck, Zap, Sparkles, Banknote } from 'lucide-react';
 
 interface StrategySummaryCardProps {
   profile: UserProfile;
@@ -331,6 +331,28 @@ export const StrategySummaryCard: React.FC<StrategySummaryCardProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Gilt Ladder Strategy Callout (if active) */}
+      {profile.giltLadderConfig?.enabled && (
+        <div className="bg-emerald-50 dark:bg-emerald-950/40 p-3.5 rounded-xl border border-emerald-300 dark:border-emerald-700/60 flex items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2.5">
+            <div className="p-1.5 bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 rounded-lg">
+              <Banknote className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="font-extrabold text-emerald-950 dark:text-emerald-100 block">
+                Active UK Gilt Ladder ({profile.giltLadderConfig.durationYears} Years from Age {profile.giltLadderConfig.startAge})
+              </span>
+              <span className="text-[11px] text-emerald-800/80 dark:text-emerald-300/80">
+                Delivers £{(profile.giltLadderConfig.targetAnnualIncome || 0).toLocaleString()}/yr guaranteed cashflow via 0% CGT arbitrage ({profile.giltLadderConfig.fundingSource?.toUpperCase()} pot).
+              </span>
+            </div>
+          </div>
+          <span className="bg-emerald-200 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-100 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0">
+            Locked
+          </span>
+        </div>
+      )}
       </div>
     </div>
   );
