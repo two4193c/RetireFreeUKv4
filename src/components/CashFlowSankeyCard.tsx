@@ -11,6 +11,7 @@ import {
   calculateUKTax,
   calculatePartnerUKTax,
 } from '../utils/ukTaxEngine';
+import { DEFAULT_POTS, DEFAULT_PARTNER_POTS } from '../utils/defaultData';
 import {
   Waves,
   ArrowRight,
@@ -186,8 +187,8 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
       const totalSalary = priSalary + partSalary;
 
       // Calculate annual tax and deductions for this year
-      const priTax = calculateUKTax(profile, pots || profile.pots, false, p.age);
-      const partTax = isCouple ? calculatePartnerUKTax(profile, profile.partnerPots || profile.pots) : null;
+      const priTax = calculateUKTax(profile, pots || DEFAULT_POTS, false, p.age);
+      const partTax = isCouple ? calculatePartnerUKTax(profile, profile.partnerPots || DEFAULT_PARTNER_POTS) : null;
 
       const priEmpPension = (priTax.employeePensionContributionsAnnual || 0);
       const priEmprPension = (priTax.employerPensionContributionsAnnual || 0);
