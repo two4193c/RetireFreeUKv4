@@ -220,4 +220,171 @@ describe('sankeyEngine - downsizing and life events coverage', () => {
     expect(linkIds).toContain('pri_life_events->pri_retire_hub');
     expect(linkIds).toContain('part_life_events->part_retire_hub');
   });
+
+  it('builds nodes and links correctly for a split couple view during accumulation', () => {
+    const profile = {
+      ...DEFAULT_PROFILE,
+      isCouplePlanning: true,
+      partnerGrossAnnualSalary: 35000,
+      targetRetirementAge: 60,
+      partnerTargetRetirementAge: 60,
+    };
+    const pots = {
+      ...DEFAULT_POTS,
+      partnerWorkplacePensionBalance: 100000
+    };
+    const projections = generateProjections(profile, pots);
+    
+    // Test for an accumulation year (e.g. currentAge)
+    const data = computeCashFlowSankeyData(profile, pots, projections, profile.currentAge, 'split');
+    
+    expect(data).toBeDefined();
+    expect(data!.nodes.length).toBeGreaterThan(0);
+    
+    const nodeIds = data!.nodes.map(n => n.id);
+    // Primary and partner hubs and sources
+    expect(nodeIds).toContain('pri_salary');
+    expect(nodeIds).toContain('part_salary');
+    expect(nodeIds).toContain('pri_gross_hub');
+    expect(nodeIds).toContain('part_gross_hub');
+    expect(nodeIds).toContain('household_essential_living');
+  });
+});
+
+describe('sankeyEngine - additional view modes and edge cases', () => {
+  it('builds nodes for primary and partner view modes during accumulation', () => {
+    const profile = {
+      ...DEFAULT_PROFILE,
+      isCouplePlanning: true,
+      partnerGrossAnnualSalary: 30000,
+    };
+    const pots = {
+      ...DEFAULT_POTS,
+      partnerWorkplacePensionBalance: 50000
+    };
+    const projections = generateProjections(profile, pots);
+    
+    const primaryData = computeCashFlowSankeyData(profile, pots, projections, profile.currentAge, 'primary');
+    expect(primaryData).toBeDefined();
+    expect(primaryData!.viewMode).toBe('primary');
+    const primaryNodes = primaryData!.nodes.map(n => n.id);
+    expect(primaryNodes).toContain('salary_income');
+
+    const partnerData = computeCashFlowSankeyData(profile, pots, projections, profile.currentAge, 'partner');
+    expect(partnerData).toBeDefined();
+    expect(partnerData!.viewMode).toBe('partner');
+    const partnerNodes = partnerData!.nodes.map(n => n.id);
+    expect(partnerNodes).toContain('salary_income');
+  });
+
+  it('builds nodes for primary and partner view modes during decumulation', () => {
+    const profile = {
+      ...DEFAULT_PROFILE,
+      isCouplePlanning: true,
+      targetRetirementAge: 60,
+      partnerTargetRetirementAge: 60,
+    };
+    const projections = generateProjections(profile, DEFAULT_POTS);
+    
+    const primaryData = computeCashFlowSankeyData(profile, DEFAULT_POTS, projections, 65, 'primary');
+    expect(primaryData).toBeDefined();
+    expect(primaryData!.viewMode).toBe('primary');
+
+    const partnerData = computeCashFlowSankeyData(profile, DEFAULT_POTS, projections, 65, 'partner');
+    expect(partnerData).toBeDefined();
+    expect(partnerData!.viewMode).toBe('partner');
+  });
+
+  it('handles retirement mortgage allocation in combined view', () => {
+    const profile = {
+      ...DEFAULT_PROFILE,
+      targetRetirementAge: 60,
+      mortgage: {
+        enabled: true,
+        propertyName: 'Home',
+        currentBalance: 200000,
+        interestRatePercent: 4,
+        remainingTermYears: 20, // 20 years from age 40 -> ends at 60. Wait, make it longer.
+        repaymentType: 'repayment' as const,
+        payoffAtRetirement: false
+      }
+    };
+    // Update profile so mortgage ends at 70
+    profile.currentAge = 40;
+    profile.mortgage.remainingTermYears = 30;
+
+    const projections = generateProjections(profile, DEFAULT_POTS);
+    const data = computeCashFlowSankeyData(profile, DEFAULT_POTS, projections, 65, 'combined');
+    expect(data).toBeDefined();
+    const nodeIds = data!.nodes.map(n => n.id);
+    expect(nodeIds).toContain('retirement_mortgage');
+  });
+
+  it('handles reinvested surplus node logic in decumulation', () => {
+    const profile = {
+      ...DEFAULT_PROFILE,
+      targetRetirementAge: 60,
+      targetRetirementIncomeAnnual: 20000 // lower target to ensure surplus
+    };
+    const pots = {
+      ...DEFAULT_POTS,
+      workplacePensionBalance: 2000000, // very large pot
+      isaBalance: 1000000
+    };
+    const projections = generateProjections(profile, pots);
+    // Find a year with annualIncomeExcess > 0
+    const surplusYear = projections.find(p => p.age >= 60 && (p.annualIncomeExcess || 0) > 0);
+    // Even if projection engine doesn't produce it normally, we can mock it
+    const fakeProjections = [{
+      ...projections[0],
+      age: 65,
+      isRetired: true,
+      year: 2040,
+      annualIncomeExcess: 10000,
+      netRetirementIncome: 30000,
+      statePensionReceived: 10000,
+      pensionDrawdownTaxFree: 10000,
+      pensionDrawdownTaxable: 10000,
+    }];
+    const data = computeCashFlowSankeyData(profile, pots, fakeProjections, 65, 'combined');
+    expect(data).toBeDefined();
+    const nodeIds = data!.nodes.map(n => n.id);
+    expect(nodeIds).toContain('reinvested_surplus');
+  });
+
+  it('handles edge cases where guaranteed income is zero and pots are completely depleted', () => {
+    const profile = {
+      ...DEFAULT_PROFILE,
+      targetRetirementAge: 60,
+    };
+    const fakeProjections = [{
+      ...generateProjections(profile, DEFAULT_POTS)[0],
+      age: 80,
+      isRetired: true,
+      year: 2055,
+      statePensionReceived: 0,
+      dbPensionIncomeReceived: 0,
+      annuityIncomeReceived: 0,
+      giltLadderIncomeReceived: 0,
+      taxableFixedIncomeReceived: 0,
+      taxFreeFixedIncomeReceived: 0,
+      pensionDrawdown: 0,
+      pensionDrawdownTaxable: 0,
+      pensionDrawdownTaxFree: 0,
+      isaDrawdown: 0,
+      cashDrawdown: 0,
+      lifeEventsIncome: 0,
+      propertyDownsizeEquityReleased: 0,
+      totalTaxPaid: 0,
+      netRetirementIncome: 0,
+      incomeShortfall: 20000,
+      annualIncomeExcess: 0
+    }];
+    const data = computeCashFlowSankeyData(profile, DEFAULT_POTS, fakeProjections, 80, 'combined');
+    expect(data).toBeDefined();
+    expect(data!.nodes.length).toBeGreaterThanOrEqual(0);
+    expect(data!.metrics.guaranteedFloor).toBe(0);
+    expect(data!.metrics.portfolioDrawdown).toBe(0);
+    expect(data!.metrics.shortfall).toBe(20000);
+  });
 });
