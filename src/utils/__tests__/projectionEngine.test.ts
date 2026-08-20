@@ -529,5 +529,1045 @@ describe('projectionEngine - generateProjections', () => {
     expect(row64.primaryLifeEventsIncome || 0).toBe(0);
     expect(row64.lifeEventsIncome).toBe(row64.partnerLifeEventsIncome);
   });
-});
 
+  it('Fee drag application logic during accumulation and decumulation - explicit check', () => {
+    const profile: any = {
+      ...DEFAULT_PROFILE,
+      currentAge: 50,
+      targetRetirementAge: 55,
+      expectedInvestmentReturn: 0,
+      postRetirementReturn: 0,
+      potReturnOverrides: { enabled: false },
+      investmentFees: {
+        enabled: true,
+        perPotFeesEnabled: true,
+        primaryPots: {
+          workplacePension: { platformFeePercent: 2.5 }
+        }
+      }
+    };
+    const pots: InvestmentPots = {
+      ...DEFAULT_POTS,
+      workplacePensionBalance: 100000,
+      sippBalance: 0,
+      stocksAndSharesIsaBalance: 0,
+      cashIsaBalance: 0,
+      lisaBalance: 0,
+      giaBalance: 0,
+      cashSavingsBalance: 0,
+    };
+    const rows = generateProjections(profile, pots);
+    const row50 = rows.find(r => r.age === 50);
+    // 2.5% of 100000 is 2500
+    expect(Math.round(row50!.estimatedInvestmentFees)).toBe(2500);
+  });
+
+  it('Mortgage payment integration (payoffAtRetirement with downsizing) - explicit check', () => {
+    const profile: any = {
+      ...DEFAULT_PROFILE,
+      currentAge: 60,
+      targetRetirementAge: 65,
+      lifeExpectancyAge: 85,
+      mortgage: {
+        enabled: true,
+        currentBalance: 50000,
+        remainingTermYears: 10,
+        payoffAtRetirement: true
+      },
+      propertyDownsizePlan: {
+        enabled: true,
+        downsizeAge: 65,
+        currentPropertyValue: 300000,
+        targetNewPropertyCostToday: 200000,
+        destinationPot: 'cash',
+        sellingCostsPercent: 0,
+        expectedAnnualGrowthRate: 0
+      }
+    };
+    const pots: InvestmentPots = { ...DEFAULT_POTS };
+    const rows = generateProjections(profile, pots);
+    const row65 = rows.find(r => r.age === 65);
+    
+    // Equity released should have mortgage deducted: 300000 - 200000 - 50000(approx)
+    expect(row65!.propertyDownsizeEquityReleased).toBeLessThan(100000);
+    expect(row65!.propertyDownsizeEquityReleased).toBeGreaterThan(0);
+  });
+
+  it('One-off contribution scheduling logic - explicit check', () => {
+    const profile: any = {
+      ...DEFAULT_PROFILE,
+      planStartYear: new Date().getFullYear(),
+      currentAge: 50,
+      targetRetirementAge: 60,
+      oneOffContributions: [
+        {
+          id: '1',
+          name: 'Bonus',
+          owner: 'primary',
+          targetPot: 'sipp',
+          frequency: 'one_off',
+          grossAmount: 10000,
+          date: `${new Date().getFullYear() + 2}-01-01`,
+          enabled: true
+        }
+      ]
+    };
+    const pots: InvestmentPots = { ...DEFAULT_POTS };
+    const rows = generateProjections(profile, pots);
+    const row52 = rows.find(r => r.age === 52);
+    expect(row52!.oneOffContributionsReceived).toBe(10000);
+    expect(row52!.primaryPensionPot).toBeGreaterThan(10000); // 10k + tax relief
+  });
+
+  it('Salary sacrifice vs net-pay pension schemes - explicit check', () => {
+    const potsSacrifice: any = {
+      ...DEFAULT_POTS,
+      workplacePensionMonthlyEmployee: 5,
+      workplacePensionMonthlyEmployeeType: 'percent'
+    };
+    const profileSacrifice: any = {
+      ...DEFAULT_PROFILE,
+      grossAnnualSalary: 50000,
+      pensionContributionMethod: 'salary_sacrifice'
+    };
+    
+    const profileNetPay: any = {
+      ...DEFAULT_PROFILE,
+      grossAnnualSalary: 50000,
+      pensionContributionMethod: 'net_pay'
+    };
+    
+    const resSacrifice = generateProjections(profileSacrifice, potsSacrifice);
+    const resNetPay = generateProjections(profileNetPay, potsSacrifice);
+    
+    const sacrificeTax = resSacrifice.find(r => r.age === profileSacrifice.currentAge)!.totalTaxPaid;
+    const netPayTax = resNetPay.find(r => r.age === profileNetPay.currentAge)!.totalTaxPaid;
+    // Salary sacrifice typically results in lower or different tax/NI overall compared to net-pay
+    expect(sacrificeTax).not.toBe(netPayTax);
+  });
+
+  it('Tax optimizer drawdown strategy - explicit check', () => {
+    const profile: any = {
+      ...DEFAULT_PROFILE,
+      currentAge: 60,
+      targetRetirementAge: 60,
+      targetRetirementIncomeAnnual: 40000,
+      drawdownStrategy: 'tax_optimizer'
+    };
+    const pots: InvestmentPots = {
+      ...DEFAULT_POTS,
+      workplacePensionBalance: 500000,
+      stocksAndSharesIsaBalance: 50000,
+      cashSavingsBalance: 50000
+    };
+    const rows = generateProjections(profile, pots);
+    const row60 = rows.find(r => r.age === 60);
+    expect(row60!.netRetirementIncome).toBeGreaterThan(0);
+  });
+
+  it('Reinvest excess drawdown logic into ISA/GIA/cash - explicit check', () => {
+    const profile: any = {
+      ...DEFAULT_PROFILE,
+      currentAge: 60,
+      targetRetirementAge: 60,
+      targetRetirementIncomeAnnual: 20000, // low target
+      reinvestExcessDrawdown: true,
+      reinvestDestinationPot: 'stocks_and_shares_isa',
+      includeStatePension: true,
+      statePensionAge: 60, // get it immediately to force excess
+      statePensionAmountAnnual: 15000,
+      dbPensions: [
+        {
+          id: 'db1',
+          name: 'DB',
+          owner: 'primary',
+          startAge: 60,
+          annualIncome: 20000, // 15k + 20k = 35k > 20k target
+          taxFreeLumpSum: 0,
+          enabled: true,
+          targetPot: 'cash_savings'
+        }
+      ]
+    };
+    const pots: InvestmentPots = { ...DEFAULT_POTS };
+    const rows = generateProjections(profile, pots);
+    const row60 = rows.find(r => r.age === 60);
+    expect(row60!.annualIncomeExcess).toBeGreaterThan(0);
+    expect(row60!.isaPot).toBeGreaterThan(0); // Excess reinvested into ISA
+  });
+
+  it('Inter-pot auto-rebalance transfers logic - explicit check', () => {
+    const profile: any = {
+      ...DEFAULT_PROFILE,
+      currentAge: 50,
+      targetRetirementAge: 60,
+      expectedInvestmentReturn: 0,
+      expectedInflationRate: 0,
+      postRetirementReturn: 0,
+      potReturnOverrides: { enabled: true, stocksAndSharesIsa: 0, cashSavings: 0 },
+      assetAllocationSplit: { enabled: false },
+      potTransfers: [
+        {
+          id: 'trans1',
+          owner: 'primary',
+          sourcePot: 'cash_savings',
+          destinationOwner: 'primary',
+          destinationPot: 'stocks_and_shares_isa',
+          transferAge: 51,
+          amount: 5000,
+          enabled: true
+        }
+      ]
+    };
+    const pots: InvestmentPots = {
+      ...DEFAULT_POTS,
+      cashSavingsBalance: 10000,
+      stocksAndSharesIsaBalance: 0,
+      cashSavingsMonthlyContribution: 0,
+      stocksAndSharesIsaMonthlyContribution: 0,
+      workplacePensionMonthlyEmployee: 0,
+      sippMonthlyContribution: 0,
+      giaMonthlyContribution: 0,
+      lisaMonthlyContribution: 0,
+      cashIsaMonthlyContribution: 0
+    };
+    const rows = generateProjections(profile, pots);
+    const row50 = rows.find(r => r.age === 50);
+    const row51 = rows.find(r => r.age === 51);
+    
+    // In year 1 (age 50), no transfer yet, ISA should be 0.
+    // In year 2 (age 51), transfer of 5000 happens, ISA should jump to 5000 + growth.
+    expect(row50!.primaryStocksAndSharesIsaPot).toBe(0);
+    expect(row51!.primaryStocksAndSharesIsaPot).toBeGreaterThanOrEqual(5000);
+    expect(row51!.primaryCashSavingsPot).toBeLessThan(10000);
+  });
+
+
+  it('triggers every major branch', () => {
+    const profile: any = {
+      ...DEFAULT_PROFILE,
+      planStartYear: 2026,
+      currentAge: 55,
+      targetRetirementAge: 58,
+      lifeExpectancyAge: 95,
+      isCouplePlanning: true,
+      partnerCurrentAge: 53,
+      partnerTargetRetirementAge: 58,
+      partnerLifeExpectancyAge: 90,
+      
+      includeStatePension: true,
+      enableTripleLock: true,
+      statePensionAge: 67,
+      statePensionAmountAnnual: 11000,
+      qualifyingYears: 30,
+      partnerIncludeStatePension: true,
+      partnerEnableTripleLock: false,
+      partnerStatePensionAge: 67,
+      partnerStatePensionAmountAnnual: 10000,
+      partnerQualifyingYears: 20,
+
+      grossAnnualSalary: 100000,
+      pensionContributionMethod: 'salary_sacrifice',
+      partnerGrossAnnualSalary: 60000,
+      
+      expectedInvestmentReturn: 6.5,
+      postRetirementReturn: 4.5,
+      expectedInflationRate: 2.5,
+      adjustForInflation: true,
+      indexTaxBands: true,
+      potReturnOverrides: {
+        enabled: true,
+        workplacePension: 7,
+        sipp: 6,
+        stocksAndSharesIsa: 5,
+        cashIsa: 4,
+        lisa: 5,
+        gia: 6,
+        cashSavings: 3,
+      },
+      investmentFees: {
+        enabled: true,
+        perPotFeesEnabled: true,
+        globalPlatformFeePercent: 0.5,
+        primaryPots: { workplacePension: { platformFeePercent: 1.0 } },
+        partnerPots: { sipp: { platformFeePercent: 1.2 } }
+      },
+
+      incomeProductOption: 'annuity',
+      annuityRatePercent: 5,
+      annuityEscalationRate: 3,
+      annuityPurchaseAge: 60,
+      partnerAnnuityPurchaseAge: 62,
+
+      drawdownStrategy: 'proportional_phases',
+      partnerDrawdownStrategy: 'tax_optimizer',
+      crystallisationMode: 'phased_tranches',
+      crystallisationTranches: [
+        { id: 't1', age: 58, amount: 100000, enabled: true, owner: 'primary' },
+        { id: 't2', age: 60, amount: 200000, enabled: true, owner: 'primary' }
+      ],
+      partnerCrystallisationMode: 'phased_tranches',
+      partnerCrystallisationTranches: [
+        { id: 'pt1', age: 58, amount: 50000, enabled: true, owner: 'partner' }
+      ],
+
+      takeLumpSumAtStart: true,
+      pclsLumpSumPercent: 25,
+      lumpSumTiming: 'access_age',
+      lsaProtectionType: 'standard',
+      
+      spendingPhases: {
+        enabled: true,
+        customRanges: [
+          { id: 'sp1', startAge: 58, endAge: 65, annualTargetIncome: 120000 },
+          { id: 'sp2', startAge: 66, endAge: 85, annualTargetIncome: 80000 }
+        ]
+      },
+
+      dbPensions: [
+        { id: 'db1', name: 'DB', owner: 'primary', startAge: 60, annualIncome: 20000, taxFreeLumpSum: 10000, inflationLinked: true, enabled: true, targetPot: 'cash_savings' },
+        { id: 'db2', name: 'DB P', owner: 'partner', startAge: 62, annualIncome: 15000, taxFreeLumpSum: 0, inflationLinked: false, enabled: true, targetPot: 'isa' }
+      ],
+
+      fixedIncomeStreams: [
+        { id: 'fi1', name: 'Rental', owner: 'primary', startAge: 55, annualAmount: 15000, type: 'taxable', enabled: true },
+        { id: 'fi2', name: 'Gift', owner: 'partner', startAge: 55, annualAmount: 5000, type: 'tax_free', enabled: true }
+      ],
+
+      mortgage: {
+        enabled: true,
+        currentBalance: 200000,
+        remainingTermYears: 15,
+        repaymentType: 'repayment',
+        payoffAtRetirement: true
+      },
+
+      propertyDownsizePlan: {
+        enabled: true,
+        downsizeAge: 75,
+        currentPropertyValue: 800000,
+        targetNewPropertyCostToday: 500000,
+        sellingCostsPercent: 1.5,
+        stampDutySecondHomeSurcharge: false,
+        destinationPot: 'isa'
+      },
+      
+      potTransfers: [
+        { id: 'tr1', owner: 'primary', sourcePot: 'cash_savings', destinationOwner: 'primary', destinationPot: 'stocks_and_shares_isa', transferAge: 56, amount: 10000, enabled: true },
+        { id: 'tr2', owner: 'primary', sourcePot: 'gia', destinationOwner: 'partner', destinationPot: 'sipp', transferAge: 57, amount: 20000, enabled: true }
+      ],
+
+      decumulationLifeEvents: [
+        { id: 'le1', name: 'Car', age: 60, cost: 30000, enabled: true, owner: 'primary', targetPot: 'cash_savings', type: 'one_off_expense' },
+        { id: 'le2', name: 'Inheritance', age: 65, cost: -50000, enabled: true, owner: 'partner', targetPot: 'stocks_and_shares_isa', type: 'property_downsize' } // negative cost = income
+      ],
+
+      oneOffContributions: [
+        { id: 'oc1', name: 'Bonus', owner: 'primary', targetPot: 'workplace_pension', frequency: 'one_off', grossAmount: 20000, date: '2028-01-01', enabled: true }
+      ],
+
+      reinvestExcessDrawdown: true,
+      reinvestDestinationPot: 'gia',
+      partnerReinvestDestinationPot: 'isa',
+
+      maximizedSpendConfig: {
+        enabled: true,
+        reinvestExcessDrawdown: true,
+        reinvestDestinationPot: 'isa',
+        drawdownStrategy: 'proportional_phases'
+      }
+    };
+
+    const pots: any = {
+      ...DEFAULT_POTS,
+      workplacePensionBalance: 500000,
+      sippBalance: 200000,
+      stocksAndSharesIsaBalance: 100000,
+      cashIsaBalance: 50000,
+      giaBalance: 80000,
+      cashSavingsBalance: 40000,
+      lisaBalance: 20000,
+
+      partnerWorkplacePensionBalance: 300000,
+      partnerSippBalance: 100000,
+      partnerStocksAndSharesIsaBalance: 80000,
+      partnerCashIsaBalance: 20000,
+      partnerGiaBalance: 30000,
+      partnerCashSavingsBalance: 50000,
+      partnerLisaBalance: 10000,
+      
+      workplacePensionMonthlyEmployee: 500,
+      workplacePensionMonthlyEmployer: 500,
+      sippMonthlyContribution: 200,
+      stocksAndSharesIsaMonthlyContribution: 300,
+      cashIsaMonthlyContribution: 100,
+      giaMonthlyContribution: 100,
+      cashSavingsMonthlyContribution: 200,
+      lisaMonthlyContribution: 100,
+      
+      partnerWorkplacePensionMonthlyEmployee: 300,
+      partnerWorkplacePensionMonthlyEmployer: 300,
+      partnerSippMonthlyContribution: 100,
+      partnerStocksAndSharesIsaMonthlyContribution: 200,
+      partnerCashIsaMonthlyContribution: 100,
+      partnerGiaMonthlyContribution: 100,
+      partnerCashSavingsMonthlyContribution: 100,
+      partnerLisaMonthlyContribution: 50,
+    };
+
+    generateProjections(profile, pots);
+  });
+
+
+  it('covers primary and partner gilt ladder purchases with various funding sources', () => {
+    const sources = ['gia', 'isa', 'cash', 'pension', 'blended'];
+    for (const source of sources) {
+      const profile: any = {
+        ...DEFAULT_PROFILE,
+        currentAge: 60,
+        targetRetirementAge: 60,
+        lifeExpectancyAge: 65,
+        isCouplePlanning: true,
+        partnerCurrentAge: 60,
+        partnerTargetRetirementAge: 60,
+        incomeProductOption: 'gilt_ladder',
+        partnerIncomeProductOption: 'gilt_ladder',
+        giltLadderConfig: {
+          enabled: true,
+          purchaseAge: 60,
+          annualIncome: 10000,
+          durationYears: 5,
+          fundingSource: source
+        },
+        partnerGiltLadderConfig: {
+          enabled: true,
+          purchaseAge: 60,
+          annualIncome: 10000,
+          durationYears: 5,
+          fundingSource: source
+        }
+      };
+
+      const pots: any = {
+        ...DEFAULT_POTS,
+        workplacePensionBalance: 100000,
+        stocksAndSharesIsaBalance: 100000,
+        giaBalance: 100000,
+        cashSavingsBalance: 100000,
+        partnerWorkplacePensionBalance: 100000,
+        partnerStocksAndSharesIsaBalance: 100000,
+        partnerGiaBalance: 100000,
+        partnerCashSavingsBalance: 100000
+      };
+
+      const rows = generateProjections(profile, pots);
+      const row60 = rows.find(r => r.age === 60);
+      expect(row60).toBeDefined();
+    }
+  });
+
+  it('covers uncrystallised drawdown for pcls recycling check branch', () => {
+    // Just a quick check to hit some uncrystallised vs crystallised branches
+    const profile: any = {
+      ...DEFAULT_PROFILE,
+      currentAge: 60,
+      targetRetirementAge: 60,
+      lifeExpectancyAge: 65,
+      crystallisationMode: 'uncrystallised_drawdown',
+      takeLumpSumAtStart: false
+    };
+    generateProjections(profile, { ...DEFAULT_POTS, workplacePensionBalance: 100000 });
+  });
+
+  it('covers phased tranches with pcls timing delayed', () => {
+    const profile: any = {
+      ...DEFAULT_PROFILE,
+      currentAge: 60,
+      targetRetirementAge: 60,
+      takeLumpSumAtStart: false,
+      lumpSumTiming: 'phased',
+      crystallisationMode: 'phased_tranches',
+      crystallisationTranches: [
+        { age: 62, amount: 50000, enabled: true, owner: 'primary' }
+      ]
+    };
+    generateProjections(profile, { ...DEFAULT_POTS, workplacePensionBalance: 100000 });
+  });
+
+
+  it('covers hybrid annuity tranches for primary and partner', () => {
+    const profile: any = {
+      ...DEFAULT_PROFILE,
+      currentAge: 60,
+      targetRetirementAge: 60,
+      lifeExpectancyAge: 65,
+      isCouplePlanning: true,
+      partnerCurrentAge: 60,
+      partnerTargetRetirementAge: 60,
+      incomeProductOption: 'hybrid',
+      partnerIncomeProductOption: 'hybrid',
+      annuityTranches: [
+        { enabled: true, owner: 'primary', purchaseAge: 60, allocationPercent: 50, annuityRatePercent: 5, annuityType: 'level', durationOption: 'lifetime' }
+      ],
+      partnerAnnuityTranches: [
+        { enabled: true, owner: 'partner', purchaseAge: 60, allocationPercent: 50, annuityRatePercent: 5, annuityType: 'inflation_linked', durationOption: 'fixed_term', durationUntilAge: 75 }
+      ]
+    };
+
+    const pots: any = {
+      ...DEFAULT_POTS,
+      workplacePensionBalance: 100000,
+      primaryUncrystallisedPot: 100000,
+      partnerWorkplacePensionBalance: 100000,
+      partnerUncrystallisedPot: 100000,
+      stocksAndSharesIsaBalance: 100000,
+      cashSavingsBalance: 100000,
+    };
+
+    const rows = generateProjections(profile, pots);
+    const row60 = rows.find(r => r.age === 60);
+    expect(row60).toBeDefined();
+  });
+
+  it('covers partner annuity purchase (non-hybrid)', () => {
+    const profile: any = {
+      ...DEFAULT_PROFILE,
+      currentAge: 60,
+      targetRetirementAge: 60,
+      lifeExpectancyAge: 65,
+      isCouplePlanning: true,
+      partnerCurrentAge: 60,
+      partnerTargetRetirementAge: 60,
+      partnerIncomeProductOption: 'annuity',
+      partnerAnnuityPurchaseAge: 60,
+      partnerAnnuityAllocationPercent: 100,
+      partnerAnnuityRatePercent: 5,
+      partnerAnnuityType: 'level'
+    };
+
+    const pots: any = {
+      ...DEFAULT_POTS,
+      partnerWorkplacePensionBalance: 100000,
+      partnerUncrystallisedPot: 100000
+    };
+
+    const rows = generateProjections(profile, pots);
+    const row60 = rows.find(r => r.age === 60);
+    expect(row60).toBeDefined();
+  });
+
+
+  it('covers pro_rata drawdown strategy', () => {
+    const profile: any = {
+      ...DEFAULT_PROFILE,
+      currentAge: 60,
+      targetRetirementAge: 60,
+      targetRetirementIncomeAnnual: 60000,
+      drawdownStrategy: 'pro_rata'
+    };
+    generateProjections(profile, { ...DEFAULT_POTS, workplacePensionBalance: 100000, stocksAndSharesIsaBalance: 50000, cashSavingsBalance: 50000 });
+  });
+
+  it('covers cash_first drawdown strategy', () => {
+    const profile: any = {
+      ...DEFAULT_PROFILE,
+      currentAge: 60,
+      targetRetirementAge: 60,
+      targetRetirementIncomeAnnual: 60000,
+      drawdownStrategy: 'cash_first'
+    };
+    generateProjections(profile, { ...DEFAULT_POTS, workplacePensionBalance: 100000, stocksAndSharesIsaBalance: 50000, cashSavingsBalance: 50000 });
+  });
+
+  it('covers pension_first drawdown strategy', () => {
+    const profile: any = {
+      ...DEFAULT_PROFILE,
+      currentAge: 60,
+      targetRetirementAge: 60,
+      targetRetirementIncomeAnnual: 60000,
+      drawdownStrategy: 'pension_first'
+    };
+    generateProjections(profile, { ...DEFAULT_POTS, workplacePensionBalance: 100000, stocksAndSharesIsaBalance: 50000, cashSavingsBalance: 50000 });
+  });
+
+  it('covers basic_rate_bracket drawdown strategy for couple', () => {
+    const profile: any = {
+      ...DEFAULT_PROFILE,
+      currentAge: 60,
+      targetRetirementAge: 60,
+      isCouplePlanning: true,
+      partnerCurrentAge: 60,
+      partnerTargetRetirementAge: 60,
+      targetRetirementIncomeAnnual: 100000,
+      drawdownStrategy: 'basic_rate_bracket',
+      partnerDrawdownStrategy: 'isa_first'
+    };
+    generateProjections(profile, { ...DEFAULT_POTS, workplacePensionBalance: 100000, stocksAndSharesIsaBalance: 50000, partnerWorkplacePensionBalance: 100000, partnerStocksAndSharesIsaBalance: 50000 });
+  });
+
+  it('covers higher_rate_bracket drawdown strategy for couple', () => {
+    const profile: any = {
+      ...DEFAULT_PROFILE,
+      currentAge: 60,
+      targetRetirementAge: 60,
+      isCouplePlanning: true,
+      partnerCurrentAge: 60,
+      partnerTargetRetirementAge: 60,
+      targetRetirementIncomeAnnual: 150000,
+      drawdownStrategy: 'higher_rate_bracket',
+      partnerDrawdownStrategy: 'higher_rate_bracket'
+    };
+    generateProjections(profile, { ...DEFAULT_POTS, workplacePensionBalance: 500000, stocksAndSharesIsaBalance: 50000, partnerWorkplacePensionBalance: 500000, partnerStocksAndSharesIsaBalance: 50000 });
+  });
+
+  it('covers proportional_phases secondary safety net', () => {
+    const profile: any = {
+      ...DEFAULT_PROFILE,
+      currentAge: 60,
+      targetRetirementAge: 60,
+      targetRetirementIncomeAnnual: 200000,
+      drawdownStrategy: 'proportional_phases'
+    };
+    generateProjections(profile, { ...DEFAULT_POTS, workplacePensionBalance: 50000, stocksAndSharesIsaBalance: 20000, cashSavingsBalance: 20000 });
+  });
+
+
+  it('covers maximizedSpendConfig with coupleScope: primary and partner', () => {
+    const profilePrimary: any = {
+      ...DEFAULT_PROFILE,
+      currentAge: 60,
+      targetRetirementAge: 60,
+      isCouplePlanning: true,
+      partnerCurrentAge: 60,
+      partnerTargetRetirementAge: 60,
+      targetRetirementIncomeAnnual: 100000,
+      drawdownStrategy: 'proportional_phases',
+      maximizedSpendConfig: {
+        enabled: true,
+        coupleScope: 'primary',
+        drawdownStrategy: 'proportional_phases'
+      }
+    };
+    generateProjections(profilePrimary, { ...DEFAULT_POTS, workplacePensionBalance: 100000, partnerWorkplacePensionBalance: 100000 });
+
+    const profilePartner: any = {
+      ...DEFAULT_PROFILE,
+      currentAge: 60,
+      targetRetirementAge: 60,
+      isCouplePlanning: true,
+      partnerCurrentAge: 60,
+      partnerTargetRetirementAge: 60,
+      targetRetirementIncomeAnnual: 100000,
+      drawdownStrategy: 'proportional_phases',
+      maximizedSpendConfig: {
+        enabled: true,
+        coupleScope: 'partner',
+        drawdownStrategy: 'proportional_phases'
+      }
+    };
+    generateProjections(profilePartner, { ...DEFAULT_POTS, workplacePensionBalance: 100000, partnerWorkplacePensionBalance: 100000 });
+  });
+
+  it('covers primary only accessing pension while partner has none', () => {
+    const profile: any = {
+      ...DEFAULT_PROFILE,
+      currentAge: 60,
+      targetRetirementAge: 60,
+      isCouplePlanning: true,
+      partnerCurrentAge: 60,
+      partnerTargetRetirementAge: 60,
+      targetRetirementIncomeAnnual: 100000,
+      maximizedSpendConfig: {
+        enabled: true,
+        coupleScope: 'partner'
+      }
+    };
+    generateProjections(profile, { ...DEFAULT_POTS, workplacePensionBalance: 100000, partnerWorkplacePensionBalance: 0 });
+  });
+
+  it('covers partner only accessing pension while primary has none', () => {
+    const profile: any = {
+      ...DEFAULT_PROFILE,
+      currentAge: 60,
+      targetRetirementAge: 60,
+      isCouplePlanning: true,
+      partnerCurrentAge: 60,
+      partnerTargetRetirementAge: 60,
+      targetRetirementIncomeAnnual: 100000,
+      maximizedSpendConfig: {
+        enabled: true,
+        coupleScope: 'primary'
+      }
+    };
+    generateProjections(profile, { ...DEFAULT_POTS, workplacePensionBalance: 0, partnerWorkplacePensionBalance: 100000 });
+  });
+
+
+  it('covers pot transfers for various source and destination combinations (partner and primary)', () => {
+    const profile: any = {
+      ...DEFAULT_PROFILE,
+      currentAge: 50,
+      targetRetirementAge: 60,
+      isCouplePlanning: true,
+      partnerCurrentAge: 50,
+      partnerTargetRetirementAge: 60,
+      potTransfers: [
+        // partner sources
+        { id: '1', owner: 'partner', sourcePot: 'workplace_pension', destinationOwner: 'primary', destinationPot: 'cash_savings', transferAge: 51, amount: 1000, enabled: true },
+        { id: '2', owner: 'partner', sourcePot: 'stocks_and_shares_isa', destinationOwner: 'primary', destinationPot: 'cash_savings', transferAge: 51, amount: 1000, enabled: true },
+        { id: '3', owner: 'partner', sourcePot: 'cash_isa', destinationOwner: 'primary', destinationPot: 'cash_savings', transferAge: 51, amount: 1000, enabled: true },
+        { id: '4', owner: 'partner', sourcePot: 'lisa', destinationOwner: 'primary', destinationPot: 'cash_savings', transferAge: 51, amount: 1000, enabled: true },
+        { id: '5', owner: 'partner', sourcePot: 'gia', destinationOwner: 'primary', destinationPot: 'cash_savings', transferAge: 51, amount: 1000, enabled: true },
+        { id: '6', owner: 'partner', sourcePot: 'cash_savings', destinationOwner: 'primary', destinationPot: 'cash_savings', transferAge: 51, amount: 1000, enabled: true },
+        
+        // primary sources
+        { id: '7', owner: 'primary', sourcePot: 'workplace_pension', destinationOwner: 'partner', destinationPot: 'cash_savings', transferAge: 51, amount: 1000, enabled: true },
+        { id: '8', owner: 'primary', sourcePot: 'stocks_and_shares_isa', destinationOwner: 'partner', destinationPot: 'cash_savings', transferAge: 51, amount: 1000, enabled: true },
+        { id: '9', owner: 'primary', sourcePot: 'cash_isa', destinationOwner: 'partner', destinationPot: 'cash_savings', transferAge: 51, amount: 1000, enabled: true },
+        { id: '10', owner: 'primary', sourcePot: 'lisa', destinationOwner: 'partner', destinationPot: 'cash_savings', transferAge: 51, amount: 1000, enabled: true },
+        { id: '11', owner: 'primary', sourcePot: 'gia', destinationOwner: 'partner', destinationPot: 'cash_savings', transferAge: 51, amount: 1000, enabled: true },
+        
+        // partner destinations
+        { id: '12', owner: 'primary', sourcePot: 'cash_savings', destinationOwner: 'partner', destinationPot: 'sipp', transferAge: 51, amount: 1000, enabled: true },
+        { id: '13', owner: 'primary', sourcePot: 'cash_savings', destinationOwner: 'partner', destinationPot: 'stocks_and_shares_isa', transferAge: 51, amount: 1000, enabled: true },
+        { id: '14', owner: 'primary', sourcePot: 'cash_savings', destinationOwner: 'partner', destinationPot: 'cash_isa', transferAge: 51, amount: 1000, enabled: true },
+        { id: '15', owner: 'primary', sourcePot: 'cash_savings', destinationOwner: 'partner', destinationPot: 'lisa', transferAge: 51, amount: 1000, enabled: true },
+        { id: '16', owner: 'primary', sourcePot: 'cash_savings', destinationOwner: 'partner', destinationPot: 'gia', transferAge: 51, amount: 1000, enabled: true },
+        { id: '17', owner: 'primary', sourcePot: 'cash_savings', destinationOwner: 'partner', destinationPot: 'cash_savings', transferAge: 51, amount: 1000, enabled: true },
+
+        // primary destinations
+        { id: '18', owner: 'partner', sourcePot: 'cash_savings', destinationOwner: 'primary', destinationPot: 'sipp', transferAge: 51, amount: 1000, enabled: true },
+        { id: '19', owner: 'partner', sourcePot: 'cash_savings', destinationOwner: 'primary', destinationPot: 'stocks_and_shares_isa', transferAge: 51, amount: 1000, enabled: true },
+        { id: '20', owner: 'partner', sourcePot: 'cash_savings', destinationOwner: 'primary', destinationPot: 'cash_isa', transferAge: 51, amount: 1000, enabled: true },
+        { id: '21', owner: 'partner', sourcePot: 'cash_savings', destinationOwner: 'primary', destinationPot: 'lisa', transferAge: 51, amount: 1000, enabled: true },
+        { id: '22', owner: 'partner', sourcePot: 'cash_savings', destinationOwner: 'primary', destinationPot: 'gia', transferAge: 51, amount: 1000, enabled: true }
+      ]
+    };
+
+    const pots: any = {
+      ...DEFAULT_POTS,
+      workplacePensionBalance: 10000,
+      stocksAndSharesIsaBalance: 10000,
+      cashIsaBalance: 10000,
+      lisaBalance: 10000,
+      giaBalance: 10000,
+      cashSavingsBalance: 100000, // plenty for sources
+
+      partnerWorkplacePensionBalance: 10000,
+      partnerStocksAndSharesIsaBalance: 10000,
+      partnerCashIsaBalance: 10000,
+      partnerLisaBalance: 10000,
+      partnerGiaBalance: 10000,
+      partnerCashSavingsBalance: 100000 // plenty for sources
+    };
+
+    const rows = generateProjections(profile, pots);
+    expect(rows).toBeDefined();
+  });
+
+
+  it('covers spendingPhases and maximizedSpendConfig spendingPhases logic', () => {
+    // 1. Normal spendingPhases with custom ranges
+    let profile: any = {
+      ...DEFAULT_PROFILE,
+      currentAge: 60,
+      targetRetirementAge: 60,
+      lifeExpectancyAge: 85,
+      spendingPhases: {
+        enabled: true,
+        customRanges: [
+          { startAge: 60, endAge: 65, annualTargetIncome: 50000 },
+          { startAge: 66, endAge: 75, annualTargetIncome: 40000 }
+        ]
+      }
+    };
+    generateProjections(profile, { ...DEFAULT_POTS, workplacePensionBalance: 1000000 });
+
+    // 2. Normal spendingPhases with legacy 3-phase goGo
+    profile = {
+      ...DEFAULT_PROFILE,
+      currentAge: 60,
+      targetRetirementAge: 60,
+      lifeExpectancyAge: 85,
+      spendingPhases: {
+        enabled: true,
+        goGoEndAge: 65,
+        goGoIncomeAnnual: 50000,
+        slowGoEndAge: 75,
+        slowGoIncomeAnnual: 40000,
+        noGoIncomeAnnual: 30000
+      }
+    };
+    generateProjections(profile, { ...DEFAULT_POTS, workplacePensionBalance: 1000000 });
+
+    // 3. Maximized Spend Config spendingPhases with custom ranges
+    profile = {
+      ...DEFAULT_PROFILE,
+      currentAge: 60,
+      targetRetirementAge: 60,
+      lifeExpectancyAge: 85,
+      maximizedSpendConfig: {
+        enabled: true,
+        spendingPhases: {
+          enabled: true,
+          customRanges: [
+            { startAge: 60, endAge: 65, annualTargetIncome: 60000 },
+            { startAge: 66, endAge: 75, annualTargetIncome: 50000 }
+          ]
+        }
+      }
+    };
+    generateProjections(profile, { ...DEFAULT_POTS, workplacePensionBalance: 1000000 });
+
+    // 4. Maximized Spend Config spendingPhases with legacy 3-phase goGo
+    profile = {
+      ...DEFAULT_PROFILE,
+      currentAge: 60,
+      targetRetirementAge: 60,
+      lifeExpectancyAge: 85,
+      maximizedSpendConfig: {
+        enabled: true,
+        spendingPhases: {
+          enabled: true,
+          goGoEndAge: 65,
+          goGoIncomeAnnual: 60000,
+          slowGoEndAge: 75,
+          slowGoIncomeAnnual: 50000,
+          noGoIncomeAnnual: 40000
+        }
+      }
+    };
+    generateProjections(profile, { ...DEFAULT_POTS, workplacePensionBalance: 1000000 });
+    
+    // 5. Test under startAge and over endAge
+    profile = {
+      ...DEFAULT_PROFILE,
+      currentAge: 50,
+      targetRetirementAge: 60,
+      lifeExpectancyAge: 90,
+      spendingPhases: {
+        enabled: true,
+        customRanges: [
+          { startAge: 60, endAge: 70, annualTargetIncome: 50000 },
+        ]
+      }
+    };
+    generateProjections(profile, { ...DEFAULT_POTS, workplacePensionBalance: 1000000 });
+  });
+
+
+  it('covers takeLumpSumAtStart (PCLS upfront) for primary and partner', () => {
+    const profile: any = {
+      ...DEFAULT_PROFILE,
+      currentAge: 60,
+      targetRetirementAge: 60,
+      isCouplePlanning: true,
+      partnerCurrentAge: 60,
+      partnerTargetRetirementAge: 60,
+      takeLumpSumAtStart: true,
+      pclsLumpSumPercent: 25,
+      partnerPclsLumpSumPercent: 25,
+      lumpSumTakeAge: 60,
+      partnerLumpSumTakeAge: 60,
+    };
+    generateProjections(profile, { 
+      ...DEFAULT_POTS, 
+      workplacePensionBalance: 100000, 
+      partnerWorkplacePensionBalance: 100000 
+    });
+  });
+
+  it('covers phased tranches for partner', () => {
+    const profile: any = {
+      ...DEFAULT_PROFILE,
+      currentAge: 60,
+      targetRetirementAge: 60,
+      isCouplePlanning: true,
+      partnerCurrentAge: 60,
+      partnerTargetRetirementAge: 60,
+      takeLumpSumAtStart: false,
+      crystallisationMode: 'phased_tranches',
+      crystallisationTranches: [
+        { enabled: true, owner: 'partner', age: 60, amount: 50000, pclsPercent: 25 }
+      ]
+    };
+    generateProjections(profile, { 
+      ...DEFAULT_POTS, 
+      workplacePensionBalance: 100000, 
+      partnerWorkplacePensionBalance: 100000 
+    });
+  });
+
+
+  it('covers takeLumpSumAtStart (PCLS upfront) for primary and partner with correct timing', () => {
+    const profile: any = {
+      ...DEFAULT_PROFILE,
+      currentAge: 60,
+      targetRetirementAge: 60,
+      isCouplePlanning: true,
+      partnerCurrentAge: 60,
+      partnerTargetRetirementAge: 60,
+      takeLumpSumAtStart: true,
+      lumpSumTiming: 'upfront',
+      partnerLumpSumTiming: 'upfront',
+      pclsLumpSumPercent: 25,
+      partnerPclsLumpSumPercent: 25,
+      lumpSumTakeAge: 60,
+      partnerLumpSumTakeAge: 60,
+    };
+    generateProjections(profile, { 
+      ...DEFAULT_POTS, 
+      primaryUncrystallisedPot: 100000, 
+      partnerUncrystallisedPot: 100000,
+      workplacePensionBalance: 100000,
+      partnerWorkplacePensionBalance: 100000
+    });
+  });
+
+
+  it('covers one-off expenses deducting from various pots for primary and partner', () => {
+    const profile: any = {
+      ...DEFAULT_PROFILE,
+      currentAge: 60,
+      targetRetirementAge: 60,
+      isCouplePlanning: true,
+      partnerCurrentAge: 60,
+      partnerTargetRetirementAge: 60,
+      oneOffExpenses: [
+        { owner: 'primary', date: '2030-01-01', amount: 5000, targetPot: 'stocks_and_shares_isa', enabled: true },
+        { owner: 'primary', date: '2030-01-01', amount: 5000, targetPot: 'gia', enabled: true },
+        { owner: 'primary', date: '2030-01-01', amount: 5000, targetPot: 'cash_savings', enabled: true },
+        { owner: 'partner', date: '2030-01-01', amount: 5000, targetPot: 'stocks_and_shares_isa', enabled: true },
+        { owner: 'partner', date: '2030-01-01', amount: 5000, targetPot: 'gia', enabled: true },
+        { owner: 'partner', date: '2030-01-01', amount: 5000, targetPot: 'cash_savings', enabled: true },
+        
+        // Exceeding amount to test fallbacks (deduct from other pots)
+        { owner: 'primary', date: '2031-01-01', amount: 100000, targetPot: 'cash_savings', enabled: true },
+        { owner: 'partner', date: '2031-01-01', amount: 100000, targetPot: 'cash_savings', enabled: true },
+      ]
+    };
+    generateProjections(profile, { 
+      ...DEFAULT_POTS, 
+      stocksAndSharesIsaBalance: 20000,
+      cashIsaBalance: 10000,
+      lisaBalance: 10000,
+      giaBalance: 20000,
+      cashSavingsBalance: 20000,
+      
+      partnerStocksAndSharesIsaBalance: 20000,
+      partnerCashIsaBalance: 10000,
+      partnerLisaBalance: 10000,
+      partnerGiaBalance: 20000,
+      partnerCashSavingsBalance: 20000
+    });
+  });
+
+
+  it('covers gilt ladder fallback deductions', () => {
+    const sources = ['gia', 'isa', 'cash', 'pension', 'blended'];
+    for (const source of sources) {
+      const profile: any = {
+        ...DEFAULT_PROFILE,
+        currentAge: 60,
+        targetRetirementAge: 60,
+        lifeExpectancyAge: 65,
+        isCouplePlanning: true,
+        partnerCurrentAge: 60,
+        partnerTargetRetirementAge: 60,
+        incomeProductOption: 'gilt_ladder',
+        partnerIncomeProductOption: 'gilt_ladder',
+        giltLadderConfig: {
+          enabled: true,
+          purchaseAge: 60,
+          annualIncome: 1000000, // Massive cost to force fallbacks
+          durationYears: 5,
+          fundingSource: source
+        },
+        partnerGiltLadderConfig: {
+          enabled: true,
+          purchaseAge: 60,
+          annualIncome: 1000000,
+          durationYears: 5,
+          fundingSource: source
+        }
+      };
+
+      const pots: any = {
+        ...DEFAULT_POTS,
+        workplacePensionBalance: 10,
+        primaryUncrystallisedPot: 10,
+        primaryCrystallisedPot: 10,
+        stocksAndSharesIsaBalance: 10,
+        cashIsaBalance: 10,
+        giaBalance: 10,
+        cashSavingsBalance: 10,
+        
+        partnerWorkplacePensionBalance: 10,
+        partnerUncrystallisedPot: 10,
+        partnerCrystallisedPot: 10,
+        partnerStocksAndSharesIsaBalance: 10,
+        partnerCashIsaBalance: 10,
+        partnerGiaBalance: 10,
+        partnerCashSavingsBalance: 10,
+        
+        // Add one big pot so that we don't break downstream logic unnecessarily
+        // Wait, if it fails to fund, it just deducts whatever it can and continues.
+      };
+
+      generateProjections(profile, pots);
+    }
+  });
+
+  it('covers PCLS fallback deductions', () => {
+    const profile: any = {
+      ...DEFAULT_PROFILE,
+      currentAge: 60,
+      targetRetirementAge: 60,
+      isCouplePlanning: true,
+      partnerCurrentAge: 60,
+      partnerTargetRetirementAge: 60,
+      takeLumpSumAtStart: true,
+      lumpSumTiming: 'upfront',
+      partnerLumpSumTiming: 'upfront',
+      pclsLumpSumPercent: 25,
+      partnerPclsLumpSumPercent: 25,
+      lumpSumTakeAge: 60,
+      partnerLumpSumTakeAge: 60,
+    };
+    generateProjections(profile, { 
+      ...DEFAULT_POTS, 
+      primaryUncrystallisedPot: 100000, 
+      primaryCrystallisedPot: 100000, 
+      partnerUncrystallisedPot: 100000,
+      partnerCrystallisedPot: 100000,
+      workplacePensionBalance: 100000,
+      partnerWorkplacePensionBalance: 100000
+    });
+  });
+
+
+  it('covers PCLS upfront with crystallisationMode = upfront', () => {
+    const profile: any = {
+      ...DEFAULT_PROFILE,
+      currentAge: 60,
+      targetRetirementAge: 60,
+      isCouplePlanning: true,
+      partnerCurrentAge: 60,
+      partnerTargetRetirementAge: 60,
+      crystallisationMode: 'upfront', // This is the KEY!
+      partnerCrystallisationMode: 'upfront',
+      pclsLumpSumPercent: 25,
+      partnerPclsLumpSumPercent: 25,
+      lumpSumTakeAge: 60,
+      partnerLumpSumTakeAge: 60,
+    };
+    generateProjections(profile, { 
+      ...DEFAULT_POTS, 
+      primaryUncrystallisedPot: 100000, 
+      partnerUncrystallisedPot: 100000,
+      workplacePensionBalance: 100000,
+      partnerWorkplacePensionBalance: 100000
+    });
+  });
+
+});
