@@ -12,7 +12,7 @@ import {
   CartesianGrid,
   ReferenceLine,
 } from 'recharts';
-import { UserProfile, InvestmentPots, TaxCalculationResult, AppMode } from '../types';
+import { UserProfile, InvestmentPots, TaxCalculationResult } from '../types';
 import { runMonteCarloSimulation, MonteCarloParams, MarketScenario, calculateCashBufferRequiredDetails } from '../utils/monteCarloEngine';
 import { getPensionAccessAge, getPartnerPensionAccessAge } from '../utils/ukTaxEngine';
 import { Dices, ShieldAlert, Sparkles, Sliders, TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, Zap } from 'lucide-react';
@@ -23,30 +23,16 @@ interface MonteCarloCardProps {
   taxResult: TaxCalculationResult;
   onChange?: (updatedProfile: UserProfile) => void;
   showAllScenarios?: boolean;
-  appMode?: AppMode;
 }
 
-export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, taxResult, onChange, showAllScenarios = false, appMode = 'basic' }) => {
-  const [debouncedProfile, setDebouncedProfile] = useState(profile);
-  const [debouncedPots, setDebouncedPots] = useState(pots);
-  const [debouncedTaxResult, setDebouncedTaxResult] = useState(taxResult);
-
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedProfile(profile);
-      setDebouncedPots(pots);
-      setDebouncedTaxResult(taxResult);
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [profile, pots, taxResult]);
-
-  const minHorizonAge = Math.max(profile.currentAge + 1, profile.targetRetirementAge || 55);
+export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, taxResult, onChange, showAllScenarios = false }) => {
+  const targetHorizonAge = profile.maximizedSpendConfig?.targetEndAge || profile.lifeExpectancyAge || 95;
 
   const [params, setParams] = useState<MonteCarloParams>({
     numSimulations: 500,
     accumulationVolatility: 12.0,
     decumulationVolatility: 8.0,
-    maxAge: Math.min(100, Math.max(minHorizonAge, profile.lifeExpectancyAge || 95)),
+    maxAge: targetHorizonAge,
     stressedReturnDropPercent: 2.0,
     crashStartAge: profile.targetRetirementAge,
     crashDurationYears: 2,
@@ -54,13 +40,16 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
   });
 
   const [localParams, setLocalParams] = useState<MonteCarloParams>(params);
+  const [hasRun, setHasRun] = useState(false);
+  const [isSimulating, setIsSimulating] = useState(false);
 
   React.useEffect(() => {
-    if (profile.lifeExpectancyAge) {
-      const targetAge = Math.min(100, Math.max(minHorizonAge, profile.lifeExpectancyAge));
-      setLocalParams((prev) => (prev.maxAge === targetAge ? prev : { ...prev, maxAge: targetAge }));
-    }
-  }, [profile.lifeExpectancyAge, minHorizonAge]);
+    setLocalParams((prev) => ({
+      ...prev,
+      maxAge: targetHorizonAge,
+      crashStartAge: profile.targetRetirementAge,
+    }));
+  }, [targetHorizonAge, profile.targetRetirementAge]);
 
   React.useEffect(() => {
     const timer = setTimeout(() => {
@@ -139,36 +128,39 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
 
   // Compute Monte Carlo simulation for current single selection
   const mcResult = useMemo(() => {
-    return runMonteCarloSimulation(debouncedProfile, debouncedPots, debouncedTaxResult, { ...params, cashBufferYears: currentCashBufferYears });
-  }, [debouncedProfile, debouncedPots, debouncedTaxResult, params, currentCashBufferYears]);
+    if (!taxResult || !hasRun) return null;
+    return runMonteCarloSimulation(profile, pots, taxResult, params);
+  }, [profile, pots, taxResult, params, hasRun]);
 
-  // Compute 3 scenario results for Overview tab comparison view (gated to active view)
+  // Compute 3 scenario results for Overview tab comparison view
   const baseResult = useMemo(() => {
-    return runMonteCarloSimulation(debouncedProfile, debouncedPots, debouncedTaxResult, { ...params, marketScenario: 'standard', useCashBuffer: false });
-  }, [debouncedProfile, debouncedPots, debouncedTaxResult, params]);
+    if (!taxResult || !hasRun) return null;
+    return runMonteCarloSimulation(profile, pots, taxResult, { ...params, marketScenario: 'standard' });
+  }, [profile, pots, taxResult, params, hasRun]);
 
   const stressedResult = useMemo(() => {
-    if (!showAllScenarios) return mcResult;
-    return runMonteCarloSimulation(debouncedProfile, debouncedPots, debouncedTaxResult, { ...params, marketScenario: 'stressed' });
-  }, [debouncedProfile, debouncedPots, debouncedTaxResult, params, showAllScenarios, mcResult]);
+    if (!taxResult || !hasRun) return null;
+    return runMonteCarloSimulation(profile, pots, taxResult, { ...params, marketScenario: 'stressed' });
+  }, [profile, pots, taxResult, params, hasRun]);
 
   const crashResult = useMemo(() => {
-    if (!showAllScenarios && params.marketScenario !== 'early_crash') return mcResult;
-    return runMonteCarloSimulation(debouncedProfile, debouncedPots, debouncedTaxResult, {
+    if (!taxResult || !hasRun) return null;
+    return runMonteCarloSimulation(profile, pots, taxResult, {
       ...params,
       marketScenario: 'early_crash',
       useCashBuffer: params.useCashBuffer ?? false,
       cashBufferYears: params.cashBufferYears ?? params.crashDurationYears ?? 2,
     });
-  }, [debouncedProfile, debouncedPots, debouncedTaxResult, params, showAllScenarios, mcResult]);
+  }, [profile, pots, taxResult, params, hasRun]);
 
   const projectedCashAtCrashStart = useMemo(() => {
-    if (!baseResult || !baseResult.agePercentiles) return 0;
-    const targetAgeData = baseResult.agePercentiles.find((p) => p.age === currentCrashStartAge);
-    return targetAgeData?.p50CashGiaPot ?? 0;
-  }, [baseResult, currentCrashStartAge]);
+    if (!crashResult || !crashResult.agePercentiles) return undefined;
+    const targetAgeData = crashResult.agePercentiles.find((p) => p.age === currentCrashStartAge);
+    return targetAgeData?.p50CashGiaPot;
+  }, [crashResult, currentCrashStartAge]);
 
   const cashBufferSummary = useMemo(() => {
+    if (!hasRun) return {} as any;
     return calculateCashBufferRequiredDetails(
       profile,
       pots,
@@ -176,31 +168,11 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
       currentCashBufferYears,
       projectedCashAtCrashStart
     );
-  }, [profile, pots, currentCrashStartAge, currentCashBufferYears, projectedCashAtCrashStart]);
-
-  if (!taxResult || !mcResult || !baseResult || !stressedResult || !crashResult) {
-    return (
-      <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 sm:p-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
-          <Dices className="h-6 w-6 mr-3 text-purple-600" />
-          Stochastic Projections
-        </h2>
-        <div className="text-gray-500">Awaiting tax calculation data...</div>
-      </div>
-    );
-  }
-
-  const formatCurrency = (val: number) => {
-    if (Math.abs(val) >= 1000000) return `£${(val / 1000000).toFixed(2)}M`;
-    if (Math.abs(val) >= 1000) return `£${(val / 1000).toFixed(0)}k`;
-    return `£${val}`;
-  };
-
-  const retirementYr = mcResult.agePercentiles.find((p) => p.age === profile.targetRetirementAge);
-  const endYr = mcResult.agePercentiles[mcResult.agePercentiles.length - 1];
+  }, [profile, pots, currentCrashStartAge, currentCashBufferYears, projectedCashAtCrashStart, hasRun]);
 
   const prepareChartData = (result: typeof mcResult) => {
-    const inflationRate = (profile.expectedInflationRate ?? 2.5) / 100;
+    if (!result) return [];
+    const inflationRate = (profile.expectedInflationRate || 2.5) / 100;
     return result.agePercentiles.map((p) => {
       const yearOffset = p.age - profile.currentAge;
       const discount = adjustInflation ? Math.pow(1 + inflationRate, yearOffset) : 1;
@@ -228,6 +200,56 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
   const stressedChartData = useMemo(() => prepareChartData(stressedResult), [stressedResult, profile.currentAge, profile.expectedInflationRate, adjustInflation]);
   const crashChartData = useMemo(() => prepareChartData(crashResult), [crashResult, profile.currentAge, profile.expectedInflationRate, adjustInflation]);
 
+  if (!taxResult) {
+    return (
+      <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 sm:p-8">
+        <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+          <Dices className="h-6 w-6 mr-3 text-purple-600" />
+          Stochastic Projections
+        </h2>
+        <div className="text-gray-500">Awaiting tax calculation data...</div>
+      </div>
+    );
+  }
+
+  if (!hasRun || !mcResult || !baseResult || !stressedResult || !crashResult) {
+    return (
+      <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 sm:p-8">
+        <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+          <Dices className="h-6 w-6 mr-3 text-purple-600" />
+          Stochastic Projections
+        </h2>
+        <div className="flex flex-col items-center justify-center p-8 space-y-4">
+          {isSimulating ? (
+            <div className="text-indigo-600 font-bold">Loading...</div>
+          ) : (
+            <button
+              onClick={() => {
+                setIsSimulating(true);
+                setTimeout(() => {
+                  setHasRun(true);
+                  setIsSimulating(false);
+                }, 100);
+              }}
+              className="bg-indigo-600 text-white font-bold px-6 py-3 rounded-xl hover:bg-indigo-700 transition-colors"
+            >
+              Run Simulation
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  const formatCurrency = (val: number) => {
+    if (Math.abs(val) >= 1000000) return `£${(val / 1000000).toFixed(2)}M`;
+    if (Math.abs(val) >= 1000) return `£${(val / 1000).toFixed(0)}k`;
+    return `£${val}`;
+  };
+
+  const retirementYr = mcResult.agePercentiles.find((p) => p.age === profile.targetRetirementAge);
+  const endYr = mcResult.agePercentiles[mcResult.agePercentiles.length - 1];
+
   const successColor =
     mcResult.successRateAge85 >= 85
       ? 'text-emerald-600 bg-emerald-50 border-emerald-200'
@@ -246,20 +268,12 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
               <Dices className="w-5 h-5" />
             </div>
             <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="font-extrabold text-slate-800 dark:text-slate-100 text-base flex items-center gap-2">
-                  <span>Monte Carlo Volatility & Risk Simulation</span>
-                  <span className="text-[10px] font-bold uppercase tracking-wider bg-indigo-100 dark:bg-indigo-950 text-indigo-800 dark:text-indigo-300 px-2.5 py-0.5 rounded-full border border-indigo-200/50 dark:border-indigo-800/50">
-                    Stochastic Model
-                  </span>
-                </h2>
-                {profile.maximizedSpendConfig?.enabled && (
-                  <span className="text-[10px] font-extrabold bg-amber-500/15 border border-amber-500/40 text-amber-900 dark:text-amber-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                    <Zap className="w-3 h-3 fill-amber-500 text-amber-500 shrink-0" />
-                    Max Drawdown Active (£{(profile.maximizedSpendConfig.targetAnnualIncome || profile.targetRetirementIncomeAnnual || 0).toLocaleString()}/yr)
-                  </span>
-                )}
-              </div>
+              <h2 className="font-extrabold text-slate-800 dark:text-slate-100 text-base flex items-center gap-2">
+                <span>Monte Carlo Volatility & Risk Simulation</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider bg-indigo-100 dark:bg-indigo-950 text-indigo-800 dark:text-indigo-300 px-2.5 py-0.5 rounded-full border border-indigo-200/50 dark:border-indigo-800/50">
+                  Stochastic Model
+                </span>
+              </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 Simulates {params.numSimulations} market scenarios across accumulation & decumulation phases
               </p>
@@ -268,60 +282,80 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
         </div>
       </div>
 
-      {/* Max Spend Solver Active Banner */}
-      {profile.maximizedSpendConfig?.enabled && (() => {
-        const solvedTarget = profile.maximizedSpendConfig.targetAnnualIncome || profile.targetRetirementIncomeAnnual || 0;
-        const baselineTarget = profile.maximizedSpendConfig.baselineTargetAnnualIncome || 0;
-        const delta = solvedTarget - baselineTarget;
-        const isReinvest = Boolean(profile.maximizedSpendConfig.reinvestExcessDrawdown);
-        const actualTarget = profile.maximizedSpendConfig.actualSpendingTargetAnnual || profile.actualSpendingTargetAnnual || 0;
-        const destPot = (profile.maximizedSpendConfig.reinvestDestinationPot || 'isa').toUpperCase();
-
-        return (
-          <div className="bg-amber-500/10 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800/60 p-3.5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-amber-500/20 dark:bg-amber-900/50 text-amber-600 dark:text-amber-400 rounded-xl shrink-0">
-                <Zap className="w-5 h-5 fill-current" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-black text-amber-950 dark:text-amber-200 uppercase tracking-wide">
-                    Max Spend Solver Data (Risk Modeled Target)
-                  </span>
-                  <span className="text-[10px] font-bold bg-amber-200/80 dark:bg-amber-900 text-amber-900 dark:text-amber-200 px-2 py-0.5 rounded-full">
-                    {isReinvest ? 'Max Drawdown & Reinvest' : 'Die With Zero'}
-                  </span>
-                </div>
-                <p className="text-xs text-amber-900/80 dark:text-amber-200/80 font-medium">
-                  {isReinvest ? (
-                    <>
-                      Drawing down max <strong className="font-extrabold text-amber-950 dark:text-amber-100">£{solvedTarget.toLocaleString()}/yr</strong>. Meeting lifestyle spend of <strong className="font-extrabold text-emerald-800 dark:text-emerald-300">£{actualTarget.toLocaleString()}/yr</strong> and automatically reinvesting surplus into your <strong>{destPot} pot</strong>.
-                    </>
-                  ) : (
-                    <>
-                      Monte Carlo volatility is modeled using your solved target of{' '}
-                      <strong className="font-extrabold text-amber-950 dark:text-amber-100">
-                        £{solvedTarget.toLocaleString()}/yr
-                      </strong>
-                      {baselineTarget > 0 && delta > 0 && (
-                        <> (unlocked <strong className="text-emerald-700 dark:text-emerald-300">+£{delta.toLocaleString()}/yr</strong> vs baseline)</>
-                      )}
-                      .
-                    </>
-                  )}
-                </p>
-              </div>
-            </div>
-            <div className="text-xs font-bold text-amber-900 dark:text-amber-200 bg-amber-100/80 dark:bg-amber-900/60 px-3 py-1.5 rounded-xl border border-amber-300/60 dark:border-amber-800 shrink-0 self-end sm:self-auto">
-              Target Horizon: Age {profile.maximizedSpendConfig.targetEndAge || profile.lifeExpectancyAge || 95}
-            </div>
-          </div>
-        );
-      })()}
-
       {/* Market Scenario Controls (Only visible when not in Overview showAllScenarios mode) */}
       {!showAllScenarios && (
         <>
+          {/* Volatility & Simulation Parameters Controls */}
+          <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-extrabold text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
+                <Sliders className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                <span>Simulation Parameters & Asset Volatility (Standard Deviation)</span>
+              </span>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                Runs: <strong>{params.numSimulations}</strong> trials
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-bold">
+              <div>
+                <div className="flex justify-between text-slate-600 dark:text-slate-300 mb-1">
+                  <span>Accumulation Volatility:</span>
+                  <span className="text-indigo-700 dark:text-indigo-400">{localParams.accumulationVolatility}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="5"
+                  max="25"
+                  step="1"
+                  value={localParams.accumulationVolatility}
+                  onChange={(e) =>
+                    setLocalParams((prev) => ({ ...prev, accumulationVolatility: Number(e.target.value) }))
+                  }
+                  className="w-full accent-indigo-600 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg cursor-pointer"
+                />
+                <p className="text-[10px] text-slate-400 dark:text-slate-500 font-normal mt-1">Pre-retirement equity/growth fluctuation</p>
+              </div>
+
+              <div>
+                <div className="flex justify-between text-slate-600 dark:text-slate-300 mb-1">
+                  <span>Decumulation Volatility:</span>
+                  <span className="text-indigo-700 dark:text-indigo-400">{localParams.decumulationVolatility}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="2"
+                  max="18"
+                  step="1"
+                  value={localParams.decumulationVolatility}
+                  onChange={(e) =>
+                    setLocalParams((prev) => ({ ...prev, decumulationVolatility: Number(e.target.value) }))
+                  }
+                  className="w-full accent-indigo-600 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg cursor-pointer"
+                />
+                <p className="text-[10px] text-slate-400 dark:text-slate-500 font-normal mt-1">Post-retirement multi-asset fluctuation</p>
+              </div>
+
+              <div>
+                <div className="flex justify-between text-slate-600 dark:text-slate-300 mb-1">
+                  <span>Projection Horizon:</span>
+                  <span className="text-indigo-700 dark:text-indigo-400">Age {localParams.maxAge}</span>
+                </div>
+                <select
+                  value={localParams.maxAge}
+                  onChange={(e) => setLocalParams((prev) => ({ ...prev, maxAge: Number(e.target.value) }))}
+                  className="w-full px-2.5 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100"
+                >
+                  <option value={85}>To Age 85</option>
+                  <option value={90}>To Age 90</option>
+                  <option value={95}>To Age 95</option>
+                  <option value={100}>To Age 100</option>
+                </select>
+                <p className="text-[10px] text-slate-400 dark:text-slate-500 font-normal mt-1">Target age model length</p>
+              </div>
+            </div>
+          </div>
+
           {/* KPI Highlight Bento Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Success Rate */}
@@ -1115,7 +1149,7 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
               {/* Per-Year Drop Settings */}
               <div className="space-y-2 pt-2 border-t border-rose-200/60 dark:border-rose-900/60">
                 <label className="text-[11px] font-extrabold text-rose-900 dark:text-rose-200 block">
-                  Configurable Percentage Event (Drop or Bounce) for Each Crash Year:
+                  Configurable Percentage Drop for Each Crash Year:
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {currentCrashYearDrops.map((drop, idx) => {
@@ -1128,29 +1162,23 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
                       >
                         <div className="flex justify-between items-center text-xs font-bold text-rose-950 dark:text-rose-100">
                           <span>Year {idx + 1} (Age {crashAge} / {crashYear}):</span>
-                          <span className={`font-extrabold px-2 py-0.5 rounded border ${
-                            drop > 0 
-                              ? 'text-rose-700 dark:text-rose-400 bg-rose-100 dark:bg-rose-950 border-rose-200 dark:border-rose-800' 
-                              : drop < 0 
-                                ? 'text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950 border-emerald-200 dark:border-emerald-800'
-                                : 'text-slate-700 dark:text-slate-400 bg-slate-100 dark:bg-slate-900 border-slate-200 dark:border-slate-800'
-                          }`}>
-                            {drop > 0 ? `-${drop}% (Drop)` : drop < 0 ? `+${Math.abs(drop)}% (Bounce)` : '0%'}
+                          <span className="font-extrabold text-rose-700 dark:text-rose-400 bg-rose-100 dark:bg-rose-950 px-2 py-0.5 rounded border border-rose-200 dark:border-rose-800">
+                            -{drop}%
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
                           <input
                             type="range"
-                            min="-100"
+                            min="0"
                             max="60"
                             step="1"
                             value={drop}
                             onChange={(e) => handleCrashYearDropChange(idx, parseInt(e.target.value, 10))}
-                            className={`w-full cursor-pointer ${drop < 0 ? 'accent-emerald-600' : 'accent-rose-600'}`}
+                            className="w-full accent-rose-600 cursor-pointer"
                           />
                           <input
                             type="number"
-                            min="-100"
+                            min="0"
                             max="90"
                             value={drop}
                             onChange={(e) => handleCrashYearDropChange(idx, parseInt(e.target.value, 10) || 0)}
@@ -1291,91 +1319,6 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
               </div>
             </div>
           )}
-        </div>
-      )}
-
-      {/* Volatility & Simulation Parameters Controls */}
-      {!showAllScenarios && appMode === 'advanced' && (
-        <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-extrabold text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
-              <Sliders className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-              <span>Simulation Parameters & Asset Volatility (Standard Deviation)</span>
-            </span>
-            <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-              Runs: <strong>{params.numSimulations}</strong> trials
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-bold">
-            <div>
-              <div className="flex justify-between text-slate-600 dark:text-slate-300 mb-1">
-                <span>Accumulation Volatility:</span>
-                <span className="text-indigo-700 dark:text-indigo-400">{localParams.accumulationVolatility}%</span>
-              </div>
-              <input
-                type="range"
-                min="5"
-                max="25"
-                step="1"
-                value={localParams.accumulationVolatility}
-                onChange={(e) =>
-                  setLocalParams((prev) => ({ ...prev, accumulationVolatility: Number(e.target.value) }))
-                }
-                className="w-full accent-indigo-600 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg cursor-pointer"
-              />
-              <p className="text-[10px] text-slate-400 dark:text-slate-500 font-normal mt-1">Pre-retirement equity/growth fluctuation</p>
-            </div>
-
-            <div>
-              <div className="flex justify-between text-slate-600 dark:text-slate-300 mb-1">
-                <span>Decumulation Volatility:</span>
-                <span className="text-indigo-700 dark:text-indigo-400">{localParams.decumulationVolatility}%</span>
-              </div>
-              <input
-                type="range"
-                min="2"
-                max="18"
-                step="1"
-                value={localParams.decumulationVolatility}
-                onChange={(e) =>
-                  setLocalParams((prev) => ({ ...prev, decumulationVolatility: Number(e.target.value) }))
-                }
-                className="w-full accent-indigo-600 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg cursor-pointer"
-              />
-              <p className="text-[10px] text-slate-400 dark:text-slate-500 font-normal mt-1">Post-retirement multi-asset fluctuation</p>
-            </div>
-
-            <div>
-              <div className="flex justify-between text-slate-600 dark:text-slate-300 mb-1">
-                <span>Projection Horizon:</span>
-                <span className="text-indigo-700 dark:text-indigo-400">Age {localParams.maxAge}</span>
-              </div>
-              <select
-                value={localParams.maxAge}
-                onChange={(e) => {
-                  const val = Number(e.target.value);
-                  setLocalParams((prev) => ({ ...prev, maxAge: val }));
-                  if (onChange && profile.lifeExpectancyAge !== val) {
-                    onChange({ ...profile, lifeExpectancyAge: val });
-                  }
-                }}
-                className="w-full px-2.5 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100"
-              >
-                {Array.from(
-                  { length: Math.max(1, 100 - minHorizonAge + 1) },
-                  (_, i) => minHorizonAge + i
-                ).map((age) => (
-                  <option key={age} value={age}>
-                    To Age {age} {age === profile.targetRetirementAge ? '(Retirement Start)' : age === 90 ? '(Standard)' : age === 95 ? '(Default Planning Horizon)' : age === 100 ? '(Max 100)' : ''}
-                  </option>
-                ))}
-              </select>
-              <p className="text-[10px] text-slate-400 dark:text-slate-500 font-normal mt-1">
-                Target model horizon age (Retirement Start Age {profile.targetRetirementAge} to 100). Also synced with Historic Market Modeling.
-              </p>
-            </div>
-          </div>
         </div>
       )}
 
