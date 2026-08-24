@@ -4,6 +4,7 @@ import { getPensionAccessAge, getPartnerPensionAccessAge, getLsaLimit, getPartne
 import { getTargetIncomeForAge, getActualSpendingTargetForAge } from './projectionEngine';
 import { SCOT_INTERMEDIATE_THRESHOLD, RUK_BASIC_THRESHOLD, SCOT_HIGHER_THRESHOLD, RUK_ADDITIONAL_THRESHOLD } from '../config/ukTaxRates';
 import { HISTORIC_MARKET_DATA, getHistoricSequence, HistoricYearData } from '../data/historicMarketData';
+import { getPotFeePercent } from './assetAllocation';
 
 export interface AssetAllocation {
   equityPercent: number; // e.g. 80
@@ -290,17 +291,30 @@ export function runHistoricModelingSimulation(
       const bondRatio = (allocationSplit.bondPercent ?? allocationSplit.bonds ?? 30) / 100;
       const cashRatio = (allocationSplit.cashPercent ?? allocationSplit.cash ?? 10) / 100;
       
-      const blendedReturnRate = (
+      const blendedGrossReturnRate = (
         eqRatio * (hData.equityReturn / 100) +
         bondRatio * (hData.bondReturn / 100) +
         cashRatio * (hData.cashReturn / 100)
       );
 
-      // Pot-specific returns
-      // Pensions & ISAs follow blended return; Cash/GIA leans higher cash/bond weighting
-      const pensionReturnRate = blendedReturnRate;
-      const isaReturnRate = blendedReturnRate;
-      const cashGiaReturnRate = 0.5 * (hData.cashReturn / 100) + 0.3 * (hData.bondReturn / 100) + 0.2 * (hData.equityReturn / 100);
+      // Compute pot-specific net returns by subtracting investment fees (Issue 1 fix)
+      const fees = profile.investmentFees;
+      const pensionFeePercent = getPotFeePercent(fees, 'primary', 'pension', {
+        workplacePensionBalance: cleanPots.workplacePensionBalance,
+        sippBalance: cleanPots.sippBalance,
+      }) / 100;
+      const isaFeePercent = getPotFeePercent(fees, 'primary', 'stocksAndSharesIsa') / 100;
+      const giaFeePercent = getPotFeePercent(fees, 'primary', 'gia') / 100;
+
+      // Pot-specific returns: Pensions & ISAs follow blended return; Cash/GIA leans higher cash/bond weighting
+      const cashGiaGrossReturnRate = 0.5 * (hData.cashReturn / 100) + 0.3 * (hData.bondReturn / 100) + 0.2 * (hData.equityReturn / 100);
+
+      const pensionReturnRate = Math.max(-0.05, blendedGrossReturnRate - pensionFeePercent);
+      const isaReturnRate = Math.max(-0.05, blendedGrossReturnRate - isaFeePercent);
+      const cashGiaReturnRate = Math.max(-0.05, cashGiaGrossReturnRate - giaFeePercent);
+
+      // Keep a blendedReturnRate for snapshot reporting (gross, for display purposes)
+      const blendedReturnRate = blendedGrossReturnRate;
 
       if (age === profile.targetRetirementAge) {
         retirementPotBalance = pensionPot + isaPot + cashGiaPot;
@@ -584,18 +598,29 @@ export function runHistoricModelingSimulation(
             : Math.min(100, Math.max(1, profile.annuityAllocationPercent ?? 50));
 
         const grossPotForAnnuity = primaryPensionPot * (allocPercent / 100);
-        let actualCapitalToAnnuity = grossPotForAnnuity;
-        
-        if (primaryCumulativeTaxFreeDrawn < maxLsa) {
-          const uncrystPcls = Math.min(grossPotForAnnuity * 0.25, Math.max(0, maxLsa - primaryCumulativeTaxFreeDrawn));
-          actualCapitalToAnnuity = grossPotForAnnuity - uncrystPcls;
-          const alloc = allocateLumpSumToPots(uncrystPcls, profile.lumpSumTargetPot, profile.lumpSumSplits);
+
+        // Fix Issue 2: PCLS only from uncrystallised portion; deduct proportionally from both sub-pots
+        const uncrystFraction = primaryPensionPot > 0 ? primaryUncrystallisedPot / primaryPensionPot : 0;
+        const uncrystForAnnuity = grossPotForAnnuity * uncrystFraction;
+        const crystForAnnuity = grossPotForAnnuity * (1 - uncrystFraction);
+
+        let pclsFromAnnuity = 0;
+        if (primaryCumulativeTaxFreeDrawn < maxLsa && uncrystForAnnuity > 0) {
+          pclsFromAnnuity = Math.min(uncrystForAnnuity * 0.25, Math.max(0, maxLsa - primaryCumulativeTaxFreeDrawn));
+          const alloc = allocateLumpSumToPots(pclsFromAnnuity, profile.lumpSumTargetPot, profile.lumpSumSplits);
           primaryIsaPot += alloc.toIsa;
           primaryCashGiaPot += alloc.toCashGia;
-          primaryCumulativeTaxFreeDrawn += uncrystPcls;
+          primaryCumulativeTaxFreeDrawn += pclsFromAnnuity;
+          isaPot = primaryIsaPot + partnerIsaPot;
+          cashGiaPot = primaryCashGiaPot + partnerCashGiaPot;
         }
 
-        primaryPensionPot -= grossPotForAnnuity;
+        const actualCapitalToAnnuity = grossPotForAnnuity - pclsFromAnnuity;
+
+        // Deduct from sub-pots correctly
+        primaryUncrystallisedPot = Math.max(0, primaryUncrystallisedPot - uncrystForAnnuity);
+        primaryCrystallisedPot = Math.max(0, primaryCrystallisedPot - crystForAnnuity);
+        primaryPensionPot = primaryUncrystallisedPot + primaryCrystallisedPot;
         pensionPot = primaryPensionPot + partnerPensionPot;
 
         const rate = (profile.annuityRatePercent || 4.2) / 100;
@@ -622,21 +647,30 @@ export function runHistoricModelingSimulation(
         (profile.partnerIncomeProductOption === 'annuity') &&
         partnerAge >= partnerTargetPurchaseAge
       ) {
-        const allocPercent = 100;
+        const grossPotForAnnuity = partnerPensionPot;
 
-        const grossPotForAnnuity = partnerPensionPot * (allocPercent / 100);
-        let actualCapitalToAnnuity = grossPotForAnnuity;
-        
-        if (partnerCumulativeTaxFreeDrawn < partnerMaxLsa) {
-          const uncrystPcls = Math.min(grossPotForAnnuity * 0.25, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn));
-          actualCapitalToAnnuity = grossPotForAnnuity - uncrystPcls;
-          const alloc = allocateLumpSumToPots(uncrystPcls, profile.partnerLumpSumTargetPot || profile.lumpSumTargetPot, profile.partnerLumpSumSplits);
+        // Fix Issue 2: PCLS only from uncrystallised portion of partner's pension
+        const uncrystFraction = partnerPensionPot > 0 ? partnerUncrystallisedPot / partnerPensionPot : 0;
+        const uncrystForAnnuity = grossPotForAnnuity * uncrystFraction;
+        const crystForAnnuity = grossPotForAnnuity * (1 - uncrystFraction);
+
+        let pclsFromAnnuity = 0;
+        if (partnerCumulativeTaxFreeDrawn < partnerMaxLsa && uncrystForAnnuity > 0) {
+          pclsFromAnnuity = Math.min(uncrystForAnnuity * 0.25, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn));
+          const alloc = allocateLumpSumToPots(pclsFromAnnuity, profile.partnerLumpSumTargetPot || profile.lumpSumTargetPot, profile.partnerLumpSumSplits);
           partnerIsaPot += alloc.toIsa;
           partnerCashGiaPot += alloc.toCashGia;
-          partnerCumulativeTaxFreeDrawn += uncrystPcls;
+          partnerCumulativeTaxFreeDrawn += pclsFromAnnuity;
+          isaPot = primaryIsaPot + partnerIsaPot;
+          cashGiaPot = primaryCashGiaPot + partnerCashGiaPot;
         }
 
-        partnerPensionPot -= grossPotForAnnuity;
+        const actualCapitalToAnnuity = grossPotForAnnuity - pclsFromAnnuity;
+
+        // Deduct from sub-pots correctly
+        partnerUncrystallisedPot = Math.max(0, partnerUncrystallisedPot - uncrystForAnnuity);
+        partnerCrystallisedPot = Math.max(0, partnerCrystallisedPot - crystForAnnuity);
+        partnerPensionPot = partnerUncrystallisedPot + partnerCrystallisedPot;
         pensionPot = primaryPensionPot + partnerPensionPot;
 
         const rate = (profile.partnerAnnuityRatePercent || 4.2) / 100;

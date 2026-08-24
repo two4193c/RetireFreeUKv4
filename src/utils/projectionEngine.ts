@@ -1865,7 +1865,7 @@ function parseAnnuityTypeConfig(type?: string) {
         ? calculateWeightedAssetReturn(profile.assetAllocationSplit.accumulation, profile.assetAllocationSplit.assetClassReturns) / 100
         : (profile.expectedInvestmentReturn || 6.5) / 100;
 
-      const primaryPensionFee = getPotFeePercent(profile.investmentFees, 'primary', 'pension', profile.pots) / 100;
+      const primaryPensionFee = getPotFeePercent(profile.investmentFees, 'primary', 'pension', cleanPots) / 100;
       const partnerPensionFee = getPotFeePercent(profile.investmentFees, 'partner', 'pension', profile.partnerPots) / 100;
       const primaryIsaFee = getPotFeePercent(profile.investmentFees, 'primary', 'stocksAndSharesIsa') / 100;
       const partnerIsaFee = getPotFeePercent(profile.investmentFees, 'partner', 'stocksAndSharesIsa') / 100;
@@ -2127,7 +2127,7 @@ function parseAnnuityTypeConfig(type?: string) {
         : (profile.postRetirementReturn || 4.5) / 100;
       const returnBaseGross = isRetired ? returnDecumulationGross : returnAccumulationGross;
 
-      const primaryPensionFeeDecum = getPotFeePercent(profile.investmentFees, 'primary', 'pension', profile.pots) / 100;
+      const primaryPensionFeeDecum = getPotFeePercent(profile.investmentFees, 'primary', 'pension', cleanPots) / 100;
       const partnerPensionFeeDecum = getPotFeePercent(profile.investmentFees, 'partner', 'pension', profile.partnerPots) / 100;
       const primaryIsaFeeDecum = getPotFeePercent(profile.investmentFees, 'primary', 'stocksAndSharesIsa') / 100;
       const partnerIsaFeeDecum = getPotFeePercent(profile.investmentFees, 'partner', 'stocksAndSharesIsa') / 100;
