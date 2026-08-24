@@ -332,7 +332,7 @@ export function runHistoricModelingSimulation(
       if (primaryPensionPot > 0 && primaryActiveTranches.length > 0) {
         for (const tranche of primaryActiveTranches) {
           if (primaryPensionPot <= 0) break;
-          const pclsPct = Math.min(100, Math.max(0, tranche.pclsPercent ?? 25)) / 100;
+          const pclsPct = Math.min(25, Math.max(0, tranche.pclsPercent ?? 25)) / 100;
           const remainingLsa = Math.max(0, maxLsa - primaryCumulativeTaxFreeDrawn);
           const maxGrossForLsa = pclsPct > 0 ? Math.floor(remainingLsa / pclsPct) : primaryUncrystallisedPot;
           const grossCrystallised = Math.min(primaryUncrystallisedPot, tranche.amount, maxGrossForLsa);
@@ -363,7 +363,7 @@ export function runHistoricModelingSimulation(
       if (profile.isCouplePlanning && !partnerDead && partnerPensionPot > 0 && partnerActiveTranches.length > 0) {
         for (const tranche of partnerActiveTranches) {
           if (partnerPensionPot <= 0) break;
-          const pclsPct = Math.min(100, Math.max(0, tranche.pclsPercent ?? 25)) / 100;
+          const pclsPct = Math.min(25, Math.max(0, tranche.pclsPercent ?? 25)) / 100;
           const remainingLsa = Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn);
           const maxGrossForLsa = pclsPct > 0 ? Math.floor(remainingLsa / pclsPct) : partnerUncrystallisedPot;
           const grossCrystallised = Math.min(partnerUncrystallisedPot, tranche.amount, maxGrossForLsa);
@@ -395,7 +395,7 @@ export function runHistoricModelingSimulation(
         primaryUncrystallisedPot > 0 &&
         (profile.pclsLumpSumPercent ?? 25) > 0
       ) {
-        const lumpSumPercent = Math.min(100, profile.pclsLumpSumPercent ?? 25) / 100;
+        const lumpSumPercent = Math.min(25, profile.pclsLumpSumPercent ?? 25) / 100;
         const pclsAmount = Math.min(primaryUncrystallisedPot * lumpSumPercent, Math.max(0, maxLsa - primaryCumulativeTaxFreeDrawn));
         
         primaryCrystallisedPot += (primaryUncrystallisedPot - pclsAmount);
@@ -423,7 +423,7 @@ export function runHistoricModelingSimulation(
         partnerUncrystallisedPot > 0 &&
         (profile.partnerPclsLumpSumPercent ?? 25) > 0
       ) {
-        const lumpSumPercent = Math.min(100, profile.partnerPclsLumpSumPercent ?? 25) / 100;
+        const lumpSumPercent = Math.min(25, profile.partnerPclsLumpSumPercent ?? 25) / 100;
         const partnerPclsAmount = Math.min(partnerUncrystallisedPot * lumpSumPercent, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn));
         
         partnerCrystallisedPot += (partnerUncrystallisedPot - partnerPclsAmount);
@@ -1066,8 +1066,15 @@ export function runHistoricModelingSimulation(
       // Partner Mortality Inheritance
       if (profile.isCouplePlanning && !partnerDead && partnerAge === (profile.partnerLifeExpectancyAge || 95)) {
         partnerDead = true;
+        
+        // Issue 4 Fix: Force inherited pension into crystallised pot to prevent further PCLS
         primaryPensionPot += partnerPensionPot;
+        primaryCrystallisedPot += partnerPensionPot;
+        
         partnerPensionPot = 0;
+        partnerUncrystallisedPot = 0;
+        partnerCrystallisedPot = 0;
+        
         primaryIsaPot += partnerIsaPot;
         partnerIsaPot = 0;
         primaryCashGiaPot += partnerCashGiaPot;

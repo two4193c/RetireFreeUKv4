@@ -399,9 +399,13 @@ function parseAnnuityTypeConfig(type?: string) {
     // Partner Mortality Inheritance
     if (profile.isCouplePlanning && !partnerDead && partnerAge >= (profile.partnerLifeExpectancyAge || 95)) {
       partnerDead = true;
+      
+      // Issue 4 Fix: Inherited pension must not generate further PCLS for the beneficiary.
+      // By forcing all inherited pension into primaryCrystallisedPot, we prevent the primary from
+      // extracting a further 25% tax-free lump sum from it.
       primaryPensionPot += partnerPensionPot;
-      primaryUncrystallisedPot += partnerUncrystallisedPot;
-      primaryCrystallisedPot += partnerCrystallisedPot;
+      primaryCrystallisedPot += partnerPensionPot;
+      
       partnerPensionPot = 0;
       partnerUncrystallisedPot = 0;
       partnerCrystallisedPot = 0;
@@ -442,7 +446,7 @@ function parseAnnuityTypeConfig(type?: string) {
       for (const tranche of primaryActiveTranches) {
         if (primaryUncrystallisedPot <= 0) break;
         const requestedGross = tranche.amount;
-        const pclsPct = Math.min(100, Math.max(0, tranche.pclsPercent ?? 25)) / 100;
+        const pclsPct = Math.min(25, Math.max(0, tranche.pclsPercent ?? 25)) / 100;
         const remainingLsa = Math.max(0, primaryMaxLsa - primaryCumulativeTaxFreeDrawn);
         const grossCrystallised = Math.min(primaryUncrystallisedPot, requestedGross);
         if (grossCrystallised <= 0) continue;
@@ -489,7 +493,7 @@ function parseAnnuityTypeConfig(type?: string) {
       for (const tranche of partnerActiveTranches) {
         if (partnerUncrystallisedPot <= 0) break;
         const requestedGross = tranche.amount;
-        const pclsPct = Math.min(100, Math.max(0, tranche.pclsPercent ?? 25)) / 100;
+        const pclsPct = Math.min(25, Math.max(0, tranche.pclsPercent ?? 25)) / 100;
         const remainingLsa = Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn);
         const grossCrystallised = Math.min(partnerUncrystallisedPot, requestedGross);
         if (grossCrystallised <= 0) continue;
@@ -535,7 +539,7 @@ function parseAnnuityTypeConfig(type?: string) {
       !annuityPurchasedPrimary &&
       (profile.pclsLumpSumPercent ?? 25) > 0
     ) {
-      const lumpSumPercent = Math.min(100, profile.pclsLumpSumPercent ?? 25) / 100;
+      const lumpSumPercent = Math.min(25, profile.pclsLumpSumPercent ?? 25) / 100;
       const pclsAmount = Math.min(primaryPensionPot * lumpSumPercent, Math.max(0, primaryMaxLsa - primaryCumulativeTaxFreeDrawn));
       
       const crystallisedTotal = Math.min(primaryPensionPot, pclsAmount * 4);
@@ -578,7 +582,7 @@ function parseAnnuityTypeConfig(type?: string) {
       !annuityPurchasedPartner &&
       (profile.partnerPclsLumpSumPercent ?? 25) > 0
     ) {
-      const partnerLumpSumPercent = Math.min(100, profile.partnerPclsLumpSumPercent ?? 25) / 100;
+      const partnerLumpSumPercent = Math.min(25, profile.partnerPclsLumpSumPercent ?? 25) / 100;
       const partnerPclsAmount = Math.min(partnerPensionPot * partnerLumpSumPercent, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn));
       
       const crystallisedTotal = Math.min(partnerPensionPot, partnerPclsAmount * 4);
