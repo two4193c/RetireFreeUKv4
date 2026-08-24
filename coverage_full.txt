@@ -1,0 +1,29 @@
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90mC:/Users/two41/.gemini/antigravity/scratch/RetireFreeUKv4[39m
+      [2mCoverage enabled with [22m[33mv8[39m
+
+ [32m✓[39m src/utils/__tests__/monteCarloEngine.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 48[2mms[22m[39m
+ [32m✓[39m src/utils/__tests__/sankeyEngine.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 68[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m2 passed[39m[22m[90m (2)[39m
+[2m      Tests [22m [1m[32m16 passed[39m[22m[90m (16)[39m
+[2m   Start at [22m 00:04:52
+[2m   Duration [22m 985ms[2m (transform 637ms, setup 0ms, import 800ms, tests 116ms, environment 0ms)[22m
+
+[34m % [39m[2mCoverage report from [22m[33mv8[39m
+-------------------|---------|----------|---------|---------|-------------------
+File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+-------------------|---------|----------|---------|---------|-------------------
+All files          |   38.36 |    26.67 |   41.37 |   39.45 |                   
+ config            |     100 |      100 |     100 |     100 |                   
+  ukTaxRates.ts    |     100 |      100 |     100 |     100 |                   
+ utils             |   37.95 |    26.67 |   41.37 |   39.02 |                   
+  ...Allocation.ts |   25.31 |    13.12 |    62.5 |      25 | ...23-136,147-148 
+  defaultData.ts   |      56 |    46.87 |   33.33 |   58.33 | 325-337,376       
+  ...dderEngine.ts |    0.74 |        0 |       0 |    0.86 | 84-433            
+  ...arloEngine.ts |   41.53 |    22.71 |   57.37 |   41.66 | ...1663,1675,1685 
+  ...tionEngine.ts |   36.22 |     28.6 |   22.58 |   37.43 | ...3287,3290,3430 
+  sankeyEngine.ts  |   56.52 |    37.19 |     100 |    59.8 | ...1440,1453-1502 
+  ...izerSolver.ts |       0 |        0 |       0 |       0 | 102-485           
+  ukTaxEngine.ts   |   39.25 |    27.35 |   44.11 |   40.71 | ...1382,1455-1597 
+-------------------|---------|----------|---------|---------|-------------------

@@ -1,4 +1,4 @@
-import { AssetAllocationConfig, AssetClassReturns, AssetAllocationSplit, InvestmentFeeConfig, SinglePotFeeConfig, PerPersonPotFees } from '../types';
+import { AssetAllocationConfig, AssetClassReturns, AssetAllocationSplit, InvestmentFeeConfig, SinglePotFeeConfig, PerPersonPotFees, InvestmentPots } from '../types';
 
 export function getTotalFeePercent(fees?: InvestmentFeeConfig): number {
   if (!fees || !fees.enabled) return 0;
@@ -37,8 +37,9 @@ export function getPotFeePercent(
       if (potType === 'pension') {
         const wpConfig = personPots.workplacePension;
         const sippConfig = personPots.sipp;
-        const wpFee = wpConfig ? Math.max(0, (wpConfig.platformFeePercent ?? 0) + (wpConfig.fundFeePercent ?? 0) + (wpConfig.advisorFeePercent ?? 0)) : getTotalFeePercent(fees);
-        const sippFee = sippConfig ? Math.max(0, (sippConfig.platformFeePercent ?? 0) + (sippConfig.fundFeePercent ?? 0) + (sippConfig.advisorFeePercent ?? 0)) : getTotalFeePercent(fees);
+        const globalFee = Math.max(0, (fees.platformFeePercent ?? 0) + (fees.fundFeePercent ?? 0) + (fees.advisorFeePercent ?? 0));
+        const wpFee = wpConfig ? Math.max(0, (wpConfig.platformFeePercent ?? 0) + (wpConfig.fundFeePercent ?? 0) + (wpConfig.advisorFeePercent ?? 0)) : globalFee;
+        const sippFee = sippConfig ? Math.max(0, (sippConfig.platformFeePercent ?? 0) + (sippConfig.fundFeePercent ?? 0) + (sippConfig.advisorFeePercent ?? 0)) : globalFee;
 
         if (pensionBalances) {
           const wpBal = Math.max(0, pensionBalances.workplacePensionBalance || 0);
@@ -65,7 +66,10 @@ export function getPotFeePercent(
     }
   }
 
-  return getTotalFeePercent(fees);
+  const platform = fees.platformFeePercent ?? 0;
+  const fund = fees.fundFeePercent ?? 0;
+  const advisor = fees.advisorFeePercent ?? 0;
+  return Math.max(0, platform + fund + advisor);
 }
 
 export function calculateWeightedAssetReturn(

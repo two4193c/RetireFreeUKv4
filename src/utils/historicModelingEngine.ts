@@ -147,6 +147,13 @@ export function runHistoricModelingSimulation(
     let isaPot = primaryIsaPot + partnerIsaPot;
     let cashGiaPot = primaryCashGiaPot + partnerCashGiaPot;
 
+    const parseAnnuityTypeConfig = (typeStr = '') => {
+      const isInflationLinked = typeStr.includes('inflation_linked');
+      let fixedEscalationRate = undefined;
+      if (typeStr.includes('_3')) fixedEscalationRate = 0.03;
+      else if (typeStr.includes('_5')) fixedEscalationRate = 0.05;
+      return { isInflationLinked, fixedEscalationRate };
+    };
     let pclsTaken = false;
     let partnerPclsTaken = false;
     let primaryCumulativeTaxFreeDrawn = 0;
@@ -161,6 +168,8 @@ export function runHistoricModelingSimulation(
     const historicAnnuityStreams: Array<{
       baseNominal: number;
       isInflationLinked: boolean;
+      fixedEscalationRate?: number;
+      purchaseYearOffset: number;
       durationOption: string;
       durationUntilAge: number;
       owner: 'primary' | 'partner';
@@ -627,13 +636,17 @@ export function runHistoricModelingSimulation(
         const baseNominal = actualCapitalToAnnuity * rate;
         annuityPurchased = true;
 
+
+        const cfgPrimary = parseAnnuityTypeConfig(profile.annuityType);
         historicAnnuityStreams.push({
           baseNominal,
-          isInflationLinked: (profile.annuityType || '').includes('inflation_linked'),
+          isInflationLinked: cfgPrimary.isInflationLinked,
+          fixedEscalationRate: cfgPrimary.fixedEscalationRate,
           durationOption: profile.annuityDurationOption || 'lifetime',
           durationUntilAge: profile.annuityDurationUntilAge || 75,
           owner: 'primary',
           purchaseInflationFactor: cumulativeInflationFactor,
+          purchaseYearOffset: yr,
         });
       }
 
@@ -677,13 +690,16 @@ export function runHistoricModelingSimulation(
         const baseNominal = actualCapitalToAnnuity * rate;
         partnerAnnuityPurchased = true;
 
+        const cfgPartner = parseAnnuityTypeConfig(profile.partnerAnnuityType || profile.annuityType);
         historicAnnuityStreams.push({
           baseNominal,
-          isInflationLinked: (profile.partnerAnnuityType || '').includes('inflation_linked'),
+          isInflationLinked: cfgPartner.isInflationLinked,
+          fixedEscalationRate: cfgPartner.fixedEscalationRate,
           durationOption: profile.partnerAnnuityDurationOption || 'lifetime',
           durationUntilAge: profile.partnerAnnuityDurationUntilAge || 75,
           owner: 'partner',
           purchaseInflationFactor: cumulativeInflationFactor,
+          purchaseYearOffset: yr,
         });
       }
 
@@ -695,9 +711,13 @@ export function runHistoricModelingSimulation(
         if (stream.durationOption === 'until_age' && streamOwnerAge >= stream.durationUntilAge) {
           return;
         }
-        const streamNominal = stream.isInflationLinked
-          ? stream.baseNominal * (cumulativeInflationFactor / (stream.purchaseInflationFactor || 1))
-          : stream.baseNominal;
+        let streamNominal = stream.baseNominal;
+        if (stream.isInflationLinked) {
+          streamNominal = stream.baseNominal * (cumulativeInflationFactor / (stream.purchaseInflationFactor || 1));
+        } else if (stream.fixedEscalationRate) {
+          const yearsSincePurchase = Math.max(0, yr - (stream.purchaseYearOffset || 0));
+          streamNominal = stream.baseNominal * Math.pow(1 + stream.fixedEscalationRate, yearsSincePurchase);
+        }
         annuityIncomeThisYear += streamNominal;
       });
 
@@ -791,13 +811,9 @@ export function runHistoricModelingSimulation(
         const guaranteedIncome = statePensionThisYr + annuityIncomeThisYear + dbIncomeThisYr + fixedIncomeThisYr;
         let remainingNeeded = Math.max(0, drawdownNetTarget - guaranteedIncome);
 
-        const executeDeduct = (potType: 'pension' | 'isa' | 'cashGia', amount: number, owner?: 'primary' | 'partner') => {
+                const executeDeduct = (potType: 'pension' | 'isa' | 'cashGia', amount: number, owner: 'primary' | 'partner') => {
           if (amount <= 0) return;
-          if (owner) {
-            deductExplicit(potType, amount, owner);
-          } else {
-            deductProRata(potType, amount);
-          }
+          deductExplicit(potType, amount, owner);
           drawdownThisYr += amount;
         };
 
@@ -810,233 +826,232 @@ export function runHistoricModelingSimulation(
           primaryGuaranteedIncome = guaranteedIncome;
         }
 
-        const approximateNetFromGross = (grossDraw: number): number => {
-          const priAvail = canAccessPension ? primaryPensionPot : 0;
-          const partAvail = (profile.isCouplePlanning && partnerCanAccessPension && !partnerDead) ? partnerPensionPot : 0;
-          const totalAvail = priAvail + partAvail;
-          const priRatio = totalAvail > 0 ? priAvail / totalAvail : (canAccessPension ? 1 : 0);
-          const partRatio = totalAvail > 0 ? partAvail / totalAvail : (profile.isCouplePlanning && partnerCanAccessPension && !partnerDead ? 1 : 0);
+        const approximateNetFromGrossForOwner = (grossDraw: number, owner: 'primary' | 'partner'): number => {
+          let taxFree = 0;
           
-          let priTaxFree = 0;
-          let partTaxFree = 0;
-          
-          if (primaryCumulativeTaxFreeDrawn < maxLsa) {
-             const priGrossDraw = grossDraw * priRatio;
-             const priCrystDrawn = Math.min(primaryCrystallisedPot, priGrossDraw);
-             const priUncrystDrawn = Math.min(primaryUncrystallisedPot, Math.max(0, priGrossDraw - priCrystDrawn));
-             priTaxFree = Math.min(priUncrystDrawn * 0.25, Math.max(0, maxLsa - primaryCumulativeTaxFreeDrawn));
-          }
-          if (partnerCumulativeTaxFreeDrawn < partnerMaxLsa) {
-             const partGrossDraw = grossDraw * partRatio;
-             const partCrystDrawn = Math.min(partnerCrystallisedPot, partGrossDraw);
-             const partUncrystDrawn = Math.min(partnerUncrystallisedPot, Math.max(0, partGrossDraw - partCrystDrawn));
-             partTaxFree = Math.min(partUncrystDrawn * 0.25, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn));
+          if (owner === 'primary') {
+            if (primaryCumulativeTaxFreeDrawn < maxLsa) {
+               const crystDrawn = Math.min(primaryCrystallisedPot, grossDraw);
+               const uncrystDrawn = Math.min(primaryUncrystallisedPot, Math.max(0, grossDraw - crystDrawn));
+               taxFree = Math.min(uncrystDrawn * 0.25, Math.max(0, maxLsa - primaryCumulativeTaxFreeDrawn));
+            }
+          } else {
+            if (partnerCumulativeTaxFreeDrawn < partnerMaxLsa) {
+               const crystDrawn = Math.min(partnerCrystallisedPot, grossDraw);
+               const uncrystDrawn = Math.min(partnerUncrystallisedPot, Math.max(0, grossDraw - crystDrawn));
+               taxFree = Math.min(uncrystDrawn * 0.25, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn));
+            }
           }
           
-          const priTaxable = (grossDraw * priRatio) - priTaxFree;
-          const partTaxable = (grossDraw * partRatio) - partTaxFree;
+          const taxable = grossDraw - taxFree;
           
           const indexTaxBands = profile.indexTaxBands ?? true;
           const inflMult = indexTaxBands ? cumulativeInflationFactor : 1;
-          const isScottish = profile.taxRegion === 'scotland';
-          const partnerIsScottish = profile.partnerTaxRegion === 'scotland';
+          const isScottish = owner === 'primary' ? profile.taxRegion === 'scotland' : profile.partnerTaxRegion === 'scotland';
           
-          const { tax: priTotalTax } = computeIncomeTaxOnAmount((primaryGuaranteedIncome + priTaxable) / inflMult, isScottish, profile.customTaxBands);
-          const { tax: priBaseTax } = computeIncomeTaxOnAmount(primaryGuaranteedIncome / inflMult, isScottish, profile.customTaxBands);
-          const priTaxOnDraw = (priTotalTax - priBaseTax) * inflMult;
+          const guaranteed = owner === 'primary' ? primaryGuaranteedIncome : partnerGuaranteedIncome;
           
-          let partTaxOnDraw = 0;
-          if (profile.isCouplePlanning && !partnerDead) {
-            const { tax: partTotalTax } = computeIncomeTaxOnAmount((partnerGuaranteedIncome + partTaxable) / inflMult, partnerIsScottish, profile.customTaxBands);
-            const { tax: partBaseTax } = computeIncomeTaxOnAmount(partnerGuaranteedIncome / inflMult, partnerIsScottish, profile.customTaxBands);
-            partTaxOnDraw = (partTotalTax - partBaseTax) * inflMult;
-          }
+          const { tax: totalTax } = computeIncomeTaxOnAmount((guaranteed + taxable) / inflMult, isScottish, profile.customTaxBands);
+          const { tax: baseTax } = computeIncomeTaxOnAmount(guaranteed / inflMult, isScottish, profile.customTaxBands);
+          const taxOnDraw = (totalTax - baseTax) * inflMult;
           
-          return grossDraw - Math.max(0, priTaxOnDraw) - Math.max(0, partTaxOnDraw);
+          return grossDraw - Math.max(0, taxOnDraw);
         };
-        const getGrossPensionNeededForNet = (netNeeded: number, potAvailable: number): number => {
+
+        const getGrossPensionNeededForNetForOwner = (netNeeded: number, potAvailable: number, owner: 'primary' | 'partner'): number => {
           if (netNeeded <= 0 || potAvailable <= 0) return 0;
           let low = netNeeded;
           let high = netNeeded * 5.0;
           let bestGross = netNeeded;
           for (let i = 0; i < 25; i++) {
             const mid = (low + high) / 2;
-            const net = approximateNetFromGross(mid);
+            const net = approximateNetFromGrossForOwner(mid, owner);
             if (net < netNeeded) { low = mid; } else { high = mid; bestGross = mid; }
           }
           return Math.min(potAvailable, bestGross);
         };
 
-        const strategy = profile.drawdownStrategy || 'isa_first';
-
         let netDrawdownAchieved = 0;
 
-        if (isReinvestExcess) {
-          if (canAccessPension && pensionPot > 0) {
-            const pensionNetNeeded = Math.max(0, drawdownNetTarget - guaranteedIncome);
-            if (pensionNetNeeded > 0) {
-              const grossDrawNeeded = getGrossPensionNeededForNet(pensionNetNeeded, pensionPot);
-              const draw = Math.min(pensionPot, grossDrawNeeded);
-              executeDeduct('pension', draw);
-              const netDraw = approximateNetFromGross(draw);
-              remainingNeeded = Math.max(0, requiredNetIncomeTarget - (guaranteedIncome + netDraw));
-              netDrawdownAchieved += netDraw;
-            } else {
-              remainingNeeded = Math.max(0, requiredNetIncomeTarget - guaranteedIncome);
+        const executeStrategyForOwner = (strategy: string, owner: 'primary' | 'partner', targetNetNeeded: number): number => {
+          if (targetNetNeeded <= 0) return 0;
+
+          const isPrimary = owner === 'primary';
+          const pPot = isPrimary ? primaryPensionPot : partnerPensionPot;
+          const iPot = isPrimary ? primaryIsaPot : partnerIsaPot;
+          const cPot = isPrimary ? primaryCashGiaPot : partnerCashGiaPot;
+          const hasAccess = isPrimary ? canAccessPension : (profile.isCouplePlanning && partnerCanAccessPension && !partnerDead);
+          
+          let remaining = targetNetNeeded;
+          let netAchieved = 0;
+
+          if (isReinvestExcess) {
+            if (hasAccess && pPot > 0) {
+              const grossDrawNeeded = getGrossPensionNeededForNetForOwner(remaining, pPot, owner);
+              const draw = Math.min(pPot, grossDrawNeeded);
+              executeDeduct('pension', draw, owner);
+              const netDraw = approximateNetFromGrossForOwner(draw, owner);
+              remaining = Math.max(0, remaining - netDraw);
+              netAchieved += netDraw;
             }
-          } else {
-            remainingNeeded = Math.max(0, requiredNetIncomeTarget - guaranteedIncome);
-          }
-
-          if (isaPot > 0 && remainingNeeded > 0) {
-            const draw = Math.min(isaPot, remainingNeeded);
-            executeDeduct('isa', draw);
-            remainingNeeded -= draw;
-            netDrawdownAchieved += draw;
-          }
-          if (cashGiaPot > 0 && remainingNeeded > 0) {
-            const draw = Math.min(cashGiaPot, remainingNeeded);
-            executeDeduct('cashGia', draw);
-            remainingNeeded -= draw;
-            netDrawdownAchieved += draw;
-          }
-        } else if (strategy === 'isa_first' || strategy === 'cash_first' || strategy === 'pension_first') {
-          const order: ('isa' | 'cashGia' | 'pension')[] =
-            strategy === 'cash_first'
-              ? ['cashGia', 'isa', 'pension']
-              : strategy === 'pension_first'
-              ? ['pension', 'isa', 'cashGia']
-              : ['isa', 'cashGia', 'pension'];
-
-          for (const potType of order) {
-            if (remainingNeeded <= 0) break;
-            if (potType === 'isa' && isaPot > 0) {
-              const draw = Math.min(isaPot, remainingNeeded);
-              executeDeduct('isa', draw);
-              remainingNeeded -= draw;
-              netDrawdownAchieved += draw;
-            } else if (potType === 'cashGia' && cashGiaPot > 0) {
-              const draw = Math.min(cashGiaPot, remainingNeeded);
-              executeDeduct('cashGia', draw);
-              remainingNeeded -= draw;
-              netDrawdownAchieved += draw;
-            } else if (potType === 'pension' && canAccessPension && pensionPot > 0) {
-              const grossDrawNeeded = getGrossPensionNeededForNet(remainingNeeded, pensionPot);
-              const draw = Math.min(pensionPot, grossDrawNeeded);
-              executeDeduct('pension', draw);
-              const netDraw = approximateNetFromGross(draw);
-              remainingNeeded = Math.max(0, remainingNeeded - netDraw);
-              netDrawdownAchieved += netDraw;
+            if (iPot > 0 && remaining > 0) {
+              const draw = Math.min(iPot, remaining);
+              executeDeduct('isa', draw, owner);
+              remaining -= draw;
+              netAchieved += draw;
             }
-          }
-        } else if (strategy === 'tax_optimizer' || strategy === 'tax_free_bracket' || strategy === 'basic_rate_bracket' || strategy === 'higher_rate_bracket') {
-          const isPrimaryScot = profile.taxRegion === 'scotland';
-          const isPartnerScot = (profile.partnerTaxRegion || profile.taxRegion) === 'scotland';
-
-          const indexTaxBands = profile.indexTaxBands ?? true;
-          const inflMult = indexTaxBands ? cumulativeInflationFactor : 1;
-
-          let priThresholdGross = 12570 * inflMult;
-          if (strategy === 'tax_optimizer' || strategy === 'basic_rate_bracket') {
-            priThresholdGross = (12570 + (isPrimaryScot ? SCOT_INTERMEDIATE_THRESHOLD : RUK_BASIC_THRESHOLD)) * inflMult;
-          } else if (strategy === 'higher_rate_bracket') {
-            priThresholdGross = (isPrimaryScot ? (12570 + SCOT_HIGHER_THRESHOLD) : RUK_ADDITIONAL_THRESHOLD) * inflMult;
-          }
-
-          let partThresholdGross = 12570 * inflMult;
-          if (strategy === 'tax_optimizer' || strategy === 'basic_rate_bracket') {
-            partThresholdGross = (12570 + (isPartnerScot ? SCOT_INTERMEDIATE_THRESHOLD : RUK_BASIC_THRESHOLD)) * inflMult;
-          } else if (strategy === 'higher_rate_bracket') {
-            partThresholdGross = (isPartnerScot ? (12570 + SCOT_HIGHER_THRESHOLD) : RUK_ADDITIONAL_THRESHOLD) * inflMult;
-          }
-
-          const cashGiaReturn = cashGiaReturnRate !== undefined ? cashGiaReturnRate : (blendedReturnRate * 0.90);
-          const primaryCashGrowth = primaryCashGiaPot * cashGiaReturn;
-          const partnerCashGrowth = partnerCashGiaPot * cashGiaReturn;
-
-          const priIncomeAlready = statePensionThisYr / (profile.isCouplePlanning ? 2 : 1) + (annuityIncomeThisYear + dbIncomeThisYr + (fixedIncomeThisYr || 0)) / (profile.isCouplePlanning ? 2 : 1);
-          const partIncomeAlready = profile.isCouplePlanning ? (statePensionThisYr / 2 + (annuityIncomeThisYear + dbIncomeThisYr + (fixedIncomeThisYr || 0)) / 2) : 0;
-
-          const priRoom = Math.max(0, priThresholdGross - priIncomeAlready);
-          const partRoom = profile.isCouplePlanning ? Math.max(0, partThresholdGross - partIncomeAlready) : 0;
-
-          const getGrossForTaxableTarget = (taxableTarget: number, crystPot: number, remainingLsa: number): number => {
-            if (taxableTarget <= crystPot) return taxableTarget;
-            let targetUncrystTaxable = taxableTarget - crystPot;
-            const maxUncrystTaxableWithPcls = remainingLsa * 3;
-            if (targetUncrystTaxable <= maxUncrystTaxableWithPcls) {
-              return crystPot + (targetUncrystTaxable / 0.75);
+            if (cPot > 0 && remaining > 0) {
+              const draw = Math.min(cPot, remaining);
+              executeDeduct('cashGia', draw, owner);
+              remaining -= draw;
+              netAchieved += draw;
             }
-            targetUncrystTaxable -= maxUncrystTaxableWithPcls;
-            return crystPot + (maxUncrystTaxableWithPcls / 0.75) + targetUncrystTaxable;
-          };
+          } else if (strategy === 'isa_first' || strategy === 'cash_first' || strategy === 'pension_first') {
+            const order = strategy === 'cash_first'
+                ? ['cashGia', 'isa', 'pension']
+                : strategy === 'pension_first'
+                ? ['pension', 'isa', 'cashGia']
+                : ['isa', 'cashGia', 'pension'];
 
-          const maxPriGrossForBracket = canAccessPension
-            ? getGrossForTaxableTarget(priRoom, primaryCrystallisedPot, Math.max(0, maxLsa - primaryCumulativeTaxFreeDrawn))
-            : 0;
-            
-          const maxPartGrossForBracket = partnerCanAccessPension
-            ? getGrossForTaxableTarget(partRoom, partnerCrystallisedPot, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn))
-            : 0;
-
-          let priTargetGross = Math.min(canAccessPension ? primaryPensionPot : 0, maxPriGrossForBracket);
-          let partTargetGross = Math.min(partnerCanAccessPension ? partnerPensionPot : 0, maxPartGrossForBracket);
-
-          if (priTargetGross > 0 || partTargetGross > 0) {
-             if (priTargetGross > 0) {
-                executeDeduct('pension', priTargetGross, 'primary');
-             }
-             if (partTargetGross > 0) {
-                executeDeduct('pension', partTargetGross, 'partner');
-             }
-             
-             const netDraw = approximateNetFromGross(priTargetGross + partTargetGross);
-             netDrawdownAchieved += netDraw;
-             remainingNeeded = Math.max(0, remainingNeeded - netDraw);
-          }
-          if (isaPot > 0 && remainingNeeded > 0) {
-            const draw = Math.min(isaPot, remainingNeeded);
-            executeDeduct('isa', draw);
-            remainingNeeded -= draw;
-            netDrawdownAchieved += draw;
-          }
-          if (cashGiaPot > 0 && remainingNeeded > 0) {
-            const draw = Math.min(cashGiaPot, remainingNeeded);
-            executeDeduct('cashGia', draw);
-            remainingNeeded -= draw;
-            netDrawdownAchieved += draw;
-          }
-        } else if (strategy === 'pro_rata') {
-          const hasPensionAccess = canAccessPension || partnerCanAccessPension;
-          const totalAccessible = cashGiaPot + isaPot + (hasPensionAccess ? pensionPot : 0);
-          if (totalAccessible > 0 && remainingNeeded > 0) {
-            if (hasPensionAccess && pensionPot > 0) {
-              const portion = pensionPot / totalAccessible;
-              const netToDraw = remainingNeeded * portion;
-              const grossDrawNeeded = getGrossPensionNeededForNet(netToDraw, pensionPot);
-              const draw = Math.min(pensionPot, grossDrawNeeded);
-              executeDeduct('pension', draw);
-              const netDraw = approximateNetFromGross(draw);
-              remainingNeeded = Math.max(0, remainingNeeded - netDraw);
-              netDrawdownAchieved += netDraw;
+            for (const potType of order) {
+              if (remaining <= 0) break;
+              if (potType === 'isa' && iPot > 0) {
+                const draw = Math.min(iPot, remaining);
+                executeDeduct('isa', draw, owner);
+                remaining -= draw;
+                netAchieved += draw;
+              } else if (potType === 'cashGia' && cPot > 0) {
+                const draw = Math.min(cPot, remaining);
+                executeDeduct('cashGia', draw, owner);
+                remaining -= draw;
+                netAchieved += draw;
+              } else if (potType === 'pension' && hasAccess && pPot > 0) {
+                const grossDrawNeeded = getGrossPensionNeededForNetForOwner(remaining, pPot, owner);
+                const draw = Math.min(pPot, grossDrawNeeded);
+                executeDeduct('pension', draw, owner);
+                const netDraw = approximateNetFromGrossForOwner(draw, owner);
+                remaining = Math.max(0, remaining - netDraw);
+                netAchieved += netDraw;
+              }
             }
-            if (isaPot > 0 && remainingNeeded > 0) {
-              const portion = isaPot / totalAccessible;
-              const draw = Math.min(isaPot, remainingNeeded * portion);
-              executeDeduct('isa', draw);
-              remainingNeeded -= draw;
-              netDrawdownAchieved += draw;
+          } else if (strategy === 'tax_optimizer' || strategy === 'tax_free_bracket' || strategy === 'basic_rate_bracket' || strategy === 'higher_rate_bracket') {
+            const isScot = isPrimary ? profile.taxRegion === 'scotland' : (profile.partnerTaxRegion || profile.taxRegion) === 'scotland';
+            const indexTaxBands = profile.indexTaxBands ?? true;
+            const inflMult = indexTaxBands ? cumulativeInflationFactor : 1;
+
+            let thresholdGross = 12570 * inflMult;
+            if (strategy === 'tax_optimizer' || strategy === 'basic_rate_bracket') {
+              thresholdGross = (12570 + (isScot ? SCOT_INTERMEDIATE_THRESHOLD : RUK_BASIC_THRESHOLD)) * inflMult;
+            } else if (strategy === 'higher_rate_bracket') {
+              thresholdGross = (isScot ? (12570 + SCOT_HIGHER_THRESHOLD) : RUK_ADDITIONAL_THRESHOLD) * inflMult;
             }
-            if (cashGiaPot > 0 && remainingNeeded > 0) {
-              const draw = Math.min(cashGiaPot, remainingNeeded);
-              executeDeduct('cashGia', draw);
-              remainingNeeded -= draw;
-              netDrawdownAchieved += draw;
+
+            const incomeAlready = isPrimary ? (statePensionThisYr / (profile.isCouplePlanning ? 2 : 1) + (annuityIncomeThisYear + dbIncomeThisYr + (fixedIncomeThisYr || 0)) / (profile.isCouplePlanning ? 2 : 1)) : (profile.isCouplePlanning ? (statePensionThisYr / 2 + (annuityIncomeThisYear + dbIncomeThisYr + (fixedIncomeThisYr || 0)) / 2) : 0);
+            const room = Math.max(0, thresholdGross - incomeAlready);
+
+            const getGrossForTaxableTarget = (taxableTarget: number, crystPot: number, remainingLsa: number): number => {
+              if (taxableTarget <= crystPot) return taxableTarget;
+              let targetUncrystTaxable = taxableTarget - crystPot;
+              const maxUncrystTaxableWithPcls = remainingLsa * 3;
+              if (targetUncrystTaxable <= maxUncrystTaxableWithPcls) {
+                return crystPot + (targetUncrystTaxable / 0.75);
+              }
+              targetUncrystTaxable -= maxUncrystTaxableWithPcls;
+              return crystPot + (maxUncrystTaxableWithPcls / 0.75) + targetUncrystTaxable;
+            };
+
+            const crystPot = isPrimary ? primaryCrystallisedPot : partnerCrystallisedPot;
+            const remLsa = Math.max(0, (isPrimary ? maxLsa : partnerMaxLsa) - (isPrimary ? primaryCumulativeTaxFreeDrawn : partnerCumulativeTaxFreeDrawn));
+
+            const maxGrossForBracket = hasAccess ? getGrossForTaxableTarget(room, crystPot, remLsa) : 0;
+            const targetGross = Math.min(hasAccess ? pPot : 0, maxGrossForBracket);
+
+            if (targetGross > 0) {
+               executeDeduct('pension', targetGross, owner);
+               const netDraw = approximateNetFromGrossForOwner(targetGross, owner);
+               netAchieved += netDraw;
+               remaining = Math.max(0, remaining - netDraw);
+            }
+            if (iPot > 0 && remaining > 0) {
+              const draw = Math.min(iPot, remaining);
+              executeDeduct('isa', draw, owner);
+              remaining -= draw;
+              netAchieved += draw;
+            }
+            if (cPot > 0 && remaining > 0) {
+              const draw = Math.min(cPot, remaining);
+              executeDeduct('cashGia', draw, owner);
+              remaining -= draw;
+              netAchieved += draw;
+            }
+          } else if (strategy === 'pro_rata') {
+            const totalAccessible = cPot + iPot + (hasAccess ? pPot : 0);
+            if (totalAccessible > 0 && remaining > 0) {
+              if (hasAccess && pPot > 0) {
+                const portion = pPot / totalAccessible;
+                const netToDraw = remaining * portion;
+                const grossDrawNeeded = getGrossPensionNeededForNetForOwner(netToDraw, pPot, owner);
+                const draw = Math.min(pPot, grossDrawNeeded);
+                executeDeduct('pension', draw, owner);
+                const netDraw = approximateNetFromGrossForOwner(draw, owner);
+                remaining = Math.max(0, remaining - netDraw);
+                netAchieved += netDraw;
+              }
+              if (iPot > 0 && remaining > 0) {
+                const portion = iPot / totalAccessible;
+                const draw = Math.min(iPot, remaining * portion);
+                executeDeduct('isa', draw, owner);
+                remaining -= draw;
+                netAchieved += draw;
+              }
+              if (cPot > 0 && remaining > 0) {
+                const draw = Math.min(cPot, remaining);
+                executeDeduct('cashGia', draw, owner);
+                remaining -= draw;
+                netAchieved += draw;
+              }
             }
           }
+          return netAchieved;
+        };
+
+        const primaryStrategy = profile.drawdownStrategy || 'isa_first';
+        const partnerStrategy = profile.isCouplePlanning ? (profile.partnerDrawdownStrategy || primaryStrategy) : primaryStrategy;
+
+        let priAvailTotal = primaryIsaPot + primaryCashGiaPot + (canAccessPension ? primaryPensionPot : 0);
+        let partAvailTotal = 0;
+        if (profile.isCouplePlanning && !partnerDead) {
+          partAvailTotal = partnerIsaPot + partnerCashGiaPot + (partnerCanAccessPension ? partnerPensionPot : 0);
         }
 
-        // 2. Apply growth to the remaining pot balances (fixing phantom growth)
+        const totalAvail = priAvailTotal + partAvailTotal;
+        let priRatio = 1;
+        let partRatio = 0;
+        if (totalAvail > 0) {
+          priRatio = priAvailTotal / totalAvail;
+          partRatio = partAvailTotal / totalAvail;
+        }
+
+        let primaryNetNeeded = remainingNeeded * priRatio;
+        let partnerNetNeeded = remainingNeeded * partRatio;
+
+        let priAchieved = executeStrategyForOwner(primaryStrategy, 'primary', primaryNetNeeded);
+        let partAchieved = 0;
+        
+        let primaryShortfall = primaryNetNeeded - priAchieved;
+        if (profile.isCouplePlanning && !partnerDead) {
+          partnerNetNeeded += Math.max(0, primaryShortfall);
+          partAchieved = executeStrategyForOwner(partnerStrategy, 'partner', partnerNetNeeded);
+          
+          let partnerShortfall = partnerNetNeeded - partAchieved;
+          if (partnerShortfall > 0) {
+            priAchieved += executeStrategyForOwner(primaryStrategy, 'primary', partnerShortfall);
+          }
+        }
+        
+        netDrawdownAchieved = priAchieved + partAchieved;
+
+// 2. Apply growth to the remaining pot balances (fixing phantom growth)
         growPots(pensionReturnRate, isaReturnRate, cashGiaReturnRate);
 
         // Reinvest surplus income when net achieved exceeds living expenses spending target

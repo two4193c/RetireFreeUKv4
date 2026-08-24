@@ -1,0 +1,332 @@
+      let priActualUncrystDrawn = 0;
+      let partActualUncrystDrawn = 0;
+      let priActualDraw = 0;
+      let partActualDraw = 0;
+      let primaryIsaDrawdown = 0;
+      let partnerIsaDrawdown = 0;
+      let primaryCashDrawdown = 0;
+      let partnerCashDrawdown = 0;
+      let pensionDrawdown = 0;
+      let isaDrawdown = 0;
+      let cashDrawdown = 0;
+      let taxOnWithdrawal = 0;
+
+        let primaryGuaranteedIncome = 0;
+        let partnerGuaranteedIncome = 0;
+        if (profile.isCouplePlanning && !partnerDead) {
+          primaryGuaranteedIncome = primaryStatePensionReceived + primaryDbPensionReceived + primaryTaxableFixedIncomeReceived + primaryAnnuityIncomeThisYear;
+          partnerGuaranteedIncome = partnerStatePensionReceived + partnerDbPensionReceived + partnerTaxableFixedIncomeReceived + partnerAnnuityIncomeThisYear;
+        } else {
+          primaryGuaranteedIncome = taxableGuaranteedIncome;
+        }
+
+        const executeDeduct = (potType: 'pension' | 'isa' | 'cashGia', amount: number, owner: 'primary' | 'partner') => {
+          if (amount <= 0) return;
+          if (potType === 'pension') {
+            if (owner === 'primary') {
+              let remaining = amount;
+              if (primaryCrystallisedPot > 0) {
+                 const d = Math.min(primaryCrystallisedPot, remaining);
+                 primaryCrystallisedPot -= d;
+                 remaining -= d;
+                 priActualDraw += d;
+              }
+              if (remaining > 0 && primaryUncrystallisedPot > 0) {
+                 const d = Math.min(primaryUncrystallisedPot, remaining);
+                 primaryUncrystallisedPot -= d;
+                 remaining -= d;
+                 priActualUncrystDrawn += d;
+                 priActualDraw += d;
+              }
+              primaryPensionPot = primaryCrystallisedPot + primaryUncrystallisedPot;
+            } else {
+              let remaining = amount;
+              if (partnerCrystallisedPot > 0) {
+                 const d = Math.min(partnerCrystallisedPot, remaining);
+                 partnerCrystallisedPot -= d;
+                 remaining -= d;
+                 partActualDraw += d;
+              }
+              if (remaining > 0 && partnerUncrystallisedPot > 0) {
+                 const d = Math.min(partnerUncrystallisedPot, remaining);
+                 partnerUncrystallisedPot -= d;
+                 remaining -= d;
+                 partActualUncrystDrawn += d;
+                 partActualDraw += d;
+              }
+              partnerPensionPot = partnerCrystallisedPot + partnerUncrystallisedPot;
+            }
+            pensionPot = primaryPensionPot + partnerPensionPot;
+            pensionDrawdown += amount;
+          } else if (potType === 'isa') {
+            if (owner === 'primary') {
+               const r = amount / primaryIsaPot;
+               primarySsIsaPot = Math.max(0, primarySsIsaPot * (1 - r));
+               primaryCashIsaPot = Math.max(0, primaryCashIsaPot * (1 - r));
+               primaryLisaPot = Math.max(0, primaryLisaPot * (1 - r));
+               primaryIsaPot = primarySsIsaPot + primaryCashIsaPot + primaryLisaPot;
+               primaryIsaDrawdown += amount;
+            } else {
+               const r = amount / partnerIsaPot;
+               partnerSsIsaPot = Math.max(0, partnerSsIsaPot * (1 - r));
+               partnerCashIsaPot = Math.max(0, partnerCashIsaPot * (1 - r));
+               partnerLisaPot = Math.max(0, partnerLisaPot * (1 - r));
+               partnerIsaPot = partnerSsIsaPot + partnerCashIsaPot + partnerLisaPot;
+               partnerIsaDrawdown += amount;
+            }
+            isaPot = primaryIsaPot + partnerIsaPot;
+            isaDrawdown += amount;
+          } else if (potType === 'cashGia') {
+            if (owner === 'primary') {
+               let remaining = amount;
+               if (primaryCashSavingsPot > 0) {
+                 const d = Math.min(primaryCashSavingsPot, remaining);
+                 primaryCashSavingsPot -= d;
+                 remaining -= d;
+               }
+               if (remaining > 0 && primaryGiaPot > 0) {
+                 const d = Math.min(primaryGiaPot, remaining);
+                 primaryGiaPot -= d;
+                 remaining -= d;
+               }
+               primaryCashGiaPot = primaryCashSavingsPot + primaryGiaPot;
+               primaryCashDrawdown += amount;
+            } else {
+               let remaining = amount;
+               if (partnerCashSavingsPot > 0) {
+                 const d = Math.min(partnerCashSavingsPot, remaining);
+                 partnerCashSavingsPot -= d;
+                 remaining -= d;
+               }
+               if (remaining > 0 && partnerGiaPot > 0) {
+                 const d = Math.min(partnerGiaPot, remaining);
+                 partnerGiaPot -= d;
+                 remaining -= d;
+               }
+               partnerCashGiaPot = partnerCashSavingsPot + partnerGiaPot;
+               partnerCashDrawdown += amount;
+            }
+            cashGiaPot = primaryCashGiaPot + partnerCashGiaPot;
+            cashSavingsPot = primaryCashSavingsPot + partnerCashSavingsPot;
+            giaPot = primaryGiaPot + partnerGiaPot;
+            cashDrawdown += amount;
+          }
+        };
+
+        const approximateNetFromGrossForOwner = (grossDraw: number, owner: 'primary' | 'partner'): number => {
+          let taxFree = 0;
+          if (owner === 'primary') {
+            const crystDrawn = Math.min(primaryCrystallisedPot, grossDraw);
+            const uncrystDrawn = Math.min(primaryUncrystallisedPot, Math.max(0, grossDraw - crystDrawn));
+            taxFree = Math.min(uncrystDrawn * 0.25, Math.max(0, primaryMaxLsa - primaryCumulativeTaxFreeDrawn));
+          } else {
+            const crystDrawn = Math.min(partnerCrystallisedPot, grossDraw);
+            const uncrystDrawn = Math.min(partnerUncrystallisedPot, Math.max(0, grossDraw - crystDrawn));
+            taxFree = Math.min(uncrystDrawn * 0.25, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn));
+          }
+          
+          const taxableDrawdown = grossDraw - taxFree;
+          const guaranteedTaxable = owner === 'primary' ? primaryGuaranteedIncome : partnerGuaranteedIncome;
+          const totalTaxable = guaranteedTaxable + taxableDrawdown;
+          const isScot = owner === 'primary' ? isScottishTax : isPartnerScottishTax;
+          
+          const totalTax = computeIncomeTax(totalTaxable, inflationFactor, isScot);
+          const baseTax = computeIncomeTax(guaranteedTaxable, inflationFactor, isScot);
+          const marginalTax = Math.max(0, totalTax - baseTax);
+          
+          return grossDraw - marginalTax;
+        };
+
+        const getGrossPensionNeededForNetForOwner = (netNeeded: number, potAvailable: number, owner: 'primary' | 'partner'): number => {
+          if (netNeeded <= 0 || potAvailable <= 0) return 0;
+          let low = 0;
+          let high = Math.min(potAvailable, netNeeded * 5.0);
+          let bestGross = high;
+          for (let i = 0; i < 25; i++) {
+            const mid = (low + high) / 2;
+            const net = approximateNetFromGrossForOwner(mid, owner);
+            if (net >= netNeeded) { high = mid; bestGross = mid; } else { low = mid; }
+          }
+          const exactGross = approximateNetFromGrossForOwner(bestGross, owner) >= netNeeded ? bestGross : potAvailable;
+          return Math.min(potAvailable, Math.ceil(exactGross));
+        };
+
+        const executeStrategyForOwner = (strategy: string, owner: 'primary' | 'partner', targetNetNeeded: number): number => {
+          if (targetNetNeeded <= 0) return 0;
+
+          const isPrimary = owner === 'primary';
+          const pPot = isPrimary ? primaryPensionPot : partnerPensionPot;
+          const iPot = isPrimary ? primaryIsaPot : partnerIsaPot;
+          const cPot = isPrimary ? primaryCashGiaPot : partnerCashGiaPot;
+          const hasAccess = isPrimary ? (age >= pensionAccessAge || primaryCrystallisedPot > 0) : (profile.isCouplePlanning && !partnerDead && (age + ((profile.partnerCurrentAge ?? profile.currentAge) - profile.currentAge) >= partnerPensionAccessAge || partnerCrystallisedPot > 0));
+          
+          let remaining = targetNetNeeded;
+          let netAchieved = 0;
+
+          const executePensionDeduct = (grossDrawNeeded: number) => {
+             const draw = Math.min(pPot, grossDrawNeeded);
+             executeDeduct('pension', draw, owner);
+             const netDraw = approximateNetFromGrossForOwner(draw, owner);
+             remaining = Math.max(0, remaining - netDraw);
+             netAchieved += netDraw;
+          };
+
+          if (isReinvestExcess) {
+            if (hasAccess && pPot > 0) {
+              const grossDrawNeeded = getGrossPensionNeededForNetForOwner(remaining, pPot, owner);
+              executePensionDeduct(grossDrawNeeded);
+            }
+            if (iPot > 0 && remaining > 0) {
+              const draw = Math.min(iPot, remaining);
+              executeDeduct('isa', draw, owner);
+              remaining -= draw;
+              netAchieved += draw;
+            }
+            if (cPot > 0 && remaining > 0) {
+              const draw = Math.min(cPot, remaining);
+              executeDeduct('cashGia', draw, owner);
+              remaining -= draw;
+              netAchieved += draw;
+            }
+          } else if (strategy === 'isa_first' || strategy === 'cash_first' || strategy === 'pension_first') {
+            const order = strategy === 'cash_first'
+                ? ['cashGia', 'isa', 'pension']
+                : strategy === 'pension_first'
+                ? ['pension', 'isa', 'cashGia']
+                : ['isa', 'cashGia', 'pension'];
+
+            for (const potType of order) {
+              if (remaining <= 0) break;
+              if (potType === 'isa' && iPot > 0) {
+                const draw = Math.min(iPot, remaining);
+                executeDeduct('isa', draw, owner);
+                remaining -= draw;
+                netAchieved += draw;
+              } else if (potType === 'cashGia' && cPot > 0) {
+                const draw = Math.min(cPot, remaining);
+                executeDeduct('cashGia', draw, owner);
+                remaining -= draw;
+                netAchieved += draw;
+              } else if (potType === 'pension' && hasAccess && pPot > 0) {
+                const grossDrawNeeded = getGrossPensionNeededForNetForOwner(remaining, pPot, owner);
+                executePensionDeduct(grossDrawNeeded);
+              }
+            }
+          } else if (strategy === 'tax_optimizer' || strategy === 'tax_free_bracket' || strategy === 'basic_rate_bracket' || strategy === 'higher_rate_bracket') {
+            const isScot = isPrimary ? profile.taxRegion === 'scotland' : (profile.partnerTaxRegion || profile.taxRegion) === 'scotland';
+            const inflMult = inflationFactor;
+
+            let thresholdGross = 12570 * inflMult;
+            if (strategy === 'tax_optimizer' || strategy === 'basic_rate_bracket') {
+              thresholdGross = (12570 + (isScot ? SCOT_INTERMEDIATE_THRESHOLD : RUK_BASIC_THRESHOLD)) * inflMult;
+            } else if (strategy === 'higher_rate_bracket') {
+              thresholdGross = (isScot ? (12570 + SCOT_HIGHER_THRESHOLD) : RUK_ADDITIONAL_THRESHOLD) * inflMult;
+            }
+
+            const incomeAlready = isPrimary ? primaryGuaranteedIncome : partnerGuaranteedIncome;
+            const room = Math.max(0, thresholdGross - incomeAlready);
+
+            const remLsa = Math.max(0, (isPrimary ? primaryMaxLsa : partnerMaxLsa) - (isPrimary ? primaryCumulativeTaxFreeDrawn : partnerCumulativeTaxFreeDrawn));
+            const crystPot = isPrimary ? primaryCrystallisedPot : partnerCrystallisedPot;
+
+            let maxGrossForBracket = 0;
+            if (room > 0) {
+              if (remLsa >= room / 3) {
+                maxGrossForBracket = crystPot + (room / 0.75); // rough proxy
+              } else {
+                maxGrossForBracket = crystPot + room + remLsa;
+              }
+            }
+
+            const targetGross = Math.min(hasAccess ? pPot : 0, maxGrossForBracket);
+
+            if (targetGross > 0) {
+               executePensionDeduct(targetGross);
+            }
+            if (iPot > 0 && remaining > 0) {
+              const draw = Math.min(iPot, remaining);
+              executeDeduct('isa', draw, owner);
+              remaining -= draw;
+              netAchieved += draw;
+            }
+            if (cPot > 0 && remaining > 0) {
+              const draw = Math.min(cPot, remaining);
+              executeDeduct('cashGia', draw, owner);
+              remaining -= draw;
+              netAchieved += draw;
+            }
+          } else if (strategy === 'pro_rata') {
+            const totalAccessible = cPot + iPot + (hasAccess ? pPot : 0);
+            if (totalAccessible > 0 && remaining > 0) {
+              if (hasAccess && pPot > 0) {
+                const portion = pPot / totalAccessible;
+                const netToDraw = remaining * portion;
+                const grossDrawNeeded = getGrossPensionNeededForNetForOwner(netToDraw, pPot, owner);
+                executePensionDeduct(grossDrawNeeded);
+              }
+              if (iPot > 0 && remaining > 0) {
+                const portion = iPot / totalAccessible;
+                const draw = Math.min(iPot, remaining * portion);
+                executeDeduct('isa', draw, owner);
+                remaining -= draw;
+                netAchieved += draw;
+              }
+              if (cPot > 0 && remaining > 0) {
+                const draw = Math.min(cPot, remaining);
+                executeDeduct('cashGia', draw, owner);
+                remaining -= draw;
+                netAchieved += draw;
+              }
+            }
+          }
+          return netAchieved;
+        };
+
+        const primaryStrategy = profile.drawdownStrategy || 'isa_first';
+        const partnerStrategy = profile.isCouplePlanning ? (profile.partnerDrawdownStrategy || primaryStrategy) : primaryStrategy;
+
+        const hasPriAcc = (age >= pensionAccessAge || primaryCrystallisedPot > 0);
+        const hasPartAcc = (profile.isCouplePlanning && !partnerDead && (age + ((profile.partnerCurrentAge ?? profile.currentAge) - profile.currentAge) >= partnerPensionAccessAge || partnerCrystallisedPot > 0));
+
+        let priAvailTotal = primaryIsaPot + primaryCashGiaPot + (hasPriAcc ? primaryPensionPot : 0);
+        let partAvailTotal = 0;
+        if (profile.isCouplePlanning && !partnerDead) {
+          partAvailTotal = partnerIsaPot + partnerCashGiaPot + (hasPartAcc ? partnerPensionPot : 0);
+        }
+
+        const totalAvail = priAvailTotal + partAvailTotal;
+        let priRatio = 1;
+        let partRatio = 0;
+        if (totalAvail > 0) {
+          priRatio = priAvailTotal / totalAvail;
+          partRatio = partAvailTotal / totalAvail;
+        }
+
+        let primaryNetNeeded = remainingIncomeNeeded * priRatio;
+        let partnerNetNeeded = remainingIncomeNeeded * partRatio;
+
+        let priAchieved = executeStrategyForOwner(primaryStrategy, 'primary', primaryNetNeeded);
+        let partAchieved = 0;
+        
+        let primaryShortfall = primaryNetNeeded - priAchieved;
+        if (profile.isCouplePlanning && !partnerDead) {
+          partnerNetNeeded += Math.max(0, primaryShortfall);
+          partAchieved = executeStrategyForOwner(partnerStrategy, 'partner', partnerNetNeeded);
+          
+          let partnerShortfall = partnerNetNeeded - partAchieved;
+          if (partnerShortfall > 0) {
+            priAchieved += executeStrategyForOwner(primaryStrategy, 'primary', partnerShortfall);
+          }
+        }
+        
+        remainingIncomeNeeded = Math.max(0, drawdownNetTarget - netInitialIncomeSecured - priAchieved - partAchieved);
+
+        if (remainingIncomeNeeded > 0) {
+          if (primaryIsaPot > 0) executeDeduct('isa', Math.min(primaryIsaPot, remainingIncomeNeeded), 'primary');
+          if (partnerIsaPot > 0) executeDeduct('isa', Math.min(partnerIsaPot, remainingIncomeNeeded), 'partner');
+          if (primaryCashGiaPot > 0) executeDeduct('cashGia', Math.min(primaryCashGiaPot, remainingIncomeNeeded), 'primary');
+          if (partnerCashGiaPot > 0) executeDeduct('cashGia', Math.min(partnerCashGiaPot, remainingIncomeNeeded), 'partner');
+          if (hasPriAcc && primaryPensionPot > 0) executeDeduct('pension', Math.min(primaryPensionPot, getGrossPensionNeededForNetForOwner(remainingIncomeNeeded, primaryPensionPot, 'primary')), 'primary');
+          if (hasPartAcc && partnerPensionPot > 0) executeDeduct('pension', Math.min(partnerPensionPot, getGrossPensionNeededForNetForOwner(remainingIncomeNeeded, partnerPensionPot, 'partner')), 'partner');
+        }
+

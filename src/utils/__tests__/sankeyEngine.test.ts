@@ -115,7 +115,7 @@ describe('sankeyEngine - computeCashFlowSankeyData', () => {
     expect(data!.nodes.length).toBeGreaterThan(0);
     
     const nodeIds = data!.nodes.map(n => n.id);
-    expect(nodeIds).toContain('pri_pension_dd');
+    expect(nodeIds).toContain('part_pension_dd');
     expect(nodeIds).toContain('pri_retire_hub');
     expect(nodeIds).toContain('essential_retirement_spend');
   });

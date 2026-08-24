@@ -50,7 +50,7 @@ export const InvestmentFeesCard: React.FC<InvestmentFeesCardProps> = ({ profile,
 
   const preReturn = profile.expectedInvestmentReturn ?? 6.5;
   const postReturn = profile.postRetirementReturn ?? 4.5;
-  const globalFeePercent = getTotalFeePercent(feeConfig);
+  const globalFeePercent = getTotalFeePercent(feeConfig, pots || profile.pots, profile.partnerPots);
 
   const updateFeeConfig = (updated: InvestmentFeeConfig) => {
     onChange({
