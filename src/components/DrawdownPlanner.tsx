@@ -40,6 +40,7 @@ import {
 } from 'lucide-react';
 
 interface LumpSumSplitEditorProps {
+  isStudioMode?: boolean;
   splits: LumpSumSplit[];
   lumpSumAmount: number;
   onChange: (splits: LumpSumSplit[]) => void;

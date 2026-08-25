@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 
 interface SpendingPhasesCardProps {
+  isStudioMode?: boolean;
   profile: UserProfile;
   onChange: (updatedProfile: UserProfile) => void;
   onOpenMaximizedSpendModal?: () => void;
@@ -252,7 +253,8 @@ export function getInitialSpendingRanges(profile: UserProfile): SpendingAgeRange
   ];
 }
 
-export const SpendingPhasesCard: React.FC<SpendingPhasesCardProps> = ({ profile, onChange, onOpenMaximizedSpendModal, appMode = 'basic' }) => {
+export const SpendingPhasesCard: React.FC<SpendingPhasesCardProps> = ({ profile, onChange, onOpenMaximizedSpendModal, appMode = 'basic' ,
+  isStudioMode}) => {
   const retAge = profile.targetRetirementAge || 60;
   const baseTarget = profile.targetRetirementIncomeAnnual || 35000;
 

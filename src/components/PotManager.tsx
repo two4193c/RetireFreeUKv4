@@ -114,7 +114,7 @@ export const PotManager: React.FC<PotManagerProps> = ({
         {/* Quick Person Switcher */}
         {isCouple && (
           <div className="flex items-center gap-1.5 sm:gap-2 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-2xl border border-slate-200 dark:border-slate-700 self-start sm:self-auto max-w-full overflow-x-auto">
-            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 pl-2 shrink-0">Editing:</span>
+            {!isStudioMode && <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 pl-2 shrink-0">Editing:</span>}
             <button
               type="button"
               onClick={() => setActivePerson('primary')}
@@ -125,7 +125,7 @@ export const PotManager: React.FC<PotManagerProps> = ({
               }`}
             >
               <User className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
-              <span className="truncate max-w-[100px] sm:max-w-none">{profile?.name || 'Primary'}</span>
+              <span className="truncate max-w-[100px] sm:max-w-none">{isStudioMode ? "P1" : (profile?.name || 'Primary')}</span>
             </button>
             <button
               type="button"
@@ -137,7 +137,7 @@ export const PotManager: React.FC<PotManagerProps> = ({
               }`}
             >
               <Heart className={`w-3.5 h-3.5 shrink-0 ${activePerson === 'partner' ? 'fill-white' : 'text-rose-500 fill-rose-500'}`} />
-              <span className="truncate max-w-[100px] sm:max-w-none">{profile?.partnerName || 'Partner'}</span>
+              <span className="truncate max-w-[100px] sm:max-w-none">{isStudioMode ? "P2" : (profile?.partnerName || 'Partner')}</span>
             </button>
           </div>
         )}
@@ -265,7 +265,9 @@ export const PotManager: React.FC<PotManagerProps> = ({
         </div>
       )}
 
-      {/* Pot Category Tabs */}
+      {!isStudioMode && (
+      <div className="tab-nav-wrapper">
+        {/* Pot Category Tabs */}
       <div className="w-full overflow-x-auto pb-1 no-scrollbar">
         <div className="flex items-center gap-1.5 sm:gap-2 bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl border border-slate-200/50 dark:border-slate-700/50 w-max min-w-full">
           <button
@@ -317,7 +319,8 @@ export const PotManager: React.FC<PotManagerProps> = ({
           </button>
         </div>
       </div>
-
+      </div>
+    )}
       {/* TAB CONTENT: PENSIONS */}
       {(isStudioMode || activeTab === 'pension') && (
         <div className="space-y-4 pt-1">

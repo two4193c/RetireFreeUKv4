@@ -6,12 +6,14 @@ import { InvestmentFeesCard } from './InvestmentFeesCard';
 import { TrendingUp, Percent, Flame, Sparkles, Shield, RotateCcw, Sliders, Layers, Coins, Building2, PieChart, BarChart3, Receipt } from 'lucide-react';
 
 interface MacroSettingsCardProps {
+  isStudioMode?: boolean;
   profile: UserProfile;
   pots?: InvestmentPots;
   onChange: (updatedProfile: UserProfile) => void;
 }
 
-export const MacroSettingsCard: React.FC<MacroSettingsCardProps> = ({ profile, pots, onChange }) => {
+export const MacroSettingsCard: React.FC<MacroSettingsCardProps> = ({ profile, pots, onChange ,
+  isStudioMode}) => {
   const preReturn = profile.expectedInvestmentReturn ?? 6.5;
   const postReturn = profile.postRetirementReturn ?? 4.5;
   const inflation = profile.expectedInflationRate ?? 2.5;

@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 
 interface GiltLadderCardProps {
+  isStudioMode?: boolean;
   profile: UserProfile;
   pots: InvestmentPots;
   projections?: YearProjection[];
@@ -29,7 +30,8 @@ export const GiltLadderCard: React.FC<GiltLadderCardProps> = ({
   profile,
   pots,
   onChange,
-}) => {
+
+  isStudioMode}) => {
   const [activePerson, setActivePerson] = useState<'primary' | 'partner'>('primary');
   const [showRungDetails, setShowRungDetails] = useState(false);
   const [copiedNotification, setCopiedNotification] = useState<string | null>(null);

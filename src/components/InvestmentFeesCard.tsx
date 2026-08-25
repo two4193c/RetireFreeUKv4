@@ -35,12 +35,14 @@ import {
 } from 'lucide-react';
 
 interface InvestmentFeesCardProps {
+  isStudioMode?: boolean;
   profile: UserProfile;
   pots?: InvestmentPots;
   onChange: (updatedProfile: UserProfile) => void;
 }
 
-export const InvestmentFeesCard: React.FC<InvestmentFeesCardProps> = ({ profile, pots, onChange }) => {
+export const InvestmentFeesCard: React.FC<InvestmentFeesCardProps> = ({ profile, pots, onChange ,
+  isStudioMode}) => {
   const feeConfig: InvestmentFeeConfig = profile.investmentFees || DEFAULT_INVESTMENT_FEES;
   const isEnabled = Boolean(feeConfig.enabled);
   const perPotFeesEnabled = Boolean(feeConfig.perPotFeesEnabled);

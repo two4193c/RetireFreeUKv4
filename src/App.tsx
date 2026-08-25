@@ -937,7 +937,7 @@ function App() {
                     </div>
                     {/* 7. Defined benefit pensions */}
                     <div className="scroll-mt-24 transition-all duration-300">
-                      <DbPensionManager profile={profile} onChange={handleProfileChange} />
+                      <DbPensionManager isStudioMode={true} profile={profile} onChange={handleProfileChange} />
                     </div>
                     {/* 8. Fixed income & disability benefits */}
                     <div className="scroll-mt-24 transition-all duration-300">

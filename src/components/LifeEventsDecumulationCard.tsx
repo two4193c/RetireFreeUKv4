@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 
 interface LifeEventsDecumulationCardProps {
+  isStudioMode?: boolean;
   profile: UserProfile;
   pots?: InvestmentPots;
   projections?: YearProjection[];
@@ -45,7 +46,8 @@ export const LifeEventsDecumulationCard: React.FC<LifeEventsDecumulationCardProp
   pots,
   projections,
   onChange,
-}) => {
+
+  isStudioMode}) => {
   const events = profile.decumulationLifeEvents || [];
   const isCouple = Boolean(profile.isCouplePlanning);
   const [activeOwnerFilter, setActiveOwnerFilter] = useState<'all' | 'primary' | 'partner'>('all');

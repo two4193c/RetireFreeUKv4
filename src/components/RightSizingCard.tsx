@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 
 interface RightSizingCardProps {
+  isStudioMode?: boolean;
   profile: UserProfile;
   onChange: (updatedProfile: UserProfile) => void;
 }
@@ -29,7 +30,8 @@ const DEFAULT_DOWNSIZE_PLAN: PropertyDownsizePlan = {
   destinationPot: 'isa',
 };
 
-export const RightSizingCard: React.FC<RightSizingCardProps> = ({ profile, onChange }) => {
+export const RightSizingCard: React.FC<RightSizingCardProps> = ({ profile, onChange ,
+  isStudioMode}) => {
   const plan = profile.propertyDownsizePlan || DEFAULT_DOWNSIZE_PLAN;
 
   const updatePlan = (updates: Partial<PropertyDownsizePlan>) => {

@@ -3,11 +3,12 @@ import { UserProfile } from '../types';
 import { ShieldCheck, Landmark, Info, Users, Sparkles } from 'lucide-react';
 
 interface StatePensionCardProps {
+  isStudioMode?: boolean;
   profile: UserProfile;
   onChange: (updatedProfile: UserProfile) => void;
 }
 
-export const StatePensionCard: React.FC<StatePensionCardProps> = ({ profile, onChange }) => {
+export const StatePensionCard: React.FC<StatePensionCardProps> = ({ profile, onChange, isStudioMode }) => {
   const updateField = <K extends keyof UserProfile>(field: K, value: UserProfile[K]) => {
     onChange({
       ...profile,
@@ -49,7 +50,7 @@ export const StatePensionCard: React.FC<StatePensionCardProps> = ({ profile, onC
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className={`grid grid-cols-1 gap-4 ${isStudioMode ? "" : "lg:grid-cols-2"}`}>
         {/* Primary State Pension */}
         <div className="p-4 bg-slate-50/80 dark:bg-slate-800/60 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-4 shadow-xs">
           <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-slate-700/60">

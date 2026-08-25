@@ -4,11 +4,13 @@ import { Banknote, Plus, Trash2, ShieldCheck, HeartHandshake, Sparkles, AlertCir
 import { ModalShell } from './ModalShell';
 
 interface FixedIncomeManagerProps {
+  isStudioMode?: boolean;
   profile: UserProfile;
   onChange: (updatedProfile: UserProfile) => void;
 }
 
-export const FixedIncomeManager: React.FC<FixedIncomeManagerProps> = ({ profile, onChange }) => {
+export const FixedIncomeManager: React.FC<FixedIncomeManagerProps> = ({ profile, onChange ,
+  isStudioMode}) => {
   const streams = profile.fixedIncomeStreams || [];
   const [activePersonFilter, setActivePersonFilter] = useState<'all' | 'primary' | 'partner'>('all');
 
