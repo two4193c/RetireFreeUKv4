@@ -289,8 +289,8 @@ export function runMonteCarloSimulation(
   const marketScenario = customParams?.marketScenario || 'standard';
 
   const inflation = (profile.expectedInflationRate || 2.5) / 100;
-  let meanAccumReturn = getEffectiveAccumulationReturn(profile.expectedInvestmentReturn || 6.0, profile.assetAllocationSplit, profile.investmentFees, profile.pots, profile.partnerPots) / 100;
-  let meanDecumReturn = getEffectiveDecumulationReturn(profile.postRetirementReturn || 4.5, profile.assetAllocationSplit, profile.investmentFees, profile.pots, profile.partnerPots) / 100;
+  let meanAccumReturn = getEffectiveAccumulationReturn(profile.expectedInvestmentReturn || 6.0, profile.assetAllocationSplit, profile.investmentFees) / 100;
+  let meanDecumReturn = getEffectiveDecumulationReturn(profile.postRetirementReturn || 4.5, profile.assetAllocationSplit, profile.investmentFees) / 100;
 
   const stressedReturnDrop = (customParams?.stressedReturnDropPercent ?? 2.0) / 100;
   const crashStartAge = customParams?.crashStartAge ?? profile.targetRetirementAge;

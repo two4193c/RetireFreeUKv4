@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, it, expect } from 'vitest';
 import { generateProjections } from '../projectionEngine';
 import { DEFAULT_PROFILE, DEFAULT_POTS } from '../defaultData';

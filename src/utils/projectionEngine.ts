@@ -208,8 +208,8 @@ export function generateProjections(
   let cashGiaPot = giaPot + cashSavingsPot;
 
   const inflation = (profile.expectedInflationRate ?? 2.5) / 100;
-  const returnAccumulation = getEffectiveAccumulationReturn(profile.expectedInvestmentReturn ?? 6.5, profile.assetAllocationSplit, profile.investmentFees, profile.pots, profile.partnerPots) / 100;
-  const returnDecumulation = getEffectiveDecumulationReturn(profile.postRetirementReturn ?? 4.5, profile.assetAllocationSplit, profile.investmentFees, profile.pots, profile.partnerPots) / 100;
+  const returnAccumulation = getEffectiveAccumulationReturn(profile.expectedInvestmentReturn ?? 6.5, profile.assetAllocationSplit, profile.investmentFees) / 100;
+  const returnDecumulation = getEffectiveDecumulationReturn(profile.postRetirementReturn ?? 4.5, profile.assetAllocationSplit, profile.investmentFees) / 100;
 
   const pensionAccessAge = getPensionAccessAge(profile);
   const lumpSumTakeAge = getLumpSumTakeAge(profile);
