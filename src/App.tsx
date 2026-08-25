@@ -241,6 +241,7 @@ function App() {
   }, [scenarios, activeScenarioId]);
 
   const [activeTab, setActiveTab] = useState<DashboardTab>('inputs');
+  const [studioMode, setStudioMode] = useState(false);
   const [docSubTab, setDocSubTab] = useState<'user_guide' | 'features_guide' | 'cash_buffer_guide' | 'lifestyling_guide' | 'state_pension_ni_guide' | 'ufpls_small_pots_guide' | 'phased_retirement_guide' | 'tapered_allowance_guide' | 'expat_qrops_guide' | 'living_standards' | 'healthy_life' | 'tax_rules' | 'mortgage_guide' | 'risk_guide' | 'iht_guide' | 'floor_guide' | 'couple_guide' | 'benchmark_guide' | 'sipp_guide' | 'wrapper_guide' | 'self_employed_guide' | 'db_guide' | 'dynamic_guide' | 'care_guide' | 'fire_bridge_guide' | 'cgt_harvesting_guide' | 'recycling_guide' | 'four_percent_guide' | 'spending_smile_guide' | 'saye_baye_guide'>('user_guide');
   const [appMode, setAppMode] = useState<AppMode>(() => {
     try {
@@ -848,7 +849,13 @@ function App() {
       />
 
       {/* Main Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      <main className={`flex-1 max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-4 ${studioMode ? '' : 'space-y-6'}`}>
+        <div className="flex justify-end mb-4">
+           <button onClick={() => setStudioMode(!studioMode)} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-lg transition-colors flex items-center gap-2">
+             <Sparkles className="w-4 h-4" />
+             {studioMode ? 'Exit Studio Mode' : 'Enter Studio Mode'}
+           </button>
+        </div>
         
         {/* Main Dashboard Content Area */}
 
@@ -890,8 +897,183 @@ function App() {
               onDeleteScenario={handleDeleteScenario}
               onResetPlanData={handleResetPlanData}
             >
+            
+            {/* STUDIO MODE */}
+            {studioMode && (
+              <div className="flex h-[calc(100vh-140px)] gap-6 overflow-hidden -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8">
+                {/* Left Pane: Inputs */}
+                <div className="w-[35%] h-full overflow-y-auto space-y-6 pr-2 custom-scrollbar pb-32">
+                  <div className="space-y-6">
+                <div id="card-inputs-couple" className="scroll-mt-24 transition-all duration-300">
+                  <CouplePlanningCard profile={profile} onChange={handleProfileChange} />
+                </div>
+                <div id="card-inputs-profile" className="scroll-mt-24 transition-all duration-300">
+                  <ProfileInputs profile={profile} onChange={handleProfileChange} pots={pots} />
+                </div>
+                <div id="card-inputs-pots" className="scroll-mt-24 transition-all duration-300">
+                  <PotManager
+                    pots={pots}
+                    onChange={handlePotsChange}
+                    taxResult={taxResult}
+                    profile={profile}
+                    partnerPots={profile.partnerPots}
+                    onPartnerPotsChange={handlePartnerPotsChange}
+                  />
+                </div>
+                <div id="card-inputs-oneoff" className="scroll-mt-24 transition-all duration-300">
+                  <OneOffContributionManager profile={profile} onChange={handleProfileChange} />
+                </div>
+                {appMode === 'advanced' && (
+                  <>
+                    <div id="card-inputs-transfers" className="scroll-mt-24 transition-all duration-300">
+                      <PotTransferManager profile={profile} onChange={handleProfileChange} pots={pots} />
+                    </div>
+                    <div id="card-inputs-statepension" className="scroll-mt-24 transition-all duration-300">
+                      <StatePensionCard profile={profile} onChange={handleProfileChange} />
+                    </div>
+                  </>
+                )}
+                <div id="card-inputs-dbpension" className="scroll-mt-24 transition-all duration-300">
+                  <DbPensionManager profile={profile} onChange={handleProfileChange} />
+                </div>
+                <div id="card-inputs-fixedincome" className="scroll-mt-24 transition-all duration-300">
+                  <FixedIncomeManager profile={profile} onChange={handleProfileChange} />
+                </div>
+                {appMode === 'advanced' && (
+                  <>
+                    <div id="card-inputs-lifeevents" className="scroll-mt-24 transition-all duration-300">
+                      <LifeEventsDecumulationCard profile={profile} pots={pots} projections={projections} onChange={handleProfileChange} />
+                    </div>
+                    <div id="card-inputs-fees" className="scroll-mt-24 transition-all duration-300">
+                      <InvestmentFeesCard profile={profile} pots={pots} onChange={handleProfileChange} />
+                    </div>
+                  </>
+                )}
+              </div>
+                </div>
+                {/* Right Pane: Analysis & Strategy */}
+                <div className="w-[65%] h-full overflow-y-auto space-y-6 pl-2 custom-scrollbar pb-32">
+                  <div className="space-y-6">
+                <div id="card-pwr-metric" className="scroll-mt-24 transition-all duration-300">
+                  <PwrMetricBannerCard profile={profile} pots={pots} projections={projections} />
+                </div>
+                <div id="card-swr-matrix" className="scroll-mt-24 transition-all duration-300">
+                  <SwrMatrixCard
+                    profile={profile}
+                    pots={pots}
+                    horizonYears={swrHorizonYears}
+                    onHorizonYearsChange={setSwrHorizonYears}
+                    equityPct={swrEquityPct}
+                    onEquityPctChange={setSwrEquityPct}
+                  />
+                </div>
+                <div id="card-guardrail-gauge" className="scroll-mt-24 transition-all duration-300">
+                  <WithdrawalGuardrailGaugeCard
+                    profile={profile}
+                    pots={pots}
+                    horizonYears={swrHorizonYears}
+                    equityPct={swrEquityPct}
+                  />
+                </div>
+                <div id="card-essential-floor-split" className="scroll-mt-24 transition-all duration-300">
+                  <EssentialFloorSplitCard profile={profile} pots={pots} />
+                </div>
+                <div id="card-swr-trajectory-chart" className="scroll-mt-24 transition-all duration-300">
+                  <SwrTrajectoryChart projections={projections} profile={profile} />
+                </div>
+                <div id="card-swr-uk-us-benchmark" className="scroll-mt-24 transition-all duration-300">
+                  <SwrUkUsBenchmarkCard />
+                </div>
+                <div id="card-ai-advisor" className="scroll-mt-24 transition-all duration-300">
+                  <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-5 flex flex-col justify-between">
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
+                        <div className="p-3 bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 rounded-2xl">
+                          <Sparkles className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100">
+                            AI Tax &amp; Pension Advisor
+                          </h3>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            Smart AI assistant tailored to your specific active scenario parameters and UK tax queries.
+                          </p>
+                        </div>
+                      </div>
+                      <ul className="text-xs text-slate-600 dark:text-slate-300 space-y-2 list-disc list-inside">
+                        <li>Personalised drawdown tax optimisation recommendations</li>
+                        <li>60% tax trap mitigation strategies</li>
+                        <li>Instant answers to complex UK pension questions</li>
+                        <li>Context-aware analysis of your active plan</li>
+                      </ul>
+                    </div>
+                    <button
+                      onClick={() => setShowAiModal(true)}
+                      className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-extrabold transition-all cursor-pointer shadow-xs flex items-center justify-center gap-2"
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      <span>Launch AI Tax Advisor</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+                  <div className="space-y-6">
+                <div id="card-strat-planner" className="scroll-mt-24 transition-all duration-300">
+                  <DrawdownPlanner
+                    profile={profile}
+                    pots={pots}
+                    projections={projections}
+                    onChange={handleProfileChange}
+                    scenarios={scenarios}
+                    activeScenarioId={activeScenarioId}
+                    onCreateStrategyVariants={handleCreateStrategyVariants}
+                    onNavigateToCompare={() => setActiveTab('compare')}
+                    onOpenMaximizedSpendModal={() => setIsMaximizedSpendModalOpen(true)}
+                    appMode={appMode}
+                  />
+                </div>
+                <div id="card-strat-phases" className="scroll-mt-24 transition-all duration-300">
+                  <SpendingPhasesCard
+                    profile={profile}
+                    onChange={handleProfileChange}
+                    onOpenMaximizedSpendModal={() => setIsMaximizedSpendModalOpen(true)}
+                    appMode={appMode}
+                  />
+                </div>
+                <div id="card-dynamic-optimiser" className="scroll-mt-24 transition-all duration-300">
+                  <DynamicOptimiserCard
+                    profile={profile}
+                    pots={pots}
+                    taxResult={taxResult}
+                    projections={projections}
+                    appMode={appMode}
+                    onRunStressTest={() => setActiveTab('risk')}
+                    onChange={handleProfileChange}
+                  />
+                </div>
+                {appMode === 'advanced' && (
+                  <div id="card-strat-gilt-ladder" className="scroll-mt-24 transition-all duration-300">
+                    <GiltLadderCard
+                      profile={profile}
+                      pots={pots}
+                      projections={projections}
+                      onChange={handleProfileChange}
+                    />
+                  </div>
+                )}
+                {appMode === 'advanced' && (
+                  <div id="card-strat-macro" className="scroll-mt-24 transition-all duration-300">
+                    <MacroSettingsCard profile={profile} pots={pots} onChange={handleProfileChange} />
+                  </div>
+                )}
+              </div>
+                </div>
+              </div>
+            )}
+
+
             {/* Tab: Plan Management */}
-            {activeTab === 'plan_management' && (
+            {!studioMode && activeTab === 'plan_management' && (
               <div className="space-y-6">
                 <PlanManagementCard
                   scenarios={scenarios}
@@ -908,7 +1090,7 @@ function App() {
             )}
 
             {/* Tab 1: Inputs & Assets */}
-            {activeTab === 'inputs' && (
+            {!studioMode && activeTab === 'inputs' && (
               <div className="space-y-6">
                 <div id="card-inputs-couple" className="scroll-mt-24 transition-all duration-300">
                   <CouplePlanningCard profile={profile} onChange={handleProfileChange} />
@@ -959,7 +1141,7 @@ function App() {
             )}
 
             {/* Tab 2: Accumulation Review (Advanced Only) */}
-            {activeTab === 'accumulation_review' && appMode === 'advanced' && (
+            {!studioMode && activeTab === 'accumulation_review' && appMode === 'advanced' && (
               <div className="space-y-6">
                 <div id="card-accum-savings" className="scroll-mt-24 transition-all duration-300">
                   <MonthlySavingsRateCard profile={profile} pots={pots} />
@@ -992,7 +1174,7 @@ function App() {
             )}
 
             {/* Tab 3: Strategy */}
-            {activeTab === 'strategy' && (
+            {!studioMode && activeTab === 'strategy' && (
               <div className="space-y-6">
                 <div id="card-strat-planner" className="scroll-mt-24 transition-all duration-300">
                   <DrawdownPlanner
@@ -1046,7 +1228,7 @@ function App() {
             )}
 
             {/* Tab 3b: Strategy Analysis (Advanced Mode Only) */}
-            {activeTab === 'strategy_analysis' && (
+            {!studioMode && activeTab === 'strategy_analysis' && (
               <div className="space-y-6">
                 <div id="card-pwr-metric" className="scroll-mt-24 transition-all duration-300">
                   <PwrMetricBannerCard profile={profile} pots={pots} projections={projections} />
@@ -1114,7 +1296,7 @@ function App() {
             )}
 
             {/* Tab 4: Projection */}
-            {activeTab === 'projections' && (
+            {!studioMode && activeTab === 'projections' && (
               <div className="space-y-6">
                 <div id="card-proj-chart" className="scroll-mt-24 transition-all duration-300">
                   <ProjectionChart
@@ -1149,7 +1331,7 @@ function App() {
             )}
 
             {/* Tab 5: Risk */}
-            {activeTab === 'risk' && (
+            {!studioMode && activeTab === 'risk' && (
               <div className="space-y-6">
                 <div id="card-risk-monte" className="scroll-mt-24 transition-all duration-300">
                   <MonteCarloCard profile={profile} pots={pots} taxResult={taxResult} onChange={handleProfileChange} appMode={appMode} />
@@ -1168,7 +1350,7 @@ function App() {
             )}
 
             {/* Tab 6: Estate */}
-            {activeTab === 'estate' && (
+            {!studioMode && activeTab === 'estate' && (
               <div className="space-y-6">
                 <div id="card-estate-iht" className="scroll-mt-24 transition-all duration-300">
                   <IhtEstatePlanningCard profile={profile} projections={projections} onChange={handleProfileChange} />
@@ -1177,7 +1359,7 @@ function App() {
             )}
 
             {/* Tab 7: Summary */}
-            {activeTab === 'overview' && (
+            {!studioMode && activeTab === 'overview' && (
               <div className="space-y-6">
                 <div id="card-plan-insights" className="scroll-mt-24 transition-all duration-300">
                   <PlanInsightsCard
@@ -1215,7 +1397,7 @@ function App() {
             )}
 
             {/* Tab: Output */}
-            {activeTab === 'output' && (
+            {!studioMode && activeTab === 'output' && (
               <div className="space-y-6">
                 <div id="card-output-pdf" className="scroll-mt-24 transition-all duration-300">
                   <ExportSection
@@ -1244,7 +1426,7 @@ function App() {
             )}
 
             {/* Tab 8: Compare */}
-            {activeTab === 'compare' && (
+            {!studioMode && activeTab === 'compare' && (
               <div className="space-y-6">
                 <div id="card-compare-scenarios" className="scroll-mt-24 transition-all duration-300">
                   <ScenarioComparer
@@ -1261,7 +1443,7 @@ function App() {
             )}
 
             {/* Tab 9: Housing Strategy */}
-            {activeTab === 'mortgage' && (
+            {!studioMode && activeTab === 'mortgage' && (
               <div className="space-y-6">
                 <div id="card-mortgage-debt" className="scroll-mt-24 transition-all duration-300">
                   <MortgageDebtCard profile={profile} onChange={handleProfileChange} />
@@ -1273,7 +1455,7 @@ function App() {
             )}
 
             {/* Tab: Advanced */}
-            {activeTab === 'advanced_settings' && (
+            {!studioMode && activeTab === 'advanced_settings' && (
               <div className="space-y-6">
                 <AdvancedSettingsCard 
                   profile={profile} 
@@ -1284,7 +1466,7 @@ function App() {
             )}
 
             {/* Tab 10: Documentation */}
-            {activeTab === 'documentation' && (
+            {!studioMode && activeTab === 'documentation' && (
               <div className="space-y-6">
                 {/* Page 1: User Guide Page */}
                 {docSubTab === 'user_guide' && (
