@@ -907,16 +907,15 @@ function App() {
                   <div className="space-y-6">
                     {/* 1. Planning mode */}
                     <div className="scroll-mt-24 transition-all duration-300">
-                      <div className="couple-planning-studio-wrapper"><CouplePlanningCard profile={profile} onChange={handleProfileChange} /></div>
+                      <div className="couple-planning-studio-wrapper"><CouplePlanningCard isStudioMode={true} profile={profile} onChange={handleProfileChange} /></div>
                     </div>
                     {/* 2. Personal profile and nmpa timeline */}
                     <div className="scroll-mt-24 transition-all duration-300">
-                      <ProfileInputs profile={profile} onChange={handleProfileChange} pots={pots} />
+                      <ProfileInputs isStudioMode={true} profile={profile} onChange={handleProfileChange} pots={pots} />
                     </div>
                     {/* 3. Investment pot balances */}
                     <div className="scroll-mt-24 transition-all duration-300">
-                      <PotManager
-                        pots={pots}
+                      <PotManager isStudioMode={true}                         pots={pots}
                         onChange={handlePotsChange}
                         taxResult={taxResult}
                         profile={profile}
@@ -926,15 +925,15 @@ function App() {
                     </div>
                     {/* 4. Contributions */}
                     <div className="scroll-mt-24 transition-all duration-300">
-                      <InvestmentContributionManager profile={profile} onChange={handleProfileChange} />
+                      <InvestmentContributionManager isStudioMode={true} profile={profile} onChange={handleProfileChange} />
                     </div>
                     {/* 5. Investment transfers */}
                     <div className="scroll-mt-24 transition-all duration-300">
-                      <PotTransferManager profile={profile} onChange={handleProfileChange} pots={pots} />
+                      <PotTransferManager isStudioMode={true} profile={profile} onChange={handleProfileChange} pots={pots} />
                     </div>
                     {/* 6. State pension forecast */}
                     <div className="scroll-mt-24 transition-all duration-300">
-                      <StatePensionCard profile={profile} onChange={handleProfileChange} />
+                      <StatePensionCard isStudioMode={true} profile={profile} onChange={handleProfileChange} />
                     </div>
                     {/* 7. Defined benefit pensions */}
                     <div className="scroll-mt-24 transition-all duration-300">
@@ -942,20 +941,19 @@ function App() {
                     </div>
                     {/* 8. Fixed income & disability benefits */}
                     <div className="scroll-mt-24 transition-all duration-300">
-                      <FixedIncomeManager profile={profile} onChange={handleProfileChange} />
+                      <FixedIncomeManager isStudioMode={true} profile={profile} onChange={handleProfileChange} />
                     </div>
                     {/* 9. Life events */}
                     <div className="scroll-mt-24 transition-all duration-300">
-                      <LifeEventsDecumulationCard profile={profile} pots={pots} projections={projections} onChange={handleProfileChange} />
+                      <LifeEventsDecumulationCard isStudioMode={true} profile={profile} pots={pots} projections={projections} onChange={handleProfileChange} />
                     </div>
                     {/* 10. Investment, platform & advisor fees */}
                     <div className="scroll-mt-24 transition-all duration-300">
-                      <InvestmentFeesCard profile={profile} pots={pots} onChange={handleProfileChange} />
+                      <InvestmentFeesCard isStudioMode={true} profile={profile} pots={pots} onChange={handleProfileChange} />
                     </div>
                     {/* 11. Drawdown strategy */}
                     <div className="scroll-mt-24 transition-all duration-300">
-                      <DrawdownPlanner
-                        profile={profile}
+                      <DrawdownPlanner isStudioMode={true}                         profile={profile}
                         pots={pots}
                         projections={projections}
                         onChange={handleProfileChange}
@@ -969,8 +967,7 @@ function App() {
                     </div>
                     {/* 12. Retirement income requirement */}
                     <div className="scroll-mt-24 transition-all duration-300">
-                      <SpendingPhasesCard
-                        profile={profile}
+                      <SpendingPhasesCard isStudioMode={true}                         profile={profile}
                         onChange={handleProfileChange}
                         onOpenMaximizedSpendModal={() => setIsMaximizedSpendModalOpen(true)}
                         appMode={appMode}
@@ -978,8 +975,7 @@ function App() {
                     </div>
                     {/* 13. UK gilt ladder strategy */}
                     <div className="scroll-mt-24 transition-all duration-300">
-                      <GiltLadderCard
-                        profile={profile}
+                      <GiltLadderCard isStudioMode={true}                         profile={profile}
                         pots={pots}
                         projections={projections}
                         onChange={handleProfileChange}
@@ -987,11 +983,11 @@ function App() {
                     </div>
                     {/* 14. Right sizings your home */}
                     <div className="scroll-mt-24 transition-all duration-300">
-                      <RightSizingCard profile={profile} onChange={handleProfileChange} />
+                      <RightSizingCard isStudioMode={true} profile={profile} onChange={handleProfileChange} />
                     </div>
                     {/* 15. Asset allocation & macro settings */}
                     <div className="scroll-mt-24 transition-all duration-300">
-                      <MacroSettingsCard profile={profile} pots={pots} onChange={handleProfileChange} />
+                      <MacroSettingsCard isStudioMode={true} profile={profile} pots={pots} onChange={handleProfileChange} />
                     </div>
                   </div>
                 </div>

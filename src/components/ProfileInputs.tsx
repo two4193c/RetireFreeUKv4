@@ -5,12 +5,13 @@ import { DEFAULT_CUSTOM_TAX_BANDS } from '../utils/defaultData';
 import { User, Heart, Users, HelpCircle, AlertTriangle, ShieldCheck, Sliders, RotateCcw, Receipt, Percent, Sparkles, CheckCircle2 } from 'lucide-react';
 
 interface ProfileInputsProps {
+  isStudioMode?: boolean;
   profile: UserProfile;
   onChange: (updatedProfile: UserProfile) => void;
   pots?: InvestmentPots;
 }
 
-export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange, pots }) => {
+export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange, pots, isStudioMode }) => {
   const isCouple = Boolean(profile.isCouplePlanning);
 
   const updateField = <K extends keyof UserProfile>(key: K, value: UserProfile[K]) => {

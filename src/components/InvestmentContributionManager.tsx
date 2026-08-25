@@ -4,11 +4,12 @@ import { Calendar, Plus, Trash2, PiggyBank, Sparkles, Landmark, Coins, ShieldChe
 import { ModalShell } from './ModalShell';
 
 interface InvestmentContributionManagerProps {
+  isStudioMode?: boolean;
   profile: UserProfile;
   onChange: (updatedProfile: UserProfile) => void;
 }
 
-export const InvestmentContributionManager: React.FC<InvestmentContributionManagerProps> = ({ profile, onChange }) => {
+export const InvestmentContributionManager: React.FC<InvestmentContributionManagerProps> = ({ profile, onChange, isStudioMode }) => {
   const contributions = profile.oneOffContributions || [];
   const [activePersonFilter, setActivePersonFilter] = useState<'all' | 'primary' | 'partner'>('all');
   const [editItem, setEditItem] = useState<InvestmentContribution | null>(null);
@@ -229,7 +230,9 @@ export const InvestmentContributionManager: React.FC<InvestmentContributionManag
         </div>
 
         {/* Aggregate Stats */}
-        <div className="flex items-center gap-4 bg-slate-50 dark:bg-slate-800/60 p-2.5 px-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80">
+        {!isStudioMode && (
+      <div className="flex items-center gap-4 bg-slate-50 dark:bg-slate-800/60 p-2.5 px-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80">
+        
           <div>
             <div className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Regular Monthly</div>
             <div className="text-lg font-black text-indigo-600 dark:text-indigo-400">
@@ -241,13 +244,14 @@ export const InvestmentContributionManager: React.FC<InvestmentContributionManag
             <div className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Planned Lump Sums</div>
             <div className="text-lg font-black text-slate-900 dark:text-slate-100">£{totalLumpSums.toLocaleString()}</div>
           </div>
-        </div>
+        
       </div>
-
-      {/* Person Filter Tabs */}
+    )}
+    </div>
+    {/* Person Filter Tabs */}
       {isCouple && (
         <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-indigo-50/60 dark:bg-slate-800/60 p-2.5 sm:p-1.5 rounded-2xl border border-indigo-200/70 dark:border-slate-700 text-xs font-bold gap-2">
-          <span className="text-indigo-900 dark:text-indigo-300 px-1 sm:px-3 text-[11px] uppercase tracking-wider font-extrabold shrink-0">Filter Person:</span>
+          {!isStudioMode && <span className="text-indigo-900 dark:text-indigo-300 px-1 sm:px-3 text-[11px] uppercase tracking-wider font-extrabold shrink-0">Filter Person:</span>}
           <div className="grid grid-cols-3 sm:flex items-center gap-1.5 w-full sm:w-auto">
             {(['all', 'primary', 'partner'] as const).map((f) => (
               <button
@@ -270,7 +274,8 @@ export const InvestmentContributionManager: React.FC<InvestmentContributionManag
         </div>
       )}
 
-      {/* Quick Presets */}
+      {!isStudioMode && ( <div className="space-y-2">
+        {/* Quick Presets */}
       <div className="space-y-2">
         <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Quick Presets:</div>
         <div className="flex items-center gap-2 flex-wrap">
@@ -293,6 +298,7 @@ export const InvestmentContributionManager: React.FC<InvestmentContributionManag
       </div>
 
       {/* Contribution List */}
+      </div>)} 
       {filteredContribs.length === 0 ? (
         <div className="p-8 text-center bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 space-y-2">
           <Coins className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto" />

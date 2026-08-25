@@ -21,6 +21,7 @@ import {
 import { ModalShell } from './ModalShell';
 
 interface PotTransferManagerProps {
+  isStudioMode?: boolean;
   profile: UserProfile;
   onChange: (updatedProfile: UserProfile) => void;
   pots: InvestmentPots;
@@ -472,6 +473,7 @@ export const PotTransferManager: React.FC<PotTransferManagerProps> = ({
         </button>
       </div>
 
+      {!isStudioMode && ( <>
       {/* Quick Preset Buttons */}
       <div className="space-y-2">
         <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
@@ -524,6 +526,7 @@ export const PotTransferManager: React.FC<PotTransferManagerProps> = ({
         </div>
       </div>
 
+      </>)} 
       {/* Transfer List */}
       {sortedTransfers.length === 0 ? (
         <div className="text-center py-8 px-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700/80">

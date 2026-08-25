@@ -3,6 +3,7 @@ import { UserProfile, InvestmentPots, UKTaxResult } from '../types';
 import { Landmark, PiggyBank, Coins, User, Heart, Users, ArrowRight, Briefcase, Sparkles, Gift } from 'lucide-react';
 
 interface PotManagerProps {
+  isStudioMode?: boolean;
   profile: UserProfile;
   pots: InvestmentPots;
   onChange: (updatedPots: InvestmentPots) => void;
@@ -13,6 +14,7 @@ interface PotManagerProps {
 }
 
 export const PotManager: React.FC<PotManagerProps> = ({
+  isStudioMode,
   profile,
   pots,
   onChange,
@@ -317,7 +319,7 @@ export const PotManager: React.FC<PotManagerProps> = ({
       </div>
 
       {/* TAB CONTENT: PENSIONS */}
-      {activeTab === 'pension' && (
+      {(isStudioMode || activeTab === 'pension') && (
         <div className="space-y-4 pt-1">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
             {/* Workplace Pension Balance */}
@@ -366,7 +368,7 @@ export const PotManager: React.FC<PotManagerProps> = ({
       )}
 
       {/* TAB CONTENT: ISAs */}
-      {activeTab === 'isa' && (
+      {(isStudioMode || activeTab === 'isa') && (
         <div className="space-y-4 pt-1">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Stocks & Shares ISA */}
@@ -420,7 +422,7 @@ export const PotManager: React.FC<PotManagerProps> = ({
       )}
 
       {/* TAB CONTENT: CASH & GIA */}
-      {activeTab === 'cash_gia' && (
+      {(isStudioMode || activeTab === 'cash_gia') && (
         <div className="space-y-4 pt-1">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* General Investment Account (GIA) */}
