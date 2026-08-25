@@ -57,3 +57,122 @@
 .dark .custom-scrollbar::-webkit-scrollbar-thumb {
   background-color: rgba(51, 65, 85, 0.5);
 }
+/* Studio Mode Aggressive Compaction */
+.studio-mode-left .bg-white, .studio-mode-left .dark\:bg-slate-900 {
+  padding: 0.75rem !important;
+  border-radius: 0.75rem !important;
+  gap: 0.5rem !important;
+}
+.studio-mode-left .space-y-8 > * + * {
+  margin-top: 0.5rem !important;
+}
+.studio-mode-left .space-y-6 > * + * {
+  margin-top: 0.5rem !important;
+}
+.studio-mode-left .p-6 {
+  padding: 0.75rem !important;
+}
+.studio-mode-left .gap-6 {
+  gap: 0.5rem !important;
+}
+.studio-mode-left .p-4 {
+  padding: 0.5rem !important;
+}
+.studio-mode-left h2, .studio-mode-left h3 {
+  font-size: 0.85rem !important;
+  margin-bottom: 0 !important;
+}
+.studio-mode-left p.text-slate-500 {
+  display: none !important;
+}
+.studio-mode-left .w-10.h-10, .studio-mode-left .w-8.h-8, .studio-mode-left .w-12.h-12 {
+  display: none !important;
+}
+.studio-mode-left input, .studio-mode-left select {
+  padding: 0.25rem 0.5rem !important;
+  font-size: 0.75rem !important;
+  height: 1.75rem !important;
+}
+.studio-mode-left label {
+  font-size: 0.65rem !important;
+  margin-bottom: 0.1rem !important;
+}
+.studio-mode-left .text-sm, .studio-mode-left .text-xs {
+  font-size: 0.7rem !important;
+}
+/* Force inputs side-by-side or stacked cleanly */
+.studio-mode-left .grid-cols-2 {
+  grid-template-columns: 1fr !important;
+}
+.studio-mode-left .sm\:grid-cols-2 {
+  grid-template-columns: 1fr !important;
+}
+.studio-mode-left .sm\:grid-cols-3 {
+  grid-template-columns: 1fr !important;
+}
+/* Hide the summary total blocks in the pot manager */
+.studio-mode-left .bg-indigo-50.rounded-2xl {
+  display: none !important;
+}
+
+/* More aggressive hiding for CouplePlanningCard specifically */
+.studio-mode-left .couple-planning-studio-wrapper h2,
+.studio-mode-left #card-inputs-couple h3,
+.studio-mode-left #card-inputs-couple .bg-indigo-50 {
+  display: none !important;
+}
+
+/* More general hiding to make it extremely compact */
+.studio-mode-left .card-header-icon {
+  display: none !important;
+}
+
+.studio-mode-left .border-b,
+.studio-mode-left .pb-6 {
+  border-bottom: none !important;
+  padding-bottom: 0 !important;
+}
+
+.studio-mode-left .mb-6 {
+  margin-bottom: 0 !important;
+}
+
+/* Hide explanations, paragraphs, or extra spacing */
+.studio-mode-left p, 
+.studio-mode-left .text-xs.text-slate-500 {
+  display: none !important;
+}
+
+/* Compact the toggle switches */
+.studio-mode-left button[role="switch"] {
+  transform: scale(0.85);
+  transform-origin: left center;
+}
+
+/* Make inputs really small */
+.studio-mode-left input,
+.studio-mode-left select {
+  padding: 0.15rem 0.25rem !important;
+  font-size: 0.75rem !important;
+  height: 1.5rem !important;
+}
+
+/* Hide the large icons on all cards */
+.studio-mode-left .p-3.rounded-2xl {
+  display: none !important;
+}
+
+/* Hide generic descriptive headers */
+.studio-mode-left .flex.items-center.gap-3.border-b {
+  border-bottom: none !important;
+  padding-bottom: 0 !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.studio-mode-left .space-y-4 > * + * {
+  margin-top: 0.25rem !important;
+}
+
+.studio-mode-left .space-y-6 > * + * {
+  margin-top: 0.5rem !important;
+}

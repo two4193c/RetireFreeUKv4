@@ -899,54 +899,102 @@ function App() {
             {studioMode && (
               <div className="flex h-[calc(100vh-140px)] gap-6 overflow-hidden -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8">
                 {/* Left Pane: Inputs */}
-                <div className="w-[35%] h-full overflow-y-auto space-y-6 pr-2 custom-scrollbar pb-32">
+                <div className="w-[35%] h-full overflow-y-auto pr-2 custom-scrollbar pb-32 studio-mode-left">
                   <div className="space-y-6">
-                <div id="card-inputs-couple" className="scroll-mt-24 transition-all duration-300">
-                  <CouplePlanningCard profile={profile} onChange={handleProfileChange} />
-                </div>
-                <div id="card-inputs-profile" className="scroll-mt-24 transition-all duration-300">
-                  <ProfileInputs profile={profile} onChange={handleProfileChange} pots={pots} />
-                </div>
-                <div id="card-inputs-pots" className="scroll-mt-24 transition-all duration-300">
-                  <PotManager
-                    pots={pots}
-                    onChange={handlePotsChange}
-                    taxResult={taxResult}
-                    profile={profile}
-                    partnerPots={profile.partnerPots}
-                    onPartnerPotsChange={handlePartnerPotsChange}
-                  />
-                </div>
-                <div id="card-inputs-oneoff" className="scroll-mt-24 transition-all duration-300">
-                  <OneOffContributionManager profile={profile} onChange={handleProfileChange} />
-                </div>
-                {appMode === 'advanced' && (
-                  <>
-                    <div id="card-inputs-transfers" className="scroll-mt-24 transition-all duration-300">
-                      <PotTransferManager profile={profile} onChange={handleProfileChange} pots={pots} />
+                    {/* 1. Planning mode */}
+                    <div className="scroll-mt-24 transition-all duration-300">
+                      <div className="couple-planning-studio-wrapper"><CouplePlanningCard profile={profile} onChange={handleProfileChange} /></div>
                     </div>
-                    <div id="card-inputs-statepension" className="scroll-mt-24 transition-all duration-300">
+                    {/* 2. Personal profile and nmpa timeline */}
+                    <div className="scroll-mt-24 transition-all duration-300">
+                      <ProfileInputs profile={profile} onChange={handleProfileChange} pots={pots} />
+                    </div>
+                    {/* 3. Investment pot balances */}
+                    <div className="scroll-mt-24 transition-all duration-300">
+                      <PotManager
+                        pots={pots}
+                        onChange={handlePotsChange}
+                        taxResult={taxResult}
+                        profile={profile}
+                        partnerPots={profile.partnerPots}
+                        onPartnerPotsChange={handlePartnerPotsChange}
+                      />
+                    </div>
+                    {/* 4. Contributions */}
+                    <div className="scroll-mt-24 transition-all duration-300">
+                      <RegularContributionsCard
+                        profile={profile}
+                        pots={pots}
+                        onChangeProfile={handleProfileChange}
+                        onChangePots={handlePotsChange}
+                      />
+                    </div>
+                    {/* 5. Investment transfers */}
+                    <div className="scroll-mt-24 transition-all duration-300">
+                      <PotTransferCard profile={profile} pots={pots} onChange={handleProfileChange} />
+                    </div>
+                    {/* 6. State pension forecast */}
+                    <div className="scroll-mt-24 transition-all duration-300">
                       <StatePensionCard profile={profile} onChange={handleProfileChange} />
                     </div>
-                  </>
-                )}
-                <div id="card-inputs-dbpension" className="scroll-mt-24 transition-all duration-300">
-                  <DbPensionManager profile={profile} onChange={handleProfileChange} />
-                </div>
-                <div id="card-inputs-fixedincome" className="scroll-mt-24 transition-all duration-300">
-                  <FixedIncomeManager profile={profile} onChange={handleProfileChange} />
-                </div>
-                {appMode === 'advanced' && (
-                  <>
-                    <div id="card-inputs-lifeevents" className="scroll-mt-24 transition-all duration-300">
+                    {/* 7. Defined benefit pensions */}
+                    <div className="scroll-mt-24 transition-all duration-300">
+                      <DbPensionCard profile={profile} onChange={handleProfileChange} />
+                    </div>
+                    {/* 8. Fixed income & disability benefits */}
+                    <div className="scroll-mt-24 transition-all duration-300">
+                      <FixedIncomeManager profile={profile} onChange={handleProfileChange} />
+                    </div>
+                    {/* 9. Life events */}
+                    <div className="scroll-mt-24 transition-all duration-300">
                       <LifeEventsDecumulationCard profile={profile} pots={pots} projections={projections} onChange={handleProfileChange} />
                     </div>
-                    <div id="card-inputs-fees" className="scroll-mt-24 transition-all duration-300">
+                    {/* 10. Investment, platform & advisor fees */}
+                    <div className="scroll-mt-24 transition-all duration-300">
                       <InvestmentFeesCard profile={profile} pots={pots} onChange={handleProfileChange} />
                     </div>
-                  </>
-                )}
-              </div>
+                    {/* 11. Drawdown strategy */}
+                    <div className="scroll-mt-24 transition-all duration-300">
+                      <DrawdownPlanner
+                        profile={profile}
+                        pots={pots}
+                        projections={projections}
+                        onChange={handleProfileChange}
+                        scenarios={scenarios}
+                        activeScenarioId={activeScenarioId}
+                        onCreateStrategyVariants={handleCreateStrategyVariants}
+                        onNavigateToCompare={() => setActiveTab('compare')}
+                        onOpenMaximizedSpendModal={() => setIsMaximizedSpendModalOpen(true)}
+                        appMode={appMode}
+                      />
+                    </div>
+                    {/* 12. Retirement income requirement */}
+                    <div className="scroll-mt-24 transition-all duration-300">
+                      <SpendingPhasesCard
+                        profile={profile}
+                        onChange={handleProfileChange}
+                        onOpenMaximizedSpendModal={() => setIsMaximizedSpendModalOpen(true)}
+                        appMode={appMode}
+                      />
+                    </div>
+                    {/* 13. UK gilt ladder strategy */}
+                    <div className="scroll-mt-24 transition-all duration-300">
+                      <GiltLadderCard
+                        profile={profile}
+                        pots={pots}
+                        projections={projections}
+                        onChange={handleProfileChange}
+                      />
+                    </div>
+                    {/* 14. Right sizings your home */}
+                    <div className="scroll-mt-24 transition-all duration-300">
+                      <DownsizingCard profile={profile} onChange={handleProfileChange} />
+                    </div>
+                    {/* 15. Asset allocation & macro settings */}
+                    <div className="scroll-mt-24 transition-all duration-300">
+                      <MacroSettingsCard profile={profile} pots={pots} onChange={handleProfileChange} />
+                    </div>
+                  </div>
                 </div>
                 {/* Right Pane: Analysis & Strategy */}
                 <div className="w-[65%] h-full overflow-y-auto space-y-6 pl-2 custom-scrollbar pb-32">
