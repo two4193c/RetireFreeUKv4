@@ -564,42 +564,42 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
     const totalFunding = sources.reduce((acc, s) => acc + s.amount, 0);
 
     return (
-      <div className="bg-slate-900 opacity-100 p-4 rounded-2xl shadow-2xl border-2 border-slate-700 text-xs space-y-3 min-w-[290px] max-w-[350px] z-50 pointer-events-none">
+      <div className="bg-white dark:bg-slate-900 opacity-100 p-4 rounded-2xl shadow-2xl border-2 border-slate-300 dark:border-slate-700 text-xs space-y-3 min-w-[290px] max-w-[350px] z-50 pointer-events-none">
         {/* Header */}
-        <div className="font-extrabold text-slate-100 flex items-center justify-between border-b border-slate-800 pb-2">
+        <div className="font-extrabold text-slate-900 dark:text-slate-100 flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
           <div>
             <span className="text-sm font-black text-slate-900 dark:text-white">Age {data.age}</span>
-            <span className="text-slate-400 font-bold ml-1.5">({data.year})</span>
+            <span className="text-slate-500 dark:text-slate-400 font-bold ml-1.5">({data.year})</span>
           </div>
           {hasShortfall ? (
-            <span className="text-[10px] bg-rose-100 dark:bg-rose-950 text-rose-200 px-2 py-0.5 rounded-md font-black border border-rose-800">
+            <span className="text-[10px] bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-200 px-2 py-0.5 rounded-md font-black border border-rose-300 dark:border-rose-800">
               🚨 Deficit: -£{Math.round(data.incomeShortfall).toLocaleString()}/yr
             </span>
           ) : (
-            <span className="text-[10px] bg-emerald-100 dark:bg-emerald-950 text-emerald-200 px-2 py-0.5 rounded-md font-black border border-emerald-800">
+            <span className="text-[10px] bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 px-2 py-0.5 rounded-md font-black border border-emerald-300 dark:border-emerald-800">
               ✅ Target Met
             </span>
           )}
         </div>
 
         {/* Target & Total Net Summary */}
-        <div className="bg-slate-800/90 p-2.5 rounded-xl border border-slate-700 space-y-1.5">
-          <div className="flex justify-between items-center text-slate-300 font-semibold">
+        <div className="bg-slate-100 dark:bg-slate-800/90 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 space-y-1.5">
+          <div className="flex justify-between items-center text-slate-700 dark:text-slate-300 font-semibold">
             <span>Target Requirement:</span>
             <span className="font-bold text-slate-900 dark:text-white">£{Math.round(data.targetIncome || 0).toLocaleString()}/yr</span>
           </div>
-          <div className="flex justify-between items-center text-emerald-400 font-extrabold text-xs">
+          <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400 font-extrabold text-xs">
             <span>Total Net Income Achieved:</span>
-            <span className="text-sm font-black text-emerald-300">£{Math.round(data.totalIncome || 0).toLocaleString()}/yr</span>
+            <span className="text-sm font-black text-emerald-700 dark:text-emerald-300">£{Math.round(data.totalIncome || 0).toLocaleString()}/yr</span>
           </div>
           {hasSurplus && (
-            <div className="flex justify-between items-center font-bold text-teal-300 text-[11px] pt-1 border-t border-slate-700">
+            <div className="flex justify-between items-center font-bold text-teal-700 dark:text-teal-300 text-[11px] pt-1 border-t border-slate-200 dark:border-slate-700">
               <span>Annual Surplus:</span>
               <span>+£{Math.round(data.annualIncomeExcess).toLocaleString()}/yr</span>
             </div>
           )}
           {data.totalTaxPaid > 0 && (
-            <div className="flex justify-between items-center font-medium text-slate-400 text-[10px] pt-0.5">
+            <div className="flex justify-between items-center font-medium text-slate-500 dark:text-slate-400 text-[10px] pt-0.5">
               <span>Est. Tax Liability Paid:</span>
               <span>-£{Math.round(data.totalTaxPaid).toLocaleString()}/yr</span>
             </div>
@@ -608,7 +608,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
 
         {/* Detailed Income Sources & Amounts Breakdown */}
         <div className="space-y-1.5 pt-0.5">
-          <div className="flex items-center justify-between text-[10px] font-black uppercase text-slate-400 tracking-wider">
+          <div className="flex items-center justify-between text-[10px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-wider">
             <span>Income Sources & Amounts:</span>
             <span>{sources.length} {sources.length === 1 ? 'Source' : 'Sources'}</span>
           </div>
@@ -618,27 +618,27 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
               {sources.map((s, idx) => {
                 const pct = totalFunding > 0 ? ((s.amount / totalFunding) * 100).toFixed(0) : '0';
                 return (
-                  <div key={idx} className="flex items-center justify-between p-2 bg-slate-950 rounded-lg border border-slate-800">
+                  <div key={idx} className="flex items-center justify-between p-2 bg-slate-50 dark:bg-slate-950 rounded-lg border border-slate-200 dark:border-slate-800">
                     <div className="flex items-center gap-2 min-w-0 pr-2">
                       <span className="w-2.5 h-2.5 rounded-full shrink-0 shadow-xs" style={{ backgroundColor: s.color }} />
                       <div className="min-w-0">
-                        <div className="font-bold text-slate-100 text-xs truncate">
+                        <div className="font-bold text-slate-900 dark:text-slate-100 text-xs truncate">
                           {s.name}
                         </div>
-                        <div className="text-[10px] text-slate-400 font-medium">
+                        <div className="text-[10px] text-slate-600 dark:text-slate-400 font-medium">
                           {s.badge} • {pct}% of total
                         </div>
                       </div>
                     </div>
                     <div className="text-right shrink-0 font-black text-slate-900 dark:text-white text-xs">
-                      £{Math.round(s.amount).toLocaleString()}<span className="text-[10px] font-normal text-slate-400">/yr</span>
+                      £{Math.round(s.amount).toLocaleString()}<span className="text-[10px] font-normal text-slate-500 dark:text-slate-400">/yr</span>
                     </div>
                   </div>
                 );
               })}
             </div>
           ) : (
-            <div className="p-2 text-center text-slate-400 italic text-[11px] bg-slate-800 rounded-lg">
+            <div className="p-2 text-center text-slate-500 dark:text-slate-400 italic text-[11px] bg-slate-100 dark:bg-slate-800 rounded-lg">
               No active income streams drawn
             </div>
           )}
@@ -646,12 +646,12 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
 
         {/* Shortfall Deficit Callout */}
         {hasShortfall && (
-          <div className="p-2 bg-rose-100 dark:bg-rose-950 rounded-xl border border-rose-800 text-rose-200 font-extrabold text-[11px] flex justify-between items-center">
+          <div className="p-2 bg-rose-100 dark:bg-rose-950 rounded-xl border border-rose-300 dark:border-rose-800 text-rose-800 dark:text-rose-200 font-extrabold text-[11px] flex justify-between items-center">
             <span className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0" />
               Unmet Income Shortfall:
             </span>
-            <span className="text-rose-300 font-black">
+            <span className="text-rose-700 dark:text-rose-300 font-black">
               -£{Math.round(data.incomeShortfall).toLocaleString()}/yr
             </span>
           </div>
@@ -665,26 +665,26 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: 'easeOut' }}
-      className="bg-slate-900 rounded-3xl p-6 shadow-xs border border-slate-800 space-y-6 transition-colors"
+      className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-xs border border-slate-200 dark:border-slate-800 space-y-6 transition-colors"
     >
       {/* Chart Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
         <div>
-          <p className="text-xs font-semibold text-slate-400">
+          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
             Age {profile.currentAge} to {projections[projections.length - 1]?.age || 100} deterministic trajectory
           </p>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap text-xs">
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-300 font-extrabold border border-emerald-800/80">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-extrabold border border-emerald-200 dark:border-emerald-800/80">
             <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
             Retire: Age {primaryRetireAge} {isCouple && `(Partner: ${profile.partnerTargetRetirementAge || 60})`}
           </span>
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-sky-50 dark:bg-sky-950/60 text-sky-300 font-extrabold border border-sky-200 dark:border-sky-800/80">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 font-extrabold border border-sky-200 dark:border-sky-800/80">
             <span className="w-2 h-2 rounded-full bg-sky-500"></span>
             Private Pension Access: Age {primaryAccessAge} {isCouple && `(Partner: ${partnerAccessAgeRaw})`}
           </span>
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-purple-50 dark:bg-purple-950/60 text-purple-300 font-extrabold border border-purple-200 dark:border-purple-800/80">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 font-extrabold border border-purple-200 dark:border-purple-800/80">
             <span className="w-2 h-2 rounded-full bg-purple-500"></span>
             State Pension: Age {primarySpa} {isCouple && `(Partner: ${profile.partnerStatePensionAge || 67})`}
           </span>
@@ -692,16 +692,16 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
       </div>
 
       {/* OVERVIEW SECTION AT TOP (PLAN STATUS & RISK COMMENT) */}
-      <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-5 border border-slate-700/60 space-y-4">
+      <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-700/60 space-y-4">
         {/* Section Title */}
-        <div className="flex items-center justify-between pb-3 border-b border-slate-700/60">
+        <div className="flex items-center justify-between pb-3 border-b border-slate-200/80 dark:border-slate-700/60">
           <div className="flex items-center gap-2">
-            <PieChart className="w-4 h-4 text-emerald-400" />
+            <PieChart className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             <h3 className="font-extrabold text-slate-900 dark:text-white text-sm uppercase tracking-wide">
               Deterministic Overview & Plan Status
             </h3>
           </div>
-          <span className="text-[11px] font-bold text-slate-400">
+          <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
             Smoothed Growth ({profile.expectedInvestmentReturn ?? 6.5}% Pre / {profile.postRetirementReturn ?? 4.5}% Post-Ret, CPI {profile.expectedInflationRate ?? 2.5}%)
           </span>
         </div>
@@ -710,32 +710,32 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
         <div
           className={`p-4 rounded-xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${
             hasPlanFailure
-              ? 'bg-rose-50/90 dark:bg-rose-950/60 border-rose-800/80 text-rose-100'
-              : 'bg-emerald-50/90 dark:bg-emerald-950/60 border-emerald-800/80 text-emerald-100'
+              ? 'bg-rose-50/90 dark:bg-rose-950/60 border-rose-300 dark:border-rose-800/80 text-rose-950 dark:text-rose-100'
+              : 'bg-emerald-50/90 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-800/80 text-emerald-950 dark:text-emerald-100'
           }`}
         >
           <div className="flex items-center gap-3">
             <div
               className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${
                 hasPlanFailure
-                  ? 'bg-rose-200 dark:bg-rose-900 text-rose-200 border-rose-700'
-                  : 'bg-emerald-200 dark:bg-emerald-900 text-emerald-200 border-emerald-700'
+                  ? 'bg-rose-200 dark:bg-rose-900 text-rose-700 dark:text-rose-200 border-rose-300 dark:border-rose-700'
+                  : 'bg-emerald-200 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-200 border-emerald-300 dark:border-emerald-700'
               }`}
             >
               {hasPlanFailure ? (
-                <AlertTriangle className="w-5 h-5 text-rose-300 animate-pulse" />
+                <AlertTriangle className="w-5 h-5 text-rose-600 dark:text-rose-300 animate-pulse" />
               ) : (
-                <CheckCircle2 className="w-5 h-5 text-emerald-300" />
+                <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-300" />
               )}
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-black uppercase tracking-wider text-slate-400">
+                <span className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Plan Status:
                 </span>
                 <span
                   className={`text-sm font-black ${
-                    hasPlanFailure ? 'text-rose-400' : 'text-emerald-400'
+                    hasPlanFailure ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'
                   }`}
                 >
                   {hasPlanFailure
@@ -766,63 +766,63 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
 
         {/* Overview Key Metrics Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="bg-slate-900 p-3.5 rounded-xl border border-slate-800">
-            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+          <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800">
+            <div className="text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider">
               Target Age {profile.targetRetirementAge} Pot
             </div>
             <div className="text-base font-black text-slate-900 dark:text-white mt-0.5">
               {formatCurrency(displayedRetirementPot)}
             </div>
-            <p className="text-[10px] text-slate-500 font-medium">
+            <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
               {adjustInflation ? "Real Terms (Today's £)" : "Nominal £"}
             </p>
           </div>
 
-          <div className="bg-slate-900 p-3.5 rounded-xl border border-slate-800">
-            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+          <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800">
+            <div className="text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider">
               Target Income Goal
             </div>
-            <div className="text-base font-black text-emerald-400 mt-0.5">
+            <div className="text-base font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
               £{targetIncomeGoal.toLocaleString()}/yr
             </div>
-            <p className="text-[10px] text-slate-500 font-medium">
+            <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
               {adjustInflation ? "Real Terms (Today's £)" : "Nominal £"}
             </p>
           </div>
 
-          <div className="bg-slate-900 p-3.5 rounded-xl border border-slate-800">
-            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+          <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800">
+            <div className="text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider">
               Pension Asset Share
             </div>
-            <div className="text-base font-black text-emerald-400 mt-0.5">
+            <div className="text-base font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
               {retirementYear?.totalPot
                 ? `${Math.round((retirementYear.pensionPot / retirementYear.totalPot) * 100)}%`
                 : '0%'}
             </div>
-            <p className="text-[10px] text-slate-500 font-medium">
+            <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
               Tax-deferred portion
             </p>
           </div>
 
-          <div className="bg-slate-900 p-3.5 rounded-xl border border-slate-800">
-            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+          <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800">
+            <div className="text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider">
               ISA Asset Share
             </div>
-            <div className="text-base font-black text-indigo-400 mt-0.5">
+            <div className="text-base font-black text-indigo-600 dark:text-indigo-400 mt-0.5">
               {retirementYear?.totalPot
                 ? `${Math.round((retirementYear.isaPot / retirementYear.totalPot) * 100)}%`
                 : '0%'}
             </div>
-            <p className="text-[10px] text-slate-500 font-medium">
+            <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
               Tax-free shelter portion
             </p>
           </div>
         </div>
 
         {/* Comment Regarding Risk */}
-        <div className="bg-amber-50/90 dark:bg-amber-950/40 p-3.5 rounded-xl border border-amber-200/80 dark:border-amber-800/60 text-xs text-amber-200 space-y-1">
-          <div className="flex items-center gap-1.5 font-extrabold text-amber-200">
-            <ShieldAlert className="w-4 h-4 text-amber-400 shrink-0" />
+        <div className="bg-amber-50/90 dark:bg-amber-950/40 p-3.5 rounded-xl border border-amber-200/80 dark:border-amber-800/60 text-xs text-amber-950 dark:text-amber-200 space-y-1">
+          <div className="flex items-center gap-1.5 font-extrabold text-amber-900 dark:text-amber-200">
+            <ShieldAlert className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
             <span>Deterministic Model Risk &amp; Volatility Consideration</span>
           </div>
           <p className="leading-relaxed text-[11px] text-amber-900/90 dark:text-amber-200/90">
@@ -836,23 +836,23 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
         <motion.div
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-rose-50 dark:bg-rose-950/70 border-2 border-rose-800/90 rounded-2xl p-4 sm:p-5 text-rose-100 shadow-sm space-y-3"
+          className="bg-rose-50 dark:bg-rose-950/70 border-2 border-rose-300 dark:border-rose-800/90 rounded-2xl p-4 sm:p-5 text-rose-950 dark:text-rose-100 shadow-sm space-y-3"
         >
           <div className="flex items-start sm:items-center justify-between gap-3 flex-col sm:flex-row">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-rose-200 dark:bg-rose-900 text-rose-200 flex items-center justify-center shrink-0 border border-rose-700">
-                <AlertTriangle className="w-5 h-5 text-rose-300 animate-pulse" />
+              <div className="w-10 h-10 rounded-xl bg-rose-200 dark:bg-rose-900 text-rose-700 dark:text-rose-200 flex items-center justify-center shrink-0 border border-rose-300 dark:border-rose-700">
+                <AlertTriangle className="w-5 h-5 text-rose-600 dark:text-rose-300 animate-pulse" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="font-extrabold text-base text-rose-100">
+                  <h3 className="font-extrabold text-base text-rose-900 dark:text-rose-100">
                     PLAN FAILURE DETECTED: Income Target Cannot Be Achieved
                   </h3>
                   <span className="text-[10px] font-black uppercase tracking-wider bg-rose-600 text-white px-2 py-0.5 rounded-full">
                     Action Required
                   </span>
                 </div>
-                <p className="text-xs text-rose-200/90 mt-0.5">
+                <p className="text-xs text-rose-800 dark:text-rose-200/90 mt-0.5">
                   Your projected retirement income falls short of your target requirement starting at{' '}
                   <strong className="font-bold underline">Age {firstShortfallYear?.age} ({firstShortfallYear?.year})</strong>.
                 </p>
@@ -871,23 +871,23 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-rose-200/80 dark:border-rose-800/60 text-xs">
-            <div className="bg-slate-900/80 p-2.5 rounded-xl border border-rose-800">
-              <div className="text-[10px] font-bold text-rose-300 uppercase">First Deficit Age</div>
-              <div className="text-sm font-extrabold text-rose-100 mt-0.5">
+            <div className="bg-white/80 dark:bg-slate-900/80 p-2.5 rounded-xl border border-rose-200 dark:border-rose-800">
+              <div className="text-[10px] font-bold text-rose-600 dark:text-rose-300 uppercase">First Deficit Age</div>
+              <div className="text-sm font-extrabold text-rose-900 dark:text-rose-100 mt-0.5">
                 Age {firstShortfallYear?.age} ({firstShortfallYear?.year})
               </div>
             </div>
 
-            <div className="bg-slate-900/80 p-2.5 rounded-xl border border-rose-800">
-              <div className="text-[10px] font-bold text-rose-300 uppercase">Max Annual Shortfall</div>
-              <div className="text-sm font-extrabold text-rose-100 mt-0.5">
+            <div className="bg-white/80 dark:bg-slate-900/80 p-2.5 rounded-xl border border-rose-200 dark:border-rose-800">
+              <div className="text-[10px] font-bold text-rose-600 dark:text-rose-300 uppercase">Max Annual Shortfall</div>
+              <div className="text-sm font-extrabold text-rose-900 dark:text-rose-100 mt-0.5">
                 -£{Math.round((maxAnnualShortfall) || 0).toLocaleString()}/yr
               </div>
             </div>
 
-            <div className="bg-slate-900/80 p-2.5 rounded-xl border border-rose-800">
-              <div className="text-[10px] font-bold text-rose-300 uppercase">Lifetime Income Deficit</div>
-              <div className="text-sm font-extrabold text-rose-100 mt-0.5">
+            <div className="bg-white/80 dark:bg-slate-900/80 p-2.5 rounded-xl border border-rose-200 dark:border-rose-800">
+              <div className="text-[10px] font-bold text-rose-600 dark:text-rose-300 uppercase">Lifetime Income Deficit</div>
+              <div className="text-sm font-extrabold text-rose-900 dark:text-rose-100 mt-0.5">
                 -£{Math.round((totalLifetimeShortfall) || 0).toLocaleString()}
               </div>
             </div>
@@ -898,11 +898,11 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
             <div className="pt-3 border-t border-rose-200/80 dark:border-rose-800/60 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-amber-100 dark:bg-amber-950/80 text-amber-300 flex items-center justify-center border border-amber-200 dark:border-amber-800 shrink-0">
+                  <div className="w-7 h-7 rounded-lg bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 flex items-center justify-center border border-amber-200 dark:border-amber-800 shrink-0">
                     <Clock className="w-4 h-4" />
                   </div>
                   <div>
-                    <h4 className="font-extrabold text-xs text-rose-100 uppercase tracking-wide flex items-center gap-1.5">
+                    <h4 className="font-extrabold text-xs text-rose-950 dark:text-rose-100 uppercase tracking-wide flex items-center gap-1.5">
                       <span>Delayed Retirement Feasibility Solver</span>
                       <Sparkles className="w-3.5 h-3.5 text-amber-500" />
                     </h4>
@@ -915,20 +915,20 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
 
               {/* RECOMMENDED DELAY RESOLUTION CALLOUT */}
               {delayedRetirementAnalysis.firstSuccessful ? (
-                <div className="bg-emerald-50 dark:bg-emerald-950/80 border-2 border-emerald-700/80 rounded-xl p-3.5 text-emerald-100 space-y-3 shadow-xs">
+                <div className="bg-emerald-50 dark:bg-emerald-950/80 border-2 border-emerald-300 dark:border-emerald-700/80 rounded-xl p-3.5 text-emerald-950 dark:text-emerald-100 space-y-3 shadow-xs">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="bg-emerald-600 text-white font-black text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-md">
                           Plan Success Solution Found
                         </span>
-                        <span className="text-xs font-bold text-emerald-300 flex items-center gap-1">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                        <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                           Delaying to Age {delayedRetirementAnalysis.firstSuccessful.testAge} eliminates 100% of shortfall
                         </span>
                       </div>
-                      <p className="text-xs text-emerald-100 leading-relaxed">
-                        Retiring at <strong className="font-bold underline text-emerald-300">Age {delayedRetirementAnalysis.firstSuccessful.testAge}</strong> (a delay of <strong>+{delayedRetirementAnalysis.firstSuccessful.delayYears} yr{delayedRetirementAnalysis.firstSuccessful.delayYears > 1 ? 's' : ''}</strong>) increases your projected retirement pot from <strong>£{displayedRetirementPot.toLocaleString()}</strong> to <strong>£{delayedRetirementAnalysis.firstSuccessful.retirementPot.toLocaleString()}</strong>, achieving <strong>100% plan success with £0 lifetime deficit</strong> through Age 100.
+                      <p className="text-xs text-emerald-900 dark:text-emerald-100 leading-relaxed">
+                        Retiring at <strong className="font-bold underline text-emerald-700 dark:text-emerald-300">Age {delayedRetirementAnalysis.firstSuccessful.testAge}</strong> (a delay of <strong>+{delayedRetirementAnalysis.firstSuccessful.delayYears} yr{delayedRetirementAnalysis.firstSuccessful.delayYears > 1 ? 's' : ''}</strong>) increases your projected retirement pot from <strong>£{displayedRetirementPot.toLocaleString()}</strong> to <strong>£{delayedRetirementAnalysis.firstSuccessful.retirementPot.toLocaleString()}</strong>, achieving <strong>100% plan success with £0 lifetime deficit</strong> through Age 100.
                         {profile.isCouplePlanning && delayedRetirementAnalysis.firstSuccessful.partnerTestAge && (
                           <span> (Partner retirement age shifts from Age {profile.partnerTargetRetirementAge || 60} to Age {delayedRetirementAnalysis.firstSuccessful.partnerTestAge}).</span>
                         )}
@@ -958,47 +958,47 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                   </div>
 
                   {/* Quick metric breakdown pills */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-emerald-800/80 text-[11px]">
-                    <div className="bg-slate-900/80 p-2 rounded-lg border border-emerald-800">
-                      <div className="text-[10px] text-emerald-400 font-bold uppercase">Original Target</div>
-                      <div className="font-extrabold text-slate-100 mt-0.5">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-emerald-200 dark:border-emerald-800/80 text-[11px]">
+                    <div className="bg-white/80 dark:bg-slate-900/80 p-2 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                      <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase">Original Target</div>
+                      <div className="font-extrabold text-slate-800 dark:text-slate-100 mt-0.5">
                         Age {profile.targetRetirementAge} (Failed)
                       </div>
                     </div>
 
-                    <div className="bg-slate-900/80 p-2 rounded-lg border border-emerald-800">
-                      <div className="text-[10px] text-emerald-400 font-bold uppercase">Successful Target</div>
-                      <div className="font-extrabold text-emerald-300 mt-0.5">
+                    <div className="bg-white/80 dark:bg-slate-900/80 p-2 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                      <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase">Successful Target</div>
+                      <div className="font-extrabold text-emerald-700 dark:text-emerald-300 mt-0.5">
                         Age {delayedRetirementAnalysis.firstSuccessful.testAge} (+{delayedRetirementAnalysis.firstSuccessful.delayYears}y)
                       </div>
                     </div>
 
-                    <div className="bg-slate-900/80 p-2 rounded-lg border border-emerald-800">
-                      <div className="text-[10px] text-emerald-400 font-bold uppercase">Pot at Retirement</div>
-                      <div className="font-extrabold text-emerald-300 mt-0.5">
+                    <div className="bg-white/80 dark:bg-slate-900/80 p-2 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                      <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase">Pot at Retirement</div>
+                      <div className="font-extrabold text-emerald-700 dark:text-emerald-300 mt-0.5">
                         £{delayedRetirementAnalysis.firstSuccessful.retirementPot.toLocaleString()}
                       </div>
                     </div>
 
-                    <div className="bg-slate-900/80 p-2 rounded-lg border border-emerald-800">
-                      <div className="text-[10px] text-emerald-400 font-bold uppercase">Lifetime Deficit</div>
-                      <div className="font-extrabold text-emerald-400 mt-0.5">
+                    <div className="bg-white/80 dark:bg-slate-900/80 p-2 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                      <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase">Lifetime Deficit</div>
+                      <div className="font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5">
                         £0 (100% On Track)
                       </div>
                     </div>
                   </div>
                 </div>
               ) : (
-                <div className="bg-amber-50 dark:bg-amber-950/80 border border-amber-300 dark:border-amber-800 rounded-xl p-3.5 text-amber-100 space-y-2">
+                <div className="bg-amber-50 dark:bg-amber-950/80 border border-amber-300 dark:border-amber-800 rounded-xl p-3.5 text-amber-950 dark:text-amber-100 space-y-2">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="bg-amber-600 text-white font-black text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-md">
                       Partial Improvement
                     </span>
-                    <span className="text-xs font-bold text-amber-200">
+                    <span className="text-xs font-bold text-amber-900 dark:text-amber-200">
                       Delaying up to Age {delayedRetirementAnalysis.maxTestAge} reduces deficit by {Math.round((1 - (delayedRetirementAnalysis.bestPartial?.totalLifetimeShortfall || 0) / (totalLifetimeShortfall || 1)) * 100)}%
                     </span>
                   </div>
-                  <p className="text-xs text-amber-200/90 leading-relaxed">
+                  <p className="text-xs text-amber-900 dark:text-amber-200/90 leading-relaxed">
                     Delaying retirement alone to Age <strong>{delayedRetirementAnalysis.bestPartial?.testAge}</strong> lowers your total lifetime deficit from <strong>£{Math.round(totalLifetimeShortfall).toLocaleString()}</strong> down to <strong>£{Math.round(delayedRetirementAnalysis.bestPartial?.totalLifetimeShortfall || 0).toLocaleString()}</strong>.
                     To fully resolve the remaining shortfall, consider combining a delayed retirement age with a modest increase in monthly savings or a lower target income.
                   </p>
@@ -1027,9 +1027,9 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
 
               {/* YEAR-BY-YEAR DELAY OPTION SIMULATOR GRID */}
               <div className="space-y-1.5 pt-1">
-                <div className="text-[11px] font-bold text-rose-200 flex items-center justify-between">
+                <div className="text-[11px] font-bold text-rose-900 dark:text-rose-200 flex items-center justify-between">
                   <span>Explore Candidate Retirement Delay Scenarios (+1 to +10 years):</span>
-                  <span className="text-[10px] text-rose-300">Click any age card to switch target age</span>
+                  <span className="text-[10px] text-rose-700 dark:text-rose-300">Click any age card to switch target age</span>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
                   {delayedRetirementAnalysis.candidates.slice(0, 10).map((cand) => {
@@ -1051,10 +1051,10 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                         }}
                         className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer relative overflow-hidden ${
                           isRec
-                            ? 'bg-emerald-100/90 dark:bg-emerald-950/90 border-emerald-600 ring-2 ring-emerald-500/30'
+                            ? 'bg-emerald-100/90 dark:bg-emerald-950/90 border-emerald-400 dark:border-emerald-600 ring-2 ring-emerald-500/30'
                             : cand.isSuccessful
-                            ? 'bg-emerald-50/70 dark:bg-emerald-950/40 border-emerald-800 hover:border-emerald-400'
-                            : 'bg-slate-900 border-rose-900/60 hover:border-amber-400'
+                            ? 'bg-emerald-50/70 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 hover:border-emerald-400'
+                            : 'bg-white dark:bg-slate-900 border-rose-200 dark:border-rose-900/60 hover:border-amber-400'
                         }`}
                       >
                         {isRec && (
@@ -1062,19 +1062,19 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                             Optimal
                           </div>
                         )}
-                        <div className="font-extrabold text-slate-100 text-xs">
+                        <div className="font-extrabold text-slate-900 dark:text-slate-100 text-xs">
                           Age {cand.testAge} <span className="text-[10px] text-slate-500 font-normal">(+{cand.delayYears}y)</span>
                         </div>
-                        <div className="text-[10px] font-bold mt-0.5 text-slate-300">
+                        <div className="text-[10px] font-bold mt-0.5 text-slate-600 dark:text-slate-300">
                           Pot: {formatCurrency(cand.retirementPot)}
                         </div>
                         <div className="mt-1">
                           {cand.isSuccessful ? (
-                            <span className="inline-flex items-center gap-0.5 text-[9px] font-black text-emerald-400 bg-emerald-100 dark:bg-emerald-900/60 px-1.5 py-0.5 rounded-md">
+                            <span className="inline-flex items-center gap-0.5 text-[9px] font-black text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/60 px-1.5 py-0.5 rounded-md">
                               <CheckCircle2 className="w-2.5 h-2.5" /> 100% On Track
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-rose-400 bg-rose-100 dark:bg-rose-900/60 px-1.5 py-0.5 rounded-md">
+                            <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-rose-700 dark:text-rose-400 bg-rose-100 dark:bg-rose-900/60 px-1.5 py-0.5 rounded-md">
                               -{formatCurrency(Math.round(cand.totalLifetimeShortfall))} deficit
                             </span>
                           )}
@@ -1090,10 +1090,10 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
       )}
 
       {/* RETIREMENT START POT BREAKDOWN (PRIMARY & PARTNER) */}
-      <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-5 border border-slate-700/60 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-700/60">
+      <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-700/60 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-200/80 dark:border-slate-700/60">
           <div className="flex items-center gap-2">
-            <PieChart className="w-4 h-4 text-emerald-400" />
+            <PieChart className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             <h3 className="font-extrabold text-slate-900 dark:text-white text-sm">
               Retirement Start Pot Breakdown (Age {profile.targetRetirementAge} / {retirementYear?.year || ''})
             </h3>
@@ -1101,7 +1101,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
 
           <div className="flex items-center gap-3">
             {hasPurchasedAnnuity && (
-              <label className="flex items-center gap-1.5 text-xs text-pink-300 font-extrabold bg-pink-50 dark:bg-pink-950/80 px-2.5 py-1 rounded-xl border border-pink-200 dark:border-pink-800/80 cursor-pointer shadow-2xs">
+              <label className="flex items-center gap-1.5 text-xs text-pink-700 dark:text-pink-300 font-extrabold bg-pink-50 dark:bg-pink-950/80 px-2.5 py-1 rounded-xl border border-pink-200 dark:border-pink-800/80 cursor-pointer shadow-2xs">
                 <input
                   type="checkbox"
                   checked={showAnnuitiesInPotBreakdown}
@@ -1111,8 +1111,8 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                 <span>🌸 Display Purchased Annuity</span>
               </label>
             )}
-            <span className="text-[11px] font-bold text-slate-400">
-              Total Capital: <strong className="text-emerald-400 font-black text-xs">£{(displayedRetirementPot || 0).toLocaleString()}</strong> ({adjustInflation ? "Real Terms" : "Nominal"})
+            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
+              Total Capital: <strong className="text-emerald-600 dark:text-emerald-400 font-black text-xs">£{(displayedRetirementPot || 0).toLocaleString()}</strong> ({adjustInflation ? "Real Terms" : "Nominal"})
             </span>
           </div>
         </div>
@@ -1120,35 +1120,35 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
         {profile.isCouplePlanning ? (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-3.5">
             {/* Combined Household Card */}
-            <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3">
+            <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Users className="w-4 h-4 text-emerald-500" />
-                  <span className="font-bold text-xs text-slate-100">Combined Household</span>
+                  <span className="font-bold text-xs text-slate-800 dark:text-slate-100">Combined Household</span>
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950 text-emerald-300 px-2 py-0.5 rounded-full">
+                <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full">
                   100% Total
                 </span>
               </div>
               <div className="text-2xl font-black text-slate-900 dark:text-white">
                 £{(combinedTotalPotAtRetirement || 0).toLocaleString()}
               </div>
-              <div className="space-y-1.5 text-xs pt-2 border-t border-slate-800">
-                <div className="flex justify-between items-center text-slate-300">
+              <div className="space-y-1.5 text-xs pt-2 border-t border-slate-100 dark:border-slate-800">
+                <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
                   <span className="flex items-center gap-1.5 font-medium">
                     <span className="w-2 h-2 rounded-full bg-emerald-500" />
                     Pension Pot
                   </span>
                   <span className="font-bold text-slate-900 dark:text-white">£{(combinedPensionPotAtRetirement || 0).toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between items-center text-slate-300">
+                <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
                   <span className="flex items-center gap-1.5 font-medium">
                     <span className="w-2 h-2 rounded-full bg-indigo-500" />
                     ISA Pot
                   </span>
                   <span className="font-bold text-slate-900 dark:text-white">£{(combinedIsaPotAtRetirement || 0).toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between items-center text-slate-300">
+                <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
                   <span className="flex items-center gap-1.5 font-medium">
                     <span className="w-2 h-2 rounded-full bg-amber-500" />
                     Cash / GIA Pot
@@ -1156,12 +1156,12 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                   <span className="font-bold text-slate-900 dark:text-white">£{(combinedCashGiaPotAtRetirement || 0).toLocaleString()}</span>
                 </div>
                 {showAnnuitiesInPotBreakdown && hasPurchasedAnnuity && (
-                  <div className="flex justify-between items-center text-pink-300 pt-1 border-t border-pink-100 dark:border-pink-950 font-bold">
+                  <div className="flex justify-between items-center text-pink-700 dark:text-pink-300 pt-1 border-t border-pink-100 dark:border-pink-950 font-bold">
                     <span className="flex items-center gap-1.5 font-bold">
                       <span className="w-2 h-2 rounded-full bg-pink-500" />
                       Guaranteed Annuity
                     </span>
-                    <span className="font-extrabold text-pink-400">
+                    <span className="font-extrabold text-pink-600 dark:text-pink-400">
                       £{(retirementAnnuityIncome || maxAnnuityIncomeAcrossTimeline || 0).toLocaleString()}/yr
                     </span>
                   </div>
@@ -1170,43 +1170,43 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
             </div>
 
             {/* Primary User Card */}
-            <div className="bg-slate-900 p-4 rounded-xl border border-indigo-200 dark:border-indigo-900/60 space-y-3">
+            <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-indigo-200 dark:border-indigo-900/60 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <User className="w-4 h-4 text-indigo-500" />
-                  <span className="font-bold text-xs text-indigo-200">{profile.name || 'Primary User'}</span>
+                  <span className="font-bold text-xs text-indigo-950 dark:text-indigo-200">{profile.name || 'Primary User'}</span>
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-wider bg-indigo-100 dark:bg-indigo-950 text-indigo-300 px-2 py-0.5 rounded-full">
+                <span className="text-[10px] font-black uppercase tracking-wider bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-full">
                   {(primarySharePct || 0).toFixed(0)}% Share
                 </span>
               </div>
-              <div className="text-2xl font-black text-indigo-100">
+              <div className="text-2xl font-black text-indigo-950 dark:text-indigo-100">
                 £{(primaryTotalPotAtRetirement || 0).toLocaleString()}
               </div>
-              <div className="space-y-1.5 text-xs pt-2 border-t border-slate-800">
-                <div className="flex justify-between items-center text-slate-300">
+              <div className="space-y-1.5 text-xs pt-2 border-t border-slate-100 dark:border-slate-800">
+                <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
                   <span className="font-medium">Pension Pot</span>
                   <span className="font-bold text-slate-900 dark:text-white">£{(primaryPensionPotAtRetirement || 0).toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between items-center text-slate-300">
+                <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
                   <span className="font-medium">ISA Pot Total</span>
                   <span className="font-bold text-slate-900 dark:text-white">£{(primaryIsaPotAtRetirement || 0).toLocaleString()}</span>
                 </div>
                 {(primarySsIsaPotAtRetirement > 0 || primaryCashIsaPotAtRetirement > 0 || primaryLisaPotAtRetirement > 0) && (
-                  <div className="pl-2 border-l-2 border-indigo-200 dark:border-indigo-800 space-y-0.5 text-[11px] text-slate-400">
-                    <div className="flex justify-between"><span>S&S ISA:</span><span className="font-semibold text-slate-300">£{(primarySsIsaPotAtRetirement || 0).toLocaleString()}</span></div>
-                    <div className="flex justify-between"><span>Cash ISA:</span><span className="font-semibold text-slate-300">£{(primaryCashIsaPotAtRetirement || 0).toLocaleString()}</span></div>
-                    <div className="flex justify-between"><span>LISA:</span><span className="font-semibold text-slate-300">£{(primaryLisaPotAtRetirement || 0).toLocaleString()}</span></div>
+                  <div className="pl-2 border-l-2 border-indigo-200 dark:border-indigo-800 space-y-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+                    <div className="flex justify-between"><span>S&S ISA:</span><span className="font-semibold text-slate-700 dark:text-slate-300">£{(primarySsIsaPotAtRetirement || 0).toLocaleString()}</span></div>
+                    <div className="flex justify-between"><span>Cash ISA:</span><span className="font-semibold text-slate-700 dark:text-slate-300">£{(primaryCashIsaPotAtRetirement || 0).toLocaleString()}</span></div>
+                    <div className="flex justify-between"><span>LISA:</span><span className="font-semibold text-slate-700 dark:text-slate-300">£{(primaryLisaPotAtRetirement || 0).toLocaleString()}</span></div>
                   </div>
                 )}
-                <div className="flex justify-between items-center text-slate-300">
+                <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
                   <span className="font-medium">Cash / GIA Pot</span>
                   <span className="font-bold text-slate-900 dark:text-white">£{(primaryCashGiaPotAtRetirement || 0).toLocaleString()}</span>
                 </div>
                 {showAnnuitiesInPotBreakdown && hasPurchasedAnnuity && (profile.incomeProductOption === 'annuity' || profile.incomeProductOption === 'hybrid') && (
-                  <div className="flex justify-between items-center text-pink-300 pt-1 border-t border-pink-100 dark:border-pink-950 font-bold">
+                  <div className="flex justify-between items-center text-pink-700 dark:text-pink-300 pt-1 border-t border-pink-100 dark:border-pink-950 font-bold">
                     <span className="font-bold">Annuity Payout</span>
-                    <span className="font-extrabold text-pink-400">
+                    <span className="font-extrabold text-pink-600 dark:text-pink-400">
                       £{(retirementAnnuityIncome || maxAnnuityIncomeAcrossTimeline || 0).toLocaleString()}/yr
                     </span>
                   </div>
@@ -1215,43 +1215,43 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
             </div>
 
             {/* Partner Card */}
-            <div className="bg-slate-900 p-4 rounded-xl border border-rose-900/60 space-y-3">
+            <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-rose-200 dark:border-rose-900/60 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Heart className="w-4 h-4 text-rose-500 fill-rose-500/20" />
-                  <span className="font-bold text-xs text-rose-200">{profile.partnerName || 'Partner'}</span>
+                  <span className="font-bold text-xs text-rose-950 dark:text-rose-200">{profile.partnerName || 'Partner'}</span>
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-wider bg-rose-100 dark:bg-rose-950 text-rose-300 px-2 py-0.5 rounded-full">
+                <span className="text-[10px] font-black uppercase tracking-wider bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 px-2 py-0.5 rounded-full">
                   {(partnerSharePct || 0).toFixed(0)}% Share
                 </span>
               </div>
-              <div className="text-2xl font-black text-rose-100">
+              <div className="text-2xl font-black text-rose-950 dark:text-rose-100">
                 £{(partnerTotalPotAtRetirement || 0).toLocaleString()}
               </div>
-              <div className="space-y-1.5 text-xs pt-2 border-t border-slate-800">
-                <div className="flex justify-between items-center text-slate-300">
+              <div className="space-y-1.5 text-xs pt-2 border-t border-slate-100 dark:border-slate-800">
+                <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
                   <span className="font-medium">Pension Pot</span>
                   <span className="font-bold text-slate-900 dark:text-white">£{(partnerPensionPotAtRetirement || 0).toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between items-center text-slate-300">
+                <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
                   <span className="font-medium">ISA Pot Total</span>
                   <span className="font-bold text-slate-900 dark:text-white">£{(partnerIsaPotAtRetirement || 0).toLocaleString()}</span>
                 </div>
                 {(partnerSsIsaPotAtRetirement > 0 || partnerCashIsaPotAtRetirement > 0 || partnerLisaPotAtRetirement > 0) && (
-                  <div className="pl-2 border-l-2 border-rose-800 space-y-0.5 text-[11px] text-slate-400">
-                    <div className="flex justify-between"><span>S&S ISA:</span><span className="font-semibold text-slate-300">£{(partnerSsIsaPotAtRetirement || 0).toLocaleString()}</span></div>
-                    <div className="flex justify-between"><span>Cash ISA:</span><span className="font-semibold text-slate-300">£{(partnerCashIsaPotAtRetirement || 0).toLocaleString()}</span></div>
-                    <div className="flex justify-between"><span>LISA:</span><span className="font-semibold text-slate-300">£{(partnerLisaPotAtRetirement || 0).toLocaleString()}</span></div>
+                  <div className="pl-2 border-l-2 border-rose-200 dark:border-rose-800 space-y-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+                    <div className="flex justify-between"><span>S&S ISA:</span><span className="font-semibold text-slate-700 dark:text-slate-300">£{(partnerSsIsaPotAtRetirement || 0).toLocaleString()}</span></div>
+                    <div className="flex justify-between"><span>Cash ISA:</span><span className="font-semibold text-slate-700 dark:text-slate-300">£{(partnerCashIsaPotAtRetirement || 0).toLocaleString()}</span></div>
+                    <div className="flex justify-between"><span>LISA:</span><span className="font-semibold text-slate-700 dark:text-slate-300">£{(partnerLisaPotAtRetirement || 0).toLocaleString()}</span></div>
                   </div>
                 )}
-                <div className="flex justify-between items-center text-slate-300">
+                <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
                   <span className="font-medium">Cash / GIA Pot</span>
                   <span className="font-bold text-slate-900 dark:text-white">£{(partnerCashGiaPotAtRetirement || 0).toLocaleString()}</span>
                 </div>
                 {showAnnuitiesInPotBreakdown && hasPurchasedAnnuity && (profile.partnerIncomeProductOption === 'annuity' || profile.partnerIncomeProductOption === 'hybrid') && (
-                  <div className="flex justify-between items-center text-pink-300 pt-1 border-t border-pink-100 dark:border-pink-950 font-bold">
+                  <div className="flex justify-between items-center text-pink-700 dark:text-pink-300 pt-1 border-t border-pink-100 dark:border-pink-950 font-bold">
                     <span className="font-bold">Annuity Payout</span>
-                    <span className="font-extrabold text-pink-400">Active</span>
+                    <span className="font-extrabold text-pink-600 dark:text-pink-400">Active</span>
                   </div>
                 )}
               </div>
@@ -1260,12 +1260,12 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
         ) : (
           /* Single User Breakdown */
           <div className={`grid grid-cols-1 ${showAnnuitiesInPotBreakdown && hasPurchasedAnnuity ? 'sm:grid-cols-4' : 'sm:grid-cols-3'} gap-3.5`}>
-            <div className="bg-slate-900 p-4 rounded-xl border border-emerald-800/80 space-y-1">
+            <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-emerald-200 dark:border-emerald-800/80 space-y-1">
               <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
                 <span>Workplace & SIPP Pension</span>
               </div>
-              <div className="text-xl font-extrabold text-emerald-400">
+              <div className="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">
                 £{(combinedPensionPotAtRetirement || 0).toLocaleString()}
               </div>
               <div className="text-[11px] text-slate-500 font-medium">
@@ -1273,8 +1273,8 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
               </div>
             </div>
 
-            <div className="bg-slate-900 p-4 rounded-xl border border-indigo-200 dark:border-indigo-800/80 space-y-1.5">
-              <div className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider flex items-center justify-between">
+            <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-indigo-200 dark:border-indigo-800/80 space-y-1.5">
+              <div className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider flex items-center justify-between">
                 <span className="flex items-center gap-1.5">
                   <span className="w-2.5 h-2.5 rounded-full bg-indigo-500" />
                   <span>Total ISA Portfolio</span>
@@ -1283,33 +1283,33 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                   {combinedTotalPotAtRetirement > 0 ? `${((combinedIsaPotAtRetirement / combinedTotalPotAtRetirement) * 100).toFixed(1)}%` : '0%'}
                 </span>
               </div>
-              <div className="text-xl font-extrabold text-indigo-400">
+              <div className="text-xl font-extrabold text-indigo-600 dark:text-indigo-400">
                 £{(combinedIsaPotAtRetirement || 0).toLocaleString()}
               </div>
 
               {/* Sub-breakdown of ISA types */}
-              <div className="pt-1.5 border-t border-slate-800 space-y-1 text-[11px]">
-                <div className="flex justify-between items-center text-slate-300">
+              <div className="pt-1.5 border-t border-slate-100 dark:border-slate-800 space-y-1 text-[11px]">
+                <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
                   <span>📈 Stocks & Shares ISA:</span>
                   <span className="font-bold">£{(combinedSsIsaPotAtRetirement || 0).toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between items-center text-slate-300">
+                <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
                   <span>🏦 Cash ISA:</span>
                   <span className="font-bold">£{(combinedCashIsaPotAtRetirement || 0).toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between items-center text-slate-300">
+                <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
                   <span>🎁 Lifetime ISA (LISA):</span>
                   <span className="font-bold">£{(combinedLisaPotAtRetirement || 0).toLocaleString()}</span>
                 </div>
               </div>
             </div>
 
-            <div className="bg-slate-900 p-4 rounded-xl border border-amber-200 dark:border-amber-800/80 space-y-1">
+            <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-amber-200 dark:border-amber-800/80 space-y-1">
               <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
                 <span>Unsheltered Cash & GIA</span>
               </div>
-              <div className="text-xl font-extrabold text-amber-400">
+              <div className="text-xl font-extrabold text-amber-600 dark:text-amber-400">
                 £{(combinedCashGiaPotAtRetirement || 0).toLocaleString()}
               </div>
               <div className="text-[11px] text-slate-500 font-medium">
@@ -1318,12 +1318,12 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
             </div>
 
             {showAnnuitiesInPotBreakdown && hasPurchasedAnnuity && (
-              <div className="bg-slate-900 p-4 rounded-xl border border-pink-200 dark:border-pink-800/80 space-y-1">
-                <div className="text-[10px] font-bold text-pink-400 uppercase tracking-wider flex items-center gap-1.5">
+              <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-pink-200 dark:border-pink-800/80 space-y-1">
+                <div className="text-[10px] font-bold text-pink-600 dark:text-pink-400 uppercase tracking-wider flex items-center gap-1.5">
                   <span className="w-2.5 h-2.5 rounded-full bg-pink-500" />
                   <span>Guaranteed Annuity Stream</span>
                 </div>
-                <div className="text-xl font-extrabold text-pink-400">
+                <div className="text-xl font-extrabold text-pink-600 dark:text-pink-400">
                   £{(retirementAnnuityIncome || maxAnnuityIncomeAcrossTimeline || 0).toLocaleString()}/yr
                 </div>
                 <div className="text-[11px] text-slate-500 font-medium">
@@ -1339,28 +1339,28 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
       {showAllCharts ? (
         <div className="space-y-8 pt-2">
           {/* Chart 1: Portfolio Trajectory */}
-          <div className="space-y-2 bg-slate-800/40 p-4 rounded-2xl border border-slate-700/80">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1 border-b border-slate-700/60">
-              <h4 className="font-extrabold text-xs text-slate-100 uppercase tracking-wider flex items-center gap-2">
+          <div className="space-y-2 bg-slate-50/60 dark:bg-slate-800/40 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1 border-b border-slate-200/60 dark:border-slate-700/60">
+              <h4 className="font-extrabold text-xs text-slate-800 dark:text-slate-100 uppercase tracking-wider flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
                 <span>1. Portfolio Trajectory (£)</span>
               </h4>
               <div className="flex gap-2 self-start sm:self-auto">
                 {profile.isCouplePlanning && (
-                  <div className="bg-slate-700/80 p-0.5 rounded-xl flex items-center text-[11px] font-bold border border-slate-600/50">
-                    <button type="button" onClick={() => setPortfolioViewMode('combined')} className={`px-2.5 py-0.5 rounded-lg transition-all cursor-pointer ${portfolioViewMode === 'combined' ? 'bg-slate-900 text-sky-400 shadow-xs font-black' : 'text-slate-300 hover:text-slate-900 dark:hover:text-white'}`}>Combined</button>
-                    <button type="button" onClick={() => setPortfolioViewMode('primary')} className={`px-2.5 py-0.5 rounded-lg transition-all cursor-pointer ${portfolioViewMode === 'primary' ? 'bg-slate-900 text-sky-400 shadow-xs font-black' : 'text-slate-300 hover:text-slate-900 dark:hover:text-white'}`}>Primary</button>
-                    <button type="button" onClick={() => setPortfolioViewMode('partner')} className={`px-2.5 py-0.5 rounded-lg transition-all cursor-pointer ${portfolioViewMode === 'partner' ? 'bg-slate-900 text-sky-400 shadow-xs font-black' : 'text-slate-300 hover:text-slate-900 dark:hover:text-white'}`}>Partner</button>
+                  <div className="bg-slate-200/80 dark:bg-slate-700/80 p-0.5 rounded-xl flex items-center text-[11px] font-bold border border-slate-300/50 dark:border-slate-600/50">
+                    <button type="button" onClick={() => setPortfolioViewMode('combined')} className={`px-2.5 py-0.5 rounded-lg transition-all cursor-pointer ${portfolioViewMode === 'combined' ? 'bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-400 shadow-xs font-black' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'}`}>Combined</button>
+                    <button type="button" onClick={() => setPortfolioViewMode('primary')} className={`px-2.5 py-0.5 rounded-lg transition-all cursor-pointer ${portfolioViewMode === 'primary' ? 'bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-400 shadow-xs font-black' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'}`}>Primary</button>
+                    <button type="button" onClick={() => setPortfolioViewMode('partner')} className={`px-2.5 py-0.5 rounded-lg transition-all cursor-pointer ${portfolioViewMode === 'partner' ? 'bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-400 shadow-xs font-black' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'}`}>Partner</button>
                   </div>
                 )}
-                <div className="bg-slate-700/80 p-0.5 rounded-xl flex items-center text-[11px] font-bold border border-slate-600/50">
+                <div className="bg-slate-200/80 dark:bg-slate-700/80 p-0.5 rounded-xl flex items-center text-[11px] font-bold border border-slate-300/50 dark:border-slate-600/50">
                 <button
                   type="button"
                   onClick={() => setPotChartType('area')}
                   className={`px-2.5 py-0.5 rounded-lg transition-all cursor-pointer ${
                     potChartType === 'area'
-                      ? 'bg-slate-900 text-emerald-400 shadow-xs font-black'
-                      : 'text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                      ? 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-xs font-black'
+                      : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
                   Stacked Area
@@ -1370,8 +1370,8 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                   onClick={() => setPotChartType('line')}
                   className={`px-2.5 py-0.5 rounded-lg transition-all cursor-pointer ${
                     potChartType === 'line'
-                      ? 'bg-slate-900 text-emerald-400 shadow-xs font-black'
-                      : 'text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                      ? 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-xs font-black'
+                      : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
                   Line Chart
@@ -1540,17 +1540,17 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
           </div>
 
           {/* Chart 2: Drawdown Income Breakdown */}
-          <div className="space-y-2 bg-slate-800/40 p-4 rounded-2xl border border-slate-700/80">
+          <div className="space-y-2 bg-slate-50/60 dark:bg-slate-800/40 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <h4 className="font-extrabold text-xs text-slate-100 uppercase tracking-wider flex items-center gap-2">
+              <h4 className="font-extrabold text-xs text-slate-800 dark:text-slate-100 uppercase tracking-wider flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
                 <span>2. Drawdown Income Breakdown (£/yr)</span>
               </h4>
               {profile.isCouplePlanning && (
-                <div className="bg-slate-800 p-0.5 rounded-xl flex items-center text-[11px] font-bold border border-slate-700 self-start sm:self-auto">
-                  <button type="button" onClick={() => setPortfolioViewMode('combined')} className={`px-2.5 py-0.5 rounded-md transition-all cursor-pointer ${portfolioViewMode === 'combined' ? 'bg-slate-900 text-sky-400 shadow-xs font-black' : 'text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>Combined</button>
-                  <button type="button" onClick={() => setPortfolioViewMode('primary')} className={`px-2.5 py-0.5 rounded-md transition-all cursor-pointer ${portfolioViewMode === 'primary' ? 'bg-slate-900 text-sky-400 shadow-xs font-black' : 'text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>Primary ({profile.name || 'Primary'})</button>
-                  <button type="button" onClick={() => setPortfolioViewMode('partner')} className={`px-2.5 py-0.5 rounded-md transition-all cursor-pointer ${portfolioViewMode === 'partner' ? 'bg-slate-900 text-sky-400 shadow-xs font-black' : 'text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>Partner ({profile.partnerName || 'Partner'})</button>
+                <div className="bg-slate-200/80 dark:bg-slate-800 p-0.5 rounded-xl flex items-center text-[11px] font-bold border border-slate-300/50 dark:border-slate-700 self-start sm:self-auto">
+                  <button type="button" onClick={() => setPortfolioViewMode('combined')} className={`px-2.5 py-0.5 rounded-md transition-all cursor-pointer ${portfolioViewMode === 'combined' ? 'bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-400 shadow-xs font-black' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>Combined</button>
+                  <button type="button" onClick={() => setPortfolioViewMode('primary')} className={`px-2.5 py-0.5 rounded-md transition-all cursor-pointer ${portfolioViewMode === 'primary' ? 'bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-400 shadow-xs font-black' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>Primary ({profile.name || 'Primary'})</button>
+                  <button type="button" onClick={() => setPortfolioViewMode('partner')} className={`px-2.5 py-0.5 rounded-md transition-all cursor-pointer ${portfolioViewMode === 'partner' ? 'bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-400 shadow-xs font-black' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>Partner ({profile.partnerName || 'Partner'})</button>
                 </div>
               )}
             </div>
@@ -1579,8 +1579,8 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
           </div>
 
           {/* Chart 3: Annual Shortfall / Deficit */}
-          <div className="space-y-2 bg-slate-800/40 p-4 rounded-2xl border border-slate-700/80">
-            <h4 className="font-extrabold text-xs text-rose-300 uppercase tracking-wider flex items-center gap-2">
+          <div className="space-y-2 bg-slate-50/60 dark:bg-slate-800/40 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80">
+            <h4 className="font-extrabold text-xs text-rose-700 dark:text-rose-300 uppercase tracking-wider flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
               <span>3. Annual Income Shortfall / Deficit (£/yr)</span>
             </h4>
@@ -1605,31 +1605,31 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
           </div>
         </div>
       ) : (
-        <div id="portfolio-trajectory-chart-container" className="h-96 w-full pt-2 bg-slate-900/40 p-2.5 rounded-2xl border border-slate-800/80 transition-colors flex flex-col">
+        <div id="portfolio-trajectory-chart-container" className="h-96 w-full pt-2 bg-slate-50 dark:bg-slate-900/40 p-2.5 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 transition-colors flex flex-col">
           {chartMode === 'pots' && (
-            <div className="flex items-center justify-between px-2 pt-1 pb-2 mb-1 border-b border-slate-800/80 shrink-0">
+            <div className="flex items-center justify-between px-2 pt-1 pb-2 mb-1 border-b border-slate-200/60 dark:border-slate-800/80 shrink-0">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                <span className="text-xs font-extrabold text-slate-100 uppercase tracking-wider">
+                <span className="text-xs font-extrabold text-slate-800 dark:text-slate-100 uppercase tracking-wider">
                   Portfolio Trajectory
                 </span>
               </div>
               <div className="flex gap-2">
                 {profile.isCouplePlanning && (
-                  <div className="bg-slate-800 p-0.5 rounded-xl flex items-center text-[11px] font-bold border border-slate-700">
-                    <button type="button" onClick={() => setPortfolioViewMode('combined')} className={`px-2.5 py-0.5 rounded-md transition-all cursor-pointer ${portfolioViewMode === 'combined' ? 'bg-slate-900 text-sky-400 shadow-xs font-black' : 'text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>Combined</button>
-                    <button type="button" onClick={() => setPortfolioViewMode('primary')} className={`px-2.5 py-0.5 rounded-md transition-all cursor-pointer ${portfolioViewMode === 'primary' ? 'bg-slate-900 text-sky-400 shadow-xs font-black' : 'text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>Primary ({profile.name || 'Primary'})</button>
-                    <button type="button" onClick={() => setPortfolioViewMode('partner')} className={`px-2.5 py-0.5 rounded-md transition-all cursor-pointer ${portfolioViewMode === 'partner' ? 'bg-slate-900 text-sky-400 shadow-xs font-black' : 'text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>Partner ({profile.partnerName || 'Partner'})</button>
+                  <div className="bg-slate-200/80 dark:bg-slate-800 p-0.5 rounded-xl flex items-center text-[11px] font-bold border border-slate-300/50 dark:border-slate-700">
+                    <button type="button" onClick={() => setPortfolioViewMode('combined')} className={`px-2.5 py-0.5 rounded-md transition-all cursor-pointer ${portfolioViewMode === 'combined' ? 'bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-400 shadow-xs font-black' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>Combined</button>
+                    <button type="button" onClick={() => setPortfolioViewMode('primary')} className={`px-2.5 py-0.5 rounded-md transition-all cursor-pointer ${portfolioViewMode === 'primary' ? 'bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-400 shadow-xs font-black' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>Primary ({profile.name || 'Primary'})</button>
+                    <button type="button" onClick={() => setPortfolioViewMode('partner')} className={`px-2.5 py-0.5 rounded-md transition-all cursor-pointer ${portfolioViewMode === 'partner' ? 'bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-400 shadow-xs font-black' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>Partner ({profile.partnerName || 'Partner'})</button>
                   </div>
                 )}
-                <div className="bg-slate-800 p-0.5 rounded-xl flex items-center text-[11px] font-bold border border-slate-700">
+                <div className="bg-slate-200/80 dark:bg-slate-800 p-0.5 rounded-xl flex items-center text-[11px] font-bold border border-slate-300/50 dark:border-slate-700">
                 <button
                   type="button"
                   onClick={() => setPotChartType('area')}
                   className={`px-2.5 py-0.5 rounded-md transition-all cursor-pointer ${
                     potChartType === 'area'
-                      ? 'bg-slate-900 text-emerald-400 shadow-xs font-black'
-                      : 'text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      ? 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-xs font-black'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
                   Stacked Area
@@ -1639,8 +1639,8 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                   onClick={() => setPotChartType('line')}
                   className={`px-2.5 py-0.5 rounded-md transition-all cursor-pointer ${
                     potChartType === 'line'
-                      ? 'bg-slate-900 text-emerald-400 shadow-xs font-black'
-                      : 'text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      ? 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-xs font-black'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
                   Line Chart
@@ -1650,18 +1650,18 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
             </div>
           )}
           {chartMode === 'income' && (
-            <div className="flex items-center justify-between px-2 pt-1 pb-2 mb-1 border-b border-slate-800/80 shrink-0">
+            <div className="flex items-center justify-between px-2 pt-1 pb-2 mb-1 border-b border-slate-200/60 dark:border-slate-800/80 shrink-0">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
-                <span className="text-xs font-extrabold text-slate-100 uppercase tracking-wider">
+                <span className="text-xs font-extrabold text-slate-800 dark:text-slate-100 uppercase tracking-wider">
                   Drawdown Income Breakdown (£/yr)
                 </span>
               </div>
               {profile.isCouplePlanning && (
-                <div className="bg-slate-800 p-0.5 rounded-xl flex items-center text-[11px] font-bold border border-slate-700">
-                  <button type="button" onClick={() => setPortfolioViewMode('combined')} className={`px-2.5 py-0.5 rounded-md transition-all cursor-pointer ${portfolioViewMode === 'combined' ? 'bg-slate-900 text-sky-400 shadow-xs font-black' : 'text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>Combined</button>
-                  <button type="button" onClick={() => setPortfolioViewMode('primary')} className={`px-2.5 py-0.5 rounded-md transition-all cursor-pointer ${portfolioViewMode === 'primary' ? 'bg-slate-900 text-sky-400 shadow-xs font-black' : 'text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>Primary ({profile.name || 'Primary'})</button>
-                  <button type="button" onClick={() => setPortfolioViewMode('partner')} className={`px-2.5 py-0.5 rounded-md transition-all cursor-pointer ${portfolioViewMode === 'partner' ? 'bg-slate-900 text-sky-400 shadow-xs font-black' : 'text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>Partner ({profile.partnerName || 'Partner'})</button>
+                <div className="bg-slate-200/80 dark:bg-slate-800 p-0.5 rounded-xl flex items-center text-[11px] font-bold border border-slate-300/50 dark:border-slate-700">
+                  <button type="button" onClick={() => setPortfolioViewMode('combined')} className={`px-2.5 py-0.5 rounded-md transition-all cursor-pointer ${portfolioViewMode === 'combined' ? 'bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-400 shadow-xs font-black' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>Combined</button>
+                  <button type="button" onClick={() => setPortfolioViewMode('primary')} className={`px-2.5 py-0.5 rounded-md transition-all cursor-pointer ${portfolioViewMode === 'primary' ? 'bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-400 shadow-xs font-black' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>Primary ({profile.name || 'Primary'})</button>
+                  <button type="button" onClick={() => setPortfolioViewMode('partner')} className={`px-2.5 py-0.5 rounded-md transition-all cursor-pointer ${portfolioViewMode === 'partner' ? 'bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-400 shadow-xs font-black' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>Partner ({profile.partnerName || 'Partner'})</button>
                 </div>
               )}
             </div>
@@ -1706,7 +1706,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                         </linearGradient>
                       </defs>
 
-                      <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" strokeOpacity={0.5} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" strokeOpacity={0.5} />
                       <XAxis dataKey="age" tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
                       <YAxis tickFormatter={formatCurrency} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
                       <Tooltip
@@ -1716,16 +1716,16 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                           if (!data) return null;
 
                           return (
-                            <div className="bg-slate-900 p-3 rounded-2xl shadow-xl border border-slate-800 text-xs space-y-1.5 min-w-[210px]">
-                              <div className="font-extrabold text-slate-100 flex items-center justify-between border-b border-slate-800 pb-1.5">
+                            <div className="bg-white dark:bg-slate-900 p-3 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 text-xs space-y-1.5 min-w-[210px]">
+                              <div className="font-extrabold text-slate-800 dark:text-slate-100 flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-1.5">
                                 <span>Age {data.age} ({data.year})</span>
                                 {data.isRetired && (
                                   data.incomeShortfall > 0 ? (
-                                    <span className="text-[10px] bg-rose-100 dark:bg-rose-950 text-rose-300 px-1.5 py-0.5 rounded font-black border border-rose-800">
+                                    <span className="text-[10px] bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 px-1.5 py-0.5 rounded font-black border border-rose-200 dark:border-rose-800">
                                       🚨 Plan Failure
                                     </span>
                                   ) : (
-                                    <span className="text-[10px] bg-emerald-100 dark:bg-emerald-950 text-emerald-300 px-1.5 py-0.5 rounded font-black border border-emerald-800">
+                                    <span className="text-[10px] bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.5 rounded font-black border border-emerald-200 dark:border-emerald-800">
                                       ✅ On Track
                                     </span>
                                   )
@@ -1733,67 +1733,67 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                               </div>
 
                               <div className="space-y-1">
-                                <div className="flex justify-between text-emerald-400 font-semibold">
+                                <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-semibold">
                                   <span>Pension Pot:</span>
                                   <span className="font-bold">£{(data[potKeys.pension] || 0).toLocaleString()}</span>
                                 </div>
                                 {data[potKeys.ssIsa] > 0 && (
-                                  <div className="flex justify-between text-indigo-400 font-semibold">
+                                  <div className="flex justify-between text-indigo-600 dark:text-indigo-400 font-semibold">
                                     <span>S&S ISA:</span>
                                     <span className="font-bold">£{(data[potKeys.ssIsa] || 0).toLocaleString()}</span>
                                   </div>
                                 )}
                                 {data[potKeys.cashIsa] > 0 && (
-                                  <div className="flex justify-between text-blue-400 font-semibold">
+                                  <div className="flex justify-between text-blue-600 dark:text-blue-400 font-semibold">
                                     <span>Cash ISA:</span>
                                     <span className="font-bold">£{(data[potKeys.cashIsa] || 0).toLocaleString()}</span>
                                   </div>
                                 )}
                                 {data[potKeys.lisa] > 0 && (
-                                  <div className="flex justify-between text-purple-400 font-semibold">
+                                  <div className="flex justify-between text-purple-600 dark:text-purple-400 font-semibold">
                                     <span>LISA:</span>
                                     <span className="font-bold">£{(data[potKeys.lisa] || 0).toLocaleString()}</span>
                                   </div>
                                 )}
-                                <div className="flex justify-between text-amber-400 font-semibold">
+                                <div className="flex justify-between text-amber-600 dark:text-amber-400 font-semibold">
                                   <span>Cash/GIA:</span>
                                   <span className="font-bold">£{(data[potKeys.cash] || 0).toLocaleString()}</span>
                                 </div>
                                 {data[potKeys.gilt] > 0 && (
-                                  <div className="flex justify-between text-teal-400 font-semibold">
+                                  <div className="flex justify-between text-teal-600 dark:text-teal-400 font-semibold">
                                     <span>🏛️ Gilt Ladder Pot:</span>
                                     <span className="font-bold">£{(data[potKeys.gilt] || 0).toLocaleString()}</span>
                                   </div>
                                 )}
                                 {data.giltLadderIncome > 0 && (
-                                  <div className="flex justify-between text-teal-300 font-bold">
+                                  <div className="flex justify-between text-teal-700 dark:text-teal-300 font-bold">
                                     <span>🏛️ Gilt Payout Received:</span>
                                     <span className="font-bold">+£{(data.giltLadderIncome || 0).toLocaleString()} (0% CGT)</span>
                                   </div>
                                 )}
-                                <div className="flex justify-between font-extrabold text-slate-900 dark:text-white pt-1 border-t border-slate-800">
+                                <div className="flex justify-between font-extrabold text-slate-900 dark:text-white pt-1 border-t border-slate-100 dark:border-slate-800">
                                   <span>Total Pot:</span>
                                   <span>£{(data[potKeys.total] || 0).toLocaleString()}</span>
                                 </div>
                                 {data.annuityIncome > 0 && (
-                                  <div className="flex justify-between text-pink-400 font-extrabold pt-1 border-t border-slate-800">
+                                  <div className="flex justify-between text-pink-600 dark:text-pink-400 font-extrabold pt-1 border-t border-slate-100 dark:border-slate-800">
                                     <span>🌸 Guaranteed Annuity Floor:</span>
                                     <span>£{(data.annuityIncome || 0).toLocaleString()}/yr</span>
                                   </div>
                                 )}
                                 {data.cumulativeExcessIncome > 0 && (
-                                  <div className="flex justify-between text-teal-400 font-bold pt-1 border-t border-slate-800">
+                                  <div className="flex justify-between text-teal-600 dark:text-teal-400 font-bold pt-1 border-t border-slate-100 dark:border-slate-800">
                                     <span>Cumulative Income Surplus:</span>
                                     <span>+£{(data.cumulativeExcessIncome || 0).toLocaleString()}</span>
                                   </div>
                                 )}
                                 {data.isRetired && (
                                   <>
-                                    <div className="flex justify-between text-indigo-400 font-semibold pt-1 border-t border-slate-800">
+                                    <div className="flex justify-between text-indigo-600 dark:text-indigo-400 font-semibold pt-1 border-t border-slate-100 dark:border-slate-800">
                                       <span>Income Target Req:</span>
                                       <span className="font-bold">£{(data.targetIncome || 0).toLocaleString()}/yr</span>
                                     </div>
-                                    <div className="flex justify-between text-emerald-500 font-semibold">
+                                    <div className="flex justify-between text-emerald-600 dark:text-emerald-500 font-semibold">
                                       <span>Net Income Received:</span>
                                       <span className="font-bold">£{(data.totalIncome || 0).toLocaleString()}/yr</span>
                                     </div>
@@ -1802,7 +1802,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                               </div>
 
                               {data.isRetired && data.incomeShortfall > 0 && (
-                                <div className="pt-1.5 border-t border-rose-900/60 text-rose-400 font-bold">
+                                <div className="pt-1.5 border-t border-rose-100 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 font-bold">
                                   Income Deficit: -£{(data.incomeShortfall || 0).toLocaleString()}/yr
                                 </div>
                               )}
@@ -1911,7 +1911,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                     </AreaChart>
                   ) : (
                     <ComposedChart data={chartData} margin={{ top: 54, right: 15, left: 0, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" strokeOpacity={0.5} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" strokeOpacity={0.5} />
                       <XAxis dataKey="age" tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
                       <YAxis tickFormatter={formatCurrency} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
                       <Tooltip
@@ -1921,16 +1921,16 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                           if (!data) return null;
 
                           return (
-                            <div className="bg-slate-900 p-3 rounded-2xl shadow-xl border border-slate-800 text-xs space-y-1.5 min-w-[210px]">
-                              <div className="font-extrabold text-slate-100 flex items-center justify-between border-b border-slate-800 pb-1.5">
+                            <div className="bg-white dark:bg-slate-900 p-3 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 text-xs space-y-1.5 min-w-[210px]">
+                              <div className="font-extrabold text-slate-800 dark:text-slate-100 flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-1.5">
                                 <span>Age {data.age} ({data.year})</span>
                                 {data.isRetired && (
                                   data.incomeShortfall > 0 ? (
-                                    <span className="text-[10px] bg-rose-100 dark:bg-rose-950 text-rose-300 px-1.5 py-0.5 rounded font-black border border-rose-800">
+                                    <span className="text-[10px] bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 px-1.5 py-0.5 rounded font-black border border-rose-200 dark:border-rose-800">
                                       🚨 Plan Failure
                                     </span>
                                   ) : (
-                                    <span className="text-[10px] bg-emerald-100 dark:bg-emerald-950 text-emerald-300 px-1.5 py-0.5 rounded font-black border border-emerald-800">
+                                    <span className="text-[10px] bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.5 rounded font-black border border-emerald-200 dark:border-emerald-800">
                                       ✅ On Track
                                     </span>
                                   )
@@ -1938,67 +1938,67 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                               </div>
 
                               <div className="space-y-1">
-                                <div className="flex justify-between text-sky-400 font-extrabold pb-1 border-b border-slate-800">
+                                <div className="flex justify-between text-sky-600 dark:text-sky-400 font-extrabold pb-1 border-b border-slate-100 dark:border-slate-800">
                                   <span>Total Portfolio Balance:</span>
                                   <span>£{(data[potKeys.total] || 0).toLocaleString()}</span>
                                 </div>
-                                <div className="flex justify-between text-emerald-400 font-semibold pt-1">
+                                <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-semibold pt-1">
                                   <span>Pension Pot:</span>
                                   <span className="font-bold">£{(data[potKeys.pension] || 0).toLocaleString()}</span>
                                 </div>
                                 {data[potKeys.ssIsa] > 0 && (
-                                  <div className="flex justify-between text-indigo-400 font-semibold">
+                                  <div className="flex justify-between text-indigo-600 dark:text-indigo-400 font-semibold">
                                     <span>S&S ISA:</span>
                                     <span className="font-bold">£{(data[potKeys.ssIsa] || 0).toLocaleString()}</span>
                                   </div>
                                 )}
                                 {data[potKeys.cashIsa] > 0 && (
-                                  <div className="flex justify-between text-blue-400 font-semibold">
+                                  <div className="flex justify-between text-blue-600 dark:text-blue-400 font-semibold">
                                     <span>Cash ISA:</span>
                                     <span className="font-bold">£{(data[potKeys.cashIsa] || 0).toLocaleString()}</span>
                                   </div>
                                 )}
                                 {data[potKeys.lisa] > 0 && (
-                                  <div className="flex justify-between text-purple-400 font-semibold">
+                                  <div className="flex justify-between text-purple-600 dark:text-purple-400 font-semibold">
                                     <span>LISA:</span>
                                     <span className="font-bold">£{(data[potKeys.lisa] || 0).toLocaleString()}</span>
                                   </div>
                                 )}
-                                <div className="flex justify-between text-amber-400 font-semibold">
+                                <div className="flex justify-between text-amber-600 dark:text-amber-400 font-semibold">
                                   <span>Cash / GIA:</span>
                                   <span className="font-bold">£{(data[potKeys.cash] || 0).toLocaleString()}</span>
                                 </div>
                                 {data[potKeys.gilt] > 0 && (
-                                  <div className="flex justify-between text-teal-400 font-semibold">
+                                  <div className="flex justify-between text-teal-600 dark:text-teal-400 font-semibold">
                                     <span>🏛️ Gilt Ladder Pot:</span>
                                     <span className="font-bold">£{(data[potKeys.gilt] || 0).toLocaleString()}</span>
                                   </div>
                                 )}
                                 {data.giltLadderIncome > 0 && (
-                                  <div className="flex justify-between text-teal-300 font-bold">
+                                  <div className="flex justify-between text-teal-700 dark:text-teal-300 font-bold">
                                     <span>🏛️ Gilt Payout Received:</span>
                                     <span className="font-bold">+£{(data.giltLadderIncome || 0).toLocaleString()} (0% CGT)</span>
                                   </div>
                                 )}
                                 {data.annuityIncome > 0 && (
-                                  <div className="flex justify-between text-pink-400 font-extrabold pt-1 border-t border-slate-800">
+                                  <div className="flex justify-between text-pink-600 dark:text-pink-400 font-extrabold pt-1 border-t border-slate-100 dark:border-slate-800">
                                     <span>🌸 Guaranteed Annuity Floor:</span>
                                     <span>£{(data.annuityIncome || 0).toLocaleString()}/yr</span>
                                   </div>
                                 )}
                                 {data.cumulativeExcessIncome > 0 && (
-                                  <div className="flex justify-between text-teal-400 font-bold pt-1 border-t border-slate-800">
+                                  <div className="flex justify-between text-teal-600 dark:text-teal-400 font-bold pt-1 border-t border-slate-100 dark:border-slate-800">
                                     <span>Cumulative Income Surplus:</span>
                                     <span>+£{(data.cumulativeExcessIncome || 0).toLocaleString()}</span>
                                   </div>
                                 )}
                                 {data.isRetired && (
                                   <>
-                                    <div className="flex justify-between text-indigo-400 font-semibold pt-1 border-t border-slate-800">
+                                    <div className="flex justify-between text-indigo-600 dark:text-indigo-400 font-semibold pt-1 border-t border-slate-100 dark:border-slate-800">
                                       <span>Income Target Req:</span>
                                       <span className="font-bold">£{(data.targetIncome || 0).toLocaleString()}/yr</span>
                                     </div>
-                                    <div className="flex justify-between text-emerald-500 font-semibold">
+                                    <div className="flex justify-between text-emerald-600 dark:text-emerald-500 font-semibold">
                                       <span>Net Income Received:</span>
                                       <span className="font-bold">£{(data.totalIncome || 0).toLocaleString()}/yr</span>
                                     </div>
@@ -2007,7 +2007,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                               </div>
 
                               {data.isRetired && data.incomeShortfall > 0 && (
-                                <div className="pt-1.5 border-t border-rose-900/60 text-rose-400 font-bold">
+                                <div className="pt-1.5 border-t border-rose-100 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 font-bold">
                                   Income Deficit: -£{(data.incomeShortfall || 0).toLocaleString()}/yr
                                 </div>
                               )}
@@ -2168,30 +2168,30 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                         if (!data) return null;
 
                         return (
-                          <div className="bg-slate-900 opacity-100 p-3.5 rounded-2xl shadow-xl border border-slate-800 text-xs space-y-2 min-w-[220px]">
-                            <div className="font-extrabold text-slate-100 flex items-center justify-between border-b border-slate-800 pb-1.5">
+                          <div className="bg-white dark:bg-slate-900 opacity-100 p-3.5 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 text-xs space-y-2 min-w-[220px]">
+                            <div className="font-extrabold text-slate-800 dark:text-slate-100 flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-1.5">
                               <span>Retirement Age {data.age} ({data.year})</span>
                               {data.incomeShortfall > 0 ? (
-                                <span className="text-[10px] bg-rose-100 dark:bg-rose-950 text-rose-300 px-1.5 py-0.5 rounded font-black border border-rose-800">
+                                <span className="text-[10px] bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 px-1.5 py-0.5 rounded font-black border border-rose-200 dark:border-rose-800">
                                   🚨 Shortfall: £{(data.incomeShortfall || 0).toLocaleString()}
                                 </span>
                               ) : (
-                                <span className="text-[10px] bg-emerald-100 dark:bg-emerald-950 text-emerald-300 px-1.5 py-0.5 rounded font-black border border-emerald-800">
+                                <span className="text-[10px] bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.5 rounded font-black border border-emerald-200 dark:border-emerald-800">
                                   ✅ Target Met
                                 </span>
                               )}
                             </div>
 
                             <div className="space-y-1">
-                              <div className="flex justify-between font-bold text-slate-300">
+                              <div className="flex justify-between font-bold text-slate-700 dark:text-slate-300">
                                 <span>Target Income Target:</span>
                                 <span>£{(data.targetIncome || 0).toLocaleString()}/yr</span>
                               </div>
-                              <div className="flex justify-between font-bold text-emerald-400">
+                              <div className="flex justify-between font-bold text-emerald-600 dark:text-emerald-400">
                                 <span>Achieved Net Income:</span>
                                 <span>£{(data.totalIncome || 0).toLocaleString()}/yr</span>
                               </div>
-                              <div className="flex justify-between font-extrabold text-rose-400 pt-1 border-t border-slate-800">
+                              <div className="flex justify-between font-extrabold text-rose-600 dark:text-rose-400 pt-1 border-t border-slate-100 dark:border-slate-800">
                                 <span>Annual Deficit / Shortfall:</span>
                                 <span>-£{(data.incomeShortfall || 0).toLocaleString()}/yr</span>
                               </div>
@@ -2222,14 +2222,14 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
 
       {/* View Mode & Inflation Controls (Positioned After Chart) */}
       {!showAllCharts ? (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-3 border-t border-slate-800/80">
-          <div className="bg-slate-800/80 p-1 rounded-2xl flex items-center text-xs font-bold border border-slate-700/60 flex-wrap">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-3 border-t border-slate-100 dark:border-slate-800/80">
+          <div className="bg-slate-100 dark:bg-slate-800/80 p-1 rounded-2xl flex items-center text-xs font-bold border border-slate-200/60 dark:border-slate-700/60 flex-wrap">
             <button
               onClick={() => setChartMode('pots')}
               className={`px-3.5 py-1.5 rounded-xl transition-all cursor-pointer ${
                 chartMode === 'pots'
                   ? 'bg-slate-900 dark:bg-emerald-600 text-white shadow-xs'
-                  : 'text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               Portfolio Trajectory (£)
@@ -2239,7 +2239,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
               className={`px-3.5 py-1.5 rounded-xl transition-all cursor-pointer ${
                 chartMode === 'income'
                   ? 'bg-slate-900 dark:bg-emerald-600 text-white shadow-xs'
-                  : 'text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               Drawdown Income (£/yr)
@@ -2249,7 +2249,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
               className={`px-3.5 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
                 chartMode === 'shortfall'
                   ? 'bg-rose-600 text-white shadow-xs font-black'
-                  : 'text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               <span>Annual Shortfall (£/yr)</span>
@@ -2261,24 +2261,24 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
             </button>
           </div>
 
-          <label className="flex items-center gap-2 text-xs text-slate-300 font-bold cursor-pointer bg-slate-800/60 px-3 py-1.5 rounded-xl border border-slate-700/80">
+          <label className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300 font-bold cursor-pointer bg-slate-50 dark:bg-slate-800/60 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700/80">
             <input
               type="checkbox"
               checked={adjustInflation}
               onChange={(e) => onChange?.({ ...profile, adjustForInflation: e.target.checked })}
-              className="w-4 h-4 text-emerald-600 rounded border-slate-700 focus:ring-emerald-500 cursor-pointer accent-emerald-600"
+              className="w-4 h-4 text-emerald-600 rounded border-slate-300 dark:border-slate-700 focus:ring-emerald-500 cursor-pointer accent-emerald-600"
             />
             <span>Today's £ (Real Terms)</span>
           </label>
         </div>
       ) : (
-        <div className="flex justify-end pt-3 border-t border-slate-800/80">
-          <label className="flex items-center gap-2 text-xs text-slate-300 font-bold cursor-pointer bg-slate-800/60 px-3 py-1.5 rounded-xl border border-slate-700/80">
+        <div className="flex justify-end pt-3 border-t border-slate-100 dark:border-slate-800/80">
+          <label className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300 font-bold cursor-pointer bg-slate-50 dark:bg-slate-800/60 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700/80">
             <input
               type="checkbox"
               checked={adjustInflation}
               onChange={(e) => onChange?.({ ...profile, adjustForInflation: e.target.checked })}
-              className="w-4 h-4 text-emerald-600 rounded border-slate-700 focus:ring-emerald-500 cursor-pointer accent-emerald-600"
+              className="w-4 h-4 text-emerald-600 rounded border-slate-300 dark:border-slate-700 focus:ring-emerald-500 cursor-pointer accent-emerald-600"
             />
             <span>Today's £ (Real Terms)</span>
           </label>
