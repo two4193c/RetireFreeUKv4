@@ -1245,6 +1245,9 @@ function parseAnnuityTypeConfig(type?: string) {
           }
         };
 
+        let primaryTaxableDrawnThisYear = 0;
+        let partnerTaxableDrawnThisYear = 0;
+
         const approximateNetFromGrossForOwner = (grossDraw: number, owner: 'primary' | 'partner'): number => {
           let taxFree = 0;
           if (owner === 'primary') {
@@ -1258,11 +1261,12 @@ function parseAnnuityTypeConfig(type?: string) {
           }
           const taxableDrawdown = grossDraw - taxFree;
           const guaranteedTaxable = owner === 'primary' ? primaryTaxableGuaranteed : partnerTaxableGuaranteed;
-          const totalTaxable = guaranteedTaxable + taxableDrawdown;
+          const previousDraws = owner === 'primary' ? primaryTaxableDrawnThisYear : partnerTaxableDrawnThisYear;
+          const totalTaxable = guaranteedTaxable + previousDraws + taxableDrawdown;
           const isScot = owner === 'primary' ? isScottishTax : isPartnerScottishTax;
           
           const totalTax = computeIncomeTax(totalTaxable, inflationFactor, isScot);
-          const baseTax = computeIncomeTax(guaranteedTaxable, inflationFactor, isScot);
+          const baseTax = computeIncomeTax(guaranteedTaxable + previousDraws, inflationFactor, isScot);
           const marginalTax = Math.max(0, totalTax - baseTax);
           
           return grossDraw - marginalTax;
@@ -1320,12 +1324,19 @@ function parseAnnuityTypeConfig(type?: string) {
           const executePensionDeduct = (grossDrawNeeded: number) => {
              const draw = Math.min(pPot, grossDrawNeeded);
              executeDeduct('pension', draw, owner);
+             const netDraw = approximateNetFromGrossForOwner(draw, owner);
+             // Update LSA AFTER tax calc so the current draw's tax-free portion is correctly computed
              if (isPrimary && primaryCumulativeTaxFreeDrawn < maxLsa) {
                 primaryCumulativeTaxFreeDrawn += Math.min(draw * 0.25, Math.max(0, maxLsa - primaryCumulativeTaxFreeDrawn));
              } else if (!isPrimary && partnerCumulativeTaxFreeDrawn < partnerMaxLsa) {
                 partnerCumulativeTaxFreeDrawn += Math.min(draw * 0.25, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn));
              }
-             const netDraw = approximateNetFromGrossForOwner(draw, owner);
+             // Track cumulative taxable pension draws for accurate marginal tax
+             const taxFreeThisDraw = owner === 'primary'
+               ? (primaryCumulativeTaxFreeDrawn < maxLsa ? Math.min(draw * 0.25, Math.max(0, maxLsa - primaryCumulativeTaxFreeDrawn)) : 0)
+               : (partnerCumulativeTaxFreeDrawn < partnerMaxLsa ? Math.min(draw * 0.25, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn)) : 0);
+             if (owner === 'primary') primaryTaxableDrawnThisYear += (draw - taxFreeThisDraw);
+             else partnerTaxableDrawnThisYear += (draw - taxFreeThisDraw);
              remaining = Math.max(0, remaining - netDraw);
              netAchieved += netDraw;
           };
@@ -1396,9 +1407,13 @@ function parseAnnuityTypeConfig(type?: string) {
               }
             }
 
-            const targetGross = Math.min(hasAccess ? pPot : 0, maxGrossForBracket);
+            let targetGross = Math.min(hasAccess ? pPot : 0, maxGrossForBracket);
+            if (!isReinvestExcess) {
+               const neededForRemaining = getGrossPensionNeededForNetForOwner(remaining, pPot, owner);
+               targetGross = Math.min(targetGross, neededForRemaining);
+            }
 
-            if (targetGross > 0) {
+            if (targetGross > 0 && (remaining > 0 || isReinvestExcess)) {
                executePensionDeduct(targetGross);
             }
             if (iPot > 0 && remaining > 0) {
@@ -1477,11 +1492,13 @@ function parseAnnuityTypeConfig(type?: string) {
         const totalNetAchieved = priAchieved + partAchieved;
         remainingNeeded = Math.max(0, drawdownNetTarget - netGuaranteedIncomeSecured - totalNetAchieved);
 
-        // Handle Reinvest Surplus
+        // Handle Reinvest Surplus (drawdown excess only � guaranteed surplus already reinvested above)
         if (isReinvestExcess && !isCashBufferActiveYr) {
+            const guaranteedAlreadyReinvested = Math.max(0, netGuaranteedIncomeSecured - requiredNetIncomeTarget);
             const actualNetSecured = netGuaranteedIncomeSecured + totalNetAchieved;
             if (actualNetSecured > requiredNetIncomeTarget) {
-                const surplus = actualNetSecured - requiredNetIncomeTarget;
+                const surplus = Math.max(0, actualNetSecured - requiredNetIncomeTarget - guaranteedAlreadyReinvested);
+                if (surplus <= 0) { /* no drawdown excess to reinvest */ }
                 const reinvestOpt = profile.annuityExcessReinvestOption || profile.reinvestDestinationPot || profile.maximizedSpendConfig?.reinvestDestinationPot || 'stocks_and_shares_isa';
                 if (profile.isCouplePlanning && !partnerDead) {
                   const partnerReinvestOpt = profile.partnerAnnuityExcessReinvestOption || reinvestOpt;

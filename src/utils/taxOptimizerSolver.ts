@@ -449,7 +449,8 @@ export function solveTaxOptimalAnnualDrawdown(
 
     // Solve for extra gross pension above Basic Rate
     let low = 0;
-    let high = Math.min(totalCombinedPension, remShortfall * 2.5);
+    // Increase binary search upper bound to handle Scottish PA taper zone with Advanced Rate (67.5% effective)
+    let high = Math.min(totalCombinedPension, remShortfall * 4.0);
     let bestExtraPri = 0;
     let bestExtraPart = 0;
 

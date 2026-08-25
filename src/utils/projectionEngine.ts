@@ -2408,6 +2408,9 @@ function parseAnnuityTypeConfig(type?: string) {
           }
         };
 
+        let primaryTaxableDrawnThisYear = 0;
+        let partnerTaxableDrawnThisYear = 0;
+
         const approximateNetFromGrossForOwner = (grossDraw: number, owner: 'primary' | 'partner'): number => {
           let taxFree = 0;
           if (owner === 'primary') {
@@ -2422,11 +2425,12 @@ function parseAnnuityTypeConfig(type?: string) {
           
           const taxableDrawdown = grossDraw - taxFree;
           const guaranteedTaxable = owner === 'primary' ? primaryGuaranteedIncome : partnerGuaranteedIncome;
-          const totalTaxable = guaranteedTaxable + taxableDrawdown;
+          const previousDraws = owner === 'primary' ? primaryTaxableDrawnThisYear : partnerTaxableDrawnThisYear;
+          const totalTaxable = guaranteedTaxable + previousDraws + taxableDrawdown;
           const isScot = owner === 'primary' ? isScottishTax : isPartnerScottishTax;
           
           const totalTax = computeIncomeTax(totalTaxable, inflationFactor, isScot);
-          const baseTax = computeIncomeTax(guaranteedTaxable, inflationFactor, isScot);
+          const baseTax = computeIncomeTax(guaranteedTaxable + previousDraws, inflationFactor, isScot);
           const marginalTax = Math.max(0, totalTax - baseTax);
           
           return grossDraw - marginalTax;
@@ -2461,7 +2465,17 @@ function parseAnnuityTypeConfig(type?: string) {
           const executePensionDeduct = (grossDrawNeeded: number) => {
              const draw = Math.min(pPot, grossDrawNeeded);
              const netDraw = approximateNetFromGrossForOwner(draw, owner);
-             executeDeduct('pension', draw, owner); if (age === 60) console.log('DEBUG PENSION DEDUCT:', {draw, netDraw, remaining});
+             
+             const uncrystDrawn = isPrimary 
+               ? Math.min(primaryUncrystallisedPot, Math.max(0, draw - primaryCrystallisedPot)) 
+               : Math.min(partnerUncrystallisedPot, Math.max(0, draw - partnerCrystallisedPot));
+             const taxFreeThisDraw = isPrimary
+               ? Math.min(uncrystDrawn * 0.25, Math.max(0, primaryMaxLsa - primaryCumulativeTaxFreeDrawn))
+               : Math.min(uncrystDrawn * 0.25, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn));
+             if (isPrimary) primaryTaxableDrawnThisYear += (draw - taxFreeThisDraw);
+             else partnerTaxableDrawnThisYear += (draw - taxFreeThisDraw);
+
+             executeDeduct('pension', draw, owner);
              remaining = Math.max(0, remaining - netDraw);
              netAchieved += netDraw;
           };

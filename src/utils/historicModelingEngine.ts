@@ -318,9 +318,9 @@ export function runHistoricModelingSimulation(
       // Pot-specific returns: Pensions & ISAs follow blended return; Cash/GIA leans higher cash/bond weighting
       const cashGiaGrossReturnRate = 0.5 * (hData.cashReturn / 100) + 0.3 * (hData.bondReturn / 100) + 0.2 * (hData.equityReturn / 100);
 
-      const pensionReturnRate = Math.max(-0.05, blendedGrossReturnRate - pensionFeePercent);
-      const isaReturnRate = Math.max(-0.05, blendedGrossReturnRate - isaFeePercent);
-      const cashGiaReturnRate = Math.max(-0.05, cashGiaGrossReturnRate - giaFeePercent);
+      const pensionReturnRate = blendedGrossReturnRate - pensionFeePercent;
+      const isaReturnRate = blendedGrossReturnRate - isaFeePercent;
+      const cashGiaReturnRate = cashGiaGrossReturnRate - giaFeePercent;
 
       // Keep a blendedReturnRate for snapshot reporting (gross, for display purposes)
       const blendedReturnRate = blendedGrossReturnRate;
@@ -809,7 +809,13 @@ export function runHistoricModelingSimulation(
           : requiredNetIncomeTarget;
 
         const guaranteedIncome = statePensionThisYr + annuityIncomeThisYear + dbIncomeThisYr + fixedIncomeThisYr;
-        let remainingNeeded = Math.max(0, drawdownNetTarget - guaranteedIncome);
+        // Net down the guaranteed income by approximate income tax before subtracting from net target
+        const indexTaxBandsForGI = profile.indexTaxBands ?? true;
+        const inflMultGI = indexTaxBandsForGI ? cumulativeInflationFactor : 1;
+        const isScotPri = profile.taxRegion === 'scotland';
+        const { tax: giTax } = computeIncomeTaxOnAmount(guaranteedIncome / inflMultGI, isScotPri, profile.customTaxBands);
+        const netGuaranteedIncome = guaranteedIncome - (giTax * inflMultGI);
+        let remainingNeeded = Math.max(0, drawdownNetTarget - netGuaranteedIncome);
 
                 const executeDeduct = (potType: 'pension' | 'isa' | 'cashGia', amount: number, owner: 'primary' | 'partner') => {
           if (amount <= 0) return;
@@ -1068,7 +1074,7 @@ export function runHistoricModelingSimulation(
           if (reinvestOpt === 'isa' || reinvestOpt === 'stocks_and_shares_isa' || reinvestOpt === 'cash_isa') {
             addProRata('isa', surplus * (1 + isaReturnRate / 2), false);
           } else if (reinvestOpt === 'gia') {
-            addProRata('cashGia', surplus * (1 + (pensionReturnRate * 0.95) / 2), false);
+            addProRata('cashGia', surplus * (1 + cashGiaReturnRate / 2), false);
           } else if (reinvestOpt === 'cash' || reinvestOpt === 'cash_savings') {
             addProRata('cashGia', surplus * (1 + cashGiaReturnRate / 2), false);
           } else if (reinvestOpt !== 'none') {
