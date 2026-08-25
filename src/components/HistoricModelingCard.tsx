@@ -303,30 +303,30 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
   }, [evaluatedRuns, searchQuery]);
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-xs border border-slate-200 dark:border-slate-800 space-y-6 transition-colors">
+    <div className="bg-slate-900 rounded-3xl p-6 shadow-xs border border-slate-800 space-y-6 transition-colors">
       
       {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-800">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-200 flex items-center justify-center shrink-0">
-            <History className="w-5 h-5 text-amber-700 dark:text-amber-400" />
+          <div className="w-10 h-10 rounded-2xl bg-amber-100 dark:bg-amber-950 text-amber-200 flex items-center justify-center shrink-0">
+            <History className="w-5 h-5 text-amber-400" />
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="font-extrabold text-slate-800 dark:text-slate-100 text-base flex items-center gap-2">
+              <h2 className="font-extrabold text-slate-100 text-base flex items-center gap-2">
                 <span>Historic Market Data Modeling (75-Year Backtest)</span>
-                <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-200 px-2.5 py-0.5 rounded-full border border-amber-200/50 dark:border-amber-800/50">
+                <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-100 dark:bg-amber-950 text-amber-200 px-2.5 py-0.5 rounded-full border border-amber-200/50 dark:border-amber-800/50">
                   1950 – 2024
                 </span>
               </h2>
               {profile.maximizedSpendConfig?.enabled && (
-                <span className="text-[10px] font-extrabold bg-amber-500/15 border border-amber-500/40 text-amber-900 dark:text-amber-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                <span className="text-[10px] font-extrabold bg-amber-500/15 border border-amber-500/40 text-amber-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
                   <Zap className="w-3 h-3 fill-amber-500 text-amber-500 shrink-0" />
                   Max Drawdown Active (£{(profile.maximizedSpendConfig.targetAnnualIncome || profile.targetRetirementIncomeAnnual || 0).toLocaleString()}/yr)
                 </span>
               )}
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            <p className="text-xs text-slate-400 mt-0.5">
               Simulates your exact strategy 75 times across every historical 75-year sequence starting from 1950 to 2024 (looping data for long horizons).
             </p>
           </div>
@@ -334,12 +334,12 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
 
         {/* Global Controls: Real vs Nominal & Max Age */}
         <div className="flex items-center gap-3 self-start lg:self-auto flex-wrap">
-          <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs font-semibold">
+          <div className="flex items-center gap-1.5 bg-slate-800 p-1 rounded-xl text-xs font-semibold">
             <button
               onClick={() => setAdjustReal(true)}
               className={`px-3 py-1 rounded-lg transition-all ${
                 adjustReal
-                  ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 shadow-xs font-bold'
+                  ? 'bg-slate-900 text-slate-100 shadow-xs font-bold'
                   : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
               }`}
             >
@@ -349,7 +349,7 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
               onClick={() => setAdjustReal(false)}
               className={`px-3 py-1 rounded-lg transition-all ${
                 !adjustReal
-                  ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 shadow-xs font-bold'
+                  ? 'bg-slate-900 text-slate-100 shadow-xs font-bold'
                   : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
               }`}
             >
@@ -357,7 +357,7 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
             </button>
           </div>
 
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-300">
             <span>Target Max Age:</span>
             <select
               value={maxAge}
@@ -368,7 +368,7 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
                   onChange({ ...profile, lifeExpectancyAge: val });
                 }
               }}
-              className="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 rounded-xl px-2.5 py-1 text-xs font-bold outline-none cursor-pointer"
+              className="bg-slate-800 border border-slate-700 text-slate-100 rounded-xl px-2.5 py-1 text-xs font-bold outline-none cursor-pointer"
             >
               {Array.from(
                 { length: Math.max(1, 100 - minHorizonAge + 1) },
@@ -381,7 +381,7 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
             </select>
           </div>
 
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 ml-2">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-300 ml-2">
             <input
               type="checkbox"
               id="reverseSequence"
@@ -406,31 +406,31 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
         return (
           <div className="bg-amber-500/10 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800/60 p-3.5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-amber-500/20 dark:bg-amber-900/50 text-amber-600 dark:text-amber-400 rounded-xl shrink-0">
+              <div className="p-2 bg-amber-500/20 dark:bg-amber-900/50 text-amber-400 rounded-xl shrink-0">
                 <Zap className="w-5 h-5 fill-current" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-black text-amber-950 dark:text-amber-200 uppercase tracking-wide">
+                  <span className="text-xs font-black text-amber-200 uppercase tracking-wide">
                     Max Spend Solver Data (75-Year Historic Backtest)
                   </span>
-                  <span className="text-[10px] font-bold bg-amber-200/80 dark:bg-amber-900 text-amber-900 dark:text-amber-200 px-2 py-0.5 rounded-full">
+                  <span className="text-[10px] font-bold bg-amber-200/80 dark:bg-amber-900 text-amber-200 px-2 py-0.5 rounded-full">
                     {isReinvest ? 'Max Drawdown & Reinvest' : 'Die With Zero'}
                   </span>
                 </div>
                 <p className="text-xs text-amber-900/80 dark:text-amber-200/80 font-medium">
                   {isReinvest ? (
                     <>
-                      Drawing down max <strong className="font-extrabold text-amber-950 dark:text-amber-100">£{solvedTarget.toLocaleString()}/yr</strong>. Meeting lifestyle spend of <strong className="font-extrabold text-emerald-800 dark:text-emerald-300">£{actualTarget.toLocaleString()}/yr</strong> and automatically reinvesting surplus into your <strong>{destPot} pot</strong>.
+                      Drawing down max <strong className="font-extrabold text-amber-100">£{solvedTarget.toLocaleString()}/yr</strong>. Meeting lifestyle spend of <strong className="font-extrabold text-emerald-300">£{actualTarget.toLocaleString()}/yr</strong> and automatically reinvesting surplus into your <strong>{destPot} pot</strong>.
                     </>
                   ) : (
                     <>
                       Historic backtesting is simulated using your solved target of{' '}
-                      <strong className="font-extrabold text-amber-950 dark:text-amber-100">
+                      <strong className="font-extrabold text-amber-100">
                         £{solvedTarget.toLocaleString()}/yr
                       </strong>
                       {baselineTarget > 0 && delta > 0 && (
-                        <> (unlocked <strong className="text-emerald-700 dark:text-emerald-300">+£{delta.toLocaleString()}/yr</strong> vs baseline)</>
+                        <> (unlocked <strong className="text-emerald-300">+£{delta.toLocaleString()}/yr</strong> vs baseline)</>
                       )}
                       .
                     </>
@@ -438,7 +438,7 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
                 </p>
               </div>
             </div>
-            <div className="text-xs font-bold text-amber-900 dark:text-amber-200 bg-amber-100/80 dark:bg-amber-900/60 px-3 py-1.5 rounded-xl border border-amber-300/60 dark:border-amber-800 shrink-0 self-end sm:self-auto">
+            <div className="text-xs font-bold text-amber-200 bg-amber-100/80 dark:bg-amber-900/60 px-3 py-1.5 rounded-xl border border-amber-300/60 dark:border-amber-800 shrink-0 self-end sm:self-auto">
               Target Horizon: Age {profile.maximizedSpendConfig.targetEndAge || profile.lifeExpectancyAge || 95}
             </div>
           </div>
@@ -449,29 +449,29 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         
         {/* Success Rate */}
-        <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-1">
-          <div className="flex items-center justify-between text-xs font-semibold text-slate-500 dark:text-slate-400">
+        <div className="bg-slate-800/60 p-4 rounded-2xl border border-slate-700/80 space-y-1">
+          <div className="flex items-center justify-between text-xs font-semibold text-slate-400">
             <span>Historic Success Rate</span>
             <CheckCircle2 className="w-4 h-4 text-emerald-500" />
           </div>
-          <div className="text-2xl font-black text-slate-800 dark:text-slate-100">
+          <div className="text-2xl font-black text-slate-100">
             {evaluatedSuccessRate}%
           </div>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400">
+          <p className="text-[11px] text-slate-400">
             {successfulRunsCount} of {simSummary.totalRuns} start years met success criteria (Min {formatCurrency(minSuccessWealth)})
           </p>
         </div>
 
         {/* Median Final Portfolio */}
-        <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-1">
-          <div className="flex items-center justify-between text-xs font-semibold text-slate-500 dark:text-slate-400">
+        <div className="bg-slate-800/60 p-4 rounded-2xl border border-slate-700/80 space-y-1">
+          <div className="flex items-center justify-between text-xs font-semibold text-slate-400">
             <span>Median Wealth (Age {maxAge})</span>
             <TrendingUp className="w-4 h-4 text-indigo-500" />
           </div>
-          <div className="text-2xl font-black text-slate-800 dark:text-slate-100">
+          <div className="text-2xl font-black text-slate-100">
             {formatCurrency(adjustReal ? simSummary.medianFinalReal : simSummary.medianFinalNominal)}
           </div>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400">
+          <p className="text-[11px] text-slate-400">
             50th percentile outcome across 50 market cycles
           </p>
         </div>
@@ -481,18 +481,18 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
           onClick={() => simSummary.worstStartYear && setSelectedStartYear(simSummary.worstStartYear.startYear)}
           className="bg-amber-50/60 dark:bg-amber-950/40 p-4 rounded-2xl border border-amber-200/80 dark:border-amber-800/60 space-y-1 cursor-pointer hover:border-amber-400 transition-all"
         >
-          <div className="flex items-center justify-between text-xs font-bold text-amber-700 dark:text-amber-400">
+          <div className="flex items-center justify-between text-xs font-bold text-amber-400">
             <span>Worst Start Year</span>
             <ShieldAlert className="w-4 h-4 text-amber-500" />
           </div>
-          <div className="text-2xl font-black text-amber-900 dark:text-amber-200 flex items-center gap-2">
+          <div className="text-2xl font-black text-amber-200 flex items-center gap-2">
             <span>{simSummary.worstStartYear?.startYear}</span>
             {simSummary.worstStartYear?.depletedAtAge ? (
-              <span className="text-xs bg-rose-200 dark:bg-rose-900/80 text-rose-800 dark:text-rose-200 font-bold px-2 py-0.5 rounded-md">
+              <span className="text-xs bg-rose-200 dark:bg-rose-900/80 text-rose-200 font-bold px-2 py-0.5 rounded-md">
                 Failed at Age {simSummary.worstStartYear.depletedAtAge}
               </span>
             ) : (
-              <span className="text-xs bg-amber-200 dark:bg-amber-900/80 text-amber-800 dark:text-amber-200 font-bold px-2 py-0.5 rounded-md">
+              <span className="text-xs bg-amber-200 dark:bg-amber-900/80 text-amber-200 font-bold px-2 py-0.5 rounded-md">
                 Min {formatCurrency(simSummary.worstStartYear?.minPotBalance || 0)}
               </span>
             )}
@@ -507,11 +507,11 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
           onClick={() => simSummary.bestStartYear && setSelectedStartYear(simSummary.bestStartYear.startYear)}
           className="bg-emerald-50/60 dark:bg-emerald-950/40 p-4 rounded-2xl border border-emerald-200/80 dark:border-emerald-800/60 space-y-1 cursor-pointer hover:border-emerald-400 transition-all"
         >
-          <div className="flex items-center justify-between text-xs font-bold text-emerald-700 dark:text-emerald-400">
+          <div className="flex items-center justify-between text-xs font-bold text-emerald-400">
             <span>Best Start Year</span>
             <Sparkles className="w-4 h-4 text-emerald-500" />
           </div>
-          <div className="text-2xl font-black text-emerald-900 dark:text-emerald-200">
+          <div className="text-2xl font-black text-emerald-200">
             {simSummary.bestStartYear?.startYear}
           </div>
           <p className="text-[11px] text-emerald-800/80 dark:text-emerald-300/80">
@@ -522,11 +522,11 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
       </div>
 
       {/* CUSTOM SUCCEEDED & FAILED CRITERIA CONTROLS BAR */}
-      <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-3">
+      <div className="bg-slate-800/50 p-4 rounded-2xl border border-slate-700/80 space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <Sliders className="w-4 h-4 text-amber-500" />
-            <span className="text-xs font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wider">
+            <span className="text-xs font-bold text-slate-100 uppercase tracking-wider">
               Success & Failure Threshold Rules
             </span>
           </div>
@@ -537,7 +537,7 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
               className={`px-2.5 py-0.5 rounded-lg border font-bold transition-all ${
                 minSuccessWealth === 0 && failIfDepleted
                   ? 'bg-amber-500 text-white border-amber-500'
-                  : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:bg-slate-100'
+                  : 'bg-slate-900 text-slate-300 border-slate-700 hover:bg-slate-100'
               }`}
             >
               Die With Zero (&gt;£0)
@@ -547,7 +547,7 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
               className={`px-2.5 py-0.5 rounded-lg border font-bold transition-all ${
                 minSuccessWealth === 50000
                   ? 'bg-amber-500 text-white border-amber-500'
-                  : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:bg-slate-100'
+                  : 'bg-slate-900 text-slate-300 border-slate-700 hover:bg-slate-100'
               }`}
             >
               Preserve £50k
@@ -557,7 +557,7 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
               className={`px-2.5 py-0.5 rounded-lg border font-bold transition-all ${
                 minSuccessWealth === 100000
                   ? 'bg-amber-500 text-white border-amber-500'
-                  : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:bg-slate-100'
+                  : 'bg-slate-900 text-slate-300 border-slate-700 hover:bg-slate-100'
               }`}
             >
               Preserve £100k
@@ -567,7 +567,7 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
               className={`px-2.5 py-0.5 rounded-lg border font-bold transition-all ${
                 minSuccessWealth === 200000
                   ? 'bg-amber-500 text-white border-amber-500'
-                  : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:bg-slate-100'
+                  : 'bg-slate-900 text-slate-300 border-slate-700 hover:bg-slate-100'
               }`}
             >
               Preserve £200k
@@ -578,7 +578,7 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
                 className={`px-2.5 py-0.5 rounded-lg border font-bold transition-all ${
                   minSuccessWealth === (profile.maximizedSpendConfig?.targetLegacyBuffer || 0)
                     ? 'bg-amber-500 text-white border-amber-500'
-                    : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:bg-slate-100'
+                    : 'bg-slate-900 text-slate-300 border-slate-700 hover:bg-slate-100'
                 }`}
               >
                 Target Legacy Buffer (£{(profile.maximizedSpendConfig.targetLegacyBuffer).toLocaleString()})
@@ -587,11 +587,11 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs pt-1 border-t border-slate-200/60 dark:border-slate-800">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs pt-1 border-t border-slate-800">
           <div className="space-y-1.5">
-            <label className="font-semibold text-slate-700 dark:text-slate-300 flex justify-between">
+            <label className="font-semibold text-slate-300 flex justify-between">
               <span>Min Wealth for Success:</span>
-              <strong className="text-emerald-600 dark:text-emerald-400">{formatCurrency(minSuccessWealth)}</strong>
+              <strong className="text-emerald-400">{formatCurrency(minSuccessWealth)}</strong>
             </label>
             <div className="relative">
               <span className="absolute left-3 top-2 text-slate-400 font-bold">£</span>
@@ -601,15 +601,15 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
                 min="0"
                 value={minSuccessWealth}
                 onChange={(e) => setMinSuccessWealth(Math.max(0, parseInt(e.target.value) || 0))}
-                className="w-full pl-7 pr-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold focus:ring-2 focus:ring-amber-500 outline-none"
+                className="w-full pl-7 pr-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-xs font-bold focus:ring-2 focus:ring-amber-500 outline-none"
               />
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <label className="font-semibold text-slate-700 dark:text-slate-300 flex justify-between">
+            <label className="font-semibold text-slate-300 flex justify-between">
               <span>Caution / Low Wealth Threshold:</span>
-              <strong className="text-amber-600 dark:text-amber-400">{formatCurrency(cautionWealthThreshold)}</strong>
+              <strong className="text-amber-400">{formatCurrency(cautionWealthThreshold)}</strong>
             </label>
             <div className="relative">
               <span className="absolute left-3 top-2 text-slate-400 font-bold">£</span>
@@ -619,7 +619,7 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
                 min="0"
                 value={cautionWealthThreshold}
                 onChange={(e) => setCautionWealthThreshold(Math.max(0, parseInt(e.target.value) || 0))}
-                className="w-full pl-7 pr-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold focus:ring-2 focus:ring-amber-500 outline-none"
+                className="w-full pl-7 pr-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-xs font-bold focus:ring-2 focus:ring-amber-500 outline-none"
               />
             </div>
           </div>
@@ -632,7 +632,7 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
               onChange={(e) => setFailIfDepleted(e.target.checked)}
               className="w-4 h-4 text-rose-600 rounded border-slate-300 focus:ring-rose-500 cursor-pointer"
             />
-            <label htmlFor="failIfDepleted" className="text-xs font-semibold text-slate-700 dark:text-slate-300 cursor-pointer">
+            <label htmlFor="failIfDepleted" className="text-xs font-semibold text-slate-300 cursor-pointer">
               Fail if pot depletes to £0 before age {maxAge}
             </label>
           </div>
@@ -640,24 +640,24 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
       </div>
 
       {/* Asset Allocation Quick Sliders */}
-      <div className="bg-slate-50 dark:bg-slate-800/40 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-3">
-        <div className="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-300">
+      <div className="bg-slate-800/40 p-4 rounded-2xl border border-slate-700/80 space-y-3">
+        <div className="flex items-center justify-between text-xs font-bold text-slate-300">
           <div className="flex items-center gap-2">
             <Sliders className="w-4 h-4 text-emerald-500" />
             <span>Tested Backtest Asset Mix</span>
           </div>
-          <div className="flex items-center gap-3 text-slate-600 dark:text-slate-300">
-            <span>Equities: <strong className="text-emerald-600 dark:text-emerald-400">{allocation.equityPercent}%</strong></span>
-            <span>Bonds: <strong className="text-indigo-600 dark:text-indigo-400">{allocation.bondPercent}%</strong></span>
-            <span>Cash: <strong className="text-amber-600 dark:text-amber-400">{allocation.cashPercent}%</strong></span>
+          <div className="flex items-center gap-3 text-slate-300">
+            <span>Equities: <strong className="text-emerald-400">{allocation.equityPercent}%</strong></span>
+            <span>Bonds: <strong className="text-indigo-400">{allocation.bondPercent}%</strong></span>
+            <span>Cash: <strong className="text-amber-400">{allocation.cashPercent}%</strong></span>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
           <div className="space-y-1">
-            <div className="flex justify-between font-semibold text-slate-600 dark:text-slate-400">
+            <div className="flex justify-between font-semibold text-slate-400">
               <span>Equity Weighting</span>
-              <span className="font-bold text-emerald-600 dark:text-emerald-400">{allocation.equityPercent}%</span>
+              <span className="font-bold text-emerald-400">{allocation.equityPercent}%</span>
             </div>
             <input
               type="range"
@@ -671,9 +671,9 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
           </div>
 
           <div className="space-y-1">
-            <div className="flex justify-between font-semibold text-slate-600 dark:text-slate-400">
+            <div className="flex justify-between font-semibold text-slate-400">
               <span>Bond Weighting</span>
-              <span className="font-bold text-indigo-600 dark:text-indigo-400">{allocation.bondPercent}%</span>
+              <span className="font-bold text-indigo-400">{allocation.bondPercent}%</span>
             </div>
             <input
               type="range"
@@ -687,9 +687,9 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
           </div>
 
           <div className="space-y-1">
-            <div className="flex justify-between font-semibold text-slate-600 dark:text-slate-400">
+            <div className="flex justify-between font-semibold text-slate-400">
               <span>Cash Weighting</span>
-              <span className="font-bold text-amber-600 dark:text-amber-400">{allocation.cashPercent}%</span>
+              <span className="font-bold text-amber-400">{allocation.cashPercent}%</span>
             </div>
             <input
               type="range"
@@ -705,13 +705,13 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
       </div>
 
       {/* Main View Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-2 overflow-x-auto no-scrollbar">
+      <div className="flex items-center gap-2 border-b border-slate-800 pb-2 overflow-x-auto no-scrollbar">
         <button
           onClick={() => setActiveTab('sequences_chart')}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
             activeTab === 'sequences_chart'
               ? 'bg-amber-500 text-white shadow-xs'
-              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+              : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
           }`}
         >
           <BarChart2 className="w-4 h-4" />
@@ -723,7 +723,7 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
             activeTab === 'trajectories'
               ? 'bg-amber-500 text-white shadow-xs'
-              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+              : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
           }`}
         >
           <TrendingUp className="w-4 h-4" />
@@ -735,7 +735,7 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
             activeTab === 'heatmap'
               ? 'bg-amber-500 text-white shadow-xs'
-              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+              : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
           }`}
         >
           <Layers className="w-4 h-4" />
@@ -747,7 +747,7 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
             activeTab === 'table'
               ? 'bg-amber-500 text-white shadow-xs'
-              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+              : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
           }`}
         >
           <Calendar className="w-4 h-4" />
@@ -759,7 +759,7 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
             activeTab === 'market_data'
               ? 'bg-amber-500 text-white shadow-xs'
-              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+              : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
           }`}
         >
           <BookOpen className="w-4 h-4" />
@@ -771,20 +771,20 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
       {activeTab === 'sequences_chart' && (
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-            <div className="text-slate-500 dark:text-slate-400 flex items-center gap-2 flex-wrap">
+            <div className="text-slate-400 flex items-center gap-2 flex-wrap">
               <span>
                 Comparing outcome across all 75 historical sequence start years (1950–2024).
               </span>
               {activeRun && (
-                <span className="font-bold text-pink-600 dark:text-pink-400 bg-pink-50 dark:bg-pink-950/50 px-2.5 py-0.5 rounded-md border border-pink-200 dark:border-pink-800/50 inline-block">
+                <span className="font-bold text-pink-400 bg-pink-50 dark:bg-pink-950/50 px-2.5 py-0.5 rounded-md border border-pink-200 dark:border-pink-800/50 inline-block">
                   {hoveredStartYear ? 'Hovered' : 'Selected'}: {activeRun.startYear} ({activeRun.startEvent})
                 </span>
               )}
             </div>
 
             <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
-              <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800/80 px-2.5 py-1 rounded-xl text-xs font-semibold">
-                <label className="flex items-center gap-1.5 cursor-pointer text-slate-700 dark:text-slate-300">
+              <div className="flex items-center gap-2 bg-slate-800/80 px-2.5 py-1 rounded-xl text-xs font-semibold">
+                <label className="flex items-center gap-1.5 cursor-pointer text-slate-300">
                   <input
                     type="checkbox"
                     checked={isolateSelected}
@@ -795,12 +795,12 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
                 </label>
               </div>
 
-              <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs font-semibold">
+              <div className="flex items-center gap-1 bg-slate-800 p-1 rounded-xl text-xs font-semibold">
                 <button
                   onClick={() => setSequenceSubView('spaghetti')}
                   className={`px-3 py-1 rounded-lg transition-all ${
                     sequenceSubView === 'spaghetti'
-                      ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 shadow-xs font-bold'
+                      ? 'bg-slate-900 text-slate-100 shadow-xs font-bold'
                       : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
                   }`}
                 >
@@ -810,7 +810,7 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
                   onClick={() => setSequenceSubView('bar')}
                   className={`px-3 py-1 rounded-lg transition-all ${
                     sequenceSubView === 'bar'
-                      ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 shadow-xs font-bold'
+                      ? 'bg-slate-900 text-slate-100 shadow-xs font-bold'
                       : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
                   }`}
                 >
@@ -821,8 +821,8 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
           </div>
 
           {/* Quick Start Year Hover/Select Ribbon */}
-          <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-950 p-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 text-xs overflow-x-auto">
-            <span className="font-bold text-slate-600 dark:text-slate-400 shrink-0 text-[11px] uppercase tracking-wider">
+          <div className="flex items-center gap-2 bg-slate-950 p-2.5 rounded-2xl border border-slate-800 text-xs overflow-x-auto">
+            <span className="font-bold text-slate-400 shrink-0 text-[11px] uppercase tracking-wider">
               Quick Focus Year:
             </span>
             <select
@@ -836,7 +836,7 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
                 setHoveredStartYear(yr);
               }}
               onMouseLeave={() => setHoveredStartYear(null)}
-              className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs font-bold text-slate-800 dark:text-slate-100 outline-none shrink-0"
+              className="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-xs font-bold text-slate-100 outline-none shrink-0"
             >
               {simSummary.runResults.map((r) => (
                 <option key={r.startYear} value={r.startYear}>
@@ -860,7 +860,7 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
                   className={`px-2 py-0.5 rounded-md font-semibold text-[10px] transition-all cursor-pointer ${
                     activeYear === k.yr
                       ? 'bg-pink-500 text-white font-bold'
-                      : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-pink-100 dark:hover:bg-pink-950/60'
+                      : 'bg-slate-800 text-slate-300 hover:bg-pink-100 dark:hover:bg-pink-950/60'
                   }`}
                 >
                   {k.label}
@@ -981,23 +981,23 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
               {/* Legend & Summary Footer */}
               <div className="flex items-center justify-between flex-wrap gap-3 text-[11px] pt-1">
                 <div className="flex items-center gap-4">
-                  <span className="flex items-center gap-1.5 font-semibold text-slate-600 dark:text-slate-400">
+                  <span className="flex items-center gap-1.5 font-semibold text-slate-400">
                     <span className="w-3 h-3 rounded-md bg-emerald-500 inline-block"></span> Strong (&gt;£200k)
                   </span>
-                  <span className="flex items-center gap-1.5 font-semibold text-slate-600 dark:text-slate-400">
+                  <span className="flex items-center gap-1.5 font-semibold text-slate-400">
                     <span className="w-3 h-3 rounded-md bg-amber-500 inline-block"></span> Low (&lt;£200k)
                   </span>
-                  <span className="flex items-center gap-1.5 font-semibold text-slate-600 dark:text-slate-400">
+                  <span className="flex items-center gap-1.5 font-semibold text-slate-400">
                     <span className="w-3 h-3 rounded-md bg-rose-500 inline-block"></span> Depleted Early
                   </span>
-                  <span className="flex items-center gap-1.5 font-semibold text-slate-600 dark:text-slate-400">
+                  <span className="flex items-center gap-1.5 font-semibold text-slate-400">
                     <span className="w-3 h-3 rounded-md bg-pink-500 inline-block"></span> Selected
                   </span>
-                  <span className="flex items-center gap-1.5 font-semibold text-slate-600 dark:text-slate-400">
+                  <span className="flex items-center gap-1.5 font-semibold text-slate-400">
                     <span className="w-3 h-3 rounded-md bg-sky-400 inline-block"></span> Hovered
                   </span>
                 </div>
-                <div className="text-slate-500 dark:text-slate-400">
+                <div className="text-slate-400">
                   Total sequences evaluated: <strong>75 start years (1950–2024)</strong>
                 </div>
               </div>
@@ -1180,14 +1180,14 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
                 </ResponsiveContainer>
               </div>
 
-              <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 pt-1 flex-wrap gap-2">
+              <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1 flex-wrap gap-2">
                 <span>
                   Showing data for Start Year <strong>{activeRun?.startYear}</strong> ({activeRun?.startEvent}).
                   {isolateSelected && ' (Isolate mode enabled)'}
                 </span>
                 <button
                   onClick={() => setIsolateSelected(!isolateSelected)}
-                  className="text-pink-600 dark:text-pink-400 font-bold hover:underline cursor-pointer"
+                  className="text-pink-400 font-bold hover:underline cursor-pointer"
                 >
                   {isolateSelected ? 'Show All 75 Paths Overlaid' : 'Isolate Active Year Only'}
                 </button>
@@ -1198,11 +1198,11 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
       )}
       {activeTab === 'trajectories' && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+          <div className="flex items-center justify-between text-xs text-slate-400">
             <span>
               Showing Median (50th), 90th Best, 10th Worst paths across all 75 historic sequences.
               {selectedRun && (
-                <span className="font-bold text-amber-600 dark:text-amber-400 ml-2">
+                <span className="font-bold text-amber-400 ml-2">
                   Highlighted Path: Start Year {selectedRun.startYear} ({selectedRun.startEvent})
                 </span>
               )}
@@ -1343,7 +1343,7 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
       {/* TAB 2: START YEARS HEATMAP GRID */}
       {activeTab === 'heatmap' && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+          <div className="flex items-center justify-between text-xs text-slate-400">
             <span>
               Click any of the 75 historical start year tiles below to inspect its trajectory and timeline.
             </span>
@@ -1407,7 +1407,7 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search year or event (e.g. 1987, Crash, 2008)..."
-                className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-3 py-1.5 text-xs font-medium text-slate-800 dark:text-slate-100 outline-none"
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-9 pr-3 py-1.5 text-xs font-medium text-slate-100 outline-none"
               />
             </div>
             <span className="text-xs text-slate-500 font-semibold">
@@ -1415,9 +1415,9 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
             </span>
           </div>
 
-          <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800">
-            <table className="w-full text-xs text-left text-slate-700 dark:text-slate-300">
-              <thead className="bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+          <div className="overflow-x-auto rounded-2xl border border-slate-800">
+            <table className="w-full text-xs text-left text-slate-300">
+              <thead className="bg-slate-800/80 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
                 <tr>
                   <th className="p-3">Start Year</th>
                   <th className="p-3">Historical Context Event</th>
@@ -1438,22 +1438,22 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
                       selectedStartYear === run.startYear ? 'bg-pink-50/60 dark:bg-pink-950/30' : hoveredStartYear === run.startYear ? 'bg-sky-50/60 dark:bg-sky-950/30' : ''
                     }`}
                   >
-                    <td className="p-3 font-bold text-slate-800 dark:text-slate-100">{run.startYear}</td>
-                    <td className="p-3 text-slate-600 dark:text-slate-400">{run.startEvent}</td>
+                    <td className="p-3 font-bold text-slate-100">{run.startYear}</td>
+                    <td className="p-3 text-slate-400">{run.startEvent}</td>
                     <td className="p-3 font-bold">
                       {run.isSuccess ? (
-                        <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                        <span className="inline-flex items-center gap-1 text-emerald-400">
                           <CheckCircle2 className="w-3.5 h-3.5" /> Succeeded
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-rose-600 dark:text-rose-400">
+                        <span className="inline-flex items-center gap-1 text-rose-400">
                           <AlertTriangle className="w-3.5 h-3.5" /> Depleted at Age {run.depletedAtAge}
                         </span>
                       )}
                     </td>
                     <td className="p-3 text-right font-semibold">{formatCurrency(run.retirementPotBalance)}</td>
                     <td className="p-3 text-right font-semibold">{formatCurrency(run.minPotBalance)}</td>
-                    <td className="p-3 text-right font-bold text-slate-800 dark:text-slate-100">
+                    <td className="p-3 text-right font-bold text-slate-100">
                       {formatCurrency(adjustReal ? run.finalRealBalance : run.finalNominalBalance)}
                     </td>
                     <td className="p-3 text-center">
@@ -1462,7 +1462,7 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
                           setSelectedStartYear(run.startYear);
                           setActiveTab('trajectories');
                         }}
-                        className="px-2.5 py-1 bg-amber-100 dark:bg-amber-950 hover:bg-amber-200 text-amber-900 dark:text-amber-200 font-bold rounded-lg text-[11px] transition-all cursor-pointer"
+                        className="px-2.5 py-1 bg-amber-100 dark:bg-amber-950 hover:bg-amber-200 text-amber-200 font-bold rounded-lg text-[11px] transition-all cursor-pointer"
                       >
                         Inspect
                       </button>
@@ -1478,13 +1478,13 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
       {/* TAB 4: STORED 75-YEAR MARKET DATASET */}
       {activeTab === 'market_data' && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+          <div className="flex items-center justify-between text-xs text-slate-400">
             <span>Stored UK & Global Market Dataset (1950 – 2024). Source: Historical Market Indexes & UK RPI/CPI.</span>
           </div>
 
-          <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 max-h-96">
-            <table className="w-full text-xs text-left text-slate-700 dark:text-slate-300">
-              <thead className="bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 font-bold uppercase tracking-wider text-[10px] sticky top-0">
+          <div className="overflow-x-auto rounded-2xl border border-slate-800 max-h-96">
+            <table className="w-full text-xs text-left text-slate-300">
+              <thead className="bg-slate-800/80 text-slate-400 font-bold uppercase tracking-wider text-[10px] sticky top-0">
                 <tr>
                   <th className="p-3">Year</th>
                   <th className="p-3 text-right">Equity Return</th>
@@ -1497,18 +1497,18 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {HISTORIC_MARKET_DATA.map((row) => (
                   <tr key={row.year} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                    <td className="p-3 font-bold text-slate-800 dark:text-slate-100">{row.year}</td>
-                    <td className={`p-3 text-right font-bold ${row.equityReturn >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                    <td className="p-3 font-bold text-slate-100">{row.year}</td>
+                    <td className={`p-3 text-right font-bold ${row.equityReturn >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                       {row.equityReturn >= 0 ? '+' : ''}{row.equityReturn}%
                     </td>
-                    <td className={`p-3 text-right font-semibold ${row.bondReturn >= 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                    <td className={`p-3 text-right font-semibold ${row.bondReturn >= 0 ? 'text-indigo-400' : 'text-rose-400'}`}>
                       {row.bondReturn >= 0 ? '+' : ''}{row.bondReturn}%
                     </td>
-                    <td className="p-3 text-right font-semibold text-amber-600 dark:text-amber-400">{row.cashReturn}%</td>
-                    <td className={`p-3 text-right font-bold ${row.inflation > 5.0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-600 dark:text-slate-400'}`}>
+                    <td className="p-3 text-right font-semibold text-amber-400">{row.cashReturn}%</td>
+                    <td className={`p-3 text-right font-bold ${row.inflation > 5.0 ? 'text-rose-400' : 'text-slate-400'}`}>
                       {row.inflation}%
                     </td>
-                    <td className="p-3 text-slate-600 dark:text-slate-400 font-medium">{row.event}</td>
+                    <td className="p-3 text-slate-400 font-medium">{row.event}</td>
                   </tr>
                 ))}
               </tbody>
@@ -1519,57 +1519,57 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
 
       {/* SELECTED START YEAR INSPECTOR BANNER */}
       {selectedRun && (
-        <div className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white p-5 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4 shadow-md transition-colors">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+        <div className="bg-slate-900 text-slate-900 dark:text-white p-5 rounded-2xl border border-slate-800 space-y-4 shadow-md transition-colors">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-pink-100 dark:bg-pink-500/20 text-pink-700 dark:text-pink-400 flex items-center justify-center font-bold text-sm shrink-0">
+              <div className="w-8 h-8 rounded-xl bg-pink-100 dark:bg-pink-500/20 text-pink-400 flex items-center justify-center font-bold text-sm shrink-0">
                 {selectedRun.startYear}
               </div>
               <div>
-                <h3 className="font-extrabold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <h3 className="font-extrabold text-sm text-slate-100 flex items-center gap-2">
                   <span>Start Year {selectedRun.startYear} Strategy Deep-Dive</span>
                   {selectedRun.isSuccess ? (
-                    <span className="text-[10px] font-bold bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30 px-2 py-0.5 rounded-md">
+                    <span className="text-[10px] font-bold bg-emerald-100 dark:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-md">
                       Succeeded to Age {maxAge}
                     </span>
                   ) : (
-                    <span className="text-[10px] font-bold bg-rose-100 dark:bg-rose-500/20 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-500/30 px-2 py-0.5 rounded-md">
+                    <span className="text-[10px] font-bold bg-rose-100 dark:bg-rose-500/20 text-rose-300 border border-rose-500/30 px-2 py-0.5 rounded-md">
                       Depleted at Age {selectedRun.depletedAtAge}
                     </span>
                   )}
                 </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{selectedRun.startEvent}</p>
+                <p className="text-xs text-slate-400 mt-0.5">{selectedRun.startEvent}</p>
               </div>
             </div>
 
             <div className="flex items-center gap-4 text-xs font-semibold self-end sm:self-auto">
               <div>
-                <span className="text-slate-500 dark:text-slate-400">Retirement Pot: </span>
-                <strong className="text-slate-900 dark:text-slate-100">{formatCurrency(selectedRun.retirementPotBalance)}</strong>
+                <span className="text-slate-400">Retirement Pot: </span>
+                <strong className="text-slate-100">{formatCurrency(selectedRun.retirementPotBalance)}</strong>
               </div>
               <div>
-                <span className="text-slate-500 dark:text-slate-400">Final Wealth: </span>
-                <strong className="text-emerald-600 dark:text-emerald-400">{formatCurrency(adjustReal ? selectedRun.finalRealBalance : selectedRun.finalNominalBalance)}</strong>
+                <span className="text-slate-400">Final Wealth: </span>
+                <strong className="text-emerald-400">{formatCurrency(adjustReal ? selectedRun.finalRealBalance : selectedRun.finalNominalBalance)}</strong>
               </div>
             </div>
           </div>
 
           {/* Timeline First 5 Sequence Years Highlight */}
           <div className="space-y-2">
-            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
               Sequence Execution Highlights (First 5 Years of Plan)
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
               {selectedRun.trajectory.slice(0, 5).map((snap, idx) => (
-                <div key={idx} className="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800 text-xs space-y-1">
-                  <div className="flex justify-between font-bold text-slate-700 dark:text-slate-300">
+                <div key={idx} className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs space-y-1">
+                  <div className="flex justify-between font-bold text-slate-300">
                     <span>{snap.calendarYear} (Age {snap.age})</span>
-                    <span className="text-pink-600 dark:text-pink-400 font-extrabold">{snap.histYear}</span>
+                    <span className="text-pink-400 font-extrabold">{snap.histYear}</span>
                   </div>
-                  <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                    Eq: <strong className={snap.histEquityReturn >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}>{snap.histEquityReturn >= 0 ? '+' : ''}{snap.histEquityReturn}%</strong> | Inf: <strong className="text-amber-600 dark:text-amber-400">{snap.histInflation}%</strong>
+                  <div className="text-[11px] text-slate-400">
+                    Eq: <strong className={snap.histEquityReturn >= 0 ? 'text-emerald-400' : 'text-rose-400'}>{snap.histEquityReturn >= 0 ? '+' : ''}{snap.histEquityReturn}%</strong> | Inf: <strong className="text-amber-400">{snap.histInflation}%</strong>
                   </div>
-                  <div className="font-bold text-slate-900 dark:text-slate-100 text-xs pt-1 border-t border-slate-200 dark:border-slate-800/80">
+                  <div className="font-bold text-slate-100 text-xs pt-1 border-t border-slate-800/80">
                     Pot: {formatCurrency(adjustReal ? snap.totalPotReal : snap.totalPot)}
                   </div>
                 </div>

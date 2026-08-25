@@ -61,11 +61,11 @@ const KpiPill: React.FC<{
   sub?: string;
   accent: string;
 }> = ({ icon, label, value, sub, accent }) => (
-  <div className="flex flex-col gap-1.5 bg-white dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/60 rounded-2xl px-4 py-3 flex-1 min-w-[140px]">
+  <div className="flex flex-col gap-1.5 bg-[#0b1120] border border-slate-800/80 rounded-2xl px-4 py-3 flex-1 min-w-[140px] shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]">
     <div className={"w-8 h-8 rounded-xl flex items-center justify-center " + accent}>{icon}</div>
-    <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wide leading-none">{label}</p>
-    <p className="text-lg font-extrabold text-slate-900 dark:text-slate-50 leading-none">{value}</p>
-    {sub && <p className="text-[10px] text-slate-400 dark:text-slate-500 leading-none">{sub}</p>}
+    <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide leading-none">{label}</p>
+    <p className="text-lg font-extrabold text-slate-50 leading-none">{value}</p>
+    {sub && <p className="text-[10px] text-slate-400 leading-none">{sub}</p>}
   </div>
 );
 
@@ -78,8 +78,8 @@ const Panel: React.FC<{ title: string; subtitle?: string; children: React.ReactN
   <div className="flex flex-col gap-3">
     <div className="flex items-start justify-between gap-2">
       <div>
-        <h4 className="text-sm font-extrabold text-slate-800 dark:text-slate-100">{title}</h4>
-        {subtitle && <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">{subtitle}</p>}
+        <h4 className="text-sm font-extrabold text-slate-100">{title}</h4>
+        {subtitle && <p className="text-[11px] text-slate-400 mt-0.5">{subtitle}</p>}
       </div>
       {action}
     </div>
@@ -90,15 +90,15 @@ const Panel: React.FC<{ title: string; subtitle?: string; children: React.ReactN
 const CurrencyTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 shadow-xl text-xs space-y-1 min-w-[160px]">
-      <p className="font-bold text-slate-700 dark:text-slate-200 mb-1">Age {label}</p>
+    <div className="bg-slate-900 border border-slate-700 shadow-2xl backdrop-blur-md bg-opacity-90 rounded-xl p-3 shadow-xl text-xs space-y-1 min-w-[160px]">
+      <p className="font-bold text-slate-200 mb-1">Age {label}</p>
       {payload.map((p: any) => (
         <div key={p.name} className="flex items-center justify-between gap-4">
           <span className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full inline-block" style={{ background: p.fill || p.stroke }} />
-            <span className="text-slate-500 dark:text-slate-400">{p.name}</span>
+            <span className="text-slate-400">{p.name}</span>
           </span>
-          <span className="font-semibold text-slate-800 dark:text-slate-100">{fmt(p.value)}</span>
+          <span className="font-semibold text-slate-100">{fmt(p.value)}</span>
         </div>
       ))}
     </div>
@@ -109,9 +109,9 @@ const RadarTooltip = ({ active, payload }: any) => {
   if (!active || !payload?.length) return null;
   const d = payload[0].payload;
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 shadow-xl text-xs">
-      <p className="font-bold text-slate-700 dark:text-slate-200">{d.subject}</p>
-      <p className="text-indigo-600 dark:text-indigo-400 font-extrabold text-base">{d.score}/100</p>
+    <div className="bg-slate-900 border border-slate-700 rounded-xl p-3 shadow-xl text-xs">
+      <p className="font-bold text-slate-200">{d.subject}</p>
+      <p className="text-indigo-400 font-extrabold text-base">{d.score}/100</p>
     </div>
   );
 };
@@ -125,9 +125,9 @@ const RadarAxisTick = ({ x, y, payload }: any) => (
 );
 
 const bandCell = (v: number, threshold: number) => {
-  if (v <= 0) return 'text-slate-300 dark:text-slate-700';
-  if (v > threshold * 0.5) return 'text-red-600 dark:text-red-400 font-bold';
-  if (v > 0) return 'text-amber-600 dark:text-amber-400';
+  if (v <= 0) return 'text-slate-700';
+  if (v > threshold * 0.5) return 'text-red-400 font-bold';
+  if (v > 0) return 'text-amber-400';
   return 'text-slate-500';
 };
 
@@ -277,14 +277,14 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
 
   if (retRows.length === 0) {
     return (
-      <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
+      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 rounded-2xl">
+          <div className="p-2.5 bg-amber-100 dark:bg-amber-950/60 text-amber-400 rounded-2xl">
             <Zap className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100">Dynamic Optimiser — Optimization Cockpit</h3>
-            <p className="text-xs text-slate-400 dark:text-slate-500">Set a retirement date to activate the optimization cockpit.</p>
+            <h3 className="text-base font-extrabold text-slate-100">Dynamic Optimiser — Optimization Cockpit</h3>
+            <p className="text-xs text-slate-400">Set a retirement date to activate the optimization cockpit.</p>
           </div>
         </div>
       </div>
@@ -292,9 +292,9 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
   }
 
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden">
+    <div className="bg-slate-900 border border-slate-800 rounded-3xl shadow-sm overflow-hidden">
       <div
-        className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 cursor-pointer select-none"
+        className="flex items-center justify-between px-6 py-4 border-b border-slate-800 cursor-pointer select-none"
         onClick={() => setExpanded((v) => !v)}
         role="button"
         aria-expanded={expanded}
@@ -305,22 +305,22 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100">Dynamic Optimiser</h3>
+              <h3 className="text-base font-extrabold text-slate-100">Dynamic Optimiser</h3>
               <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-widest bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow-sm">
                 Optimization Cockpit
               </span>
               {mcRunning && (
-                <span className="flex items-center gap-1 text-[9px] text-indigo-500 dark:text-indigo-400">
+                <span className="flex items-center gap-1 text-[9px] text-indigo-400">
                   <Dices className="w-3 h-3 animate-spin" /> Running 1,000 sims…
                 </span>
               )}
               {!mcRunning && mcSuccessRate !== undefined && (
-                <span className="flex items-center gap-1 text-[9px] text-emerald-600 dark:text-emerald-400">
+                <span className="flex items-center gap-1 text-[9px] text-emerald-400">
                   <CheckCircle2 className="w-3 h-3" /> MC: {mcSuccessRate}% success
                 </span>
               )}
             </div>
-            <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
+            <p className="text-xs text-slate-400 mt-0.5">
               1,000-sim stochastic engine · Tax matrix · Radar scoring · Withdrawal streamgraph
             </p>
           </div>
@@ -336,21 +336,21 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
             <div className="flex flex-wrap gap-3">
               <KpiPill
                 icon={<Zap className="w-4 h-4" />}
-                accent="bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400"
+                accent="bg-amber-100 dark:bg-amber-950/60 text-amber-400"
                 label="Lifetime Tax Saved"
                 value={fmt(kpis.taxSaved)}
                 sub="vs flat 20% baseline"
               />
               <KpiPill
                 icon={<TrendingUp className="w-4 h-4" />}
-                accent="bg-sky-100 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400"
+                accent="bg-sky-100 dark:bg-sky-950/60 text-sky-400"
                 label="Avg Effective Tax Rate"
                 value={pct(kpis.avgRate)}
                 sub="across all retirement years"
               />
               <KpiPill
                 icon={<Target className="w-4 h-4" />}
-                accent="bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400"
+                accent="bg-emerald-100 dark:bg-emerald-950/60 text-emerald-400"
                 label="PA Capture Rate"
                 value={pct(kpis.paRate)}
                 sub="Personal Allowance utilised"
@@ -358,7 +358,7 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
               {!mcRunning && mcSuccessRate !== undefined && (
                 <KpiPill
                   icon={<Dices className="w-4 h-4" />}
-                  accent="bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400"
+                  accent="bg-indigo-100 dark:bg-indigo-950/60 text-indigo-400"
                   label="MC Success Rate (1,000)"
                   value={mcSuccessRate + '%'}
                   sub="probability of lifetime solvency"
@@ -378,7 +378,7 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
                       e.stopPropagation();
                       setShowMatrix((v) => !v);
                     }}
-                    className="flex items-center gap-1.5 text-[10px] font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg px-2.5 py-1.5 transition-colors shrink-0"
+                    className="flex items-center gap-1.5 text-[10px] font-semibold text-slate-400 bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg px-2.5 py-1.5 transition-colors shrink-0"
                   >
                     <Table2 className="w-3 h-3" />
                     {showMatrix ? 'Hide Matrix' : 'Tax Matrix'}
@@ -401,7 +401,7 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
                         </linearGradient>
                       ))}
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
                     <XAxis dataKey="age" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
                     <YAxis tickFormatter={(v) => '£' + Math.round(v / 1000) + 'k'} tick={{ fontSize: 10 }} tickLine={false} axisLine={false} width={52} />
                     <Tooltip content={<CurrencyTooltip />} />
@@ -431,7 +431,7 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
                 {mcSuccessRate === undefined && !mcRunning && (
                   <button
                     onClick={onRunStressTest}
-                    className="flex items-start gap-2 text-[10px] text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-xl px-2.5 py-2 hover:bg-amber-100 transition-colors cursor-pointer w-full text-left"
+                    className="flex items-start gap-2 text-[10px] text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-xl px-2.5 py-2 hover:bg-amber-100 transition-colors cursor-pointer w-full text-left"
                   >
                     <Info className="w-3 h-3 shrink-0 mt-0.5" />
                     <span>
@@ -441,10 +441,10 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
                 )}
                 <ResponsiveContainer width="100%" height={220}>
                   <RadarChart data={radarData} margin={{ top: 20, right: 24, bottom: 20, left: 24 }}>
-                    <PolarGrid stroke="#e2e8f0" />
+                    <PolarGrid stroke="#334155" />
                     <PolarAngleAxis dataKey="subject" tick={<RadarAxisTick />} />
                     <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
-                    <Radar name="Plan Score" dataKey="score" stroke="#6366f1" fill="#6366f1" fillOpacity={0.22} strokeWidth={2} dot={{ r: 3, fill: '#6366f1', strokeWidth: 0 }} />
+                    <Radar name="Plan Score" dataKey="score" stroke="#10b981" fill="#10b981" fillOpacity={0.35} strokeWidth={2} dot={{ r: 3, fill: '#6366f1', strokeWidth: 0 }} />
                     <Tooltip content={<RadarTooltip />} />
                   </RadarChart>
                 </ResponsiveContainer>
@@ -464,7 +464,7 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
 
           
           {/* Advanced Visual Telemetry */}
-          <div className="grid xl:grid-cols-2 gap-4 border-t border-slate-100 dark:border-slate-800 pt-4">
+          <div className="grid xl:grid-cols-2 gap-4 border-t border-slate-800 pt-4">
             
             <Panel title="Depletion Sequence Waterfall" subtitle="Visual timeline of when each pot runs completely dry.">
               <div className="space-y-2 mt-2">
@@ -475,14 +475,14 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
                   { label: 'GIA', fn: (r: any) => (r.cashGiaPot || 0) > 100, baseColor: 'bg-rose-500' },
                 ].map((pot) => (
                   <div key={pot.label} className="flex items-center gap-2 text-[10px]">
-                    <div className="w-24 text-slate-600 dark:text-slate-400 font-semibold">{pot.label}</div>
+                    <div className="w-24 text-slate-400 font-semibold">{pot.label}</div>
                     <div className="flex-1 flex gap-[1px] h-4">
                       {retRows.map((r, i) => {
                         const active = pot.fn(r);
                         return (
                           <div 
                             key={r.age} 
-                            className={`flex-1 rounded-sm transition-all ${active ? pot.baseColor : 'bg-slate-100 dark:bg-slate-800/50'}`} 
+                            className={`flex-1 rounded-sm transition-all ${active ? pot.baseColor : 'bg-slate-800/50'}`} 
                             title={`Age ${r.age}: ${active ? 'Active' : 'Depleted'}`}
                           />
                         );
@@ -508,7 +508,7 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
                   { label: 'PA (0%)', key: 'Personal Allowance (0%)', limit: 12570, color: '16, 185, 129' }, // emerald-500
                 ].map((band) => (
                   <div key={band.label} className="flex items-center gap-2 text-[10px]">
-                    <div className="w-24 text-slate-600 dark:text-slate-400 font-semibold">{band.label}</div>
+                    <div className="w-24 text-slate-400 font-semibold">{band.label}</div>
                     <div className="flex-1 flex gap-[1px] h-4">
                       {streamData.map((r) => {
                         let val = r[band.key as keyof typeof r] as number;
@@ -524,7 +524,7 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
                         return (
                           <div 
                             key={r.age} 
-                            className={`flex-1 rounded-sm ${isZero ? 'bg-slate-100 dark:bg-slate-800/50' : ''}`}
+                            className={`flex-1 rounded-sm ${isZero ? 'bg-slate-800/50' : ''}`}
                             style={isZero ? {} : { backgroundColor: `rgba(${band.color}, ${intensity})` }}
                             title={`Age ${r.age}: A�${val}`}
                           />
@@ -547,59 +547,59 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
           {showMatrix && (
 
             <Panel title="Annual Tax Matrix" subtitle="Per-year income split, tax band exposure and 60% trap detection across all retirement years">
-              <div className="overflow-x-auto rounded-xl border border-slate-100 dark:border-slate-800">
+              <div className="overflow-x-auto rounded-xl border border-slate-800">
                 <table className="w-full text-[10px] border-collapse">
                   <thead>
-                    <tr className="bg-slate-50 dark:bg-slate-800/60">
-                      <th className="px-2 py-2 text-left font-bold text-slate-500 dark:text-slate-400 sticky left-0 bg-slate-50 dark:bg-slate-800/60">Age</th>
-                      <th className="px-2 py-2 text-right font-bold text-slate-500 dark:text-slate-400">Gross (P)</th>
-                      <th className="px-2 py-2 text-right font-bold text-emerald-600 dark:text-emerald-400">PA 0%</th>
-                      <th className="px-2 py-2 text-right font-bold text-sky-600 dark:text-sky-400">Basic 20%</th>
-                      <th className="px-2 py-2 text-right font-bold text-rose-500 dark:text-rose-400">Higher 40%</th>
+                    <tr className="bg-slate-800/60">
+                      <th className="px-2 py-2 text-left font-bold text-slate-400 sticky left-0 bg-slate-800/60">Age</th>
+                      <th className="px-2 py-2 text-right font-bold text-slate-400">Gross (P)</th>
+                      <th className="px-2 py-2 text-right font-bold text-emerald-400">PA 0%</th>
+                      <th className="px-2 py-2 text-right font-bold text-sky-400">Basic 20%</th>
+                      <th className="px-2 py-2 text-right font-bold text-rose-400">Higher 40%</th>
                       <th className="px-2 py-2 text-right font-bold text-orange-600">60% Trap</th>
                       <th className="px-2 py-2 text-right font-bold text-slate-500">Tax (P)</th>
                       {isCouple && (
                         <>
-                          <th className="px-2 py-2 text-right font-bold text-slate-500 dark:text-slate-400 border-l border-slate-200 dark:border-slate-700">Gross (Q)</th>
-                          <th className="px-2 py-2 text-right font-bold text-emerald-600 dark:text-emerald-400">PA 0%</th>
-                          <th className="px-2 py-2 text-right font-bold text-sky-600 dark:text-sky-400">Basic 20%</th>
-                          <th className="px-2 py-2 text-right font-bold text-rose-500 dark:text-rose-400">Higher 40%</th>
+                          <th className="px-2 py-2 text-right font-bold text-slate-400 border-l border-slate-700">Gross (Q)</th>
+                          <th className="px-2 py-2 text-right font-bold text-emerald-400">PA 0%</th>
+                          <th className="px-2 py-2 text-right font-bold text-sky-400">Basic 20%</th>
+                          <th className="px-2 py-2 text-right font-bold text-rose-400">Higher 40%</th>
                           <th className="px-2 py-2 text-right font-bold text-orange-600">60% Trap</th>
                           <th className="px-2 py-2 text-right font-bold text-slate-500">Tax (Q)</th>
                         </>
                       )}
-                      <th className="px-2 py-2 text-right font-bold text-slate-700 dark:text-slate-200 border-l border-slate-200 dark:border-slate-700">Total Tax</th>
+                      <th className="px-2 py-2 text-right font-bold text-slate-200 border-l border-slate-700">Total Tax</th>
                     </tr>
                   </thead>
                   <tbody>
                     {matrixRows.map((r, i) => (
-                      <tr key={r.age} className={i % 2 === 0 ? 'bg-white dark:bg-slate-900' : 'bg-slate-50/60 dark:bg-slate-800/30'}>
-                        <td className="px-2 py-1.5 font-semibold text-slate-600 dark:text-slate-300 sticky left-0 bg-inherit">{r.age}</td>
+                      <tr key={r.age} className={i % 2 === 0 ? 'bg-slate-900' : 'bg-slate-800/30'}>
+                        <td className="px-2 py-1.5 font-semibold text-slate-300 sticky left-0 bg-inherit">{r.age}</td>
                         <td className="px-2 py-1.5 text-right text-slate-500">{fmt(r.pGross)}</td>
-                        <td className="px-2 py-1.5 text-right text-emerald-600 dark:text-emerald-400">{fmt(r.pPA)}</td>
+                        <td className="px-2 py-1.5 text-right text-emerald-400">{fmt(r.pPA)}</td>
                         <td className={"px-2 py-1.5 text-right " + bandCell(r.pBasic, BASIC_CEIL - PA)}>{r.pBasic > 0 ? fmt(r.pBasic) : '—'}</td>
-                        <td className={"px-2 py-1.5 text-right " + (r.pHigher > 0 ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-slate-300 dark:text-slate-700')}>{r.pHigher > 0 ? fmt(r.pHigher) : '—'}</td>
-                        <td className={"px-2 py-1.5 text-right " + (r.p60Trap > 0 ? 'text-orange-600 dark:text-orange-400 font-extrabold animate-pulse' : 'text-slate-300 dark:text-slate-700')}>{r.p60Trap > 0 ? fmt(r.p60Trap) : '—'}</td>
-                        <td className="px-2 py-1.5 text-right text-slate-700 dark:text-slate-300 font-semibold">{fmt(r.pTax)}</td>
+                        <td className={"px-2 py-1.5 text-right " + (r.pHigher > 0 ? 'text-rose-400 font-bold' : 'text-slate-700')}>{r.pHigher > 0 ? fmt(r.pHigher) : '—'}</td>
+                        <td className={"px-2 py-1.5 text-right " + (r.p60Trap > 0 ? 'text-orange-400 font-extrabold animate-pulse' : 'text-slate-700')}>{r.p60Trap > 0 ? fmt(r.p60Trap) : '—'}</td>
+                        <td className="px-2 py-1.5 text-right text-slate-300 font-semibold">{fmt(r.pTax)}</td>
                         {isCouple && (
                           <>
-                            <td className="px-2 py-1.5 text-right text-slate-500 border-l border-slate-100 dark:border-slate-800">{fmt(r.qGross ?? 0)}</td>
-                            <td className="px-2 py-1.5 text-right text-emerald-600 dark:text-emerald-400">{fmt(r.qPA ?? 0)}</td>
+                            <td className="px-2 py-1.5 text-right text-slate-500 border-l border-slate-800">{fmt(r.qGross ?? 0)}</td>
+                            <td className="px-2 py-1.5 text-right text-emerald-400">{fmt(r.qPA ?? 0)}</td>
                             <td className={"px-2 py-1.5 text-right " + bandCell(r.qBasic ?? 0, BASIC_CEIL - PA)}>{(r.qBasic ?? 0) > 0 ? fmt(r.qBasic ?? 0) : '—'}</td>
-                            <td className={"px-2 py-1.5 text-right " + ((r.qHigher ?? 0) > 0 ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-slate-300 dark:text-slate-700')}>{(r.qHigher ?? 0) > 0 ? fmt(r.qHigher ?? 0) : '—'}</td>
-                            <td className={"px-2 py-1.5 text-right " + ((r.q60Trap ?? 0) > 0 ? 'text-orange-600 dark:text-orange-400 font-extrabold animate-pulse' : 'text-slate-300 dark:text-slate-700')}>{(r.q60Trap ?? 0) > 0 ? fmt(r.q60Trap ?? 0) : '—'}</td>
-                            <td className="px-2 py-1.5 text-right text-slate-700 dark:text-slate-300 font-semibold">{fmt(r.qTax)}</td>
+                            <td className={"px-2 py-1.5 text-right " + ((r.qHigher ?? 0) > 0 ? 'text-rose-400 font-bold' : 'text-slate-700')}>{(r.qHigher ?? 0) > 0 ? fmt(r.qHigher ?? 0) : '—'}</td>
+                            <td className={"px-2 py-1.5 text-right " + ((r.q60Trap ?? 0) > 0 ? 'text-orange-400 font-extrabold animate-pulse' : 'text-slate-700')}>{(r.q60Trap ?? 0) > 0 ? fmt(r.q60Trap ?? 0) : '—'}</td>
+                            <td className="px-2 py-1.5 text-right text-slate-300 font-semibold">{fmt(r.qTax)}</td>
                           </>
                         )}
-                        <td className="px-2 py-1.5 text-right font-extrabold text-slate-800 dark:text-slate-100 border-l border-slate-100 dark:border-slate-800">{fmt(r.totalTax)}</td>
+                        <td className="px-2 py-1.5 text-right font-extrabold text-slate-100 border-l border-slate-800">{fmt(r.totalTax)}</td>
                       </tr>
                     ))}
                   </tbody>
                   <tfoot>
-                    <tr className="bg-slate-100 dark:bg-slate-800 font-bold">
-                      <td className="px-2 py-2 text-slate-700 dark:text-slate-200 sticky left-0 bg-slate-100 dark:bg-slate-800">Total</td>
+                    <tr className="bg-slate-800 font-bold">
+                      <td className="px-2 py-2 text-slate-200 sticky left-0 bg-slate-800">Total</td>
                       <td colSpan={isCouple ? 13 : 6} />
-                      <td className="px-2 py-2 text-right text-slate-900 dark:text-white font-extrabold border-l border-slate-200 dark:border-slate-700">
+                      <td className="px-2 py-2 text-right text-slate-900 dark:text-white font-extrabold border-l border-slate-700">
                         {fmt(matrixRows.reduce((s, r) => s + r.totalTax, 0))}
                       </td>
                     </tr>
@@ -613,7 +613,7 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
                   { color: '#f87171', label: 'Red = Higher Rate 40% — tax leakage' },
                   { color: '#f97316', label: 'Orange (pulsing) = 60% Tax Trap zone' },
                 ].map((h) => (
-                  <div key={h.label} className="flex items-center gap-1.5 text-[10px] text-slate-400 dark:text-slate-500">
+                  <div key={h.label} className="flex items-center gap-1.5 text-[10px] text-slate-400">
                     <span className="w-2 h-2 rounded-full shrink-0" style={{ background: h.color }} />
                     {h.label}
                   </div>

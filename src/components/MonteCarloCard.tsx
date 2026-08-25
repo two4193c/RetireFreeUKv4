@@ -202,7 +202,7 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
 
   if (!taxResult) {
     return (
-      <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 sm:p-8">
+      <div className="bg-slate-900 rounded-xl shadow-lg border border-gray-100 p-6 sm:p-8">
         <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
           <Dices className="h-6 w-6 mr-3 text-purple-600" />
           Stochastic Projections
@@ -214,7 +214,7 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
 
   if (!hasRun || !mcResult || !baseResult || !stressedResult || !crashResult) {
     return (
-      <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 sm:p-8">
+      <div className="bg-slate-900 rounded-xl shadow-lg border border-gray-100 p-6 sm:p-8">
         <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
           <Dices className="h-6 w-6 mr-3 text-purple-600" />
           Stochastic Projections
@@ -258,23 +258,23 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
       : 'text-rose-600 bg-rose-50 border-rose-200';
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-xs border border-slate-200 dark:border-slate-800 space-y-6 transition-colors">
+    <div className="bg-slate-900 rounded-3xl p-6 shadow-xs border border-slate-800 space-y-6 transition-colors">
       
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-800">
         <div>
           <div className="flex items-center gap-2">
-            <div className="p-2 bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 rounded-xl">
+            <div className="p-2 bg-indigo-50 dark:bg-indigo-950 text-indigo-400 rounded-xl">
               <Dices className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="font-extrabold text-slate-800 dark:text-slate-100 text-base flex items-center gap-2">
+              <h2 className="font-extrabold text-slate-100 text-base flex items-center gap-2">
                 <span>Monte Carlo Volatility & Risk Simulation</span>
-                <span className="text-[10px] font-bold uppercase tracking-wider bg-indigo-100 dark:bg-indigo-950 text-indigo-800 dark:text-indigo-300 px-2.5 py-0.5 rounded-full border border-indigo-200/50 dark:border-indigo-800/50">
+                <span className="text-[10px] font-bold uppercase tracking-wider bg-indigo-100 dark:bg-indigo-950 text-indigo-300 px-2.5 py-0.5 rounded-full border border-indigo-200/50 dark:border-indigo-800/50">
                   Stochastic Model
                 </span>
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              <p className="text-xs text-slate-400 mt-0.5">
                 Simulates {params.numSimulations} market scenarios across accumulation & decumulation phases
               </p>
             </div>
@@ -286,22 +286,22 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
       {!showAllScenarios && (
         <>
           {/* Volatility & Simulation Parameters Controls */}
-          <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-3">
+          <div className="bg-slate-800/60 p-4 rounded-2xl border border-slate-700/80 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-extrabold text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
-                <Sliders className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+              <span className="text-xs font-extrabold text-slate-200 flex items-center gap-1.5">
+                <Sliders className="w-4 h-4 text-indigo-400" />
                 <span>Simulation Parameters & Asset Volatility (Standard Deviation)</span>
               </span>
-              <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+              <span className="text-[11px] text-slate-400 font-medium">
                 Runs: <strong>{params.numSimulations}</strong> trials
               </span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-bold">
               <div>
-                <div className="flex justify-between text-slate-600 dark:text-slate-300 mb-1">
+                <div className="flex justify-between text-slate-300 mb-1">
                   <span>Accumulation Volatility:</span>
-                  <span className="text-indigo-700 dark:text-indigo-400">{localParams.accumulationVolatility}%</span>
+                  <span className="text-indigo-400">{localParams.accumulationVolatility}%</span>
                 </div>
                 <input
                   type="range"
@@ -312,15 +312,15 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
                   onChange={(e) =>
                     setLocalParams((prev) => ({ ...prev, accumulationVolatility: Number(e.target.value) }))
                   }
-                  className="w-full accent-indigo-600 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg cursor-pointer"
+                  className="w-full accent-indigo-600 h-1.5 bg-slate-700 rounded-lg cursor-pointer"
                 />
-                <p className="text-[10px] text-slate-400 dark:text-slate-500 font-normal mt-1">Pre-retirement equity/growth fluctuation</p>
+                <p className="text-[10px] text-slate-500 font-normal mt-1">Pre-retirement equity/growth fluctuation</p>
               </div>
 
               <div>
-                <div className="flex justify-between text-slate-600 dark:text-slate-300 mb-1">
+                <div className="flex justify-between text-slate-300 mb-1">
                   <span>Decumulation Volatility:</span>
-                  <span className="text-indigo-700 dark:text-indigo-400">{localParams.decumulationVolatility}%</span>
+                  <span className="text-indigo-400">{localParams.decumulationVolatility}%</span>
                 </div>
                 <input
                   type="range"
@@ -331,27 +331,27 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
                   onChange={(e) =>
                     setLocalParams((prev) => ({ ...prev, decumulationVolatility: Number(e.target.value) }))
                   }
-                  className="w-full accent-indigo-600 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg cursor-pointer"
+                  className="w-full accent-indigo-600 h-1.5 bg-slate-700 rounded-lg cursor-pointer"
                 />
-                <p className="text-[10px] text-slate-400 dark:text-slate-500 font-normal mt-1">Post-retirement multi-asset fluctuation</p>
+                <p className="text-[10px] text-slate-500 font-normal mt-1">Post-retirement multi-asset fluctuation</p>
               </div>
 
               <div>
-                <div className="flex justify-between text-slate-600 dark:text-slate-300 mb-1">
+                <div className="flex justify-between text-slate-300 mb-1">
                   <span>Projection Horizon:</span>
-                  <span className="text-indigo-700 dark:text-indigo-400">Age {localParams.maxAge}</span>
+                  <span className="text-indigo-400">Age {localParams.maxAge}</span>
                 </div>
                 <select
                   value={localParams.maxAge}
                   onChange={(e) => setLocalParams((prev) => ({ ...prev, maxAge: Number(e.target.value) }))}
-                  className="w-full px-2.5 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100"
+                  className="w-full px-2.5 py-1 bg-slate-900 border border-slate-700 rounded-xl text-xs font-bold text-slate-100"
                 >
                   <option value={85}>To Age 85</option>
                   <option value={90}>To Age 90</option>
                   <option value={95}>To Age 95</option>
                   <option value={100}>To Age 100</option>
                 </select>
-                <p className="text-[10px] text-slate-400 dark:text-slate-500 font-normal mt-1">Target age model length</p>
+                <p className="text-[10px] text-slate-500 font-normal mt-1">Target age model length</p>
               </div>
             </div>
           </div>
@@ -379,46 +379,46 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
             </div>
 
             {/* Median Pot at Retirement */}
-            <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 flex flex-col justify-between">
-              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">
+            <div className="bg-slate-800/60 p-4 rounded-2xl border border-slate-700/80 flex flex-col justify-between">
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
                 Target Age {profile.targetRetirementAge} Pot (Median)
               </span>
-              <div className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-1">
+              <div className="text-2xl font-black text-slate-100 mt-1">
                 {formatCurrency(retirementYr?.p50TotalPot || 0)}
               </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+              <p className="text-[11px] text-slate-400 font-medium">
                 P10: <strong>{formatCurrency(retirementYr?.p10TotalPot || 0)}</strong> • P90: <strong>{formatCurrency(retirementYr?.p90TotalPot || 0)}</strong>
               </p>
             </div>
 
             {/* End of Horizon Pot */}
-            <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 flex flex-col justify-between">
-              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">
+            <div className="bg-slate-800/60 p-4 rounded-2xl border border-slate-700/80 flex flex-col justify-between">
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
                 Pot Balance at Age {params.maxAge} (Median)
               </span>
-              <div className="text-2xl font-black text-indigo-700 dark:text-indigo-400 mt-1">
+              <div className="text-2xl font-black text-indigo-400 mt-1">
                 {formatCurrency(endYr?.p50TotalPot || 0)}
               </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+              <p className="text-[11px] text-slate-400 font-medium">
                 P10: <strong>{formatCurrency(endYr?.p10TotalPot || 0)}</strong> • P90: <strong>{formatCurrency(endYr?.p90TotalPot || 0)}</strong>
               </p>
             </div>
 
             {/* Depletion Risk / Survival by Age */}
-            <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 flex flex-col justify-between">
-              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Survival Rates by Age</span>
-              <div className="text-xs font-bold text-slate-800 dark:text-slate-200 space-y-1 mt-1">
+            <div className="bg-slate-800/60 p-4 rounded-2xl border border-slate-700/80 flex flex-col justify-between">
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Survival Rates by Age</span>
+              <div className="text-xs font-bold text-slate-200 space-y-1 mt-1">
                 <div className="flex justify-between">
                   <span>Age 80:</span>
-                  <span className="text-emerald-700 dark:text-emerald-400 font-extrabold">{mcResult.successRateAge80}%</span>
+                  <span className="text-emerald-400 font-extrabold">{mcResult.successRateAge80}%</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Age 85:</span>
-                  <span className="text-indigo-700 dark:text-indigo-400 font-extrabold">{mcResult.successRateAge85}%</span>
+                  <span className="text-indigo-400 font-extrabold">{mcResult.successRateAge85}%</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Age 90:</span>
-                  <span className="text-purple-700 dark:text-purple-400 font-extrabold">{mcResult.successRateAge90}%</span>
+                  <span className="text-purple-400 font-extrabold">{mcResult.successRateAge90}%</span>
                 </div>
               </div>
             </div>
@@ -430,18 +430,18 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
       {showAllScenarios ? (
         <div className="space-y-8 pt-2">
           {/* Scenario 1: Standard Volatility Model */}
-          <div className="space-y-3 bg-slate-50/60 dark:bg-slate-800/40 p-4.5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/80 dark:border-slate-700/80 pb-3">
+          <div className="space-y-3 bg-slate-800/40 p-4.5 rounded-2xl border border-slate-700/80">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-700/80 pb-3">
               <div>
                 <h4 className="font-extrabold text-sm text-slate-900 dark:text-white flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  <TrendingUp className="w-4 h-4 text-emerald-400" />
                   <span>1. Standard Volatility Model</span>
                 </h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-slate-400">
                   Compounding returns fluctuate around baseline expected annual growth ({profile.expectedInvestmentReturn || 6}% accum / {profile.postRetirementReturn || 4.5}% decum).
                 </p>
               </div>
-              <div className="flex items-center gap-2 bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 px-3 py-1.5 rounded-xl border border-emerald-200 dark:border-emerald-800 text-xs font-bold shrink-0">
+              <div className="flex items-center gap-2 bg-emerald-100 dark:bg-emerald-950/80 text-emerald-300 px-3 py-1.5 rounded-xl border border-emerald-800 text-xs font-bold shrink-0">
                 <span>Success Rate (Age 85):</span>
                 <span className="font-black text-sm">{baseResult.successRateAge85}%</span>
               </div>
@@ -497,18 +497,18 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
           </div>
 
           {/* Scenario 2: Stressed Market Model */}
-          <div className="space-y-3 bg-slate-50/60 dark:bg-slate-800/40 p-4.5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/80 dark:border-slate-700/80 pb-3">
+          <div className="space-y-3 bg-slate-800/40 p-4.5 rounded-2xl border border-slate-700/80">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-700/80 pb-3">
               <div>
                 <h4 className="font-extrabold text-sm text-slate-900 dark:text-white flex items-center gap-2">
-                  <TrendingDown className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                  <TrendingDown className="w-4 h-4 text-amber-400" />
                   <span>2. Stressed Market Model (-2.0% Growth Drag)</span>
                 </h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-slate-400">
                   Tests portfolio resilience under lower investment growth or sustained inflationary drag.
                 </p>
               </div>
-              <div className="flex items-center gap-2 bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 px-3 py-1.5 rounded-xl border border-amber-200 dark:border-amber-800 text-xs font-bold shrink-0">
+              <div className="flex items-center gap-2 bg-amber-100 dark:bg-amber-950/80 text-amber-300 px-3 py-1.5 rounded-xl border border-amber-200 dark:border-amber-800 text-xs font-bold shrink-0">
                 <span>Success Rate (Age 85):</span>
                 <span className="font-black text-sm">{stressedResult.successRateAge85}%</span>
               </div>
@@ -564,18 +564,18 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
           </div>
 
           {/* Scenario 3: Sequence Risk Early Crash */}
-          <div className="space-y-3 bg-slate-50/60 dark:bg-slate-800/40 p-4.5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/80 dark:border-slate-700/80 pb-3">
+          <div className="space-y-3 bg-slate-800/40 p-4.5 rounded-2xl border border-slate-700/80">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-700/80 pb-3">
               <div>
                 <h4 className="font-extrabold text-sm text-slate-900 dark:text-white flex items-center gap-2">
-                  <ShieldAlert className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+                  <ShieldAlert className="w-4 h-4 text-rose-400" />
                   <span>3. Sequence Risk ({crashSummaryText} Market Crash)</span>
                 </h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-slate-400">
                   Simulates market crash across {currentCrashDuration} year(s) starting at Age {currentCrashStartAge} ({crashSummaryText}).
                 </p>
               </div>
-              <div className="flex items-center gap-2 bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300 px-3 py-1.5 rounded-xl border border-rose-200 dark:border-rose-800 text-xs font-bold shrink-0">
+              <div className="flex items-center gap-2 bg-rose-100 dark:bg-rose-950/80 text-rose-300 px-3 py-1.5 rounded-xl border border-rose-800 text-xs font-bold shrink-0">
                 <span>Success Rate (Age 85):</span>
                 <span className="font-black text-sm">{crashResult.successRateAge85}%</span>
               </div>
@@ -880,12 +880,12 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
 
       {/* View mode toggle & inflation toggle (Positioned After Chart) */}
       {!showAllScenarios ? (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-3 border-t border-slate-100 dark:border-slate-800/80">
-          <div className="bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl flex items-center text-xs font-bold border border-slate-200/50 dark:border-slate-700/50 flex-wrap">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-3 border-t border-slate-800/80">
+          <div className="bg-slate-800 p-1 rounded-2xl flex items-center text-xs font-bold border border-slate-700/50 flex-wrap">
             <button
               onClick={() => setActiveTab('fan')}
               className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
-                activeTab === 'fan' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                activeTab === 'fan' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-300 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               Pot Trajectory Percentiles
@@ -893,7 +893,7 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
             <button
               onClick={() => setActiveTab('breakdown')}
               className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
-                activeTab === 'breakdown' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                activeTab === 'breakdown' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-300 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               Median Pot Split
@@ -901,31 +901,31 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
             <button
               onClick={() => setActiveTab('survival')}
               className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
-                activeTab === 'survival' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                activeTab === 'survival' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-300 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               Survival Probability
             </button>
           </div>
 
-          <label className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300 font-bold cursor-pointer bg-slate-50 dark:bg-slate-800/60 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700/80">
+          <label className="flex items-center gap-2 text-xs text-slate-300 font-bold cursor-pointer bg-slate-800/60 px-3 py-1.5 rounded-xl border border-slate-700/80">
             <input
               type="checkbox"
               checked={adjustInflation}
               onChange={(e) => onChange?.({ ...profile, adjustForInflation: e.target.checked })}
-              className="w-4 h-4 text-indigo-600 rounded border-slate-300 dark:border-slate-700 focus:ring-indigo-500 cursor-pointer accent-indigo-600"
+              className="w-4 h-4 text-indigo-600 rounded border-slate-700 focus:ring-indigo-500 cursor-pointer accent-indigo-600"
             />
             <span>Today's £ (Real Terms)</span>
           </label>
         </div>
       ) : (
-        <div className="flex justify-end pt-3 border-t border-slate-100 dark:border-slate-800/80">
-          <label className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300 font-bold cursor-pointer bg-slate-50 dark:bg-slate-800/60 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700/80">
+        <div className="flex justify-end pt-3 border-t border-slate-800/80">
+          <label className="flex items-center gap-2 text-xs text-slate-300 font-bold cursor-pointer bg-slate-800/60 px-3 py-1.5 rounded-xl border border-slate-700/80">
             <input
               type="checkbox"
               checked={adjustInflation}
               onChange={(e) => onChange?.({ ...profile, adjustForInflation: e.target.checked })}
-              className="w-4 h-4 text-indigo-600 rounded border-slate-300 dark:border-slate-700 focus:ring-indigo-500 cursor-pointer accent-indigo-600"
+              className="w-4 h-4 text-indigo-600 rounded border-slate-700 focus:ring-indigo-500 cursor-pointer accent-indigo-600"
             />
             <span>Today's £ (Real Terms)</span>
           </label>
@@ -934,14 +934,14 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
 
       {/* Market Scenario Stress Models Selector (Positioned after chart, before info box) */}
       {!showAllScenarios && (
-        <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-3">
+        <div className="bg-slate-800/60 p-4 rounded-2xl border border-slate-700/80 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-extrabold text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
+            <span className="text-xs font-extrabold text-slate-200 flex items-center gap-1.5">
               <Zap className="w-4 h-4 text-amber-500" />
               <span>Market Scenario Stress Models</span>
             </span>
-            <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-              Active: <strong className="text-indigo-700 dark:text-indigo-300 font-bold">
+            <span className="text-[11px] text-slate-400 font-medium">
+              Active: <strong className="text-indigo-300 font-bold">
                 {(localParams.marketScenario || 'standard') === 'stressed'
                   ? `Stressed Market (-${(localParams.stressedReturnDropPercent ?? 2.0).toFixed(1)}%)`
                   : (localParams.marketScenario || 'standard') === 'early_crash'
@@ -960,20 +960,20 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
               onClick={() => setLocalParams((prev) => ({ ...prev, marketScenario: 'standard' }))}
               className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between space-y-1 ${
                 (localParams.marketScenario || 'standard') === 'standard'
-                  ? 'bg-indigo-50/90 dark:bg-indigo-950/80 border-indigo-300 dark:border-indigo-700 ring-2 ring-indigo-500/20 text-indigo-950 dark:text-indigo-100 shadow-xs'
-                  : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 hover:bg-slate-100/70 dark:hover:bg-slate-800/70 text-slate-700 dark:text-slate-300'
+                  ? 'bg-indigo-50/90 dark:bg-indigo-950/80 border-indigo-300 dark:border-indigo-700 ring-2 ring-indigo-500/20 text-indigo-100 shadow-xs'
+                  : 'bg-slate-900 border-slate-700 hover:bg-slate-100/70 dark:hover:bg-slate-800/70 text-slate-300'
               }`}
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-extrabold flex items-center gap-1.5">
-                  <TrendingUp className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                  <TrendingUp className="w-4 h-4 text-indigo-400" />
                   <span>Standard Market</span>
                 </span>
                 {(localParams.marketScenario || 'standard') === 'standard' && (
                   <span className="w-2 h-2 rounded-full bg-indigo-600 dark:bg-indigo-400" />
                 )}
               </div>
-              <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 leading-tight">
+              <p className="text-[10px] font-medium text-slate-400 leading-tight">
                 Baseline expected returns ({profile.expectedInvestmentReturn || 6}% accum / {profile.postRetirementReturn || 4.5}% decum)
               </p>
             </button>
@@ -986,20 +986,20 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
               onClick={() => setLocalParams((prev) => ({ ...prev, marketScenario: 'stressed' }))}
               className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between space-y-1 ${
                 localParams.marketScenario === 'stressed'
-                  ? 'bg-amber-50 dark:bg-amber-950/80 border-amber-300 dark:border-amber-700 ring-2 ring-amber-500/20 text-amber-950 dark:text-amber-100 shadow-xs'
-                  : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 hover:bg-slate-100/70 dark:hover:bg-slate-800/70 text-slate-700 dark:text-slate-300'
+                  ? 'bg-amber-50 dark:bg-amber-950/80 border-amber-300 dark:border-amber-700 ring-2 ring-amber-500/20 text-amber-100 shadow-xs'
+                  : 'bg-slate-900 border-slate-700 hover:bg-slate-100/70 dark:hover:bg-slate-800/70 text-slate-300'
               }`}
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-extrabold flex items-center gap-1.5">
-                  <TrendingDown className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                  <TrendingDown className="w-4 h-4 text-amber-400" />
                   <span>Stressed Market (-{(localParams.stressedReturnDropPercent ?? 2.0).toFixed(1)}%)</span>
                 </span>
                 {localParams.marketScenario === 'stressed' && (
                   <span className="w-2 h-2 rounded-full bg-amber-600 dark:bg-amber-400" />
                 )}
               </div>
-              <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 leading-tight">
+              <p className="text-[10px] font-medium text-slate-400 leading-tight">
                 -{(localParams.stressedReturnDropPercent ?? 2.0).toFixed(1)}% p.a. drag ({Math.max(0, (profile.expectedInvestmentReturn || 6) - (localParams.stressedReturnDropPercent ?? 2.0)).toFixed(1)}% / {Math.max(0, (profile.postRetirementReturn || 4.5) - (localParams.stressedReturnDropPercent ?? 2.0)).toFixed(1)}%)
               </p>
             </button>
@@ -1012,20 +1012,20 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
               onClick={() => setLocalParams((prev) => ({ ...prev, marketScenario: 'early_crash' }))}
               className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between space-y-1 ${
                 localParams.marketScenario === 'early_crash'
-                  ? 'bg-rose-50 dark:bg-rose-950/80 border-rose-300 dark:border-rose-700 ring-2 ring-rose-500/20 text-rose-950 dark:text-rose-100 shadow-xs'
-                  : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 hover:bg-slate-100/70 dark:hover:bg-slate-800/70 text-slate-700 dark:text-slate-300'
+                  ? 'bg-rose-50 dark:bg-rose-950/80 border-rose-700 ring-2 ring-rose-500/20 text-rose-100 shadow-xs'
+                  : 'bg-slate-900 border-slate-700 hover:bg-slate-100/70 dark:hover:bg-slate-800/70 text-slate-300'
               }`}
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-extrabold flex items-center gap-1.5">
-                  <ShieldAlert className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+                  <ShieldAlert className="w-4 h-4 text-rose-400" />
                   <span>Market Crash ({crashSummaryText})</span>
                 </span>
                 {localParams.marketScenario === 'early_crash' && (
                   <span className="w-2 h-2 rounded-full bg-rose-600 dark:bg-rose-400" />
                 )}
               </div>
-              <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 leading-tight">
+              <p className="text-[10px] font-medium text-slate-400 leading-tight">
                 {currentCrashDuration} yrs crash at Age {currentCrashStartAge} ({crashSummaryText})
               </p>
             </button>
@@ -1034,7 +1034,7 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
           {/* Dynamic Controls for Stressed Market Scenario */}
           {localParams.marketScenario === 'stressed' && (
             <div className="mt-3 p-3.5 bg-amber-500/10 dark:bg-amber-950/40 rounded-2xl border border-amber-300/60 dark:border-amber-800/60 flex flex-col sm:flex-row items-center justify-between gap-3">
-              <label className="text-xs font-bold text-amber-950 dark:text-amber-200 flex items-center gap-2">
+              <label className="text-xs font-bold text-amber-200 flex items-center gap-2">
                 <span>Stressed Market Annual Return Reduction (Default -2.0%):</span>
               </label>
               <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -1054,9 +1054,9 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
                   max="20"
                   value={localParams.stressedReturnDropPercent ?? 2.0}
                   onChange={(e) => setLocalParams((prev) => ({ ...prev, stressedReturnDropPercent: parseFloat(e.target.value) || 0 }))}
-                  className="w-20 text-xs font-extrabold text-center px-2 py-1 bg-white dark:bg-slate-800 text-amber-950 dark:text-amber-100 border border-amber-300 dark:border-amber-700 rounded-xl"
+                  className="w-20 text-xs font-extrabold text-center px-2 py-1 bg-slate-900 text-amber-100 border border-amber-300 dark:border-amber-700 rounded-xl"
                 />
-                <span className="text-xs font-extrabold text-amber-950 dark:text-amber-100 bg-amber-100 dark:bg-amber-900/80 px-2.5 py-1 rounded-xl border border-amber-300 dark:border-amber-700 whitespace-nowrap">
+                <span className="text-xs font-extrabold text-amber-100 bg-amber-100 dark:bg-amber-900/80 px-2.5 py-1 rounded-xl border border-amber-300 dark:border-amber-700 whitespace-nowrap">
                   -{(localParams.stressedReturnDropPercent ?? 2.0).toFixed(1)}% p.a.
                 </span>
               </div>
@@ -1067,8 +1067,8 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
           {localParams.marketScenario === 'early_crash' && (
             <div className="mt-3 p-4 bg-rose-500/10 dark:bg-rose-950/40 rounded-2xl border border-rose-300/60 dark:border-rose-800/60 space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-rose-200/60 dark:border-rose-900/60 pb-2.5">
-                <span className="text-xs font-extrabold text-rose-950 dark:text-rose-200 flex items-center gap-1.5">
-                  <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+                <span className="text-xs font-extrabold text-rose-200 flex items-center gap-1.5">
+                  <AlertTriangle className="w-4 h-4 text-rose-400" />
                   <span>Custom Market Crash Parameters</span>
                 </span>
                 <button
@@ -1081,7 +1081,7 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
                       crashYearDropsPercent: [30, 15],
                     }));
                   }}
-                  className="text-[11px] font-bold text-rose-700 dark:text-rose-300 hover:underline cursor-pointer"
+                  className="text-[11px] font-bold text-rose-300 hover:underline cursor-pointer"
                 >
                   Reset Defaults (-30% Y1, -15% Y2 @ Retirement Start)
                 </button>
@@ -1090,13 +1090,13 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Crash Start Age */}
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-rose-900 dark:text-rose-200 block">
+                  <label className="text-[11px] font-bold text-rose-200 block">
                     Crash Start Timing (Default: Retirement Start - Age {profile.targetRetirementAge}):
                   </label>
                   <select
                     value={currentCrashStartAge}
                     onChange={(e) => setLocalParams((prev) => ({ ...prev, crashStartAge: parseInt(e.target.value, 10) }))}
-                    className="w-full text-xs font-bold bg-white dark:bg-slate-900 text-rose-950 dark:text-rose-100 border border-rose-300 dark:border-rose-700 rounded-xl px-2.5 py-2 focus:ring-rose-500 cursor-pointer"
+                    className="w-full text-xs font-bold bg-slate-900 text-rose-100 border border-rose-700 rounded-xl px-2.5 py-2 focus:ring-rose-500 cursor-pointer"
                   >
                     {Array.from({ length: Math.max(1, (localParams.maxAge || 95) - profile.currentAge + 1) }, (_, i) => profile.currentAge + i).map((a) => {
                       const pAccessAge = getPensionAccessAge(profile);
@@ -1123,7 +1123,7 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
 
                 {/* Crash Duration */}
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-rose-900 dark:text-rose-200 block">
+                  <label className="text-[11px] font-bold text-rose-200 block">
                     Crash Duration (Years):
                   </label>
                   <div className="flex items-center gap-2">
@@ -1136,7 +1136,7 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
                       onChange={(e) => handleCrashDurationChange(parseInt(e.target.value, 10))}
                       className="w-full accent-rose-600 cursor-pointer"
                     />
-                    <span className="text-xs font-extrabold text-rose-950 dark:text-rose-100 bg-rose-100 dark:bg-rose-900/80 px-2.5 py-1 rounded-lg border border-rose-300 dark:border-rose-700 min-w-[65px] text-center">
+                    <span className="text-xs font-extrabold text-rose-100 bg-rose-100 dark:bg-rose-900/80 px-2.5 py-1 rounded-lg border border-rose-700 min-w-[65px] text-center">
                       {currentCrashDuration} {currentCrashDuration === 1 ? 'Year' : 'Years'}
                     </span>
                   </div>
@@ -1148,7 +1148,7 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
 
               {/* Per-Year Drop Settings */}
               <div className="space-y-2 pt-2 border-t border-rose-200/60 dark:border-rose-900/60">
-                <label className="text-[11px] font-extrabold text-rose-900 dark:text-rose-200 block">
+                <label className="text-[11px] font-extrabold text-rose-200 block">
                   Configurable Percentage Drop for Each Crash Year:
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1158,11 +1158,11 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
                     return (
                       <div
                         key={idx}
-                        className="bg-white/80 dark:bg-slate-900/80 p-2.5 rounded-xl border border-rose-200 dark:border-rose-800/80 space-y-1.5"
+                        className="bg-slate-900/80 p-2.5 rounded-xl border border-rose-800/80 space-y-1.5"
                       >
-                        <div className="flex justify-between items-center text-xs font-bold text-rose-950 dark:text-rose-100">
+                        <div className="flex justify-between items-center text-xs font-bold text-rose-100">
                           <span>Year {idx + 1} (Age {crashAge} / {crashYear}):</span>
-                          <span className="font-extrabold text-rose-700 dark:text-rose-400 bg-rose-100 dark:bg-rose-950 px-2 py-0.5 rounded border border-rose-200 dark:border-rose-800">
+                          <span className="font-extrabold text-rose-400 bg-rose-100 dark:bg-rose-950 px-2 py-0.5 rounded border border-rose-800">
                             -{drop}%
                           </span>
                         </div>
@@ -1182,7 +1182,7 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
                             max="90"
                             value={drop}
                             onChange={(e) => handleCrashYearDropChange(idx, parseInt(e.target.value, 10) || 0)}
-                            className="w-16 text-xs font-extrabold text-center px-1 py-1 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-300 dark:border-slate-700 rounded-lg"
+                            className="w-16 text-xs font-extrabold text-center px-1 py-1 bg-slate-900 text-slate-100 border border-slate-700 rounded-lg"
                           />
                         </div>
                       </div>
@@ -1193,9 +1193,9 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
 
               {/* Cash Buffer Strategy Option & Yearly Breakdown */}
               <div className="space-y-3 pt-3 border-t border-rose-200/60 dark:border-rose-900/60">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white/90 dark:bg-slate-900/90 p-3.5 rounded-xl border border-rose-200 dark:border-rose-800">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-900/90 p-3.5 rounded-xl border border-rose-800">
                   <div>
-                    <label className="text-xs font-extrabold text-rose-950 dark:text-rose-100 flex items-center gap-2 cursor-pointer">
+                    <label className="text-xs font-extrabold text-rose-100 flex items-center gap-2 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={localParams.useCashBuffer ?? false}
@@ -1204,18 +1204,18 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
                       />
                       <span>Use Cash Buffer for Crash Scenario ({currentCashBufferYears} {currentCashBufferYears === 1 ? 'Year' : 'Years'} from Crash Start)</span>
                     </label>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 ml-6">
+                    <p className="text-[10px] text-slate-400 mt-0.5 ml-6">
                       Prioritises drawing living expenses from cash reserves during the market crash instead of selling equities or pension investments at a loss.
                     </p>
                   </div>
 
                   {localParams.useCashBuffer && (
                     <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
-                      <span className="text-[11px] font-bold text-rose-900 dark:text-rose-200">Buffer Duration:</span>
+                      <span className="text-[11px] font-bold text-rose-200">Buffer Duration:</span>
                       <select
                         value={currentCashBufferYears}
                         onChange={(e) => setLocalParams((prev) => ({ ...prev, cashBufferYears: parseInt(e.target.value, 10) }))}
-                        className="text-xs font-bold bg-rose-50 dark:bg-slate-800 text-rose-950 dark:text-rose-100 border border-rose-300 dark:border-rose-700 rounded-lg px-2 py-1 focus:ring-rose-500 cursor-pointer"
+                        className="text-xs font-bold bg-rose-50 dark:bg-slate-800 text-rose-100 border border-rose-700 rounded-lg px-2 py-1 focus:ring-rose-500 cursor-pointer"
                       >
                         {Array.from({ length: 10 }, (_, i) => i + 1).map((y) => (
                           <option key={y} value={y}>
@@ -1228,21 +1228,21 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
                 </div>
 
                 {/* Cash Buffer Required Details Table */}
-                <div className="bg-white/90 dark:bg-slate-900/90 p-4 rounded-xl border border-rose-200 dark:border-rose-800 space-y-3">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-rose-100 dark:border-rose-900/50 pb-2.5">
+                <div className="bg-slate-900/90 p-4 rounded-xl border border-rose-800 space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-rose-900/50 pb-2.5">
                     <div>
-                      <h5 className="text-xs font-extrabold text-rose-950 dark:text-rose-100 flex items-center gap-1.5">
-                        <ShieldAlert className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+                      <h5 className="text-xs font-extrabold text-rose-100 flex items-center gap-1.5">
+                        <ShieldAlert className="w-3.5 h-3.5 text-rose-400" />
                         <span>Cash Buffer Required Details (by Year)</span>
                       </h5>
-                      <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                      <p className="text-[10px] text-slate-400">
                         Net income needed for living expenses during crash years (after guaranteed State & DB pensions).
                       </p>
                     </div>
 
                     <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-xs font-extrabold text-slate-700 dark:text-slate-300">Total Buffer Required:</span>
-                      <span className="text-xs font-black text-rose-700 dark:text-rose-400 bg-rose-100 dark:bg-rose-950 px-2.5 py-1 rounded-lg border border-rose-300 dark:border-rose-800">
+                      <span className="text-xs font-extrabold text-slate-300">Total Buffer Required:</span>
+                      <span className="text-xs font-black text-rose-400 bg-rose-100 dark:bg-rose-950 px-2.5 py-1 rounded-lg border border-rose-800">
                         £{cashBufferSummary.totalNetCashBufferRequired.toLocaleString()}
                       </span>
                     </div>
@@ -1252,38 +1252,38 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs">
                       <thead>
-                        <tr className="border-b border-rose-200/80 dark:border-rose-900/80 text-[10px] font-extrabold text-rose-900 dark:text-rose-300 uppercase tracking-wider bg-rose-50/50 dark:bg-rose-950/30">
+                        <tr className="border-b border-rose-200/80 dark:border-rose-900/80 text-[10px] font-extrabold text-rose-300 uppercase tracking-wider bg-rose-50/50 dark:bg-rose-950/30">
                           <th className="py-2 px-2">Crash Year</th>
                           <th className="py-2 px-2">Age / Year</th>
                           <th className="py-2 px-2 text-right">Target Net Income</th>
                           <th className="py-2 px-2 text-right">Guaranteed Income</th>
-                          <th className="py-2 px-2 text-right text-rose-700 dark:text-rose-400">Net Cash Buffer Required</th>
-                          <th className="py-2 px-2 text-right text-emerald-700 dark:text-emerald-400">Gross Pension Draw Avoided</th>
+                          <th className="py-2 px-2 text-right text-rose-400">Net Cash Buffer Required</th>
+                          <th className="py-2 px-2 text-right text-emerald-400">Gross Pension Draw Avoided</th>
                           <th className="py-2 px-2 text-center">Coverage</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-rose-100 dark:divide-rose-900/40 font-medium">
                         {cashBufferSummary.yearlyDetails.map((detail) => (
                           <tr key={detail.crashYearIndex} className="hover:bg-rose-50/30 dark:hover:bg-rose-950/20">
-                            <td className="py-2 px-2 font-bold text-rose-950 dark:text-rose-100">Year {detail.crashYearIndex}</td>
-                            <td className="py-2 px-2 text-slate-600 dark:text-slate-300">Age {detail.age} ({detail.calendarYear})</td>
-                            <td className="py-2 px-2 text-right text-slate-700 dark:text-slate-200 font-semibold">£{detail.targetNetIncome.toLocaleString()}</td>
-                            <td className="py-2 px-2 text-right text-slate-500 dark:text-slate-400">
+                            <td className="py-2 px-2 font-bold text-rose-100">Year {detail.crashYearIndex}</td>
+                            <td className="py-2 px-2 text-slate-300">Age {detail.age} ({detail.calendarYear})</td>
+                            <td className="py-2 px-2 text-right text-slate-200 font-semibold">£{detail.targetNetIncome.toLocaleString()}</td>
+                            <td className="py-2 px-2 text-right text-slate-400">
                               {detail.totalGuaranteedIncome > 0 ? `£${detail.totalGuaranteedIncome.toLocaleString()}` : '£0'}
                             </td>
-                            <td className="py-2 px-2 text-right font-extrabold text-rose-700 dark:text-rose-400 bg-rose-50/60 dark:bg-rose-950/50">
+                            <td className="py-2 px-2 text-right font-extrabold text-rose-400 bg-rose-50/60 dark:bg-rose-950/50">
                               £{detail.netCashBufferRequired.toLocaleString()}
                             </td>
-                            <td className="py-2 px-2 text-right font-bold text-emerald-700 dark:text-emerald-400">
+                            <td className="py-2 px-2 text-right font-bold text-emerald-400">
                               ~£{detail.grossPensionAvoided.toLocaleString()}
                             </td>
                             <td className="py-2 px-2 text-center">
                               {detail.isCoveredByExistingCash ? (
-                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-800">
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-300 bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 rounded-full border border-emerald-800">
                                   <CheckCircle2 className="w-3 h-3" /> Covered
                                 </span>
                               ) : (
-                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-950 px-2 py-0.5 rounded-full border border-amber-300 dark:border-amber-800">
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-300 bg-amber-100 dark:bg-amber-950 px-2 py-0.5 rounded-full border border-amber-300 dark:border-amber-800">
                                   <AlertTriangle className="w-3 h-3" /> Shortfall
                                 </span>
                               )}
@@ -1295,9 +1295,9 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
                   </div>
 
                   {/* Summary comparison with user's actual cash reserves */}
-                  <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold">
+                  <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-800/60 p-3 rounded-xl border border-slate-700 text-xs font-semibold">
                     <div className="flex items-center gap-2">
-                      <span className="text-slate-600 dark:text-slate-400">
+                      <span className="text-slate-400">
                         Projected Liquid Cash at Crash Start (Age {currentCrashStartAge} / {new Date().getFullYear() + (currentCrashStartAge - profile.currentAge)}):
                       </span>
                       <strong className="text-slate-900 dark:text-white font-extrabold">£{cashBufferSummary.existingCashAvailable.toLocaleString()}</strong>
@@ -1305,11 +1305,11 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
                     <div className="flex items-center gap-2">
                       <span>Cash Buffer Readiness:</span>
                       {cashBufferSummary.isFullyCovered ? (
-                        <span className="text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950 px-2.5 py-1 rounded-lg border border-emerald-300 dark:border-emerald-800 font-extrabold flex items-center gap-1">
+                        <span className="text-emerald-300 bg-emerald-100 dark:bg-emerald-950 px-2.5 py-1 rounded-lg border border-emerald-800 font-extrabold flex items-center gap-1">
                           <CheckCircle2 className="w-3.5 h-3.5" /> Fully Funded (+£{cashBufferSummary.shortfallOrSurplus.toLocaleString()} Surplus)
                         </span>
                       ) : (
-                        <span className="text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-950 px-2.5 py-1 rounded-lg border border-amber-300 dark:border-amber-800 font-extrabold flex items-center gap-1">
+                        <span className="text-amber-300 bg-amber-100 dark:bg-amber-950 px-2.5 py-1 rounded-lg border border-amber-300 dark:border-amber-800 font-extrabold flex items-center gap-1">
                           <AlertTriangle className="w-3.5 h-3.5" /> Buffer Shortfall (-£{Math.abs(cashBufferSummary.shortfallOrSurplus).toLocaleString()})
                         </span>
                       )}
@@ -1324,22 +1324,22 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
 
       {/* Dynamic Scenario Insight Banner */}
       {localParams.marketScenario === 'stressed' ? (
-        <div className="bg-amber-50 dark:bg-amber-950/40 p-3 rounded-2xl border border-amber-200 dark:border-amber-800/60 flex items-start gap-2 text-xs text-amber-950 dark:text-amber-200 font-medium">
-          <TrendingDown className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+        <div className="bg-amber-50 dark:bg-amber-950/40 p-3 rounded-2xl border border-amber-200 dark:border-amber-800/60 flex items-start gap-2 text-xs text-amber-200 font-medium">
+          <TrendingDown className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
           <p>
             <strong>Stressed Market Model Active:</strong> Reduces expected annual growth by {(localParams.stressedReturnDropPercent ?? 2.0).toFixed(1)}% p.a. across all years ({Math.max(0, (profile.expectedInvestmentReturn || 6) - (localParams.stressedReturnDropPercent ?? 2.0)).toFixed(1)}% pre-retirement / {Math.max(0, (profile.postRetirementReturn || 4.5) - (localParams.stressedReturnDropPercent ?? 2.0)).toFixed(1)}% post-retirement). This tests how your portfolio holds up under lower growth or sustained inflationary drag.
           </p>
         </div>
       ) : params.marketScenario === 'early_crash' ? (
-        <div className="bg-rose-50 dark:bg-rose-950/40 p-3 rounded-2xl border border-rose-200 dark:border-rose-800/60 flex items-start gap-2 text-xs text-rose-950 dark:text-rose-200 font-medium">
-          <ShieldAlert className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+        <div className="bg-rose-50 dark:bg-rose-950/40 p-3 rounded-2xl border border-rose-800/60 flex items-start gap-2 text-xs text-rose-200 font-medium">
+          <ShieldAlert className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
           <p>
             <strong>Sequence Risk ({crashSummaryText} Market Crash) Active:</strong> Simulates a market crash across {currentCrashDuration} year(s) starting at Age {currentCrashStartAge} ({crashSummaryText}). This tests whether your initial cash savings and portfolio survive severe market drawdown.
           </p>
         </div>
       ) : (
-        <div className="bg-indigo-50/60 dark:bg-indigo-950/40 p-3 rounded-2xl border border-indigo-100 dark:border-indigo-800/60 flex items-start gap-2 text-xs text-indigo-900 dark:text-indigo-200 font-medium">
-          <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" />
+        <div className="bg-indigo-50/60 dark:bg-indigo-950/40 p-3 rounded-2xl border border-indigo-100 dark:border-indigo-800/60 flex items-start gap-2 text-xs text-indigo-200 font-medium">
+          <Sparkles className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />
           <p>
             <strong>Standard Volatility Model:</strong> Compounding returns fluctuate randomly around your expected annual growth rates ({profile.expectedInvestmentReturn || 6}% pre-retirement / {profile.postRetirementReturn || 4.5}% post-retirement).
             The <strong>10th percentile</strong> shows a pessimistic sequence, while the <strong>90th percentile</strong> represents optimistic market conditions.

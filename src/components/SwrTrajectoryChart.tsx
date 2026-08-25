@@ -54,22 +54,22 @@ export const SwrTrajectoryChart: React.FC<SwrTrajectoryChartProps> = ({ projecti
   const yAxisMax = Math.min(30, Math.max(10, Math.ceil((peakSwrItem.effectiveSwr * 1.3) / 2) * 2));
 
   return (
-    <div id="card-swr-trajectory-chart" className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-xl space-y-6 transition-colors">
+    <div id="card-swr-trajectory-chart" className="bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-800 shadow-xl space-y-6 transition-colors">
       
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
         <div className="flex items-center gap-3.5">
-          <div className="p-3 bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 rounded-2xl border border-indigo-200/60 dark:border-indigo-800/60">
+          <div className="p-3 bg-indigo-50 dark:bg-indigo-950 text-indigo-400 rounded-2xl border border-indigo-200/60 dark:border-indigo-800/60">
             <LineChart className="w-6 h-6" />
           </div>
           <div>
             <h3 className="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
               <span>Effective Withdrawal Rate Trajectory Chart</span>
-              <span className="text-[10px] font-bold uppercase tracking-wider bg-indigo-100 dark:bg-indigo-950 text-indigo-800 dark:text-indigo-300 px-2.5 py-1 rounded-full border border-indigo-200 dark:border-indigo-800">
+              <span className="text-[10px] font-bold uppercase tracking-wider bg-indigo-100 dark:bg-indigo-950 text-indigo-300 px-2.5 py-1 rounded-full border border-indigo-200 dark:border-indigo-800">
                 Year-by-Year % Overlay
               </span>
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            <p className="text-xs text-slate-400 mt-0.5">
               Tracking how your effective portfolio withdrawal rate evolves throughout retirement
             </p>
           </div>
@@ -80,7 +80,7 @@ export const SwrTrajectoryChart: React.FC<SwrTrajectoryChartProps> = ({ projecti
       <div className="h-72 w-full pt-2">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.6} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" opacity={0.6} />
             <XAxis dataKey="age" tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
             <YAxis
               unit="%"
@@ -129,7 +129,7 @@ export const SwrTrajectoryChart: React.FC<SwrTrajectoryChartProps> = ({ projecti
       </div>
 
       {/* Peak Trajectory Warning */}
-      <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between text-xs">
+      <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700/60 flex items-center justify-between text-xs">
         <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-white">
           <Info className="w-4 h-4 text-indigo-500 shrink-0" />
           <span>Peak Effective Withdrawal Rate:</span>
