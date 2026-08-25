@@ -129,7 +129,7 @@ export const StatePensionCard: React.FC<StatePensionCardProps> = ({ profile, onC
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 {/* Qualifying Years */}
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">

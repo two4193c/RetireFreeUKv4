@@ -360,6 +360,7 @@ export interface UserProfile {
   lifeExpectancyAge?: number;
   statePensionAge: number;
   includeStatePension: boolean;
+  statePensionDeferralYears?: number;
   enableTripleLock?: boolean;
   statePensionAmountAnnual: number;
   fullStatePensionAmount?: number;
@@ -378,6 +379,7 @@ export interface UserProfile {
   partnerStatePensionAge?: number;
   partnerLifeExpectancyAge?: number;
   partnerIncludeStatePension?: boolean;
+  partnerStatePensionDeferralYears?: number;
   partnerEnableTripleLock?: boolean;
   partnerStatePensionAmountAnnual?: number;
   partnerFullStatePensionAmount?: number;
