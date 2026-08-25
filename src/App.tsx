@@ -12,6 +12,10 @@ import { generateProjections } from './utils/projectionEngine';
 import { solveMaximizedSpend, disableMaximizedSpend } from './utils/maximizedSpendSolver';
 import { Header } from './components/Header';
 import { ProfileInputs } from './components/ProfileInputs';
+import { InvestmentContributionManager } from './components/InvestmentContributionManager';
+import { PotTransferManager } from './components/PotTransferManager';
+import { DbPensionManager } from './components/DbPensionManager';
+import { RightSizingCard } from './components/RightSizingCard';
 import { CouplePlanningCard } from './components/CouplePlanningCard';
 import { PotManager } from './components/PotManager';
 import { StatePensionCard } from './components/StatePensionCard';
@@ -922,16 +926,11 @@ function App() {
                     </div>
                     {/* 4. Contributions */}
                     <div className="scroll-mt-24 transition-all duration-300">
-                      <RegularContributionsCard
-                        profile={profile}
-                        pots={pots}
-                        onChangeProfile={handleProfileChange}
-                        onChangePots={handlePotsChange}
-                      />
+                      <InvestmentContributionManager profile={profile} onChange={handleProfileChange} />
                     </div>
                     {/* 5. Investment transfers */}
                     <div className="scroll-mt-24 transition-all duration-300">
-                      <PotTransferCard profile={profile} pots={pots} onChange={handleProfileChange} />
+                      <PotTransferManager profile={profile} onChange={handleProfileChange} pots={pots} />
                     </div>
                     {/* 6. State pension forecast */}
                     <div className="scroll-mt-24 transition-all duration-300">
@@ -939,7 +938,7 @@ function App() {
                     </div>
                     {/* 7. Defined benefit pensions */}
                     <div className="scroll-mt-24 transition-all duration-300">
-                      <DbPensionCard profile={profile} onChange={handleProfileChange} />
+                      <DbPensionManager profile={profile} onChange={handleProfileChange} />
                     </div>
                     {/* 8. Fixed income & disability benefits */}
                     <div className="scroll-mt-24 transition-all duration-300">
@@ -988,7 +987,7 @@ function App() {
                     </div>
                     {/* 14. Right sizings your home */}
                     <div className="scroll-mt-24 transition-all duration-300">
-                      <DownsizingCard profile={profile} onChange={handleProfileChange} />
+                      <RightSizingCard profile={profile} onChange={handleProfileChange} />
                     </div>
                     {/* 15. Asset allocation & macro settings */}
                     <div className="scroll-mt-24 transition-all duration-300">
