@@ -348,6 +348,8 @@ export function SidebarNav({
   onSetAppMode,
   theme,
   onToggleTheme,
+  studioMode,
+  onToggleStudioMode,
   scenarios,
   activeScenarioId,
   onSelectScenario,
