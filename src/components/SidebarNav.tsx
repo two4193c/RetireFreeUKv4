@@ -322,6 +322,8 @@ interface SidebarNavProps {
   // Theme control props
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
+  studioMode?: boolean;
+  onToggleStudioMode?: () => void;
   // Plan & file management props
   scenarios: PlannerScenario[];
   activeScenarioId: string;

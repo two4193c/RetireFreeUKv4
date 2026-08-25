@@ -732,6 +732,8 @@ function App() {
       
       {/* Left Collapsible Navigation Sidebar (Flush against left edge) */}
       <SidebarNav
+        studioMode={studioMode}
+        onToggleStudioMode={() => setStudioMode(!studioMode)}
         activeTab={activeTab}
         onSelectTab={(tab) => {
           setActiveTab(tab);
@@ -850,12 +852,7 @@ function App() {
 
       {/* Main Container */}
       <main className={`flex-1 max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-4 ${studioMode ? '' : 'space-y-6'}`}>
-        <div className="flex justify-end mb-4">
-           <button onClick={() => setStudioMode(!studioMode)} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-lg transition-colors flex items-center gap-2">
-             <Sparkles className="w-4 h-4" />
-             {studioMode ? 'Exit Studio Mode' : 'Enter Studio Mode'}
-           </button>
-        </div>
+        
         
         {/* Main Dashboard Content Area */}
 
