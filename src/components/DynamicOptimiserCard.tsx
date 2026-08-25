@@ -462,7 +462,93 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
             </div>
           </div>
 
+          
+          {/* Advanced Visual Telemetry */}
+          <div className="grid xl:grid-cols-2 gap-4 border-t border-slate-100 dark:border-slate-800 pt-4">
+            
+            <Panel title="Depletion Sequence Waterfall" subtitle="Visual timeline of when each pot runs completely dry.">
+              <div className="space-y-2 mt-2">
+                {[
+                  { label: 'State Pension', fn: (r: any) => (r.primaryStatePensionReceived || 0) + (r.partnerStatePensionReceived || 0) > 0, baseColor: 'bg-purple-500' },
+                  { label: 'Tax-Free (ISA/Cash)', fn: (r: any) => (r.isaPot || 0) > 100, baseColor: 'bg-amber-500' },
+                  { label: 'Pension', fn: (r: any) => (r.pensionPot || 0) > 100, baseColor: 'bg-emerald-500' },
+                  { label: 'GIA', fn: (r: any) => (r.cashGiaPot || 0) > 100, baseColor: 'bg-rose-500' },
+                ].map((pot) => (
+                  <div key={pot.label} className="flex items-center gap-2 text-[10px]">
+                    <div className="w-24 text-slate-600 dark:text-slate-400 font-semibold">{pot.label}</div>
+                    <div className="flex-1 flex gap-[1px] h-4">
+                      {retRows.map((r, i) => {
+                        const active = pot.fn(r);
+                        return (
+                          <div 
+                            key={r.age} 
+                            className={`flex-1 rounded-sm transition-all ${active ? pot.baseColor : 'bg-slate-100 dark:bg-slate-800/50'}`} 
+                            title={`Age ${r.age}: ${active ? 'Active' : 'Depleted'}`}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+                <div className="flex items-center gap-2 text-[8px] text-slate-400 pl-26 mt-1">
+                  <div className="flex-1 flex justify-between">
+                    <span>Age {retRows[0]?.age}</span>
+                    <span>Age {retRows[retRows.length - 1]?.age}</span>
+                  </div>
+                </div>
+              </div>
+            </Panel>
+
+            <Panel title="Tax Efficiency Heatmap" subtitle="Density matrix of tax band utilisation. Darker = Maxed out band.">
+              <div className="space-y-2 mt-2">
+                {[
+                  { label: '60% Trap / Addt.', key: 'Higher Rate', limit: 50000, color: '225, 29, 72' }, // rose-600
+                  { label: 'Higher (40%)', key: 'Higher Rate', limit: 50000, color: '239, 68, 68' }, // red-500
+                  { label: 'Basic (20%)', key: 'Basic Rate (20%)', limit: 37700, color: '14, 165, 233' }, // sky-500
+                  { label: 'PA (0%)', key: 'Personal Allowance (0%)', limit: 12570, color: '16, 185, 129' }, // emerald-500
+                ].map((band) => (
+                  <div key={band.label} className="flex items-center gap-2 text-[10px]">
+                    <div className="w-24 text-slate-600 dark:text-slate-400 font-semibold">{band.label}</div>
+                    <div className="flex-1 flex gap-[1px] h-4">
+                      {streamData.map((r) => {
+                        let val = r[band.key as keyof typeof r] as number;
+                        if (band.label === '60% Trap / Addt.') {
+                           val = val > 50000 ? val - 50000 : 0;
+                        } else if (band.label === 'Higher (40%)') {
+                           val = Math.min(val, 50000);
+                        }
+                        
+                        const intensity = val > 0 ? Math.max(0.15, Math.min(1, val / band.limit)) : 0.03;
+                        const isZero = val === 0;
+                        
+                        return (
+                          <div 
+                            key={r.age} 
+                            className="flex-1 rounded-sm"
+                            style={{ 
+                              backgroundColor: isZero ? undefined : `rgba(${band.color}, ${intensity})`,
+                              background: isZero ? 'var(--tw-colors-slate-100)' : undefined
+                            }}
+                            title={`Age ${r.age}: A${val}`}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+                 <div className="flex items-center gap-2 text-[8px] text-slate-400 pl-26 mt-1">
+                  <div className="flex-1 flex justify-between">
+                    <span>Age {retRows[0]?.age}</span>
+                    <span>Age {retRows[retRows.length - 1]?.age}</span>
+                  </div>
+                </div>
+              </div>
+            </Panel>
+
+          </div>
+
           {showMatrix && (
+
             <Panel title="Annual Tax Matrix" subtitle="Per-year income split, tax band exposure and 60% trap detection across all retirement years">
               <div className="overflow-x-auto rounded-xl border border-slate-100 dark:border-slate-800">
                 <table className="w-full text-[10px] border-collapse">
