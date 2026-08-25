@@ -524,12 +524,9 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
                         return (
                           <div 
                             key={r.age} 
-                            className="flex-1 rounded-sm"
-                            style={{ 
-                              backgroundColor: isZero ? undefined : `rgba(${band.color}, ${intensity})`,
-                              background: isZero ? 'var(--tw-colors-slate-100)' : undefined
-                            }}
-                            title={`Age ${r.age}: A${val}`}
+                            className={`flex-1 rounded-sm ${isZero ? 'bg-slate-100 dark:bg-slate-800/50' : ''}`}
+                            style={isZero ? {} : { backgroundColor: `rgba(${band.color}, ${intensity})` }}
+                            title={`Age ${r.age}: A�${val}`}
                           />
                         );
                       })}
