@@ -261,6 +261,7 @@ export const PotTransferManager: React.FC<PotTransferManagerProps> = ({
   profile,
   onChange,
   pots,
+  isStudioMode
 }) => {
   const isCouple = Boolean(profile.isCouplePlanning);
   const transfers = profile.potTransfers || [];
