@@ -667,7 +667,7 @@ export function SidebarNav({
                 type="button"
                 onClick={() => handleModeChange('basic')}
                 className={`flex-1 flex items-center justify-center gap-1 py-1 px-2 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
-                  appMode === 'basic'
+                  appMode === 'basic' && !studioMode
                     ? 'bg-emerald-600 text-white shadow-2xs'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
@@ -679,13 +679,26 @@ export function SidebarNav({
                 type="button"
                 onClick={() => handleModeChange('advanced')}
                 className={`flex-1 flex items-center justify-center gap-1 py-1 px-2 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
-                  appMode === 'advanced'
+                  appMode === 'advanced' && !studioMode
                     ? 'bg-indigo-600 text-white shadow-2xs'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
                 <SlidersHorizontal className="w-3 h-3" />
                 <span>Advanced</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => onToggleStudioMode?.()}
+                className={`flex-1 flex items-center justify-center gap-1 py-1 px-2 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                  studioMode
+                    ? 'bg-indigo-900 text-amber-300 shadow-2xs ring-1 ring-amber-500/50'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+                title="Studio Mode: Split-Pane Real-Time Analysis"
+              >
+                <Sparkles className="w-3 h-3" />
+                <span>Studio</span>
               </button>
             </div>
           )}
