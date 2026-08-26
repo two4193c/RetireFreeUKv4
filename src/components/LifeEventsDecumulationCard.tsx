@@ -284,7 +284,19 @@ export const LifeEventsDecumulationCard: React.FC<LifeEventsDecumulationCardProp
         )}
       </div>
 
-      {/* Preset Action Buttons */}
+      {isStudioMode ? (
+      <div className="flex justify-start">
+        <button
+          onClick={() => openAddModal('custom')}
+          className="flex items-center gap-1.5 px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer"
+        >
+          <Plus className="w-4 h-4" />
+          <span>Add Event</span>
+        </button>
+      </div>
+    ) : (
+      <div className="preset-action-wrapper">
+        {/* Preset Action Buttons */}
       <div className="space-y-2">
         <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
           <Sparkles className="w-3.5 h-3.5 text-purple-500" />
@@ -437,7 +449,10 @@ export const LifeEventsDecumulationCard: React.FC<LifeEventsDecumulationCardProp
         </div>
       </div>
 
-      {/* KPI Summary Banner */}
+     
+      </div>
+    )}
+    {/* KPI Summary Banner */}
       {activeEvents.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200/80 dark:border-slate-800">
           <div className="space-y-1">
@@ -692,22 +707,7 @@ export const LifeEventsDecumulationCard: React.FC<LifeEventsDecumulationCardProp
         </ModalShell>
       )}
 
-      {pots && projections && (
-        <MilestoneTimelineCard 
-          profile={profile} 
-          pots={pots} 
-          projections={projections} 
-          onChange={onChange} 
-          isEmbedded={true}
-          onEditEvent={(id) => {
-            const ev = profile.decumulationLifeEvents?.find(e => e.id === id);
-            if (ev) {
-              setEditItem(ev);
-              setIsAdding(false);
-            }
-          }}
-        />
-      )}
+      {!isStudioMode && pots && projections && ( <MilestoneTimelineCard profile={profile} pots={pots} projections={projections} onChange={onChange} isEmbedded={true} /> )}
     </div>
   );
 };

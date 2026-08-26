@@ -392,7 +392,9 @@ export const InvestmentFeesCard: React.FC<InvestmentFeesCardProps> = ({ profile,
 
       {isEnabled ? (
         <div className="space-y-6">
-          {/* ========================================================================= */}
+          {!isStudioMode && (
+      <div className="fee-visualiser-wrapper">
+        {/* ========================================================================= */}
           {/* VISUALISATION SECTION: COMPARATIVE TRAJECTORY & DRAG BREAKDOWN */}
           {/* ========================================================================= */}
           <div className="p-4 sm:p-5 bg-gradient-to-br from-slate-50 via-indigo-50/20 to-slate-50 dark:from-slate-800/60 dark:via-indigo-950/20 dark:to-slate-800/60 rounded-2xl border border-indigo-100 dark:border-indigo-900/50 space-y-4">
@@ -637,7 +639,8 @@ export const InvestmentFeesCard: React.FC<InvestmentFeesCardProps> = ({ profile,
               )}
             </div>
           </div>
-
+      </div>
+    )}
           {/* Mode Selector: Uniform vs Per-Pot & Person */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200/80 dark:border-slate-700/80">
             <div className="space-y-0.5">
