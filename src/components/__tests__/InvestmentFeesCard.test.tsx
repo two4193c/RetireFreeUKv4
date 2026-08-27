@@ -23,14 +23,13 @@ vi.mock('../../utils/projectionEngine', () => ({
   ])
 }));
 
-const mockProfile: UserProfile = {
+const mockProfile: Partial<UserProfile> = {
   name: 'John',
+  currentAge: 50,
   isCouplePlanning: false,
   targetRetirementAge: 60,
   expectedInvestmentReturn: 6.5,
   postRetirementReturn: 4.5,
-  workplacePensionBalance: 50000,
-  sippBalance: 50000,
   investmentFees: {
     enabled: false,
     perPotFeesEnabled: false,
@@ -126,9 +125,13 @@ describe('InvestmentFeesCard', () => {
       }
     };
     // Total fee is 0.65%. Total pot is 100,000. So annual drag = 650.
+    const mockPots = {
+      workplacePensionBalance: 50000,
+      sippBalance: 50000,
+    } as any;
 
     render(
-      <InvestmentFeesCard profile={enabledProfile} onChange={onChangeMock} />
+      <InvestmentFeesCard profile={enabledProfile as any} pots={mockPots} onChange={onChangeMock} />
     );
 
     // Should display the total fee percent

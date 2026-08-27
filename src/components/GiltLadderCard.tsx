@@ -184,21 +184,27 @@ export const GiltLadderCard: React.FC<GiltLadderCardProps> = ({
               <h3 className="font-bold text-slate-900 dark:text-slate-100 text-base">
                 UK Gilt Ladder Strategy
               </h3>
-              <span className="bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-800">
-                0% CGT Arbitrage
-              </span>
-              <span className="bg-blue-100 dark:bg-blue-950/80 text-blue-800 dark:text-blue-300 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-blue-300 dark:border-blue-800">
-                DMO Backed
-              </span>
-              {isCouple && (
-                <span className="bg-indigo-100 dark:bg-indigo-950/80 text-indigo-800 dark:text-indigo-300 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-indigo-300 dark:border-indigo-800">
-                  Dual-Person Strategy
-                </span>
+              {!isStudioMode && (
+                <>
+                  <span className="bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-800">
+                    0% CGT Arbitrage
+                  </span>
+                  <span className="bg-blue-100 dark:bg-blue-950/80 text-blue-800 dark:text-blue-300 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-blue-300 dark:border-blue-800">
+                    DMO Backed
+                  </span>
+                  {isCouple && (
+                    <span className="bg-indigo-100 dark:bg-indigo-950/80 text-indigo-800 dark:text-indigo-300 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-indigo-300 dark:border-indigo-800">
+                      Dual-Person Strategy
+                    </span>
+                  )}
+                </>
               )}
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Lock in guaranteed, default-free annual cashflows using individual UK Gilts with zero Capital Gains Tax under TCGA 1992 s.115.
-            </p>
+            {!isStudioMode && (
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Lock in guaranteed, default-free annual cashflows using individual UK Gilts with zero Capital Gains Tax under TCGA 1992 s.115.
+              </p>
+            )}
           </div>
         </div>
 

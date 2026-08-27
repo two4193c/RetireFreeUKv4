@@ -80,6 +80,7 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
   appMode = 'basic',
   initialViewMode = 'combined',
 }) => {
+  const isStudioMode = appMode === 'studio';
   // Select initial age (default to target retirement age or current age)
   const defaultAge = profile.targetRetirementAge || (projections[0]?.age ?? 60);
   const [selectedAge, setSelectedAge] = useState<number>(defaultAge);
@@ -1939,9 +1940,11 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
                 {isRetired ? `Decumulation Phase (Age ${selectedAge})` : `Accumulation Phase (Age ${selectedAge})`}
               </span>
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Visualizing how gross inflows map through UK tax deductions and distribute into essential living, lifestyle, debt, and re-invested wealth.
-            </p>
+            {!isStudioMode && (
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                Visualizing how gross inflows map through UK tax deductions and distribute into essential living, lifestyle, debt, and re-invested wealth.
+              </p>
+            )}
           </div>
         </div>
 

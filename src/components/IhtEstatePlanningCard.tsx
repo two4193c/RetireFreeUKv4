@@ -25,9 +25,13 @@ import {
   Award,
   Lock,
   RefreshCw,
+  X,
+  Edit2,
+  Check,
 } from 'lucide-react';
 
 interface IhtEstatePlanningCardProps {
+  isStudioMode?: boolean;
   profile: UserProfile;
   projections: YearProjection[];
   onChange: (updatedProfile: UserProfile) => void;
@@ -35,6 +39,7 @@ interface IhtEstatePlanningCardProps {
 }
 
 export const IhtEstatePlanningCard: React.FC<IhtEstatePlanningCardProps> = ({
+  isStudioMode,
   profile,
   projections,
   onChange,
@@ -42,6 +47,19 @@ export const IhtEstatePlanningCard: React.FC<IhtEstatePlanningCardProps> = ({
 }) => {
   const iht = profile.ihtSettings || DEFAULT_IHT_SETTINGS;
   const isCouple = profile.isCouplePlanning ?? false;
+
+  // Popout modal state for adding / editing PET gifts
+  const [isGiftModalOpen, setIsGiftModalOpen] = useState(false);
+  const [editingGiftId, setEditingGiftId] = useState<string | null>(null);
+  const [giftForm, setGiftForm] = useState<{
+    recipient: string;
+    amount: number;
+    yearsAgo: number;
+  }>({
+    recipient: '',
+    amount: 25000,
+    yearsAgo: 2,
+  });
 
   const handleUpdateIht = (field: keyof typeof iht, value: any) => {
     onChange({
@@ -53,30 +71,55 @@ export const IhtEstatePlanningCard: React.FC<IhtEstatePlanningCardProps> = ({
     });
   };
 
-  const handleAddPetGift = () => {
-    const newGift: PetGift = {
-      id: Date.now().toString(),
-      amount: 10000,
+  const handleOpenAddGift = () => {
+    setEditingGiftId(null);
+    setGiftForm({
+      recipient: '',
+      amount: 25000,
       yearsAgo: 2,
-      recipient: 'Child / Beneficiary',
-    };
-    const updatedGifts = [...(iht.petGifts || []), newGift];
-    handleUpdateIht('petGifts', updatedGifts);
+    });
+    setIsGiftModalOpen(true);
+  };
+
+  const handleOpenEditGift = (gift: PetGift) => {
+    setEditingGiftId(gift.id);
+    setGiftForm({
+      recipient: gift.recipient,
+      amount: gift.amount,
+      yearsAgo: gift.yearsAgo,
+    });
+    setIsGiftModalOpen(true);
+  };
+
+  const handleSaveGift = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const recipientText = giftForm.recipient.trim() || 'Beneficiary / Child';
+    const amountVal = Math.max(0, Number(giftForm.amount) || 0);
+    const yearsAgoVal = Math.max(0, Math.min(10, Number(giftForm.yearsAgo) || 0));
+
+    if (editingGiftId) {
+      const updatedGifts = (iht.petGifts || []).map((g) =>
+        g.id === editingGiftId
+          ? { ...g, recipient: recipientText, amount: amountVal, yearsAgo: yearsAgoVal }
+          : g
+      );
+      handleUpdateIht('petGifts', updatedGifts);
+    } else {
+      const newGift: PetGift = {
+        id: Date.now().toString(),
+        recipient: recipientText,
+        amount: amountVal,
+        yearsAgo: yearsAgoVal,
+      };
+      const updatedGifts = [...(iht.petGifts || []), newGift];
+      handleUpdateIht('petGifts', updatedGifts);
+    }
+    setIsGiftModalOpen(false);
+    setEditingGiftId(null);
   };
 
   const handleRemovePetGift = (id: string) => {
     const updatedGifts = (iht.petGifts || []).filter((g) => g.id !== id);
-    handleUpdateIht('petGifts', updatedGifts);
-  };
-
-  const handleUpdatePetGift = (id: string, field: keyof PetGift, value: any) => {
-    const updatedGifts = (iht.petGifts || []).map((g) => {
-      if (g.id === id) {
-        const val = (field === 'amount' || field === 'yearsAgo') ? (Number(value) || 0) : value;
-        return { ...g, [field]: val };
-      }
-      return g;
-    });
     handleUpdateIht('petGifts', updatedGifts);
   };
 
@@ -229,13 +272,17 @@ export const IhtEstatePlanningCard: React.FC<IhtEstatePlanningCardProps> = ({
               <h3 className="font-extrabold text-slate-900 dark:text-white text-base tracking-tight">
                 Inheritance Tax (IHT) & Estate Planning Module
               </h3>
-              <span className="bg-indigo-100 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 text-[10px] font-black px-2 py-0.5 rounded-full border border-indigo-200 dark:border-indigo-800 uppercase tracking-wider">
-                April 2027 Budget Rules & Non-Pension Death Benefits
-              </span>
+              {!isStudioMode && (
+                <span className="bg-indigo-100 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 text-[10px] font-black px-2 py-0.5 rounded-full border border-indigo-200 dark:border-indigo-800 uppercase tracking-wider">
+                  April 2027 Budget Rules & Non-Pension Death Benefits
+                </span>
+              )}
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Project gross estate valuation at Ages 80, 90 & 100, Nil Rate Bands, non-pension asset rules (ISAs, GIAs, Cash), Spousal APS, CGT uplift, and 40% IHT liabilities.
-            </p>
+            {!isStudioMode && (
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Project gross estate valuation at Ages 80, 90 & 100, Nil Rate Bands, non-pension asset rules (ISAs, GIAs, Cash), Spousal APS, CGT uplift, and 40% IHT liabilities.
+              </p>
+            )}
           </div>
         </div>
 
@@ -401,71 +448,75 @@ export const IhtEstatePlanningCard: React.FC<IhtEstatePlanningCardProps> = ({
 
 
           {/* Detailed Milestone Comparison Ledger Table */}
-          <div className="overflow-x-auto rounded-2xl border border-slate-200/80 dark:border-slate-800">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-200 dark:border-slate-700">
-                <tr>
-                  <th className="py-3 px-4">Estate Parameter</th>
-                  <th className="py-3 px-4">Age 80 ({milestone80.year})</th>
-                  <th className="py-3 px-4">Age 90 ({milestone90.year})</th>
-                  <th className="py-3 px-4">Age 100 ({milestone100.year})</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300 font-medium">
-                <tr>
-                  <td className="py-2.5 px-4 font-bold text-slate-800 dark:text-slate-200">Primary Residence Valuation</td>
-                  <td className="py-2.5 px-4 font-semibold">£{milestone80.propertyValue.toLocaleString()}</td>
-                  <td className="py-2.5 px-4 font-semibold">£{milestone90.propertyValue.toLocaleString()}</td>
-                  <td className="py-2.5 px-4 font-semibold">£{milestone100.propertyValue.toLocaleString()}</td>
-                </tr>
-                <tr className="bg-slate-50/50 dark:bg-slate-800/30">
-                  <td className="py-2.5 px-4 font-bold text-slate-800 dark:text-slate-200">Unused Pension Wealth (Workplace + SIPP)</td>
-                  <td className="py-2.5 px-4 font-semibold">£{milestone80.pensionWealth.toLocaleString()}</td>
-                  <td className="py-2.5 px-4 font-semibold">£{milestone90.pensionWealth.toLocaleString()}</td>
-                  <td className="py-2.5 px-4 font-semibold">£{milestone100.pensionWealth.toLocaleString()}</td>
-                </tr>
-                <tr>
-                  <td className="py-2.5 px-4 font-bold text-slate-800 dark:text-slate-200">Non-Pension Financial Wealth (ISA/Cash/GIA)</td>
-                  <td className="py-2.5 px-4 font-semibold">£{milestone80.grossNonPensionWealth.toLocaleString()}</td>
-                  <td className="py-2.5 px-4 font-semibold">£{milestone90.grossNonPensionWealth.toLocaleString()}</td>
-                  <td className="py-2.5 px-4 font-semibold">£{milestone100.grossNonPensionWealth.toLocaleString()}</td>
-                </tr>
-                <tr className="bg-slate-50/50 dark:bg-slate-800/30">
-                  <td className="py-2.5 px-4 font-bold text-slate-800 dark:text-slate-200">Total Available IHT Allowances (NRB + RNRB)</td>
-                  <td className="py-2.5 px-4 font-bold text-indigo-600 dark:text-indigo-400">£{milestone80.totalAllowances.toLocaleString()}</td>
-                  <td className="py-2.5 px-4 font-bold text-indigo-600 dark:text-indigo-400">£{milestone90.totalAllowances.toLocaleString()}</td>
-                  <td className="py-2.5 px-4 font-bold text-indigo-600 dark:text-indigo-400">£{milestone100.totalAllowances.toLocaleString()}</td>
-                </tr>
-                <tr className="font-extrabold bg-slate-100/70 dark:bg-slate-800/60 text-slate-900 dark:text-white">
-                  <td className="py-3 px-4">Estimated Inheritance Tax (IHT) Liability</td>
-                  <td className="py-3 px-4 text-rose-600 dark:text-rose-400">£{milestone80.netIhtLiability.toLocaleString()} ({milestone80.effectiveIhtRate}%)</td>
-                  <td className="py-3 px-4 text-rose-600 dark:text-rose-400">£{milestone90.netIhtLiability.toLocaleString()} ({milestone90.effectiveIhtRate}%)</td>
-                  <td className="py-3 px-4 text-rose-600 dark:text-rose-400">£{milestone100.netIhtLiability.toLocaleString()} ({milestone100.effectiveIhtRate}%)</td>
-                </tr>
-                <tr className="font-extrabold bg-emerald-500/10 text-emerald-800 dark:text-emerald-300">
-                  <td className="py-3 px-4">Net Wealth Inherited by Beneficiaries</td>
-                  <td className="py-3 px-4 text-emerald-700 dark:text-emerald-300">£{milestone80.netPassedToHeirs.toLocaleString()}</td>
-                  <td className="py-3 px-4 text-emerald-700 dark:text-emerald-300">£{milestone90.netPassedToHeirs.toLocaleString()}</td>
-                  <td className="py-3 px-4 text-emerald-700 dark:text-emerald-300">£{milestone100.netPassedToHeirs.toLocaleString()}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+          {!isStudioMode && (
+            <div className="overflow-x-auto rounded-2xl border border-slate-200/80 dark:border-slate-800">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-200 dark:border-slate-700">
+                  <tr>
+                    <th className="py-3 px-4">Estate Parameter</th>
+                    <th className="py-3 px-4">Age 80 ({milestone80.year})</th>
+                    <th className="py-3 px-4">Age 90 ({milestone90.year})</th>
+                    <th className="py-3 px-4">Age 100 ({milestone100.year})</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300 font-medium">
+                  <tr>
+                    <td className="py-2.5 px-4 font-bold text-slate-800 dark:text-slate-200">Primary Residence Valuation</td>
+                    <td className="py-2.5 px-4 font-semibold">£{milestone80.propertyValue.toLocaleString()}</td>
+                    <td className="py-2.5 px-4 font-semibold">£{milestone90.propertyValue.toLocaleString()}</td>
+                    <td className="py-2.5 px-4 font-semibold">£{milestone100.propertyValue.toLocaleString()}</td>
+                  </tr>
+                  <tr className="bg-slate-50/50 dark:bg-slate-800/30">
+                    <td className="py-2.5 px-4 font-bold text-slate-800 dark:text-slate-200">Unused Pension Wealth (Workplace + SIPP)</td>
+                    <td className="py-2.5 px-4 font-semibold">£{milestone80.pensionWealth.toLocaleString()}</td>
+                    <td className="py-2.5 px-4 font-semibold">£{milestone90.pensionWealth.toLocaleString()}</td>
+                    <td className="py-2.5 px-4 font-semibold">£{milestone100.pensionWealth.toLocaleString()}</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2.5 px-4 font-bold text-slate-800 dark:text-slate-200">Non-Pension Financial Wealth (ISA/Cash/GIA)</td>
+                    <td className="py-2.5 px-4 font-semibold">£{milestone80.grossNonPensionWealth.toLocaleString()}</td>
+                    <td className="py-2.5 px-4 font-semibold">£{milestone90.grossNonPensionWealth.toLocaleString()}</td>
+                    <td className="py-2.5 px-4 font-semibold">£{milestone100.grossNonPensionWealth.toLocaleString()}</td>
+                  </tr>
+                  <tr className="bg-slate-50/50 dark:bg-slate-800/30">
+                    <td className="py-2.5 px-4 font-bold text-slate-800 dark:text-slate-200">Total Available IHT Allowances (NRB + RNRB)</td>
+                    <td className="py-2.5 px-4 font-bold text-indigo-600 dark:text-indigo-400">£{milestone80.totalAllowances.toLocaleString()}</td>
+                    <td className="py-2.5 px-4 font-bold text-indigo-600 dark:text-indigo-400">£{milestone90.totalAllowances.toLocaleString()}</td>
+                    <td className="py-2.5 px-4 font-bold text-indigo-600 dark:text-indigo-400">£{milestone100.totalAllowances.toLocaleString()}</td>
+                  </tr>
+                  <tr className="font-extrabold bg-slate-100/70 dark:bg-slate-800/60 text-slate-900 dark:text-white">
+                    <td className="py-3 px-4">Estimated Inheritance Tax (IHT) Liability</td>
+                    <td className="py-3 px-4 text-rose-600 dark:text-rose-400">£{milestone80.netIhtLiability.toLocaleString()} ({milestone80.effectiveIhtRate}%)</td>
+                    <td className="py-3 px-4 text-rose-600 dark:text-rose-400">£{milestone90.netIhtLiability.toLocaleString()} ({milestone90.effectiveIhtRate}%)</td>
+                    <td className="py-3 px-4 text-rose-600 dark:text-rose-400">£{milestone100.netIhtLiability.toLocaleString()} ({milestone100.effectiveIhtRate}%)</td>
+                  </tr>
+                  <tr className="font-extrabold bg-emerald-500/10 text-emerald-800 dark:text-emerald-300">
+                    <td className="py-3 px-4">Net Wealth Inherited by Beneficiaries</td>
+                    <td className="py-3 px-4 text-emerald-700 dark:text-emerald-300">£{milestone80.netPassedToHeirs.toLocaleString()}</td>
+                    <td className="py-3 px-4 text-emerald-700 dark:text-emerald-300">£{milestone90.netPassedToHeirs.toLocaleString()}</td>
+                    <td className="py-3 px-4 text-emerald-700 dark:text-emerald-300">£{milestone100.netPassedToHeirs.toLocaleString()}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
         {/* Non-Pension Assets Section */}
         <div className="space-y-6 pt-6 border-t border-slate-200/80 dark:border-slate-800">
-          <div className="bg-emerald-50/60 dark:bg-emerald-950/30 p-4 rounded-2xl border border-emerald-200/80 dark:border-emerald-900/60 flex items-start gap-3 text-xs">
-            <Coins className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
-            <div className="space-y-1">
-              <h4 className="font-bold text-emerald-900 dark:text-emerald-200">
-                Non-Pension Asset Estate & Death Benefits Strategy
-              </h4>
-              <p className="text-emerald-800/90 dark:text-emerald-300/90 leading-relaxed">
-                Non-pension assets (ISAs, GIAs, and Cash) behave differently from pensions upon death. While ISAs benefit from Spousal Additional Permitted Subscriptions (APS), GIAs receive a valuable <strong>Death-Bed Capital Gains Tax (CGT) Uplift</strong>, wiping out unrealized gains. Business Property Relief (BPR) can also shelter qualifying AIM ISAs from 40% IHT.
-              </p>
+          {!isStudioMode && (
+            <div className="bg-emerald-50/60 dark:bg-emerald-950/30 p-4 rounded-2xl border border-emerald-200/80 dark:border-emerald-900/60 flex items-start gap-3 text-xs">
+              <Coins className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <h4 className="font-bold text-emerald-900 dark:text-emerald-200">
+                  Non-Pension Asset Estate & Death Benefits Strategy
+                </h4>
+                <p className="text-emerald-800/90 dark:text-emerald-300/90 leading-relaxed">
+                  Non-pension assets (ISAs, GIAs, and Cash) behave differently from pensions upon death. While ISAs benefit from Spousal Additional Permitted Subscriptions (APS), GIAs receive a valuable <strong>Death-Bed Capital Gains Tax (CGT) Uplift</strong>, wiping out unrealized gains. Business Property Relief (BPR) can also shelter qualifying AIM ISAs from 40% IHT.
+                </p>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Non-Pension Asset Specific Controls */}
           {!hideInputs && (
@@ -532,114 +583,118 @@ export const IhtEstatePlanningCard: React.FC<IhtEstatePlanningCardProps> = ({
           )}
 
           {/* Asset-by-Asset Breakdown Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            
-            {/* Stocks & Shares ISAs */}
-            <div className="bg-white dark:bg-slate-900 p-4.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-3">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-indigo-500" />
-                  <h5 className="font-extrabold text-slate-900 dark:text-white text-xs">ISAs (S&S, Cash & LISA)</h5>
+          {!isStudioMode && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              
+              {/* Stocks & Shares ISAs */}
+              <div className="bg-white dark:bg-slate-900 p-4.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-3">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-indigo-500" />
+                    <h5 className="font-extrabold text-slate-900 dark:text-white text-xs">ISAs (S&S, Cash & LISA)</h5>
+                  </div>
+                  <span className="text-[10px] font-black uppercase bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-full">
+                    Spousal APS
+                  </span>
                 </div>
-                <span className="text-[10px] font-black uppercase bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-full">
-                  Spousal APS
-                </span>
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                    <span>Valuation at Age 90:</span>
+                    <span className="font-bold text-slate-900 dark:text-white">£{milestone90.totalIsaPot.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                    <span>Spousal Transfer (APS):</span>
+                    <span className="font-bold text-emerald-600 dark:text-emerald-400">100% Tax-Free</span>
+                  </div>
+                  <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                    <span>Non-Spouse Heirs IHT:</span>
+                    <span className="font-bold text-rose-600 dark:text-rose-400">Subject to 40% IHT</span>
+                  </div>
+                  <div className="p-2.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+                    Surviving spouse gets Additional Permitted Subscription (APS) allowance to maintain tax-free wrapper status indefinitely.
+                  </div>
+                </div>
               </div>
-              <div className="space-y-2 text-xs">
-                <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                  <span>Valuation at Age 90:</span>
-                  <span className="font-bold text-slate-900 dark:text-white">£{milestone90.totalIsaPot.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                  <span>Spousal Transfer (APS):</span>
-                  <span className="font-bold text-emerald-600 dark:text-emerald-400">100% Tax-Free</span>
-                </div>
-                <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                  <span>Non-Spouse Heirs IHT:</span>
-                  <span className="font-bold text-rose-600 dark:text-rose-400">Subject to 40% IHT</span>
-                </div>
-                <div className="p-2.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
-                  Surviving spouse gets Additional Permitted Subscription (APS) allowance to maintain tax-free wrapper status indefinitely.
-                </div>
-              </div>
-            </div>
 
-            {/* General Investment Accounts (GIAs) */}
-            <div className="bg-white dark:bg-slate-900 p-4.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-3">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-emerald-500" />
-                  <h5 className="font-extrabold text-slate-900 dark:text-white text-xs">GIAs & Taxable Accounts</h5>
+              {/* General Investment Accounts (GIAs) */}
+              <div className="bg-white dark:bg-slate-900 p-4.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-3">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-emerald-500" />
+                    <h5 className="font-extrabold text-slate-900 dark:text-white text-xs">GIAs & Taxable Accounts</h5>
+                  </div>
+                  <span className="text-[10px] font-black uppercase bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full">
+                    CGT Death Uplift
+                  </span>
                 </div>
-                <span className="text-[10px] font-black uppercase bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full">
-                  CGT Death Uplift
-                </span>
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                    <span>Valuation at Age 90:</span>
+                    <span className="font-bold text-slate-900 dark:text-white">£{milestone90.totalCashGiaPot.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                    <span>CGT Wiped On Death:</span>
+                    <span className="font-bold text-emerald-600 dark:text-emerald-400">100% Wiped (Death Uplift)</span>
+                  </div>
+                  <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                    <span>Estate IHT Status:</span>
+                    <span className="font-bold text-rose-600 dark:text-rose-400">Included in Gross Estate</span>
+                  </div>
+                  <div className="p-2.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+                    All accrued capital gains are wiped out on death under TCGA s62. Heirs inherit at current market value.
+                  </div>
+                </div>
               </div>
-              <div className="space-y-2 text-xs">
-                <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                  <span>Valuation at Age 90:</span>
-                  <span className="font-bold text-slate-900 dark:text-white">£{milestone90.totalCashGiaPot.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                  <span>CGT Wiped On Death:</span>
-                  <span className="font-bold text-emerald-600 dark:text-emerald-400">100% Wiped (Death Uplift)</span>
-                </div>
-                <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                  <span>Estate IHT Status:</span>
-                  <span className="font-bold text-rose-600 dark:text-rose-400">Included in Gross Estate</span>
-                </div>
-                <div className="p-2.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
-                  All accrued capital gains are wiped out on death under TCGA s62. Heirs inherit at current market value.
-                </div>
-              </div>
-            </div>
 
-            {/* Cash Savings */}
-            <div className="bg-white dark:bg-slate-900 p-4.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-3">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-                <div className="flex items-center gap-2">
-                  <Coins className="w-4 h-4 text-amber-500" />
-                  <h5 className="font-extrabold text-slate-900 dark:text-white text-xs">Cash Savings & Deposits</h5>
+              {/* Cash Savings */}
+              <div className="bg-white dark:bg-slate-900 p-4.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-3">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-2">
+                    <Coins className="w-4 h-4 text-amber-500" />
+                    <h5 className="font-extrabold text-slate-900 dark:text-white text-xs">Cash Savings & Deposits</h5>
+                  </div>
+                  <span className="text-[10px] font-black uppercase bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-full">
+                    Standard Asset
+                  </span>
                 </div>
-                <span className="text-[10px] font-black uppercase bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-full">
-                  Standard Asset
-                </span>
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                    <span>Spousal Transfer:</span>
+                    <span className="font-bold text-emerald-600 dark:text-emerald-400">100% Tax-Free</span>
+                  </div>
+                  <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                    <span>Non-Spouse Heirs IHT:</span>
+                    <span className="font-bold text-rose-600 dark:text-rose-400">40% IHT (Above NRB)</span>
+                  </div>
+                  <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                    <span>Income Tax Post-Death:</span>
+                    <span className="font-bold text-slate-900 dark:text-white">Taxable at Marginal Rate</span>
+                  </div>
+                  <div className="p-2.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+                    Liquid cash forms part of probate. Non-spouse beneficiaries pay standard income tax on post-death interest.
+                  </div>
+                </div>
               </div>
-              <div className="space-y-2 text-xs">
-                <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                  <span>Spousal Transfer:</span>
-                  <span className="font-bold text-emerald-600 dark:text-emerald-400">100% Tax-Free</span>
-                </div>
-                <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                  <span>Non-Spouse Heirs IHT:</span>
-                  <span className="font-bold text-rose-600 dark:text-rose-400">40% IHT (Above NRB)</span>
-                </div>
-                <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                  <span>Income Tax Post-Death:</span>
-                  <span className="font-bold text-slate-900 dark:text-white">Taxable at Marginal Rate</span>
-                </div>
-                <div className="p-2.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
-                  Liquid cash forms part of probate. Non-spouse beneficiaries pay standard income tax on post-death interest.
-                </div>
-              </div>
-            </div>
 
-          </div>
+            </div>
+          )}
         </div>
 
         {/* 7-Year PET Gifts & Taper Relief Section */}
         <div className="space-y-6 pt-6 border-t border-slate-200/80 dark:border-slate-800">
-          <div className="bg-indigo-50/60 dark:bg-indigo-950/30 p-4 rounded-2xl border border-indigo-200/80 dark:border-indigo-900/60 flex items-start gap-3 text-xs">
-            <Gift className="w-5 h-5 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" />
-            <div className="space-y-1">
-              <h4 className="font-bold text-indigo-900 dark:text-indigo-200">
-                Potentially Exempt Transfers (PETs) & HMRC 7-Year Rule
-              </h4>
-              <p className="text-indigo-800/90 dark:text-indigo-300/90 leading-relaxed">
-                Outright gifts to individuals above the £3,000 annual exemption become Potentially Exempt Transfers (PETs). If you survive 7 years after making the gift, it becomes 100% tax-free. If death occurs between years 3 and 7, <strong>HMRC Taper Relief</strong> reduces the tax charged on the gift.
-              </p>
+          {!isStudioMode && (
+            <div className="bg-indigo-50/60 dark:bg-indigo-950/30 p-4 rounded-2xl border border-indigo-200/80 dark:border-indigo-900/60 flex items-start gap-3 text-xs">
+              <Gift className="w-5 h-5 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <h4 className="font-bold text-indigo-900 dark:text-indigo-200">
+                  Potentially Exempt Transfers (PETs) & HMRC 7-Year Rule
+                </h4>
+                <p className="text-indigo-800/90 dark:text-indigo-300/90 leading-relaxed">
+                  Outright gifts to individuals above the £3,000 annual exemption become Potentially Exempt Transfers (PETs). If you survive 7 years after making the gift, it becomes 100% tax-free. If death occurs between years 3 and 7, <strong>HMRC Taper Relief</strong> reduces the tax charged on the gift.
+                </p>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* PET Gifts Log & Calculator */}
           <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-4">
@@ -655,8 +710,9 @@ export const IhtEstatePlanningCard: React.FC<IhtEstatePlanningCardProps> = ({
 
               {!hideInputs && (
                 <button
-                  onClick={handleAddPetGift}
-                  className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3 py-2 rounded-xl transition-colors shadow-sm"
+                  type="button"
+                  onClick={handleOpenAddGift}
+                  className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition-all shadow-sm shadow-indigo-600/20 cursor-pointer"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Add Gift</span>
@@ -665,8 +721,12 @@ export const IhtEstatePlanningCard: React.FC<IhtEstatePlanningCardProps> = ({
             </div>
 
             {(iht.petGifts || []).length === 0 ? (
-              <div className="p-6 text-center bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-dashed border-slate-200 dark:border-slate-700 text-slate-500 text-xs">
-                No substantial gifts recorded. Click "Add Gift" to log a Potentially Exempt Transfer (PET).
+              <div className="p-8 text-center bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-dashed border-slate-200 dark:border-slate-700 text-slate-500 text-xs space-y-2">
+                <Gift className="w-8 h-8 mx-auto text-slate-400 dark:text-slate-500" />
+                <p className="font-semibold text-slate-700 dark:text-slate-300">No substantial gifts recorded</p>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Click the <strong>Add Gift</strong> button to log a Potentially Exempt Transfer (PET) and calculate HMRC 7-year taper relief.
+                </p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -704,49 +764,15 @@ export const IhtEstatePlanningCard: React.FC<IhtEstatePlanningCardProps> = ({
                       }
 
                       return (
-                        <tr key={g.id}>
+                        <tr key={g.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors">
                           <td className="p-2.5 font-bold text-slate-800 dark:text-slate-200">
-                            {hideInputs ? (
-                              g.recipient
-                            ) : (
-                              <input
-                                type="text"
-                                value={g.recipient}
-                                onChange={(e) => handleUpdatePetGift(g.id, 'recipient', e.target.value)}
-                                className="px-2 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg w-full text-xs font-medium"
-                              />
-                            )}
+                            {g.recipient || 'Beneficiary'}
                           </td>
                           <td className="p-2.5 font-bold text-slate-900 dark:text-white">
-                            {hideInputs ? (
-                              `£${g.amount.toLocaleString()}`
-                            ) : (
-                              <input
-                                type="number"
-                                min={0}
-                                step={5000}
-                                value={g.amount}
-                                onChange={(e) => handleUpdatePetGift(g.id, 'amount', Number(e.target.value))}
-                                className="px-2 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg w-28 text-xs font-bold"
-                              />
-                            )}
+                            £{g.amount.toLocaleString()}
                           </td>
                           <td className="p-2.5 font-semibold text-slate-700 dark:text-slate-300">
-                            {hideInputs ? (
-                              `${g.yearsAgo} Years Ago`
-                            ) : (
-                              <select
-                                value={g.yearsAgo}
-                                onChange={(e) => handleUpdatePetGift(g.id, 'yearsAgo', Number(e.target.value))}
-                                className="px-2 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium"
-                              >
-                                {[0, 1, 2, 3, 4, 5, 6, 7].map((yr) => (
-                                  <option key={yr} value={yr}>
-                                    {yr} {yr === 1 ? 'Year' : 'Years'} Ago {yr >= 7 ? '(Exempt)' : ''}
-                                  </option>
-                                ))}
-                              </select>
-                            )}
+                            {g.yearsAgo} {g.yearsAgo === 1 ? 'Year' : 'Years'} Ago {g.yearsAgo >= 7 ? '(Exempt)' : ''}
                           </td>
                           <td className="p-2.5">
                             <span className={`px-2 py-0.5 rounded-md font-bold text-[10px] ${badgeColor}`}>
@@ -758,12 +784,24 @@ export const IhtEstatePlanningCard: React.FC<IhtEstatePlanningCardProps> = ({
                           </td>
                           {!hideInputs && (
                             <td className="p-2.5 text-right">
-                              <button
-                                onClick={() => handleRemovePetGift(g.id)}
-                                className="p-1 text-slate-400 hover:text-rose-600 transition-colors"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
+                              <div className="flex items-center justify-end gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenEditGift(g)}
+                                  title="Edit gift details"
+                                  className="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                                >
+                                  <Edit2 className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemovePetGift(g.id)}
+                                  title="Delete gift entry"
+                                  className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
                             </td>
                           )}
                         </tr>
@@ -776,87 +814,266 @@ export const IhtEstatePlanningCard: React.FC<IhtEstatePlanningCardProps> = ({
           </div>
         </div>
 
-        {/* Death Benefits & Tax Rules Guide Section */}
-        <div className="space-y-6 pt-6 border-t border-slate-200/80 dark:border-slate-800">
-          <div className="bg-slate-50/90 dark:bg-slate-800/60 rounded-2xl p-5 border border-slate-200 dark:border-slate-700/80 space-y-4">
-            <div className="flex items-center gap-2 pb-3 border-b border-slate-200 dark:border-slate-700/80">
-              <Info className="w-5 h-5 text-indigo-600 dark:text-indigo-400 shrink-0" />
-              <h4 className="font-extrabold text-slate-900 dark:text-white text-sm">
-                Master Guide: Income Tax & Death Benefits Across Asset Types
-              </h4>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-              
-              {/* Pensions Column */}
-              <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="font-extrabold text-emerald-600 dark:text-emerald-400 text-sm flex items-center gap-1.5">
-                    <Coins className="w-4 h-4" />
-                    <span>Pensions (SIPP & DC)</span>
-                  </span>
-                  <span className="text-[10px] font-black uppercase bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full">
-                    Age 75 Rule
-                  </span>
+        {/* Popout Modal Window: Add / Edit Gift */}
+        {isGiftModalOpen && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-xs animate-in fade-in duration-150">
+            <div
+              className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 max-w-lg w-full overflow-hidden animate-in zoom-in-95 duration-150"
+              role="dialog"
+              aria-modal="true"
+            >
+              {/* Modal Header */}
+              <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-850/50">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-indigo-100 dark:bg-indigo-950 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                    <Gift className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
+                      {editingGiftId ? 'Edit Non-Pension Gift' : 'Add Non-Pension Capital Gift (PET)'}
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Record capital gifts made within the last 7 years
+                    </p>
+                  </div>
                 </div>
-                
-                <ul className="space-y-2 text-slate-600 dark:text-slate-300 font-medium">
-                  <li className="flex items-start gap-2">
-                    <span className="text-emerald-500 font-bold">•</span>
-                    <span>
-                      <strong className="text-slate-900 dark:text-white">Death Before Age 75:</strong> Beneficiaries can withdraw inherited pension funds <strong className="text-emerald-600 dark:text-emerald-400">100% Tax-Free</strong> for Income Tax (up to £1,073,100 LSDBA limit).
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-amber-500 font-bold">•</span>
-                    <span>
-                      <strong className="text-slate-900 dark:text-white">Death Age 75 or Older:</strong> Beneficiary withdrawals are taxed as <strong className="text-amber-600 dark:text-amber-400">Income Tax at the beneficiary's marginal rate</strong> (20%, 40%, or 45%).
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-2 text-[11px] text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800">
-                    <span>
-                      <em>April 2027 Budget Reform:</em> Pension pots become subject to 40% IHT in the estate, followed by marginal Income Tax if drawn post-75.
-                    </span>
-                  </li>
-                </ul>
+                <button
+                  type="button"
+                  onClick={() => setIsGiftModalOpen(false)}
+                  className="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
 
-              {/* ISAs Column */}
-              <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="font-extrabold text-indigo-600 dark:text-indigo-400 text-sm flex items-center gap-1.5">
-                    <Sparkles className="w-4 h-4 text-indigo-500" />
-                    <span>ISAs & Cash Savings</span>
-                  </span>
-                  <span className="text-[10px] font-black uppercase bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-full">
-                    Spousal APS
-                  </span>
+              {/* Modal Body Form */}
+              <form onSubmit={handleSaveGift} className="p-5 space-y-4">
+                {/* Recipient Input */}
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
+                    Gift Recipient & Purpose
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Eldest daughter (house deposit), Son (wedding gift)"
+                    value={giftForm.recipient}
+                    onChange={(e) => setGiftForm({ ...giftForm, recipient: e.target.value })}
+                    className="w-full px-3.5 py-2.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                  />
                 </div>
 
-                <ul className="space-y-2 text-slate-600 dark:text-slate-300 font-medium">
-                  <li className="flex items-start gap-2">
-                    <span className="text-indigo-500 font-bold">•</span>
-                    <span>
-                      <strong className="text-slate-900 dark:text-white">Spousal Transfer (APS):</strong> Surviving spouses receive an <strong className="text-indigo-600 dark:text-indigo-400">Additional Permitted Subscription</strong> allowance, keeping inherited ISAs 100% tax-free indefinitely.
+                {/* Gift Amount Input */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
+                      Gift Amount (£)
+                    </label>
+                    <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                      Above £3k annual exemption
                     </span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-slate-500 font-bold">•</span>
-                    <span>
-                      <strong className="text-slate-900 dark:text-white">Non-Spouse Heirs:</strong> <strong className="text-emerald-600 dark:text-emerald-400">No Income Tax</strong> is charged on the inherited capital lump sum upon death, but ISA tax wrapper status ends.
+                  </div>
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">
+                      £
                     </span>
-                  </li>
-                  <li className="flex items-start gap-2 text-[11px] text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800">
-                    <span>
-                      Subsequent growth, interest, and dividends earned post-distribution outside an ISA wrapper are subject to standard CGT and Income Tax.
-                    </span>
-                  </li>
-                </ul>
-              </div>
+                    <input
+                      type="number"
+                      min={100}
+                      step={1000}
+                      required
+                      value={giftForm.amount || ''}
+                      onChange={(e) => setGiftForm({ ...giftForm, amount: Number(e.target.value) })}
+                      className="w-full pl-8 pr-3.5 py-2.5 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-extrabold text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    />
+                  </div>
 
+                  {/* Quick Preset Buttons */}
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {[10000, 25000, 50000, 100000, 250000].map((preset) => (
+                      <button
+                        key={preset}
+                        type="button"
+                        onClick={() => setGiftForm({ ...giftForm, amount: preset })}
+                        className={`text-[10px] font-bold px-2 py-1 rounded-lg border transition-colors ${
+                          giftForm.amount === preset
+                            ? 'bg-indigo-50 dark:bg-indigo-950/80 border-indigo-300 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300'
+                            : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                        }`}
+                      >
+                        £{preset >= 1000 ? `${preset / 1000}k` : preset}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Years Elapsed Selector */}
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
+                    Time Elapsed Since Gift Made
+                  </label>
+                  <select
+                    value={giftForm.yearsAgo}
+                    onChange={(e) => setGiftForm({ ...giftForm, yearsAgo: Number(e.target.value) })}
+                    className="w-full px-3.5 py-2.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-semibold text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                  >
+                    <option value={0}>Within last 12 months (0 years ago — 0% Relief / 40% Full Tax)</option>
+                    <option value={1}>1 Year Ago (0% Relief / 40% Full Tax)</option>
+                    <option value={2}>2 Years Ago (0% Relief / 40% Full Tax)</option>
+                    <option value={3}>3 Years Ago (20% Taper Relief — 32% Effective Tax)</option>
+                    <option value={4}>4 Years Ago (40% Taper Relief — 24% Effective Tax)</option>
+                    <option value={5}>5 Years Ago (60% Taper Relief — 16% Effective Tax)</option>
+                    <option value={6}>6 Years Ago (80% Taper Relief — 8% Effective Tax)</option>
+                    <option value={7}>7+ Years Ago (100% Relief — 100% Tax-Free Exempt)</option>
+                  </select>
+                </div>
+
+                {/* Live Taper Relief Calculation Box */}
+                {(() => {
+                  let reliefText = '0% Taper Relief (40% Standard IHT Tax)';
+                  let reliefClass = 'text-rose-600 dark:text-rose-400';
+                  let desc = 'Gifts made within 0–3 years before death receive no taper relief and use up Nil Rate Band allowances first.';
+
+                  if (giftForm.yearsAgo >= 7) {
+                    reliefText = '100% Taper Relief (100% Tax-Free)';
+                    reliefClass = 'text-emerald-600 dark:text-emerald-400';
+                    desc = 'This gift has survived the full 7-year HMRC rule and is completely outside your taxable estate.';
+                  } else if (giftForm.yearsAgo === 6) {
+                    reliefText = '80% Taper Relief (8% Effective IHT Tax)';
+                    reliefClass = 'text-teal-600 dark:text-teal-400';
+                    desc = 'Year 6 gifts receive 80% HMRC taper relief, reducing IHT tax from 40% down to 8%.';
+                  } else if (giftForm.yearsAgo === 5) {
+                    reliefText = '60% Taper Relief (16% Effective IHT Tax)';
+                    reliefClass = 'text-sky-600 dark:text-sky-400';
+                    desc = 'Year 5 gifts receive 60% HMRC taper relief, reducing IHT tax from 40% down to 16%.';
+                  } else if (giftForm.yearsAgo === 4) {
+                    reliefText = '40% Taper Relief (24% Effective IHT Tax)';
+                    reliefClass = 'text-indigo-600 dark:text-indigo-400';
+                    desc = 'Year 4 gifts receive 40% HMRC taper relief, reducing IHT tax from 40% down to 24%.';
+                  } else if (giftForm.yearsAgo === 3) {
+                    reliefText = '20% Taper Relief (32% Effective IHT Tax)';
+                    reliefClass = 'text-amber-600 dark:text-amber-400';
+                    desc = 'Year 3 gifts receive 20% HMRC taper relief, reducing IHT tax from 40% down to 32%.';
+                  }
+
+                  return (
+                    <div className="p-3.5 bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700 space-y-1">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-slate-500 dark:text-slate-400 font-semibold">HMRC 7-Year Status:</span>
+                        <span className={`font-extrabold ${reliefClass}`}>{reliefText}</span>
+                      </div>
+                      <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
+                        {desc}
+                      </p>
+                    </div>
+                  );
+                })()}
+
+                {/* Modal Footer Buttons */}
+                <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setIsGiftModalOpen(false)}
+                    className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex items-center gap-1.5 px-5 py-2 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs font-bold rounded-xl transition-all shadow-sm shadow-indigo-600/20 cursor-pointer"
+                  >
+                    <Check className="w-4 h-4" />
+                    <span>{editingGiftId ? 'Save Gift Changes' : 'Add Gift to Log'}</span>
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
-        </div>
+        )}
+
+        {/* Death Benefits & Tax Rules Guide Section */}
+        {!isStudioMode && (
+          <div className="space-y-6 pt-6 border-t border-slate-200/80 dark:border-slate-800">
+            <div className="bg-slate-50/90 dark:bg-slate-800/60 rounded-2xl p-5 border border-slate-200 dark:border-slate-700/80 space-y-4">
+              <div className="flex items-center gap-2 pb-3 border-b border-slate-200 dark:border-slate-700/80">
+                <Info className="w-5 h-5 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                <h4 className="font-extrabold text-slate-900 dark:text-white text-sm">
+                  Master Guide: Income Tax & Death Benefits Across Asset Types
+                </h4>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                
+                {/* Pensions Column */}
+                <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-extrabold text-emerald-600 dark:text-emerald-400 text-sm flex items-center gap-1.5">
+                      <Coins className="w-4 h-4" />
+                      <span>Pensions (SIPP & DC)</span>
+                    </span>
+                    <span className="text-[10px] font-black uppercase bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full">
+                      Age 75 Rule
+                    </span>
+                  </div>
+                  
+                  <ul className="space-y-2 text-slate-600 dark:text-slate-300 font-medium">
+                    <li className="flex items-start gap-2">
+                      <span className="text-emerald-500 font-bold">•</span>
+                      <span>
+                        <strong className="text-slate-900 dark:text-white">Death Before Age 75:</strong> Beneficiaries can withdraw inherited pension funds <strong className="text-emerald-600 dark:text-emerald-400">100% Tax-Free</strong> for Income Tax (up to £1,073,100 LSDBA limit).
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-amber-500 font-bold">•</span>
+                      <span>
+                        <strong className="text-slate-900 dark:text-white">Death Age 75 or Older:</strong> Beneficiary withdrawals are taxed as <strong className="text-amber-600 dark:text-amber-400">Income Tax at the beneficiary's marginal rate</strong> (20%, 40%, or 45%).
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2 text-[11px] text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800">
+                      <span>
+                        <em>April 2027 Budget Reform:</em> Pension pots become subject to 40% IHT in the estate, followed by marginal Income Tax if drawn post-75.
+                      </span>
+                    </li>
+                  </ul>
+                </div>
+
+                {/* ISAs Column */}
+                <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-extrabold text-indigo-600 dark:text-indigo-400 text-sm flex items-center gap-1.5">
+                      <Sparkles className="w-4 h-4 text-indigo-500" />
+                      <span>ISAs & Cash Savings</span>
+                    </span>
+                    <span className="text-[10px] font-black uppercase bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-full">
+                      Spousal APS
+                    </span>
+                  </div>
+
+                  <ul className="space-y-2 text-slate-600 dark:text-slate-300 font-medium">
+                    <li className="flex items-start gap-2">
+                      <span className="text-indigo-500 font-bold">•</span>
+                      <span>
+                        <strong className="text-slate-900 dark:text-white">Spousal Transfer (APS):</strong> Surviving spouses receive an <strong className="text-indigo-600 dark:text-indigo-400">Additional Permitted Subscription</strong> allowance, keeping inherited ISAs 100% tax-free indefinitely.
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-slate-500 font-bold">•</span>
+                      <span>
+                        <strong className="text-slate-900 dark:text-white">Non-Spouse Heirs:</strong> <strong className="text-emerald-600 dark:text-emerald-400">No Income Tax</strong> is charged on the inherited capital lump sum upon death, but ISA tax wrapper status ends.
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2 text-[11px] text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800">
+                      <span>
+                        Subsequent growth, interest, and dividends earned post-distribution outside an ISA wrapper are subject to standard CGT and Income Tax.
+                      </span>
+                    </li>
+                  </ul>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        )}
 
     </div>
   );

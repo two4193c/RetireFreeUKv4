@@ -236,13 +236,17 @@ export const LifeEventsDecumulationCard: React.FC<LifeEventsDecumulationCardProp
             <h2 className="text-lg font-bold text-slate-900 dark:text-white">
               Life Events
             </h2>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
-              {activeEvents.length} Active {activeEvents.length === 1 ? 'Event' : 'Events'}
-            </span>
+            {!isStudioMode && (
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                {activeEvents.length} Active {activeEvents.length === 1 ? 'Event' : 'Events'}
+              </span>
+            )}
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed max-w-2xl">
-            Model one-off planned expenses or income in retirement—such as property downsizing lump sums, inheritances, buying a vehicle, world trips, home renovations, or gifting to family—and see their direct impact on your lifetime projection graph.
-          </p>
+          {!isStudioMode && (
+            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed max-w-2xl">
+              Model one-off planned expenses or income in retirement—such as property downsizing lump sums, inheritances, buying a vehicle, world trips, home renovations, or gifting to family—and see their direct impact on your lifetime projection graph.
+            </p>
+          )}
         </div>
 
         {/* Couple Owner Filter */}
@@ -453,7 +457,7 @@ export const LifeEventsDecumulationCard: React.FC<LifeEventsDecumulationCardProp
       </div>
     )}
     {/* KPI Summary Banner */}
-      {activeEvents.length > 0 && (
+      {activeEvents.length > 0 && !isStudioMode && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200/80 dark:border-slate-800">
           <div className="space-y-1">
             <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1">
@@ -498,9 +502,11 @@ export const LifeEventsDecumulationCard: React.FC<LifeEventsDecumulationCardProp
           <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300">
             No Life Events Planned Yet
           </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-            Click one of the quick-add presets above to model property downsizing, inheritance, car purchases, or world trips.
-          </p>
+          {!isStudioMode && (
+            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+              Click one of the quick-add presets above to model property downsizing, inheritance, car purchases, or world trips.
+            </p>
+          )}
         </div>
       ) : (
         <div className="space-y-4">

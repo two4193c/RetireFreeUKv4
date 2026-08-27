@@ -104,11 +104,13 @@ export const PotManager: React.FC<PotManagerProps> = ({
             <Coins className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
             <span>Investment Pots Balance</span>
           </h2>
-          <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
-            {isCouple 
-              ? 'Enter starting balances for household pension, ISA, and investment accounts'
-              : 'Enter current starting balances for your UK pension and investment tax shelters'}
-          </p>
+          {!isStudioMode && (
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
+              {isCouple 
+                ? 'Enter starting balances for household pension, ISA, and investment accounts'
+                : 'Enter current starting balances for your UK pension and investment tax shelters'}
+            </p>
+          )}
         </div>
 
         {/* Quick Person Switcher */}

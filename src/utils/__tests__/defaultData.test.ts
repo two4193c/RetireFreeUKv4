@@ -149,7 +149,7 @@ describe('defaultData utils', () => {
 
     it('should sanitize partnerPots', () => {
       const result = sanitizeProfile({
-        partnerPots: { workplacePensionBalance: 999 },
+        partnerPots: { workplacePensionBalance: 999 } as any,
       });
       expect(result.partnerPots.workplacePensionBalance).toBe(999);
       expect(result.partnerPots.sippBalance).toBe(DEFAULT_PARTNER_POTS.sippBalance);
@@ -157,7 +157,7 @@ describe('defaultData utils', () => {
 
     it('should sanitize mortgage if provided', () => {
       const result = sanitizeProfile({
-        mortgage: { currentBalance: 50000 },
+        mortgage: { currentBalance: 50000 } as any,
       });
       expect(result.mortgage.currentBalance).toBe(50000);
       expect(result.mortgage.propertyValue).toBe(DEFAULT_MORTGAGE.propertyValue);

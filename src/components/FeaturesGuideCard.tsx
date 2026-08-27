@@ -7,11 +7,14 @@ import {
   FileText, 
   Zap, 
   Home, 
-  ShieldCheck,
-  CheckCircle2,
-  Lock,
-  Download,
-  Banknote
+  ShieldCheck, 
+  CheckCircle2, 
+  Lock, 
+  Download, 
+  Banknote,
+  Columns,
+  Maximize2,
+  ArrowRightLeft
 } from 'lucide-react';
 
 export const FeaturesGuideCard: React.FC = () => {
@@ -28,7 +31,7 @@ export const FeaturesGuideCard: React.FC = () => {
           Comprehensive Feature List
         </h2>
         <p className="text-sm text-slate-500 dark:text-slate-400 max-w-3xl leading-relaxed">
-          RetireFree UK provides adviser-depth tax modelling and financial planning in a fast, real-time reactive interface. Explore the full range of features available to help you build and stress-test your retirement plan.
+          RetireFree UK provides adviser-depth tax modelling and financial planning in a fast, real-time reactive interface. Explore the full range of features available across Basic, Advanced, and Studio modes.
         </p>
       </div>
 
@@ -65,6 +68,18 @@ export const FeaturesGuideCard: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
+              <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
+                <td className="px-4 py-3 font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0"/> Studio Mode Dual-Pane
+                </td>
+                <td className="px-4 py-3 leading-relaxed">Adviser-grade side-by-side workspace: continuous parameter inputs on the left and live real-time decumulation charts on the right with instant recalculation.</td>
+              </tr>
+              <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
+                <td className="px-4 py-3 font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0"/> Studio Pop-Out Windows
+                </td>
+                <td className="px-4 py-3 leading-relaxed">Dedicated focused modal pop-outs for Executive Summary (tabbed sub-views), Scenario &amp; Variant Comparison, 25+ Guides, Mortgage Schedules, and AI Advisors.</td>
+              </tr>
               <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
                 <td className="px-4 py-3 font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0"/> UK Income Tax Modelling
@@ -153,9 +168,18 @@ export const FeaturesGuideCard: React.FC = () => {
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="p-4 bg-emerald-50 dark:bg-emerald-900/10 rounded-2xl border border-emerald-200 dark:border-emerald-800/30 space-y-2">
+            <h4 className="font-bold text-emerald-900 dark:text-emerald-100 flex items-center gap-2">
+              <Columns className="w-4 h-4 text-emerald-600" /> Studio Mode &amp; Pop-Out Windows
+            </h4>
+            <p className="text-xs text-emerald-800/80 dark:text-emerald-200/80 leading-relaxed">
+              Continuous dual-pane financial workbench pairing all 18 parameter modules side-by-side with live visual projections, plus modal pop-out windows for Executive Summaries and Scenario Comparisons.
+            </p>
+          </div>
+
           <div className="p-4 bg-amber-50 dark:bg-amber-900/10 rounded-2xl border border-amber-200 dark:border-amber-800/30 space-y-2">
             <h4 className="font-bold text-amber-900 dark:text-amber-100 flex items-center gap-2">
-              <Zap className="w-4 h-4" /> Genetic Max Spend Solver
+              <Zap className="w-4 h-4 text-amber-600" /> Genetic Max Spend Solver
             </h4>
             <p className="text-xs text-amber-800/80 dark:text-amber-200/80 leading-relaxed">
               Instead of guessing if your money will last, our algorithmic solver automatically iterates through your cash flow to find the exact maximum sustainable withdrawal ("Die With Zero").
@@ -164,43 +188,34 @@ export const FeaturesGuideCard: React.FC = () => {
 
           <div className="p-4 bg-blue-50 dark:bg-blue-900/10 rounded-2xl border border-blue-200 dark:border-blue-800/30 space-y-2">
             <h4 className="font-bold text-blue-900 dark:text-blue-100 flex items-center gap-2">
-              <Activity className="w-4 h-4" /> Sankey Cash Flow Diagrams
+              <Activity className="w-4 h-4 text-blue-600" /> Sankey Cash Flow Diagrams
             </h4>
             <p className="text-xs text-blue-800/80 dark:text-blue-200/80 leading-relaxed">
               Interactive waterfall diagrams generated for every phase of retirement, visually routing every pound from its source account, through the HMRC tax system, and into your spending budget.
             </p>
           </div>
 
-          <div className="p-4 bg-emerald-50 dark:bg-emerald-900/10 rounded-2xl border border-emerald-200 dark:border-emerald-800/30 space-y-2">
-            <h4 className="font-bold text-emerald-900 dark:text-emerald-100 flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4" /> Right-Sizing Equity Routing
+          <div className="p-4 bg-teal-50 dark:bg-teal-900/10 rounded-2xl border border-teal-200 dark:border-teal-800/30 space-y-2">
+            <h4 className="font-bold text-teal-900 dark:text-teal-100 flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-teal-600" /> Right-Sizing Equity Routing
             </h4>
-            <p className="text-xs text-emerald-800/80 dark:text-emerald-200/80 leading-relaxed">
+            <p className="text-xs text-teal-800/80 dark:text-teal-200/80 leading-relaxed">
               Models complex property downsizing events, automatically deducting agent fees and SDLT, and letting you inject the released equity directly into specific pots (like ISAs or SIPPs).
             </p>
           </div>
 
           <div className="p-4 bg-purple-50 dark:bg-purple-900/10 rounded-2xl border border-purple-200 dark:border-purple-800/30 space-y-2">
             <h4 className="font-bold text-purple-900 dark:text-purple-100 flex items-center gap-2">
-              <LineChart className="w-4 h-4" /> KPI Impact Slider
+              <LineChart className="w-4 h-4 text-purple-600" /> KPI Impact Slider
             </h4>
             <p className="text-xs text-purple-800/80 dark:text-purple-200/80 leading-relaxed">
               A real-time sliding bar showing exactly how each input change instantly impacts your key metrics (retirement age, pot depletion age, and inheritance value) without reloading.
             </p>
           </div>
 
-          <div className="p-4 bg-emerald-50 dark:bg-emerald-900/10 rounded-2xl border border-emerald-200 dark:border-emerald-800/30 space-y-2">
-            <h4 className="font-bold text-emerald-900 dark:text-emerald-100 flex items-center gap-2">
-              <Banknote className="w-4 h-4" /> UK Gilt Ladder & 0% CGT Arbitrage
-            </h4>
-            <p className="text-xs text-emerald-800/80 dark:text-emerald-200/80 leading-relaxed">
-              Build custom maturity schedules using real UK Treasury Gilts. Eliminates Sequence of Returns Risk by securing guaranteed annual cashflow with zero Capital Gains Tax under TCGA 1992 s.115.
-            </p>
-          </div>
-
           <div className="p-4 bg-indigo-50 dark:bg-indigo-900/10 rounded-2xl border border-indigo-200 dark:border-indigo-800/30 space-y-2">
             <h4 className="font-bold text-indigo-900 dark:text-indigo-100 flex items-center gap-2">
-              <FileText className="w-4 h-4" /> Live AI-Ready Exports
+              <FileText className="w-4 h-4 text-indigo-600" /> Live AI-Ready Exports
             </h4>
             <p className="text-xs text-indigo-800/80 dark:text-indigo-200/80 leading-relaxed">
               Download your entire plan as a live Formula Excel (.xlsx) workbook where every cell connects using native Excel formulas. Designed specifically so you can upload it directly to ChatGPT or Claude for a second-opinion critique.

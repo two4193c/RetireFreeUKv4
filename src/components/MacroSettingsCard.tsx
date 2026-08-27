@@ -2,7 +2,6 @@ import React from 'react';
 import { UserProfile, InvestmentPots, PerPersonPotAllocations, PotReturnOverrides, AssetAllocationSplit } from '../types';
 import { DEFAULT_POT_RETURN_OVERRIDES, DEFAULT_ASSET_ALLOCATION_SPLIT } from '../utils/defaultData';
 import { calculateWeightedAssetReturn } from '../utils/assetAllocation';
-import { InvestmentFeesCard } from './InvestmentFeesCard';
 import { TrendingUp, Percent, Flame, Sparkles, Shield, RotateCcw, Sliders, Layers, Coins, Building2, PieChart, BarChart3, Receipt } from 'lucide-react';
 
 interface MacroSettingsCardProps {
@@ -91,13 +90,17 @@ export const MacroSettingsCard: React.FC<MacroSettingsCardProps> = ({ profile, p
               <h2 className="font-bold text-slate-900 dark:text-slate-100 text-base">
                 Investment Returns & Macroeconomic Settings
               </h2>
-              <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-950 text-indigo-800 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
-                Growth Assumptions
-              </span>
+              {!isStudioMode && (
+                <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-950 text-indigo-800 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                  Growth Assumptions
+                </span>
+              )}
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Adjust pre-retirement return, post-retirement return, CPI inflation, and pot-specific growth overrides
-            </p>
+            {!isStudioMode && (
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Adjust pre-retirement return, post-retirement return, CPI inflation, and pot-specific growth overrides
+              </p>
+            )}
           </div>
         </div>
 
@@ -113,172 +116,201 @@ export const MacroSettingsCard: React.FC<MacroSettingsCardProps> = ({ profile, p
       </div>
 
       {/* Preset Buttons */}
-      <div className="space-y-2">
-        <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 block uppercase tracking-wider">
-          Quick Macroeconomic Presets:
-        </span>
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => applyPreset(5.0, 3.5, 2.5)}
-            className="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors border border-slate-200/80 dark:border-slate-700/80 cursor-pointer"
-          >
-            🛡️ Conservative (5.0% Pre / 3.5% Post / 2.5% Inf)
-          </button>
-          <button
-            type="button"
-            onClick={() => applyPreset(6.5, 4.5, 2.5)}
-            className="px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900 transition-colors border border-indigo-200 dark:border-indigo-800 cursor-pointer"
-          >
-            ⚖️ Balanced Baseline (6.5% Pre / 4.5% Post / 2.5% Inf)
-          </button>
-          <button
-            type="button"
-            onClick={() => applyPreset(8.0, 5.5, 2.0)}
-            className="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900 transition-colors border border-emerald-200 dark:border-emerald-800 cursor-pointer"
-          >
-            🚀 Growth / Optimistic (8.0% Pre / 5.5% Post / 2.0% Inf)
-          </button>
-          <button
-            type="button"
-            onClick={() => applyPreset(7.0, 5.0, 4.0)}
-            className="px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900 transition-colors border border-amber-200 dark:border-amber-800 cursor-pointer"
-          >
-            🔥 High Inflation Scenario (7.0% Pre / 5.0% Post / 4.0% Inf)
-          </button>
+      {!isStudioMode && (
+        <div className="space-y-2">
+          <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 block uppercase tracking-wider">
+            Quick Macroeconomic Presets:
+          </span>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => applyPreset(5.0, 3.5, 2.5)}
+              className="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors border border-slate-200/80 dark:border-slate-700/80 cursor-pointer"
+            >
+              🛡️ Conservative (5.0% Pre / 3.5% Post / 2.5% Inf)
+            </button>
+            <button
+              type="button"
+              onClick={() => applyPreset(6.5, 4.5, 2.5)}
+              className="px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900 transition-colors border border-indigo-200 dark:border-indigo-800 cursor-pointer"
+            >
+              ⚖️ Balanced Baseline (6.5% Pre / 4.5% Post / 2.5% Inf)
+            </button>
+            <button
+              type="button"
+              onClick={() => applyPreset(8.0, 5.5, 2.0)}
+              className="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900 transition-colors border border-emerald-200 dark:border-emerald-800 cursor-pointer"
+            >
+              🚀 Growth / Optimistic (8.0% Pre / 5.5% Post / 2.0% Inf)
+            </button>
+            <button
+              type="button"
+              onClick={() => applyPreset(7.0, 5.0, 4.0)}
+              className="px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900 transition-colors border border-amber-200 dark:border-amber-800 cursor-pointer"
+            >
+              🔥 High Inflation Scenario (7.0% Pre / 5.0% Post / 4.0% Inf)
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Baseline Macro Settings Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
         
         {/* Pre-Retirement Return Rate */}
-        <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700/80 space-y-3">
+        <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-2.5">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+            <label htmlFor="macro-pre-return" className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 cursor-pointer">
               <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               <span>Pre-Retirement Return</span>
             </label>
-            <div className="flex items-center gap-1">
+            <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100/80 dark:bg-emerald-950/80 px-2 py-0.5 rounded-md">
+              Real: {realPreReturn}%
+            </span>
+          </div>
+
+          <div className="relative flex items-center">
+            <input
+              id="macro-pre-return"
+              type="number"
+              step="0.1"
+              min="0"
+              max="25"
+              value={preReturn}
+              onChange={(e) => updateField('expectedInvestmentReturn', e.target.value === '' ? 0 : Number(e.target.value))}
+              onBlur={(e) => {
+                let val = Number(e.target.value);
+                if (isNaN(val) || e.target.value === '') val = 0;
+                val = Math.max(-5, Math.min(25, val));
+                updateField('expectedInvestmentReturn', val);
+              }}
+              className="w-full h-11 pl-3.5 pr-14 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-extrabold text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:outline-none transition-all shadow-xs"
+            />
+            <span className="absolute right-3.5 text-xs font-bold text-slate-400 dark:text-slate-500 pointer-events-none select-none">
+              % p.a.
+            </span>
+          </div>
+
+          {!isStudioMode && (
+            <>
               <input
-                type="number"
-                step="0.1"
+                type="range"
                 min="0"
-                max="20"
+                max="15"
+                step="0.1"
                 value={preReturn}
-                onChange={(e) => updateField('expectedInvestmentReturn', e.target.value === '' ? 0 : Number(e.target.value))}
-                onBlur={(e) => {
-                  let val = Number(e.target.value);
-                  if (isNaN(val) || e.target.value === '') val = 0;
-                  val = Math.max(-5, Math.min(25, val));
-                  updateField('expectedInvestmentReturn', val);
-                }}
-                className="w-16 px-2 py-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-extrabold text-slate-900 dark:text-white text-right focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                onChange={(e) => updateField('expectedInvestmentReturn', Number(e.target.value))}
+                className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-600"
               />
-              <span className="text-xs font-bold text-slate-500 dark:text-slate-400">% p.a.</span>
-            </div>
-          </div>
-          {(preReturn < -5 || preReturn > 25) && <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-0.5 font-medium">⚠ Value clamped to -5% to 25% on save</p>}
-
-          <input
-            type="range"
-            min="0"
-            max="15"
-            step="0.1"
-            value={preReturn}
-            onChange={(e) => updateField('expectedInvestmentReturn', Number(e.target.value))}
-            className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-600"
-          />
-
-          <div className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-            Compound annual growth rate during working accumulation years.
-          </div>
+              <div className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                Compound annual growth rate during working accumulation years.
+              </div>
+            </>
+          )}
         </div>
 
         {/* Post-Retirement Return Rate */}
-        <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700/80 space-y-3">
+        <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700/80 space-y-2.5">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+            <label htmlFor="macro-post-return" className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 cursor-pointer">
               <Shield className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
               <span>Post-Retirement Return</span>
             </label>
-            <div className="flex items-center gap-1">
+            <span className="text-[11px] font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-100/80 dark:bg-indigo-950/80 px-2 py-0.5 rounded-md">
+              Real: {realPostReturn}%
+            </span>
+          </div>
+
+          <div className="relative flex items-center">
+            <input
+              id="macro-post-return"
+              type="number"
+              step="0.1"
+              min="0"
+              max="25"
+              value={postReturn}
+              onChange={(e) => updateField('postRetirementReturn', e.target.value === '' ? 0 : Number(e.target.value))}
+              onBlur={(e) => {
+                let val = Number(e.target.value);
+                if (isNaN(val) || e.target.value === '') val = 0;
+                val = Math.max(-5, Math.min(25, val));
+                updateField('postRetirementReturn', val);
+              }}
+              className="w-full h-11 pl-3.5 pr-14 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-extrabold text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all shadow-xs"
+            />
+            <span className="absolute right-3.5 text-xs font-bold text-slate-400 dark:text-slate-500 pointer-events-none select-none">
+              % p.a.
+            </span>
+          </div>
+
+          {!isStudioMode && (
+            <>
               <input
-                type="number"
-                step="0.1"
+                type="range"
                 min="0"
-                max="20"
+                max="12"
+                step="0.1"
                 value={postReturn}
-                onChange={(e) => updateField('postRetirementReturn', e.target.value === '' ? 0 : Number(e.target.value))}
-                onBlur={(e) => {
-                  let val = Number(e.target.value);
-                  if (isNaN(val) || e.target.value === '') val = 0;
-                  val = Math.max(-5, Math.min(25, val));
-                  updateField('postRetirementReturn', val);
-                }}
-                className="w-16 px-2 py-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-extrabold text-slate-900 dark:text-white text-right focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                onChange={(e) => updateField('postRetirementReturn', Number(e.target.value))}
+                className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-600"
               />
-              <span className="text-xs font-bold text-slate-500 dark:text-slate-400">% p.a.</span>
-            </div>
-          </div>
-          {(postReturn < -5 || postReturn > 25) && <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-0.5 font-medium">⚠ Value clamped to -5% to 25% on save</p>}
-
-          <input
-            type="range"
-            min="0"
-            max="12"
-            step="0.1"
-            value={postReturn}
-            onChange={(e) => updateField('postRetirementReturn', Number(e.target.value))}
-            className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-600"
-          />
-
-          <div className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-            Compound annual growth rate during drawdown decumulation years (usually lower risk).
-          </div>
+              <div className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                Compound annual growth rate during drawdown decumulation years (usually lower risk).
+              </div>
+            </>
+          )}
         </div>
 
         {/* Expected Inflation Rate */}
-        <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700/80 space-y-3">
+        <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700/80 space-y-2.5">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+            <label htmlFor="macro-inflation" className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 cursor-pointer">
               <Flame className="w-4 h-4 text-amber-500 dark:text-amber-400" />
               <span>Expected Annual Inflation</span>
             </label>
-            <div className="flex items-center gap-1">
+            <span className="text-[11px] font-bold text-amber-700 dark:text-amber-300 bg-amber-100/80 dark:bg-amber-950/80 px-2 py-0.5 rounded-md">
+              BoE Target: 2.0%
+            </span>
+          </div>
+
+          <div className="relative flex items-center">
+            <input
+              id="macro-inflation"
+              type="number"
+              step="0.1"
+              min="0"
+              max="15"
+              value={inflation}
+              onChange={(e) => updateField('expectedInflationRate', e.target.value === '' ? 0 : Number(e.target.value))}
+              onBlur={(e) => {
+                let val = Number(e.target.value);
+                if (isNaN(val) || e.target.value === '') val = 0;
+                val = Math.max(-2, Math.min(15, val));
+                updateField('expectedInflationRate', val);
+              }}
+              className="w-full h-11 pl-3.5 pr-14 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-extrabold text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 focus:outline-none transition-all shadow-xs"
+            />
+            <span className="absolute right-3.5 text-xs font-bold text-slate-400 dark:text-slate-500 pointer-events-none select-none">
+              % p.a.
+            </span>
+          </div>
+
+          {!isStudioMode && (
+            <>
               <input
-                type="number"
-                step="0.1"
+                type="range"
                 min="0"
-                max="15"
+                max="10"
+                step="0.1"
                 value={inflation}
-                onChange={(e) => updateField('expectedInflationRate', e.target.value === '' ? 0 : Number(e.target.value))}
-                onBlur={(e) => {
-                  let val = Number(e.target.value);
-                  if (isNaN(val) || e.target.value === '') val = 0;
-                  val = Math.max(-2, Math.min(15, val));
-                  updateField('expectedInflationRate', val);
-                }}
-                className="w-16 px-2 py-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-extrabold text-slate-900 dark:text-white text-right focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                onChange={(e) => updateField('expectedInflationRate', Number(e.target.value))}
+                className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-amber-500"
               />
-              <span className="text-xs font-bold text-slate-500 dark:text-slate-400">% p.a.</span>
-            </div>
-          </div>
-          {(inflation < -2 || inflation > 15) && <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-0.5 font-medium">⚠ Value clamped to -2% to 15% on save</p>}
-
-          <input
-            type="range"
-            min="0"
-            max="10"
-            step="0.1"
-            value={inflation}
-            onChange={(e) => updateField('expectedInflationRate', Number(e.target.value))}
-            className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-amber-500"
-          />
-
-          <div className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-            Expected annual CPI inflation rate used to index spending and state pensions.
-          </div>
+              <div className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                Expected annual CPI inflation rate used to index spending and state pensions.
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -294,13 +326,17 @@ export const MacroSettingsCard: React.FC<MacroSettingsCardProps> = ({ profile, p
                 <h3 className="font-extrabold text-slate-900 dark:text-white text-xs sm:text-sm">
                   Asset Allocation Split (Accumulation vs Decumulation)
                 </h3>
-                <span className="bg-emerald-200 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-200 text-[10px] font-black px-2 py-0.5 rounded-md uppercase">
-                  Multi-Asset Portfolio
-                </span>
+                {!isStudioMode && (
+                  <span className="bg-emerald-200 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-200 text-[10px] font-black px-2 py-0.5 rounded-md uppercase">
+                    Multi-Asset Portfolio
+                  </span>
+                )}
               </div>
-              <p className="text-[11px] text-slate-600 dark:text-slate-300">
-                Model separate Equities, Bonds, and Cash allocations during working accumulation vs drawdown decumulation years.
-              </p>
+              {!isStudioMode && (
+                <p className="text-[11px] text-slate-600 dark:text-slate-300">
+                  Model separate Equities, Bonds, and Cash allocations during working accumulation vs drawdown decumulation years.
+                </p>
+              )}
             </div>
           </div>
 
@@ -549,7 +585,7 @@ export const MacroSettingsCard: React.FC<MacroSettingsCardProps> = ({ profile, p
               </span>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400">Equity Expected Return:</label>
+                  <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400">Equity Return:</label>
                   <div className="flex items-center gap-1">
                     <input
                       type="number" step="0.1" min="0" max="25"
@@ -563,7 +599,7 @@ export const MacroSettingsCard: React.FC<MacroSettingsCardProps> = ({ profile, p
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400">Bond Expected Return:</label>
+                  <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400">Bond Return:</label>
                   <div className="flex items-center gap-1">
                     <input
                       type="number" step="0.1" min="0" max="25"
@@ -577,7 +613,7 @@ export const MacroSettingsCard: React.FC<MacroSettingsCardProps> = ({ profile, p
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400">Cash Expected Return:</label>
+                  <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400">Cash Return:</label>
                   <div className="flex items-center gap-1">
                     <input
                       type="number" step="0.1" min="0" max="25"
@@ -825,9 +861,6 @@ export const MacroSettingsCard: React.FC<MacroSettingsCardProps> = ({ profile, p
         )}
 
       </div>
-
-      {/* Investment, Platform & Adviser Fees Section */}
-      <InvestmentFeesCard profile={profile} pots={pots} onChange={onChange} />
 
     </div>
   );

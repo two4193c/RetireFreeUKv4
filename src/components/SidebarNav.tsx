@@ -31,6 +31,7 @@ import {
   Upload,
   Zap,
   SlidersHorizontal,
+  ExternalLink,
 } from 'lucide-react';
 
 export interface CardSubItem {
@@ -136,7 +137,6 @@ export const NAV_STRUCTURE: TabGroup[] = [
     description: 'Monte Carlo stress tests and historic sequence of returns',
     cards: [
       { id: 'card-risk-monte', label: 'Monte Carlo Stress Simulation' },
-      { id: 'card-risk-macro', label: 'Economic & Stress Parameters' },
       { id: 'card-risk-historic', label: 'Historic Market Sequences' },
     ],
   },
@@ -210,6 +210,7 @@ export const NAV_STRUCTURE: TabGroup[] = [
     cards: [
       // 1. Getting Started & Foundations
       { id: 'card-doc-userguide', label: 'Quick Start Guide', category: '1. Foundations' },
+      { id: 'card-doc-studioguide', label: 'Studio Mode Workspace Guide', category: '1. Foundations' },
       { id: 'card-doc-featuresguide', label: 'App Features & Capabilities', category: '1. Foundations' },
       { id: 'card-doc-cashbufferguide', label: 'Emergency Fund & Cash Buffer Guide', category: '1. Foundations' },
       { id: 'card-doc-statepensionniguide', label: 'State Pension & Voluntary NI Guide', category: '1. Foundations' },
@@ -252,7 +253,7 @@ export const NAV_STRUCTURE: TabGroup[] = [
 ];
 
 export function getFilteredNavStructure(mode: AppMode = 'basic'): TabGroup[] {
-  if (mode === 'advanced') {
+  if (mode === 'advanced' || mode === 'studio') {
     return NAV_STRUCTURE;
   }
 
@@ -271,7 +272,6 @@ export function getFilteredNavStructure(mode: AppMode = 'basic'): TabGroup[] {
     'card-proj-macro',
     'card-cashflow-sankey',
     'card-proj-table',
-    'card-risk-macro',
     'card-risk-historic',
     // Documentation cards hidden in basic mode (only card-doc-userguide is shown)
     'card-doc-cashbufferguide',
@@ -323,7 +323,6 @@ interface SidebarNavProps {
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
   studioMode?: boolean;
-  onToggleStudioMode?: () => void;
   // Plan & file management props
   scenarios: PlannerScenario[];
   activeScenarioId: string;
@@ -349,7 +348,6 @@ export function SidebarNav({
   theme,
   onToggleTheme,
   studioMode,
-  onToggleStudioMode,
   scenarios,
   activeScenarioId,
   onSelectScenario,
@@ -419,16 +417,21 @@ export function SidebarNav({
     const isCurrentlyOpen = Boolean(openTabGroups[tabId]);
 
     if (isCurrentlyOpen) {
-      // Collapsing the menu item - do NOT change page/tab
-      setOpenTabGroups((prev) => ({
-        ...prev,
-        [tabId]: false,
-      }));
+      if (appMode === 'studio') {
+        // In Studio mode, clicking an active or open tab header scrolls directly to that section
+        onSelectTab(tabId);
+      } else {
+        // Collapsing the menu item - do NOT change page/tab
+        setOpenTabGroups((prev) => ({
+          ...prev,
+          [tabId]: false,
+        }));
+      }
     } else {
       // Opening the menu item - switch active tab/page
       const isPageChanging = tabId !== activeTab;
       onSelectTab(tabId);
-      if (isPageChanging) {
+      if (isPageChanging && appMode !== 'studio') {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
       setOpenTabGroups((prev) => ({
@@ -587,9 +590,16 @@ export function SidebarNav({
                   <div className="flex items-center gap-3 min-w-0">
                     <Icon className={`w-4 h-4 shrink-0 transition-transform ${isTabActive ? 'scale-110' : 'group-hover:scale-105'}`} />
                     {!isCollapsed && (
-                      <span className="truncate text-xs font-bold tracking-tight">
-                        {group.label}
-                      </span>
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="truncate text-xs font-bold tracking-tight">
+                          {group.label}
+                        </span>
+                        {(group.id === 'documentation' || group.id === 'overview' || group.id === 'compare' || group.id === 'plan_management') && appMode === 'studio' && (
+                          <span title="Opens as Pop-Out Window in Studio Mode">
+                            <ExternalLink className="w-3 h-3 text-emerald-400 dark:text-emerald-400 shrink-0 opacity-80" />
+                          </span>
+                        )}
+                      </div>
                     )}
                   </div>
 
@@ -650,6 +660,11 @@ export function SidebarNav({
                                 : 'text-slate-400 dark:text-slate-500 group-hover:text-emerald-500'
                             }`} />
                             <span className="truncate">{card.label}</span>
+                            {(group.id === 'overview' || group.id === 'compare' || group.id === 'plan_management' || card.id === 'card-mortgage-debt' || card.id === 'card-plan-mgmt-overview' || card.id === 'card-plan-mgmt-json') && appMode === 'studio' && (
+                              <span title="Opens as Pop-Out Window in Studio Mode" className="ml-auto shrink-0">
+                                <ExternalLink className="w-3 h-3 text-emerald-500 dark:text-emerald-400 opacity-80" />
+                              </span>
+                            )}
                           </button>
                         </React.Fragment>
                       );
@@ -669,7 +684,7 @@ export function SidebarNav({
                 type="button"
                 onClick={() => handleModeChange('basic')}
                 className={`flex-1 flex items-center justify-center gap-1 py-1 px-2 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
-                  appMode === 'basic' && !studioMode
+                  appMode === 'basic'
                     ? 'bg-emerald-600 text-white shadow-2xs'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
@@ -681,7 +696,7 @@ export function SidebarNav({
                 type="button"
                 onClick={() => handleModeChange('advanced')}
                 className={`flex-1 flex items-center justify-center gap-1 py-1 px-2 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
-                  appMode === 'advanced' && !studioMode
+                  appMode === 'advanced'
                     ? 'bg-indigo-600 text-white shadow-2xs'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
@@ -691,10 +706,10 @@ export function SidebarNav({
               </button>
               <button
                 type="button"
-                onClick={() => onToggleStudioMode?.()}
+                onClick={() => handleModeChange('studio')}
                 className={`flex-1 flex items-center justify-center gap-1 py-1 px-2 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
-                  studioMode
-                    ? 'bg-indigo-900 text-amber-300 shadow-2xs ring-1 ring-amber-500/50'
+                  appMode === 'studio'
+                    ? 'bg-purple-600 text-white shadow-2xs'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
                 title="Studio Mode: Split-Pane Real-Time Analysis"

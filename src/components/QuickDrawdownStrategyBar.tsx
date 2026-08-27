@@ -356,6 +356,7 @@ export const QuickDrawdownStrategyBar: React.FC<QuickDrawdownStrategyBarProps> =
   compact = false,
   appMode = 'basic',
 }) => {
+  const isStudioMode = appMode === 'studio';
   const isCouple = Boolean(profile.isCouplePlanning);
   const [targetPerson, setTargetPerson] = useState<'primary' | 'partner' | 'both'>('primary');
   const [showCloneSuccess, setShowCloneSuccess] = useState(false);
@@ -552,9 +553,11 @@ export const QuickDrawdownStrategyBar: React.FC<QuickDrawdownStrategyBarProps> =
                 </div>
               )}
             </div>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400">
-              Select a strategy to test sequence of withdrawals, tax bracket caps, and tax impact across your active plan
-            </p>
+            {!isStudioMode && (
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                Select a strategy to test sequence of withdrawals, tax bracket caps, and tax impact across your active plan
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -578,202 +581,76 @@ export const QuickDrawdownStrategyBar: React.FC<QuickDrawdownStrategyBarProps> =
 
       {/* Horizontal Strategy Buttons / Cards Grid */}
       {!isCouple ? (
-        <div className="space-y-1.5">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+        isStudioMode ? (
+          /* Studio Mode: 1 option per row, titles only */
+          <div className="space-y-1.5">
             {availableStrategyDefinitions.map((def) => {
               const isActive = activePrimaryStrategy === def.id;
-              const metrics = strategyMetrics[def.id];
 
               return (
-                <div
+                <button
                   key={def.id}
-                  role="button"
-                  tabIndex={0}
+                  type="button"
                   onClick={() => handleSelectStrategyForPerson('primary', def.id)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      handleSelectStrategyForPerson('primary', def.id);
-                    }
-                  }}
-                  className={`flex flex-col justify-between p-2.5 rounded-xl border text-left transition-all cursor-pointer relative group ${
+                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl border text-left text-xs font-bold transition-all cursor-pointer ${
                     isActive
-                      ? `${def.activeBorderColor} ${def.activeBg} ring-2 ring-indigo-500/30 shadow-xs`
-                      : `${def.borderColor} bg-slate-50/50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800`
+                      ? `${def.activeBorderColor} ${def.activeBg} ring-2 ring-indigo-500/30 text-indigo-950 dark:text-indigo-200 shadow-xs font-extrabold`
+                      : `${def.borderColor} bg-slate-50/60 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200`
                   }`}
                 >
-                  <div className="space-y-1.5">
-                    {/* Header Badge */}
-                    <div className="flex items-center justify-between gap-1">
-                      <span
-                        className={`text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded tracking-wider ${def.badgeBg} ${def.badgeText}`}
-                      >
-                        {def.tagline}
-                      </span>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setInfoModalData({
-                              def,
-                              person: 'primary',
-                              metrics,
-                            });
-                          }}
-                          className="p-1 rounded-md text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-300 hover:bg-slate-200/80 dark:hover:bg-slate-700/80 transition-colors"
-                          title="View detailed strategy info"
-                        >
-                          <Info className="w-3.5 h-3.5" />
-                        </button>
-                        {isActive && (
-                          <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse shrink-0" />
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Title */}
-                    <div className="font-extrabold text-xs text-slate-900 dark:text-white leading-tight">
-                      {def.title}
-                    </div>
-
-                    {!compact && (
-                      <p className="text-[10px] text-slate-500 dark:text-slate-400 line-clamp-2 leading-snug">
-                        {def.description}
-                      </p>
-                    )}
+                  <div className="flex items-center gap-2.5">
+                    <span
+                      className={`w-2.5 h-2.5 rounded-full shrink-0 transition-all ${
+                        isActive ? 'bg-indigo-600 dark:bg-indigo-400 ring-4 ring-indigo-500/20' : 'bg-slate-300 dark:bg-slate-600'
+                      }`}
+                    />
+                    <span>{def.shortLabel || def.title}</span>
                   </div>
-
-                  {/* Bottom Live Metrics Bar */}
-                  <div className="mt-2 pt-2 border-t border-slate-200/60 dark:border-slate-700/60 flex flex-col gap-1 text-[10px]">
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-500 dark:text-slate-400 font-semibold">Pot @ 90:</span>
-                      <span
-                        className={`font-black ${
-                          metrics?.hasShortfall
-                            ? 'text-rose-600 dark:text-rose-400'
-                            : 'text-emerald-600 dark:text-emerald-400'
-                        }`}
-                      >
-                        {formatShortCurrency(metrics?.finalPot || 0)}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-500 dark:text-slate-400 font-semibold">Est. Tax Paid:</span>
-                      <span className="font-bold text-slate-800 dark:text-slate-200">
-                        {metrics?.totalTaxPaid === 0
-                          ? '£0 (Tax-Free)'
-                          : formatShortCurrency(metrics?.totalTaxPaid || 0)}
-                      </span>
-                    </div>
-
-                    {metrics?.hasShortfall && (
-                      <div className="text-[9px] font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/60 px-1.5 py-0.5 rounded text-center">
-                        Shortfall Age {metrics.depletedAge}
-                      </div>
-                    )}
-                  </div>
-                </div>
+                  {isActive && (
+                    <span className="text-[10px] uppercase tracking-wider font-extrabold px-2 py-0.5 rounded bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300">
+                      Active
+                    </span>
+                  )}
+                </button>
               );
             })}
 
-            {/* 8th Strategy Card: Max Spend Solver */}
+            {/* Max Spend Solver in Studio Mode */}
             {onOpenMaximizedSpendModal && (() => {
               const isMaxSpendActive = Boolean(profile.maximizedSpendConfig?.enabled);
-              const maxIncome = profile.maximizedSpendConfig?.targetAnnualIncome || profile.targetRetirementIncomeAnnual || 0;
               return (
-                <div
-                  role="button"
-                  tabIndex={0}
+                <button
+                  type="button"
                   onClick={onOpenMaximizedSpendModal}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      onOpenMaximizedSpendModal();
-                    }
-                  }}
-                  className={`flex flex-col justify-between p-2.5 rounded-xl border text-left transition-all cursor-pointer relative group shadow-xs hover:shadow-md ${
+                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl border text-left text-xs font-bold transition-all cursor-pointer ${
                     isMaxSpendActive
-                      ? 'border-amber-500 dark:border-amber-400 bg-amber-500/20 dark:bg-amber-950/60 ring-2 ring-amber-500/80 shadow-amber-500/10'
-                      : 'border-amber-300 dark:border-amber-700/80 bg-gradient-to-b from-amber-500/10 via-amber-500/5 to-amber-500/20 dark:from-amber-950/40 dark:to-amber-900/30 hover:border-amber-400 dark:hover:border-amber-500 hover:shadow-amber-500/10'
+                      ? 'border-amber-500 dark:border-amber-400 bg-amber-500/20 dark:bg-amber-950/60 ring-2 ring-amber-500/80 text-amber-950 dark:text-amber-200'
+                      : 'border-amber-300 dark:border-amber-700/80 bg-amber-50/40 dark:bg-amber-950/20 hover:bg-amber-100/60 dark:hover:bg-amber-900/40 text-amber-900 dark:text-amber-300'
                   }`}
                 >
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between gap-1">
-                      <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded tracking-wider bg-amber-400 dark:bg-amber-500 text-slate-950">
-                        {isMaxSpendActive ? 'ACTIVE SOLVER' : 'Die With Zero'}
-                      </span>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setInfoModalData({
-                              def: MAX_SOLVER_DEF,
-                              person: 'primary',
-                            });
-                          }}
-                          className="p-1 rounded-md text-amber-800 dark:text-amber-200 hover:bg-amber-200/60 dark:hover:bg-amber-900/60 transition-colors"
-                          title="View Max Spend Solver details"
-                        >
-                          <Info className="w-3.5 h-3.5" />
-                        </button>
-                        {isMaxSpendActive ? (
-                          <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse shrink-0" />
-                        ) : (
-                          <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0 animate-pulse" />
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="font-extrabold text-xs text-amber-950 dark:text-amber-200 leading-tight flex items-center gap-1">
-                      <Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500 shrink-0" />
-                      <span>Max Spend Solver</span>
-                    </div>
-
-                    {!compact && (
-                      <p className="text-[10px] text-slate-600 dark:text-slate-300 line-clamp-2 leading-snug">
-                        {isMaxSpendActive
-                          ? `Max sustainable spend set to £${maxIncome.toLocaleString()}/yr.`
-                          : `Calculate max sustainable annual income to age ${profile.lifeExpectancyAge || 95} without running out.`}
-                      </p>
-                    )}
+                  <div className="flex items-center gap-2.5">
+                    <Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500 shrink-0" />
+                    <span>Max Spend Solver (Die With Zero)</span>
                   </div>
-
-                  <div className="mt-2 pt-2 border-t border-amber-200/80 dark:border-amber-800/80 flex flex-col gap-1 text-[10px]">
-                    <div className="w-full py-1 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 text-slate-950 font-black rounded-lg text-[10px] text-center shadow-xs">
-                      {isMaxSpendActive ? `Active: £${maxIncome.toLocaleString()}/yr` : 'Run Max Solver →'}
-                    </div>
-                  </div>
-                </div>
+                  {isMaxSpendActive && (
+                    <span className="text-[10px] uppercase tracking-wider font-extrabold px-2 py-0.5 rounded bg-amber-200 dark:bg-amber-900 text-amber-900 dark:text-amber-200">
+                      Active
+                    </span>
+                  )}
+                </button>
               );
             })()}
           </div>
-        </div>
-      ) : (
-        /* Couple Mode: Dedicated Row per Person */
-        <div className="space-y-4">
-          {/* Primary Person Row */}
-          <div className="space-y-1.5 p-3 rounded-2xl bg-indigo-50/40 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/50">
-            <div className="flex items-center justify-between px-1">
-              <div className="flex items-center gap-1.5 text-xs font-black text-indigo-900 dark:text-indigo-200 uppercase tracking-wider">
-                <User className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-                <span>{profile.name || 'Primary'} Strategy</span>
-              </div>
-              <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-900/60 px-2 py-0.5 rounded-full">
-                Active: {STRATEGY_DEFINITIONS.find((s) => s.id === activePrimaryStrategy)?.title}
-              </span>
-            </div>
-
+        ) : (
+          <div className="space-y-1.5">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
               {availableStrategyDefinitions.map((def) => {
                 const isActive = activePrimaryStrategy === def.id;
-                const metrics = primaryStrategyMetrics[def.id];
+                const metrics = strategyMetrics[def.id];
 
                 return (
                   <div
-                    key={`primary-${def.id}`}
+                    key={def.id}
                     role="button"
                     tabIndex={0}
                     onClick={() => handleSelectStrategyForPerson('primary', def.id)}
@@ -785,14 +662,15 @@ export const QuickDrawdownStrategyBar: React.FC<QuickDrawdownStrategyBarProps> =
                     }}
                     className={`flex flex-col justify-between p-2.5 rounded-xl border text-left transition-all cursor-pointer relative group ${
                       isActive
-                        ? `${def.activeBorderColor} ${def.activeBg} ring-2 ring-indigo-500/40 shadow-xs`
-                        : `${def.borderColor} bg-white dark:bg-slate-800/70 hover:bg-indigo-50/60 dark:hover:bg-slate-800`
+                        ? `${def.activeBorderColor} ${def.activeBg} ring-2 ring-indigo-500/30 shadow-xs`
+                        : `${def.borderColor} bg-slate-50/50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800`
                     }`}
                   >
-                    <div className="space-y-1">
+                    <div className="space-y-1.5">
+                      {/* Header Badge */}
                       <div className="flex items-center justify-between gap-1">
                         <span
-                          className={`text-[8px] font-extrabold uppercase px-1.5 py-0.5 rounded tracking-wider ${def.badgeBg} ${def.badgeText}`}
+                          className={`text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded tracking-wider ${def.badgeBg} ${def.badgeText}`}
                         >
                           {def.tagline}
                         </span>
@@ -810,19 +688,28 @@ export const QuickDrawdownStrategyBar: React.FC<QuickDrawdownStrategyBarProps> =
                             className="p-1 rounded-md text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-300 hover:bg-slate-200/80 dark:hover:bg-slate-700/80 transition-colors"
                             title="View detailed strategy info"
                           >
-                            <Info className="w-3 h-3" />
+                            <Info className="w-3.5 h-3.5" />
                           </button>
                           {isActive && (
                             <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse shrink-0" />
                           )}
                         </div>
                       </div>
+
+                      {/* Title */}
                       <div className="font-extrabold text-xs text-slate-900 dark:text-white leading-tight">
                         {def.title}
                       </div>
+
+                      {!compact && (
+                        <p className="text-[10px] text-slate-500 dark:text-slate-400 line-clamp-2 leading-snug">
+                          {def.description}
+                        </p>
+                      )}
                     </div>
 
-                    <div className="mt-2 pt-2 border-t border-slate-200/60 dark:border-slate-700/60 flex flex-col gap-0.5 text-[9px]">
+                    {/* Bottom Live Metrics Bar */}
+                    <div className="mt-2 pt-2 border-t border-slate-200/60 dark:border-slate-700/60 flex flex-col gap-1 text-[10px]">
                       <div className="flex items-center justify-between">
                         <span className="text-slate-500 dark:text-slate-400 font-semibold">Pot @ 90:</span>
                         <span
@@ -835,12 +722,21 @@ export const QuickDrawdownStrategyBar: React.FC<QuickDrawdownStrategyBarProps> =
                           {formatShortCurrency(metrics?.finalPot || 0)}
                         </span>
                       </div>
+
                       <div className="flex items-center justify-between">
-                        <span className="text-slate-500 dark:text-slate-400 font-semibold">Est. Tax:</span>
+                        <span className="text-slate-500 dark:text-slate-400 font-semibold">Est. Tax Paid:</span>
                         <span className="font-bold text-slate-800 dark:text-slate-200">
-                          {metrics?.totalTaxPaid === 0 ? '£0' : formatShortCurrency(metrics?.totalTaxPaid || 0)}
+                          {metrics?.totalTaxPaid === 0
+                            ? '£0 (Tax-Free)'
+                            : formatShortCurrency(metrics?.totalTaxPaid || 0)}
                         </span>
                       </div>
+
+                      {metrics?.hasShortfall && (
+                        <div className="text-[9px] font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/60 px-1.5 py-0.5 rounded text-center">
+                          Shortfall Age {metrics.depletedAge}
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
@@ -848,9 +744,7 @@ export const QuickDrawdownStrategyBar: React.FC<QuickDrawdownStrategyBarProps> =
 
               {/* 8th Strategy Card: Max Spend Solver */}
               {onOpenMaximizedSpendModal && (() => {
-                const maxScope = profile.maximizedSpendConfig?.coupleScope || 'couple';
-                const isMaxSpendActive = Boolean(profile.maximizedSpendConfig?.enabled) &&
-                  (maxScope === 'couple' || maxScope === 'primary');
+                const isMaxSpendActive = Boolean(profile.maximizedSpendConfig?.enabled);
                 const maxIncome = profile.maximizedSpendConfig?.targetAnnualIncome || profile.targetRetirementIncomeAnnual || 0;
                 return (
                   <div
@@ -869,10 +763,10 @@ export const QuickDrawdownStrategyBar: React.FC<QuickDrawdownStrategyBarProps> =
                         : 'border-amber-300 dark:border-amber-700/80 bg-gradient-to-b from-amber-500/10 via-amber-500/5 to-amber-500/20 dark:from-amber-950/40 dark:to-amber-900/30 hover:border-amber-400 dark:hover:border-amber-500 hover:shadow-amber-500/10'
                     }`}
                   >
-                    <div className="space-y-1">
+                    <div className="space-y-1.5">
                       <div className="flex items-center justify-between gap-1">
-                        <span className="text-[8px] font-extrabold uppercase px-1.5 py-0.5 rounded tracking-wider bg-amber-400 dark:bg-amber-500 text-slate-950">
-                          {isMaxSpendActive ? 'ACTIVE' : 'Die With Zero'}
+                        <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded tracking-wider bg-amber-400 dark:bg-amber-500 text-slate-950">
+                          {isMaxSpendActive ? 'ACTIVE SOLVER' : 'Die With Zero'}
                         </span>
                         <div className="flex items-center gap-1 shrink-0">
                           <button
@@ -887,23 +781,33 @@ export const QuickDrawdownStrategyBar: React.FC<QuickDrawdownStrategyBarProps> =
                             className="p-1 rounded-md text-amber-800 dark:text-amber-200 hover:bg-amber-200/60 dark:hover:bg-amber-900/60 transition-colors"
                             title="View Max Spend Solver details"
                           >
-                            <Info className="w-3 h-3" />
+                            <Info className="w-3.5 h-3.5" />
                           </button>
                           {isMaxSpendActive ? (
-                            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
+                            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse shrink-0" />
                           ) : (
-                            <Sparkles className="w-3 h-3 text-amber-500 shrink-0 animate-pulse" />
+                            <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0 animate-pulse" />
                           )}
                         </div>
                       </div>
+
                       <div className="font-extrabold text-xs text-amber-950 dark:text-amber-200 leading-tight flex items-center gap-1">
-                        <Zap className="w-3 h-3 text-amber-500 fill-amber-500 shrink-0" />
-                        <span>Max Solver</span>
+                        <Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500 shrink-0" />
+                        <span>Max Spend Solver</span>
                       </div>
+
+                      {!compact && (
+                        <p className="text-[10px] text-slate-600 dark:text-slate-300 line-clamp-2 leading-snug">
+                          {isMaxSpendActive
+                            ? `Max sustainable spend set to £${maxIncome.toLocaleString()}/yr.`
+                            : `Calculate max sustainable annual income to age ${profile.lifeExpectancyAge || 95} without running out.`}
+                        </p>
+                      )}
                     </div>
-                    <div className="mt-2 pt-2 border-t border-amber-200/80 dark:border-amber-800/80 text-[9px]">
-                      <div className="w-full py-0.5 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 text-slate-950 font-black rounded-lg text-center">
-                        {isMaxSpendActive ? `£${maxIncome.toLocaleString()}/yr` : 'Run Solver →'}
+
+                    <div className="mt-2 pt-2 border-t border-amber-200/80 dark:border-amber-800/80 flex flex-col gap-1 text-[10px]">
+                      <div className="w-full py-1 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 text-slate-950 font-black rounded-lg text-[10px] text-center shadow-xs">
+                        {isMaxSpendActive ? `Active: £${maxIncome.toLocaleString()}/yr` : 'Run Max Solver →'}
                       </div>
                     </div>
                   </div>
@@ -911,163 +815,450 @@ export const QuickDrawdownStrategyBar: React.FC<QuickDrawdownStrategyBarProps> =
               })()}
             </div>
           </div>
+        )
+      ) : (
+        /* Couple Mode: Dedicated Row per Person */
+        <div className="space-y-4">
+          {/* Primary Person Row */}
+          <div className="space-y-1.5 p-3 rounded-2xl bg-indigo-50/40 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/50">
+            <div className="flex items-center justify-between px-1 mb-1">
+              <div className="flex items-center gap-1.5 text-xs font-black text-indigo-900 dark:text-indigo-200 uppercase tracking-wider">
+                <User className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                <span>{profile.name || 'Primary'} Strategy</span>
+              </div>
+              <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-900/60 px-2 py-0.5 rounded-full">
+                Active: {STRATEGY_DEFINITIONS.find((s) => s.id === activePrimaryStrategy)?.shortLabel || STRATEGY_DEFINITIONS.find((s) => s.id === activePrimaryStrategy)?.title}
+              </span>
+            </div>
+
+            {isStudioMode ? (
+              <div className="space-y-1.5">
+                {availableStrategyDefinitions.map((def) => {
+                  const isActive = activePrimaryStrategy === def.id;
+
+                  return (
+                    <button
+                      key={`primary-${def.id}`}
+                      type="button"
+                      onClick={() => handleSelectStrategyForPerson('primary', def.id)}
+                      className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl border text-left text-xs font-bold transition-all cursor-pointer ${
+                        isActive
+                          ? `${def.activeBorderColor} ${def.activeBg} ring-2 ring-indigo-500/40 text-indigo-950 dark:text-indigo-200 shadow-xs font-extrabold`
+                          : `${def.borderColor} bg-white dark:bg-slate-800/70 hover:bg-indigo-50/60 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200`
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <span
+                          className={`w-2.5 h-2.5 rounded-full shrink-0 transition-all ${
+                            isActive ? 'bg-indigo-600 dark:bg-indigo-400 ring-4 ring-indigo-500/20' : 'bg-slate-300 dark:bg-slate-600'
+                          }`}
+                        />
+                        <span>{def.shortLabel || def.title}</span>
+                      </div>
+                      {isActive && (
+                        <span className="text-[10px] uppercase tracking-wider font-extrabold px-2 py-0.5 rounded bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300">
+                          Active
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+
+                {/* Max Spend Solver for Primary */}
+                {onOpenMaximizedSpendModal && (() => {
+                  const maxScope = profile.maximizedSpendConfig?.coupleScope || 'couple';
+                  const isMaxSpendActive = Boolean(profile.maximizedSpendConfig?.enabled) &&
+                    (maxScope === 'couple' || maxScope === 'primary');
+                  return (
+                    <button
+                      type="button"
+                      onClick={onOpenMaximizedSpendModal}
+                      className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl border text-left text-xs font-bold transition-all cursor-pointer ${
+                        isMaxSpendActive
+                          ? 'border-amber-500 dark:border-amber-400 bg-amber-500/20 dark:bg-amber-950/60 ring-2 ring-amber-500/80 text-amber-950 dark:text-amber-200'
+                          : 'border-amber-300 dark:border-amber-700/80 bg-white dark:bg-slate-800/70 hover:bg-amber-50/60 dark:hover:bg-amber-900/30 text-amber-900 dark:text-amber-300'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500 shrink-0" />
+                        <span>Max Spend Solver (Die With Zero)</span>
+                      </div>
+                      {isMaxSpendActive && (
+                        <span className="text-[10px] uppercase tracking-wider font-extrabold px-2 py-0.5 rounded bg-amber-200 dark:bg-amber-900 text-amber-900 dark:text-amber-200">
+                          Active
+                        </span>
+                      )}
+                    </button>
+                  );
+                })()}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+                {availableStrategyDefinitions.map((def) => {
+                  const isActive = activePrimaryStrategy === def.id;
+                  const metrics = primaryStrategyMetrics[def.id];
+
+                  return (
+                    <div
+                      key={`primary-${def.id}`}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => handleSelectStrategyForPerson('primary', def.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          handleSelectStrategyForPerson('primary', def.id);
+                        }
+                      }}
+                      className={`flex flex-col justify-between p-2.5 rounded-xl border text-left transition-all cursor-pointer relative group ${
+                        isActive
+                          ? `${def.activeBorderColor} ${def.activeBg} ring-2 ring-indigo-500/40 shadow-xs`
+                          : `${def.borderColor} bg-white dark:bg-slate-800/70 hover:bg-indigo-50/60 dark:hover:bg-slate-800`
+                      }`}
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between gap-1">
+                          <span
+                            className={`text-[8px] font-extrabold uppercase px-1.5 py-0.5 rounded tracking-wider ${def.badgeBg} ${def.badgeText}`}
+                          >
+                            {def.tagline}
+                          </span>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setInfoModalData({
+                                  def,
+                                  person: 'primary',
+                                  metrics,
+                                });
+                              }}
+                              className="p-1 rounded-md text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-300 hover:bg-slate-200/80 dark:hover:bg-slate-700/80 transition-colors"
+                              title="View detailed strategy info"
+                            >
+                              <Info className="w-3 h-3" />
+                            </button>
+                            {isActive && (
+                              <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse shrink-0" />
+                            )}
+                          </div>
+                        </div>
+                        <div className="font-extrabold text-xs text-slate-900 dark:text-white leading-tight">
+                          {def.title}
+                        </div>
+                      </div>
+
+                      <div className="mt-2 pt-2 border-t border-slate-200/60 dark:border-slate-700/60 flex flex-col gap-0.5 text-[9px]">
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-500 dark:text-slate-400 font-semibold">Pot @ 90:</span>
+                          <span
+                            className={`font-black ${
+                              metrics?.hasShortfall
+                                ? 'text-rose-600 dark:text-rose-400'
+                                : 'text-emerald-600 dark:text-emerald-400'
+                            }`}
+                          >
+                            {formatShortCurrency(metrics?.finalPot || 0)}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-500 dark:text-slate-400 font-semibold">Est. Tax:</span>
+                          <span className="font-bold text-slate-800 dark:text-slate-200">
+                            {metrics?.totalTaxPaid === 0 ? '£0' : formatShortCurrency(metrics?.totalTaxPaid || 0)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* 8th Strategy Card: Max Spend Solver */}
+                {onOpenMaximizedSpendModal && (() => {
+                  const maxScope = profile.maximizedSpendConfig?.coupleScope || 'couple';
+                  const isMaxSpendActive = Boolean(profile.maximizedSpendConfig?.enabled) &&
+                    (maxScope === 'couple' || maxScope === 'primary');
+                  const maxIncome = profile.maximizedSpendConfig?.targetAnnualIncome || profile.targetRetirementIncomeAnnual || 0;
+                  return (
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={onOpenMaximizedSpendModal}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          onOpenMaximizedSpendModal();
+                        }
+                      }}
+                      className={`flex flex-col justify-between p-2.5 rounded-xl border text-left transition-all cursor-pointer relative group shadow-xs hover:shadow-md ${
+                        isMaxSpendActive
+                          ? 'border-amber-500 dark:border-amber-400 bg-amber-500/20 dark:bg-amber-950/60 ring-2 ring-amber-500/80 shadow-amber-500/10'
+                          : 'border-amber-300 dark:border-amber-700/80 bg-gradient-to-b from-amber-500/10 via-amber-500/5 to-amber-500/20 dark:from-amber-950/40 dark:to-amber-900/30 hover:border-amber-400 dark:hover:border-amber-500 hover:shadow-amber-500/10'
+                      }`}
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="text-[8px] font-extrabold uppercase px-1.5 py-0.5 rounded tracking-wider bg-amber-400 dark:bg-amber-500 text-slate-950">
+                            {isMaxSpendActive ? 'ACTIVE' : 'Die With Zero'}
+                          </span>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setInfoModalData({
+                                  def: MAX_SOLVER_DEF,
+                                  person: 'primary',
+                                });
+                              }}
+                              className="p-1 rounded-md text-amber-800 dark:text-amber-200 hover:bg-amber-200/60 dark:hover:bg-amber-900/60 transition-colors"
+                              title="View Max Spend Solver details"
+                            >
+                              <Info className="w-3 h-3" />
+                            </button>
+                            {isMaxSpendActive ? (
+                              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
+                            ) : (
+                              <Sparkles className="w-3 h-3 text-amber-500 shrink-0 animate-pulse" />
+                            )}
+                          </div>
+                        </div>
+                        <div className="font-extrabold text-xs text-amber-950 dark:text-amber-200 leading-tight flex items-center gap-1">
+                          <Zap className="w-3 h-3 text-amber-500 fill-amber-500 shrink-0" />
+                          <span>Max Solver</span>
+                        </div>
+                      </div>
+                      <div className="mt-2 pt-2 border-t border-amber-200/80 dark:border-amber-800/80 text-[9px]">
+                        <div className="w-full py-0.5 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 text-slate-950 font-black rounded-lg text-center">
+                          {isMaxSpendActive ? `£${maxIncome.toLocaleString()}/yr` : 'Run Solver →'}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+          </div>
 
           {/* Partner Person Row */}
           <div className="space-y-1.5 p-3 rounded-2xl bg-rose-50/40 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/50">
-            <div className="flex items-center justify-between px-1">
+            <div className="flex items-center justify-between px-1 mb-1">
               <div className="flex items-center gap-1.5 text-xs font-black text-rose-900 dark:text-rose-200 uppercase tracking-wider">
                 <Heart className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 fill-current" />
                 <span>{profile.partnerName || 'Partner'} Strategy</span>
               </div>
               <span className="text-[10px] font-bold text-rose-600 dark:text-rose-400 bg-rose-100 dark:bg-rose-900/60 px-2 py-0.5 rounded-full">
-                Active: {STRATEGY_DEFINITIONS.find((s) => s.id === activePartnerStrategy)?.title}
+                Active: {STRATEGY_DEFINITIONS.find((s) => s.id === activePartnerStrategy)?.shortLabel || STRATEGY_DEFINITIONS.find((s) => s.id === activePartnerStrategy)?.title}
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
-              {availableStrategyDefinitions.map((def) => {
-                const isActive = activePartnerStrategy === def.id;
-                const metrics = partnerStrategyMetrics[def.id];
+            {isStudioMode ? (
+              <div className="space-y-1.5">
+                {availableStrategyDefinitions.map((def) => {
+                  const isActive = activePartnerStrategy === def.id;
 
-                return (
-                  <div
-                    key={`partner-${def.id}`}
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => handleSelectStrategyForPerson('partner', def.id)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        handleSelectStrategyForPerson('partner', def.id);
-                      }
-                    }}
-                    className={`flex flex-col justify-between p-2.5 rounded-xl border text-left transition-all cursor-pointer relative group ${
-                      isActive
-                        ? `${def.activeBorderColor} ${def.activeBg} ring-2 ring-rose-500/40 shadow-xs`
-                        : `${def.borderColor} bg-white dark:bg-slate-800/70 hover:bg-rose-50/60 dark:hover:bg-slate-800`
-                    }`}
-                  >
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between gap-1">
+                  return (
+                    <button
+                      key={`partner-${def.id}`}
+                      type="button"
+                      onClick={() => handleSelectStrategyForPerson('partner', def.id)}
+                      className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl border text-left text-xs font-bold transition-all cursor-pointer ${
+                        isActive
+                          ? `${def.activeBorderColor} ${def.activeBg} ring-2 ring-rose-500/40 text-rose-950 dark:text-rose-200 shadow-xs font-extrabold`
+                          : `${def.borderColor} bg-white dark:bg-slate-800/70 hover:bg-rose-50/60 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200`
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
                         <span
-                          className={`text-[8px] font-extrabold uppercase px-1.5 py-0.5 rounded tracking-wider ${def.badgeBg} ${def.badgeText}`}
-                        >
-                          {def.tagline}
-                        </span>
-                        <div className="flex items-center gap-1 shrink-0">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setInfoModalData({
-                                def,
-                                person: 'partner',
-                                metrics,
-                              });
-                            }}
-                            className="p-1 rounded-md text-slate-400 hover:text-rose-600 dark:hover:text-rose-300 hover:bg-slate-200/80 dark:hover:bg-slate-700/80 transition-colors"
-                            title="View detailed strategy info"
-                          >
-                            <Info className="w-3 h-3" />
-                          </button>
-                          {isActive && (
-                            <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse shrink-0" />
-                          )}
-                        </div>
-                      </div>
-                      <div className="font-extrabold text-xs text-slate-900 dark:text-white leading-tight">
-                        {def.title}
-                      </div>
-                    </div>
-
-                    <div className="mt-2 pt-2 border-t border-slate-200/60 dark:border-slate-700/60 flex flex-col gap-0.5 text-[9px]">
-                      <div className="flex items-center justify-between">
-                        <span className="text-slate-500 dark:text-slate-400 font-semibold">Pot @ 90:</span>
-                        <span
-                          className={`font-black ${
-                            metrics?.hasShortfall
-                              ? 'text-rose-600 dark:text-rose-400'
-                              : 'text-emerald-600 dark:text-emerald-400'
+                          className={`w-2.5 h-2.5 rounded-full shrink-0 transition-all ${
+                            isActive ? 'bg-rose-600 dark:bg-rose-400 ring-4 ring-rose-500/20' : 'bg-slate-300 dark:bg-slate-600'
                           }`}
-                        >
-                          {formatShortCurrency(metrics?.finalPot || 0)}
-                        </span>
+                        />
+                        <span>{def.shortLabel || def.title}</span>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-slate-500 dark:text-slate-400 font-semibold">Est. Tax:</span>
-                        <span className="font-bold text-slate-800 dark:text-slate-200">
-                          {metrics?.totalTaxPaid === 0 ? '£0' : formatShortCurrency(metrics?.totalTaxPaid || 0)}
+                      {isActive && (
+                        <span className="text-[10px] uppercase tracking-wider font-extrabold px-2 py-0.5 rounded bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300">
+                          Active
                         </span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+                      )}
+                    </button>
+                  );
+                })}
 
-              {/* 8th Strategy Card: Max Spend Solver */}
-              {onOpenMaximizedSpendModal && (() => {
-                const maxScope = profile.maximizedSpendConfig?.coupleScope || 'couple';
-                const isMaxSpendActive = Boolean(profile.maximizedSpendConfig?.enabled) &&
-                  (maxScope === 'couple' || maxScope === 'partner');
-                const maxIncome = profile.maximizedSpendConfig?.targetAnnualIncome || profile.targetRetirementIncomeAnnual || 0;
-                return (
-                  <div
-                    role="button"
-                    tabIndex={0}
-                    onClick={onOpenMaximizedSpendModal}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        onOpenMaximizedSpendModal();
-                      }
-                    }}
-                    className={`flex flex-col justify-between p-2.5 rounded-xl border text-left transition-all cursor-pointer relative group shadow-xs hover:shadow-md ${
-                      isMaxSpendActive
-                        ? 'border-amber-500 dark:border-amber-400 bg-amber-500/20 dark:bg-amber-950/60 ring-2 ring-amber-500/80 shadow-amber-500/10'
-                        : 'border-amber-300 dark:border-amber-700/80 bg-gradient-to-b from-amber-500/10 via-amber-500/5 to-amber-500/20 dark:from-amber-950/40 dark:to-amber-900/30 hover:border-amber-400 dark:hover:border-amber-500 hover:shadow-amber-500/10'
-                    }`}
-                  >
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between gap-1">
-                        <span className="text-[8px] font-extrabold uppercase px-1.5 py-0.5 rounded tracking-wider bg-amber-400 dark:bg-amber-500 text-slate-950">
-                          {isMaxSpendActive ? 'ACTIVE' : 'Die With Zero'}
+                {/* Max Spend Solver for Partner */}
+                {onOpenMaximizedSpendModal && (() => {
+                  const maxScope = profile.maximizedSpendConfig?.coupleScope || 'couple';
+                  const isMaxSpendActive = Boolean(profile.maximizedSpendConfig?.enabled) &&
+                    (maxScope === 'couple' || maxScope === 'partner');
+                  return (
+                    <button
+                      type="button"
+                      onClick={onOpenMaximizedSpendModal}
+                      className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl border text-left text-xs font-bold transition-all cursor-pointer ${
+                        isMaxSpendActive
+                          ? 'border-amber-500 dark:border-amber-400 bg-amber-500/20 dark:bg-amber-950/60 ring-2 ring-amber-500/80 text-amber-950 dark:text-amber-200'
+                          : 'border-amber-300 dark:border-amber-700/80 bg-white dark:bg-slate-800/70 hover:bg-amber-50/60 dark:hover:bg-amber-900/30 text-amber-900 dark:text-amber-300'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500 shrink-0" />
+                        <span>Max Spend Solver (Die With Zero)</span>
+                      </div>
+                      {isMaxSpendActive && (
+                        <span className="text-[10px] uppercase tracking-wider font-extrabold px-2 py-0.5 rounded bg-amber-200 dark:bg-amber-900 text-amber-900 dark:text-amber-200">
+                          Active
                         </span>
-                        <div className="flex items-center gap-1 shrink-0">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setInfoModalData({
-                                def: MAX_SOLVER_DEF,
-                                person: 'partner',
-                              });
-                            }}
-                            className="p-1 rounded-md text-amber-800 dark:text-amber-200 hover:bg-amber-200/60 dark:hover:bg-amber-900/60 transition-colors"
-                            title="View Max Spend Solver details"
+                      )}
+                    </button>
+                  );
+                })()}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+                {availableStrategyDefinitions.map((def) => {
+                  const isActive = activePartnerStrategy === def.id;
+                  const metrics = partnerStrategyMetrics[def.id];
+
+                  return (
+                    <div
+                      key={`partner-${def.id}`}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => handleSelectStrategyForPerson('partner', def.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          handleSelectStrategyForPerson('partner', def.id);
+                        }
+                      }}
+                      className={`flex flex-col justify-between p-2.5 rounded-xl border text-left transition-all cursor-pointer relative group ${
+                        isActive
+                          ? `${def.activeBorderColor} ${def.activeBg} ring-2 ring-rose-500/40 shadow-xs`
+                          : `${def.borderColor} bg-white dark:bg-slate-800/70 hover:bg-rose-50/60 dark:hover:bg-slate-800`
+                      }`}
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between gap-1">
+                          <span
+                            className={`text-[8px] font-extrabold uppercase px-1.5 py-0.5 rounded tracking-wider ${def.badgeBg} ${def.badgeText}`}
                           >
-                            <Info className="w-3 h-3" />
-                          </button>
-                          {isMaxSpendActive ? (
-                            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
-                          ) : (
-                            <Sparkles className="w-3 h-3 text-amber-500 shrink-0 animate-pulse" />
-                          )}
+                            {def.tagline}
+                          </span>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setInfoModalData({
+                                  def,
+                                  person: 'partner',
+                                  metrics,
+                                });
+                              }}
+                              className="p-1 rounded-md text-slate-400 hover:text-rose-600 dark:hover:text-rose-300 hover:bg-slate-200/80 dark:hover:bg-slate-700/80 transition-colors"
+                              title="View detailed strategy info"
+                            >
+                              <Info className="w-3 h-3" />
+                            </button>
+                            {isActive && (
+                              <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse shrink-0" />
+                            )}
+                          </div>
+                        </div>
+                        <div className="font-extrabold text-xs text-slate-900 dark:text-white leading-tight">
+                          {def.title}
                         </div>
                       </div>
-                      <div className="font-extrabold text-xs text-amber-950 dark:text-amber-200 leading-tight flex items-center gap-1">
-                        <Zap className="w-3 h-3 text-amber-500 fill-amber-500 shrink-0" />
-                        <span>Max Solver</span>
+
+                      <div className="mt-2 pt-2 border-t border-slate-200/60 dark:border-slate-700/60 flex flex-col gap-0.5 text-[9px]">
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-500 dark:text-slate-400 font-semibold">Pot @ 90:</span>
+                          <span
+                            className={`font-black ${
+                              metrics?.hasShortfall
+                                ? 'text-rose-600 dark:text-rose-400'
+                                : 'text-emerald-600 dark:text-emerald-400'
+                            }`}
+                          >
+                            {formatShortCurrency(metrics?.finalPot || 0)}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-500 dark:text-slate-400 font-semibold">Est. Tax:</span>
+                          <span className="font-bold text-slate-800 dark:text-slate-200">
+                            {metrics?.totalTaxPaid === 0 ? '£0' : formatShortCurrency(metrics?.totalTaxPaid || 0)}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                    <div className="mt-2 pt-2 border-t border-amber-200/80 dark:border-amber-800/80 text-[9px]">
-                      <div className="w-full py-0.5 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 text-slate-950 font-black rounded-lg text-center">
-                        {isMaxSpendActive ? `£${maxIncome.toLocaleString()}/yr` : 'Run Solver →'}
+                  );
+                })}
+
+                {/* 8th Strategy Card: Max Spend Solver */}
+                {onOpenMaximizedSpendModal && (() => {
+                  const maxScope = profile.maximizedSpendConfig?.coupleScope || 'couple';
+                  const isMaxSpendActive = Boolean(profile.maximizedSpendConfig?.enabled) &&
+                    (maxScope === 'couple' || maxScope === 'partner');
+                  const maxIncome = profile.maximizedSpendConfig?.targetAnnualIncome || profile.targetRetirementIncomeAnnual || 0;
+                  return (
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={onOpenMaximizedSpendModal}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          onOpenMaximizedSpendModal();
+                        }
+                      }}
+                      className={`flex flex-col justify-between p-2.5 rounded-xl border text-left transition-all cursor-pointer relative group shadow-xs hover:shadow-md ${
+                        isMaxSpendActive
+                          ? 'border-amber-500 dark:border-amber-400 bg-amber-500/20 dark:bg-amber-950/60 ring-2 ring-amber-500/80 shadow-amber-500/10'
+                          : 'border-amber-300 dark:border-amber-700/80 bg-gradient-to-b from-amber-500/10 via-amber-500/5 to-amber-500/20 dark:from-amber-950/40 dark:to-amber-900/30 hover:border-amber-400 dark:hover:border-amber-500 hover:shadow-amber-500/10'
+                      }`}
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="text-[8px] font-extrabold uppercase px-1.5 py-0.5 rounded tracking-wider bg-amber-400 dark:bg-amber-500 text-slate-950">
+                            {isMaxSpendActive ? 'ACTIVE' : 'Die With Zero'}
+                          </span>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setInfoModalData({
+                                  def: MAX_SOLVER_DEF,
+                                  person: 'partner',
+                                });
+                              }}
+                              className="p-1 rounded-md text-amber-800 dark:text-amber-200 hover:bg-amber-200/60 dark:hover:bg-amber-900/60 transition-colors"
+                              title="View Max Spend Solver details"
+                            >
+                              <Info className="w-3 h-3" />
+                            </button>
+                            {isMaxSpendActive ? (
+                              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
+                            ) : (
+                              <Sparkles className="w-3 h-3 text-amber-500 shrink-0 animate-pulse" />
+                            )}
+                          </div>
+                        </div>
+                        <div className="font-extrabold text-xs text-amber-950 dark:text-amber-200 leading-tight flex items-center gap-1">
+                          <Zap className="w-3 h-3 text-amber-500 fill-amber-500 shrink-0" />
+                          <span>Max Solver</span>
+                        </div>
+                      </div>
+                      <div className="mt-2 pt-2 border-t border-amber-200/80 dark:border-amber-800/80 text-[9px]">
+                        <div className="w-full py-0.5 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 text-slate-950 font-black rounded-lg text-center">
+                          {isMaxSpendActive ? `£${maxIncome.toLocaleString()}/yr` : 'Run Solver →'}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })()}
-            </div>
+                  );
+                })()}
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -5,7 +5,7 @@ import { DEFAULT_PROFILE, DEFAULT_POTS, DEFAULT_PARTNER_POTS, PRESET_SCENARIOS, 
 import { NewPlanModal } from './components/NewPlanModal';
 import { JsonImportModal } from './components/JsonImportModal';
 import { DeletePlanModal } from './components/DeletePlanModal';
-import { ManagePlansModal } from './components/ManagePlansModal';
+import { ManagePlansModal, ManagePlansTab } from './components/ManagePlansModal';
 import { ResetPresetsModal } from './components/ResetPresetsModal';
 import { calculateUKTax } from './utils/ukTaxEngine';
 import { generateProjections } from './utils/projectionEngine';
@@ -13,9 +13,6 @@ import { solveMaximizedSpend, disableMaximizedSpend } from './utils/maximizedSpe
 import { Header } from './components/Header';
 import { ProfileInputs } from './components/ProfileInputs';
 import { InvestmentContributionManager } from './components/InvestmentContributionManager';
-import { PotTransferManager } from './components/PotTransferManager';
-import { DbPensionManager } from './components/DbPensionManager';
-import { RightSizingCard } from './components/RightSizingCard';
 import { CouplePlanningCard } from './components/CouplePlanningCard';
 import { PotManager } from './components/PotManager';
 import { StatePensionCard } from './components/StatePensionCard';
@@ -92,6 +89,10 @@ import { Sparkles, ArrowUpRight, RotateCcw, Pencil, X, Check, LayoutDashboard, W
 import { SidebarNav } from './components/SidebarNav';
 import { PlanErrorBoundary } from './components/PlanErrorBoundary';
 import { DynamicOptimiserCard } from './components/DynamicOptimiserCard';
+import { DocumentationModal, DocSubTabType } from './components/DocumentationModal';
+import { MortgageDebtModal } from './components/MortgageDebtModal';
+import { SummaryModal, SummaryModalSubTab } from './components/SummaryModal';
+import { CompareModal } from './components/CompareModal';
 
 const STORAGE_KEY = 'uk_retirement_planner_scenarios_v2';
 const THEME_STORAGE_KEY = 'retireready_theme_v1';
@@ -245,15 +246,20 @@ function App() {
   }, [scenarios, activeScenarioId]);
 
   const [activeTab, setActiveTab] = useState<DashboardTab>('inputs');
-  const [studioMode, setStudioMode] = useState(false);
-  const [docSubTab, setDocSubTab] = useState<'user_guide' | 'features_guide' | 'cash_buffer_guide' | 'lifestyling_guide' | 'state_pension_ni_guide' | 'ufpls_small_pots_guide' | 'phased_retirement_guide' | 'tapered_allowance_guide' | 'expat_qrops_guide' | 'living_standards' | 'healthy_life' | 'tax_rules' | 'mortgage_guide' | 'risk_guide' | 'iht_guide' | 'floor_guide' | 'couple_guide' | 'benchmark_guide' | 'sipp_guide' | 'wrapper_guide' | 'self_employed_guide' | 'db_guide' | 'dynamic_guide' | 'care_guide' | 'fire_bridge_guide' | 'cgt_harvesting_guide' | 'recycling_guide' | 'four_percent_guide' | 'spending_smile_guide' | 'saye_baye_guide'>('user_guide');
+  const [docSubTab, setDocSubTab] = useState<DocSubTabType>('user_guide');
+  const [isDocPopoutOpen, setIsDocPopoutOpen] = useState(false);
+  const [isMortgagePopoutOpen, setIsMortgagePopoutOpen] = useState(false);
+  const [isSummaryPopoutOpen, setIsSummaryPopoutOpen] = useState(false);
+  const [isComparePopoutOpen, setIsComparePopoutOpen] = useState(false);
+  const [summaryModalSubTab, setSummaryModalSubTab] = useState<SummaryModalSubTab>('all');
   const [appMode, setAppMode] = useState<AppMode>(() => {
     try {
       const saved = localStorage.getItem('retireready_mode_v1');
-      if (saved === 'basic' || saved === 'advanced') return saved;
+      if (saved === 'basic' || saved === 'advanced' || saved === 'studio') return saved;
     } catch (e) {}
     return 'basic';
   });
+  const studioMode = appMode === 'studio';
 
   useEffect(() => {
     try {
@@ -293,17 +299,24 @@ function App() {
   const [isNewPlanModalOpen, setIsNewPlanModalOpen] = useState(false);
 
   const handleOpenGuide = () => {
-    setActiveTab('documentation');
-    setTimeout(() => {
-      const elem = document.getElementById('card-other-taxrules');
-      if (elem) {
-        elem.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    }, 50);
+    if (appMode === 'studio') {
+      setDocSubTab('tax_rules');
+      setIsDocPopoutOpen(true);
+    } else {
+      setActiveTab('documentation');
+      setDocSubTab('tax_rules');
+      setTimeout(() => {
+        const elem = document.getElementById('card-other-taxrules');
+        if (elem) {
+          elem.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 50);
+    }
   };
   const [isMaximizedSpendModalOpen, setIsMaximizedSpendModalOpen] = useState(false);
   const [planToDelete, setPlanToDelete] = useState<{ id: string; name: string } | null>(null);
   const [isManagePlansModalOpen, setIsManagePlansModalOpen] = useState(false);
+  const [managePlansInitialTab, setManagePlansInitialTab] = useState<ManagePlansTab>('overview');
   const [isResetPresetsModalOpen, setIsResetPresetsModalOpen] = useState(false);
 
   // Strategy Variant duplicate conflict modal state
@@ -737,18 +750,85 @@ function App() {
       {/* Left Collapsible Navigation Sidebar (Flush against left edge) */}
       <SidebarNav
         studioMode={studioMode}
-        onToggleStudioMode={() => setStudioMode(!studioMode)}
         activeTab={activeTab}
         onSelectTab={(tab) => {
+          if (appMode === 'studio' && tab === 'documentation') {
+            setIsDocPopoutOpen(true);
+            return;
+          }
+          if (appMode === 'studio' && tab === 'plan_management') {
+            setManagePlansInitialTab('overview');
+            setIsManagePlansModalOpen(true);
+            return;
+          }
+          if (appMode === 'studio' && tab === 'overview') {
+            setSummaryModalSubTab('all');
+            setIsSummaryPopoutOpen(true);
+            return;
+          }
+          if (appMode === 'studio' && tab === 'compare') {
+            setIsComparePopoutOpen(true);
+            return;
+          }
           setActiveTab(tab);
           setActiveCardId('');
+          if (appMode === 'studio') {
+            const studioTabTargetMap: Record<string, string> = {
+              strategy: 'card-strat-planner',
+              inputs: 'card-inputs-couple',
+              mortgage: 'card-right-sizing',
+              advanced_settings: 'card-adv-macro',
+              accumulation_review: 'card-accum-savings',
+              strategy_analysis: 'card-pwr-metric',
+              projections: 'card-proj-chart',
+              risk: 'card-risk-monte',
+              estate: 'card-estate-iht',
+              output: 'card-output-pdf',
+            };
+            const targetId = studioTabTargetMap[tab];
+            if (targetId) {
+              setTimeout(() => {
+                const elem = document.getElementById(targetId);
+                if (elem) {
+                  elem.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+              }, 50);
+            }
+          }
         }}
         activeCardId={activeCardId}
         onSelectCard={(tabId, cardId) => {
+          if (appMode === 'studio' && (tabId === 'documentation' || cardId.startsWith('card-doc-') || cardId === 'card-other-userguide' || cardId === 'card-other-taxrules')) {
+            setIsDocPopoutOpen(true);
+          }
+          if (appMode === 'studio' && (tabId === 'plan_management' || cardId === 'card-plan-mgmt-overview' || cardId === 'card-plan-mgmt-json')) {
+            setManagePlansInitialTab(cardId === 'card-plan-mgmt-json' ? 'json_backup' : 'overview');
+            setIsManagePlansModalOpen(true);
+          }
+          if (appMode === 'studio' && cardId === 'card-mortgage-debt') {
+            setIsMortgagePopoutOpen(true);
+          }
+          if (appMode === 'studio' && (tabId === 'compare' || cardId.startsWith('card-compare-'))) {
+            setIsComparePopoutOpen(true);
+          }
+          if (appMode === 'studio' && tabId === 'overview') {
+            const summarySubTabMap: Record<string, SummaryModalSubTab> = {
+              'card-plan-insights': 'insights',
+              'card-summary-strat': 'strategy_summary',
+              'card-summary-chart': 'projections_chart',
+              'card-summary-monte': 'stress_testing',
+              'card-summary-estate': 'iht_summary',
+              'card-summary-comments': 'comments',
+            };
+            setSummaryModalSubTab(summarySubTabMap[cardId] || 'all');
+            setIsSummaryPopoutOpen(true);
+          }
           setActiveTab(tabId);
           setActiveCardId(cardId);
           if (cardId === 'card-doc-userguide' || cardId === 'card-other-userguide') {
             setDocSubTab('user_guide');
+          } else if (cardId === 'card-doc-studioguide') {
+            setDocSubTab('studio_guide');
           } else if (cardId === 'card-doc-featuresguide') {
             setDocSubTab('features_guide');
           } else if (cardId === 'card-doc-cashbufferguide') {
@@ -809,7 +889,17 @@ function App() {
             setDocSubTab('saye_baye_guide');
           }
           setTimeout(() => {
-            const elem = document.getElementById(cardId);
+            const aliasMap: Record<string, string> = {
+              'card-strat-macro': 'card-adv-macro',
+              'card-proj-macro': 'card-adv-macro',
+              'card-mortgage-debt': 'card-right-sizing',
+              'card-mortgage-downsize': 'card-right-sizing',
+              'card-studio-strat-planner': 'card-strat-planner',
+              'card-studio-strat-phases': 'card-strat-phases',
+              'card-studio-strat-gilt-ladder': 'card-strat-gilt-ladder',
+            };
+            const targetId = aliasMap[cardId] || cardId;
+            const elem = document.getElementById(targetId) || document.getElementById(cardId);
             if (elem) {
               elem.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
@@ -906,16 +996,17 @@ function App() {
                 <div className="w-[35%] h-full overflow-y-auto pr-2 custom-scrollbar pb-32 studio-mode-left">
                   <div className="space-y-6">
                     {/* 1. Planning mode */}
-                    <div className="scroll-mt-24 transition-all duration-300">
+                    <div id="card-inputs-couple" className="scroll-mt-24 transition-all duration-300">
                       <div className="couple-planning-studio-wrapper"><CouplePlanningCard isStudioMode={true} profile={profile} onChange={handleProfileChange} /></div>
                     </div>
                     {/* 2. Personal profile and nmpa timeline */}
-                    <div className="scroll-mt-24 transition-all duration-300">
+                    <div id="card-inputs-profile" className="scroll-mt-24 transition-all duration-300">
                       <ProfileInputs isStudioMode={true} profile={profile} onChange={handleProfileChange} pots={pots} />
                     </div>
                     {/* 3. Investment pot balances */}
-                    <div className="scroll-mt-24 transition-all duration-300">
-                      <PotManager isStudioMode={true}                         pots={pots}
+                    <div id="card-inputs-pots" className="scroll-mt-24 transition-all duration-300">
+                      <PotManager isStudioMode={true}
+                        pots={pots}
                         onChange={handlePotsChange}
                         taxResult={taxResult}
                         profile={profile}
@@ -924,189 +1015,230 @@ function App() {
                       />
                     </div>
                     {/* 4. Contributions */}
-                    <div className="scroll-mt-24 transition-all duration-300">
+                    <div id="card-inputs-oneoff" className="scroll-mt-24 transition-all duration-300">
                       <InvestmentContributionManager isStudioMode={true} profile={profile} onChange={handleProfileChange} />
                     </div>
                     {/* 5. Investment transfers */}
-                    <div className="scroll-mt-24 transition-all duration-300">
+                    <div id="card-inputs-transfers" className="scroll-mt-24 transition-all duration-300">
                       <PotTransferManager isStudioMode={true} profile={profile} onChange={handleProfileChange} pots={pots} />
                     </div>
                     {/* 6. State pension forecast */}
-                    <div className="scroll-mt-24 transition-all duration-300">
+                    <div id="card-inputs-statepension" className="scroll-mt-24 transition-all duration-300">
                       <StatePensionCard isStudioMode={true} profile={profile} onChange={handleProfileChange} />
                     </div>
                     {/* 7. Defined benefit pensions */}
-                    <div className="scroll-mt-24 transition-all duration-300">
+                    <div id="card-inputs-dbpension" className="scroll-mt-24 transition-all duration-300">
                       <DbPensionManager isStudioMode={true} profile={profile} onChange={handleProfileChange} />
                     </div>
                     {/* 8. Fixed income & disability benefits */}
-                    <div className="scroll-mt-24 transition-all duration-300">
+                    <div id="card-inputs-fixedincome" className="scroll-mt-24 transition-all duration-300">
                       <FixedIncomeManager isStudioMode={true} profile={profile} onChange={handleProfileChange} />
                     </div>
                     {/* 9. Life events */}
-                    <div className="scroll-mt-24 transition-all duration-300">
+                    <div id="card-inputs-lifeevents" className="scroll-mt-24 transition-all duration-300">
                       <LifeEventsDecumulationCard isStudioMode={true} profile={profile} pots={pots} projections={projections} onChange={handleProfileChange} />
                     </div>
                     {/* 10. Investment, platform & advisor fees */}
-                    <div className="scroll-mt-24 transition-all duration-300">
+                    <div id="card-inputs-fees" className="scroll-mt-24 transition-all duration-300">
                       <InvestmentFeesCard isStudioMode={true} profile={profile} pots={pots} onChange={handleProfileChange} />
                     </div>
                     {/* 11. Drawdown strategy */}
-                    <div className="scroll-mt-24 transition-all duration-300">
-                      <DrawdownPlanner isStudioMode={true}                         profile={profile}
+                    <div id="card-strat-planner" className="scroll-mt-24 transition-all duration-300">
+                      <DrawdownPlanner isStudioMode={true}
+                        profile={profile}
                         pots={pots}
                         projections={projections}
                         onChange={handleProfileChange}
                         scenarios={scenarios}
                         activeScenarioId={activeScenarioId}
                         onCreateStrategyVariants={handleCreateStrategyVariants}
-                        onNavigateToCompare={() => setActiveTab('compare')}
+                        onNavigateToCompare={() => {
+                          if (appMode === 'studio') {
+                            setIsComparePopoutOpen(true);
+                          } else {
+                            setActiveTab('compare');
+                          }
+                        }}
                         onOpenMaximizedSpendModal={() => setIsMaximizedSpendModalOpen(true)}
                         appMode={appMode}
                       />
                     </div>
                     {/* 12. Retirement income requirement */}
-                    <div className="scroll-mt-24 transition-all duration-300">
-                      <SpendingPhasesCard isStudioMode={true}                         profile={profile}
+                    <div id="card-strat-phases" className="scroll-mt-24 transition-all duration-300">
+                      <SpendingPhasesCard isStudioMode={true}
+                        profile={profile}
                         onChange={handleProfileChange}
                         onOpenMaximizedSpendModal={() => setIsMaximizedSpendModalOpen(true)}
                         appMode={appMode}
                       />
                     </div>
                     {/* 13. UK gilt ladder strategy */}
-                    <div className="scroll-mt-24 transition-all duration-300">
-                      <GiltLadderCard isStudioMode={true}                         profile={profile}
+                    <div id="card-strat-gilt-ladder" className="scroll-mt-24 transition-all duration-300">
+                      <GiltLadderCard isStudioMode={true}
+                        profile={profile}
                         pots={pots}
                         projections={projections}
                         onChange={handleProfileChange}
                       />
                     </div>
                     {/* 14. Right sizings your home */}
-                    <div className="scroll-mt-24 transition-all duration-300">
+                    <div id="card-right-sizing" className="scroll-mt-24 transition-all duration-300">
                       <RightSizingCard isStudioMode={true} profile={profile} onChange={handleProfileChange} />
                     </div>
                     {/* 15. Asset allocation & macro settings */}
-                    <div className="scroll-mt-24 transition-all duration-300">
+                    <div id="card-adv-macro" className="scroll-mt-24 transition-all duration-300">
                       <MacroSettingsCard isStudioMode={true} profile={profile} pots={pots} onChange={handleProfileChange} />
+                    </div>
+                    {/* 16. AI Tax & Pension Advisor */}
+                    <div id="card-ai-advisor" className="scroll-mt-24 transition-all duration-300">
+                      <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2.5 bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 rounded-2xl shrink-0">
+                            <Sparkles className="w-5 h-5" />
+                          </div>
+                          <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100">
+                            AI Tax &amp; Pension Advisor
+                          </h3>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setShowAiModal(true)}
+                          className="py-2.5 px-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-extrabold transition-all cursor-pointer shadow-xs flex items-center justify-center gap-2 shrink-0"
+                        >
+                          <Sparkles className="w-4 h-4" />
+                          <span>Launch AI Tax Advisor</span>
+                        </button>
+                      </div>
+                    </div>
+                    {/* 17. Inheritance Tax & Estate Planning */}
+                    <div id="card-estate-iht" className="scroll-mt-24 transition-all duration-300">
+                      <IhtEstatePlanningCard isStudioMode={true} profile={profile} projections={projections} onChange={handleProfileChange} />
                     </div>
                   </div>
                 </div>
                 {/* Right Pane: Analysis & Strategy */}
                 <div className="w-[65%] h-full overflow-y-auto space-y-6 pl-2 custom-scrollbar pb-32">
                   <div className="space-y-6">
-                <div id="card-pwr-metric" className="scroll-mt-24 transition-all duration-300">
-                  <PwrMetricBannerCard profile={profile} pots={pots} projections={projections} />
-                </div>
-                <div id="card-swr-matrix" className="scroll-mt-24 transition-all duration-300">
-                  <SwrMatrixCard
-                    profile={profile}
-                    pots={pots}
-                    horizonYears={swrHorizonYears}
-                    onHorizonYearsChange={setSwrHorizonYears}
-                    equityPct={swrEquityPct}
-                    onEquityPctChange={setSwrEquityPct}
-                  />
-                </div>
-                <div id="card-guardrail-gauge" className="scroll-mt-24 transition-all duration-300">
-                  <WithdrawalGuardrailGaugeCard
-                    profile={profile}
-                    pots={pots}
-                    horizonYears={swrHorizonYears}
-                    equityPct={swrEquityPct}
-                  />
-                </div>
-                <div id="card-essential-floor-split" className="scroll-mt-24 transition-all duration-300">
-                  <EssentialFloorSplitCard profile={profile} pots={pots} />
-                </div>
-                <div id="card-swr-trajectory-chart" className="scroll-mt-24 transition-all duration-300">
-                  <SwrTrajectoryChart projections={projections} profile={profile} />
-                </div>
-                <div id="card-swr-uk-us-benchmark" className="scroll-mt-24 transition-all duration-300">
-                  <SwrUkUsBenchmarkCard />
-                </div>
-                <div id="card-ai-advisor" className="scroll-mt-24 transition-all duration-300">
-                  <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-5 flex flex-col justify-between">
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
-                        <div className="p-3 bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 rounded-2xl">
-                          <Sparkles className="w-6 h-6" />
-                        </div>
-                        <div>
-                          <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100">
-                            AI Tax &amp; Pension Advisor
-                          </h3>
-                          <p className="text-xs text-slate-500 dark:text-slate-400">
-                            Smart AI assistant tailored to your specific active scenario parameters and UK tax queries.
-                          </p>
-                        </div>
-                      </div>
-                      <ul className="text-xs text-slate-600 dark:text-slate-300 space-y-2 list-disc list-inside">
-                        <li>Personalised drawdown tax optimisation recommendations</li>
-                        <li>60% tax trap mitigation strategies</li>
-                        <li>Instant answers to complex UK pension questions</li>
-                        <li>Context-aware analysis of your active plan</li>
-                      </ul>
+                    <div id="card-proj-chart" className="scroll-mt-24 transition-all duration-300">
+                      <ProjectionChart
+                        projections={projections}
+                        profile={profile}
+                        pots={pots}
+                        onChange={handleProfileChange}
+                        onOpenMaximizedSpendModal={() => setIsMaximizedSpendModalOpen(true)}
+                        appMode={appMode}
+                      />
                     </div>
-                    <button
-                      onClick={() => setShowAiModal(true)}
-                      className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-extrabold transition-all cursor-pointer shadow-xs flex items-center justify-center gap-2"
-                    >
-                      <Sparkles className="w-4 h-4" />
-                      <span>Launch AI Tax Advisor</span>
-                    </button>
+                    <div id="card-dynamic-optimiser" className="scroll-mt-24 transition-all duration-300">
+                      <DynamicOptimiserCard
+                        profile={profile}
+                        pots={pots}
+                        taxResult={taxResult}
+                        projections={projections}
+                        appMode={appMode}
+                        onRunStressTest={() => setActiveTab('risk')}
+                        onChange={handleProfileChange}
+                      />
+                    </div>
+                    <div id="card-swr-trajectory-chart" className="scroll-mt-24 transition-all duration-300">
+                      <SwrTrajectoryChart projections={projections} profile={profile} />
+                    </div>
+                    <div id="card-cashflow-sankey" className="scroll-mt-24 transition-all duration-300">
+                      <CashFlowSankeyCard
+                        projections={projections}
+                        profile={profile}
+                        pots={pots}
+                        taxResult={taxResult}
+                        appMode={appMode}
+                      />
+                    </div>
+                    <div id="card-risk-monte" className="scroll-mt-24 transition-all duration-300">
+                      <MonteCarloCard profile={profile} pots={pots} taxResult={taxResult} onChange={handleProfileChange} appMode={appMode} />
+                    </div>
+                    <div id="card-risk-historic" className="scroll-mt-24 transition-all duration-300">
+                      <HistoricModelingCard profile={profile} pots={pots} taxResult={taxResult} onChange={handleProfileChange} appMode={appMode} />
+                    </div>
+                    <div id="card-pwr-metric" className="scroll-mt-24 transition-all duration-300">
+                      <PwrMetricBannerCard profile={profile} pots={pots} projections={projections} />
+                    </div>
+                    <div id="card-swr-matrix" className="scroll-mt-24 transition-all duration-300">
+                      <SwrMatrixCard
+                        profile={profile}
+                        pots={pots}
+                        horizonYears={swrHorizonYears}
+                        onHorizonYearsChange={setSwrHorizonYears}
+                        equityPct={swrEquityPct}
+                        onEquityPctChange={setSwrEquityPct}
+                      />
+                    </div>
+                    <div id="card-guardrail-gauge" className="scroll-mt-24 transition-all duration-300">
+                      <WithdrawalGuardrailGaugeCard
+                        profile={profile}
+                        pots={pots}
+                        horizonYears={swrHorizonYears}
+                        equityPct={swrEquityPct}
+                      />
+                    </div>
+                    <div id="card-essential-floor-split" className="scroll-mt-24 transition-all duration-300">
+                      <EssentialFloorSplitCard profile={profile} pots={pots} />
+                    </div>
+                    <div id="card-swr-uk-us-benchmark" className="scroll-mt-24 transition-all duration-300">
+                      <SwrUkUsBenchmarkCard />
+                    </div>
+                    {/* Monthly Savings & Capacity */}
+                    <div id="card-accum-savings" className="scroll-mt-24 transition-all duration-300">
+                      <MonthlySavingsRateCard profile={profile} pots={pots} />
+                    </div>
+                    {/* ISA vs Pension Tax Efficiency */}
+                    <div id="card-accum-efficiency" className="scroll-mt-24 transition-all duration-300">
+                      <IsaVsPensionEfficiencyCard
+                        profile={profile}
+                        pots={pots}
+                        taxResult={taxResult}
+                        projections={projections}
+                        onChange={handleProfileChange}
+                      />
+                    </div>
+                    {/* 60% Tax Trap Optimiser */}
+                    <div id="card-accum-tax" className="scroll-mt-24 transition-all duration-300">
+                      <TaxOptimizerCard
+                        taxResult={taxResult}
+                        profile={profile}
+                        pots={pots}
+                        onOptimizeTaxTrap={handleOptimizeTaxTrap}
+                      />
+                    </div>
+                    {/* Accumulation Ledger */}
+                    <div id="card-accum-ledger" className="scroll-mt-24 transition-all duration-300">
+                      <AccumulationLedgerCard
+                        profile={profile}
+                        pots={pots}
+                        onChange={handleProfileChange}
+                      />
+                    </div>
+                    {/* Year by Year Cash Flow Ledger */}
+                    <div id="card-proj-table" className="scroll-mt-24 transition-all duration-300">
+                      <AnnualBreakdownTable
+                        projections={projections}
+                        profile={profile}
+                        taxResult={taxResult}
+                        onChange={handleProfileChange}
+                      />
+                    </div>
+                    {/* Full PDF Report & Export Hub */}
+                    <div id="card-output-pdf" className="scroll-mt-24 transition-all duration-300">
+                      <ExportSection
+                        variant="all"
+                        profile={profile}
+                        pots={pots}
+                        projections={projections}
+                        taxResult={taxResult}
+                        planName={activeScenario.name}
+                        scenarios={scenarios}
+                        onImportScenarios={handleImportScenarios}
+                      />
+                    </div>
                   </div>
-                </div>
-              </div>
-                  <div className="space-y-6">
-                <div id="card-strat-planner" className="scroll-mt-24 transition-all duration-300">
-                  <DrawdownPlanner
-                    profile={profile}
-                    pots={pots}
-                    projections={projections}
-                    onChange={handleProfileChange}
-                    scenarios={scenarios}
-                    activeScenarioId={activeScenarioId}
-                    onCreateStrategyVariants={handleCreateStrategyVariants}
-                    onNavigateToCompare={() => setActiveTab('compare')}
-                    onOpenMaximizedSpendModal={() => setIsMaximizedSpendModalOpen(true)}
-                    appMode={appMode}
-                  />
-                </div>
-                <div id="card-strat-phases" className="scroll-mt-24 transition-all duration-300">
-                  <SpendingPhasesCard
-                    profile={profile}
-                    onChange={handleProfileChange}
-                    onOpenMaximizedSpendModal={() => setIsMaximizedSpendModalOpen(true)}
-                    appMode={appMode}
-                  />
-                </div>
-                <div id="card-dynamic-optimiser" className="scroll-mt-24 transition-all duration-300">
-                  <DynamicOptimiserCard
-                    profile={profile}
-                    pots={pots}
-                    taxResult={taxResult}
-                    projections={projections}
-                    appMode={appMode}
-                    onRunStressTest={() => setActiveTab('risk')}
-                    onChange={handleProfileChange}
-                  />
-                </div>
-                {appMode === 'advanced' && (
-                  <div id="card-strat-gilt-ladder" className="scroll-mt-24 transition-all duration-300">
-                    <GiltLadderCard
-                      profile={profile}
-                      pots={pots}
-                      projections={projections}
-                      onChange={handleProfileChange}
-                    />
-                  </div>
-                )}
-                {appMode === 'advanced' && (
-                  <div id="card-strat-macro" className="scroll-mt-24 transition-all duration-300">
-                    <MacroSettingsCard profile={profile} pots={pots} onChange={handleProfileChange} />
-                  </div>
-                )}
-              </div>
                 </div>
               </div>
             )}
@@ -1301,31 +1433,19 @@ function App() {
                   <SwrUkUsBenchmarkCard />
                 </div>
                 <div id="card-ai-advisor" className="scroll-mt-24 transition-all duration-300">
-                  <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-5 flex flex-col justify-between">
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
-                        <div className="p-3 bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 rounded-2xl">
-                          <Sparkles className="w-6 h-6" />
-                        </div>
-                        <div>
-                          <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100">
-                            AI Tax &amp; Pension Advisor
-                          </h3>
-                          <p className="text-xs text-slate-500 dark:text-slate-400">
-                            Smart AI assistant tailored to your specific active scenario parameters and UK tax queries.
-                          </p>
-                        </div>
+                  <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 rounded-2xl shrink-0">
+                        <Sparkles className="w-5 h-5" />
                       </div>
-                      <ul className="text-xs text-slate-600 dark:text-slate-300 space-y-2 list-disc list-inside">
-                        <li>Personalised drawdown tax optimisation recommendations</li>
-                        <li>60% tax trap mitigation strategies</li>
-                        <li>Instant answers to complex UK pension questions</li>
-                        <li>Context-aware analysis of your active plan</li>
-                      </ul>
+                      <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100">
+                        AI Tax &amp; Pension Advisor
+                      </h3>
                     </div>
                     <button
+                      type="button"
                       onClick={() => setShowAiModal(true)}
-                      className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-extrabold transition-all cursor-pointer shadow-xs flex items-center justify-center gap-2"
+                      className="py-2.5 px-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-extrabold transition-all cursor-pointer shadow-xs flex items-center justify-center gap-2 shrink-0"
                     >
                       <Sparkles className="w-4 h-4" />
                       <span>Launch AI Tax Advisor</span>
@@ -1377,14 +1497,9 @@ function App() {
                   <MonteCarloCard profile={profile} pots={pots} taxResult={taxResult} onChange={handleProfileChange} appMode={appMode} />
                 </div>
                 {appMode === 'advanced' && (
-                  <>
-                    <div id="card-risk-macro" className="scroll-mt-24 transition-all duration-300">
-                      <MacroSettingsCard profile={profile} onChange={handleProfileChange} />
-                    </div>
-                    <div id="card-risk-historic" className="scroll-mt-24 transition-all duration-300">
-                      <HistoricModelingCard profile={profile} pots={pots} taxResult={taxResult} onChange={handleProfileChange} />
-                    </div>
-                  </>
+                  <div id="card-risk-historic" className="scroll-mt-24 transition-all duration-300">
+                    <HistoricModelingCard profile={profile} pots={pots} taxResult={taxResult} onChange={handleProfileChange} appMode={appMode} />
+                  </div>
                 )}
               </div>
             )}
@@ -1502,6 +1617,28 @@ function App() {
                   onChange={handleProfileChange} 
                   onOpenAiAdvisor={() => setShowAiModal(true)} 
                 />
+              </div>
+            )}
+
+            {/* Tab: Plan Management */}
+            {!studioMode && activeTab === 'plan_management' && (
+              <div className="space-y-6">
+                <div id="card-plan-mgmt-overview" className="scroll-mt-24 transition-all duration-300">
+                  <PlanManagementCard
+                    scenarios={scenarios}
+                    activeScenarioId={activeScenarioId}
+                    onSelectScenario={handleSelectScenario}
+                    onSaveScenario={handleOpenSavePlanModal}
+                    onNewScenario={handleOpenNewPlanModal}
+                    onRequestDeleteScenario={(id, name) => setPlanToDelete({ id, name })}
+                    onRenameScenario={handleRenameScenario}
+                    onOpenManagePlans={() => {
+                      setManagePlansInitialTab('overview');
+                      setIsManagePlansModalOpen(true);
+                    }}
+                    onImportScenarios={handleImportScenarios}
+                  />
+                </div>
               </div>
             )}
 
@@ -1805,7 +1942,13 @@ function App() {
         onRequestDeleteScenario={(id, name) => setPlanToDelete({ id, name })}
         onNewScenario={handleOpenNewPlanModal}
         onRenameScenario={handleRenameScenario}
+        onDuplicateScenario={(id) => {
+          const source = scenarios.find((s) => s.id === id) || activeScenario;
+          handleCreatePlan('clone', id, `${source.name} (Copy)`);
+        }}
         onImportScenarios={setPendingImportScenarios}
+        onOpenResetPresets={() => setIsResetPresetsModalOpen(true)}
+        initialTab={managePlansInitialTab}
       />
 
       {/* Reset Presets Modal */}
@@ -1867,6 +2010,52 @@ function App() {
           onImport={handleFinalImport}
         />
       )}
+
+      {/* Documentation Pop-Out Modal for Studio Mode */}
+      <DocumentationModal
+        isOpen={isDocPopoutOpen}
+        onClose={() => setIsDocPopoutOpen(false)}
+        docSubTab={docSubTab}
+        onSelectDocSubTab={(subTab) => setDocSubTab(subTab)}
+        profile={profile}
+        onProfileChange={handleProfileChange}
+        appMode={appMode}
+        onToggleAppMode={setAppMode}
+      />
+
+      {/* Mortgage & Debt Repayment Pop-Out Modal for Studio Mode */}
+      <MortgageDebtModal
+        isOpen={isMortgagePopoutOpen}
+        onClose={() => setIsMortgagePopoutOpen(false)}
+        profile={profile}
+        onChange={handleProfileChange}
+      />
+
+      {/* Executive Summary Pop-Out Modal for Studio Mode */}
+      <SummaryModal
+        isOpen={isSummaryPopoutOpen}
+        onClose={() => setIsSummaryPopoutOpen(false)}
+        profile={profile}
+        pots={pots}
+        projections={projections}
+        taxResult={taxResult}
+        onChange={handleProfileChange}
+        onOpenMaximizedSpendModal={() => setIsMaximizedSpendModalOpen(true)}
+        appMode={appMode}
+        initialSubTab={summaryModalSubTab}
+      />
+
+      {/* Compare Scenarios Pop-Out Modal for Studio Mode */}
+      <CompareModal
+        isOpen={isComparePopoutOpen}
+        onClose={() => setIsComparePopoutOpen(false)}
+        scenarios={scenarios}
+        activeScenarioId={activeScenarioId}
+        scenarioAId={effectiveCompareAId}
+        scenarioBId={effectiveCompareBId}
+        onSelectScenarioA={setCompareScenarioAId}
+        onSelectScenarioB={setCompareScenarioBId}
+      />
 
       </div>
     </div>

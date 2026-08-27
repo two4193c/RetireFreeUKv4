@@ -224,30 +224,39 @@ export const InvestmentContributionManager: React.FC<InvestmentContributionManag
             <Coins className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
             <span>Contributions</span>
           </h2>
-          <p className="text-xs text-slate-400 dark:text-slate-500">
-            Manage regular monthly contributions and one-off lump sums across your pension, ISA, and investment pots
-          </p>
+          {!isStudioMode && (
+            <p className="text-xs text-slate-400 dark:text-slate-500">
+              Manage regular monthly contributions and one-off lump sums across your pension, ISA, and investment pots
+            </p>
+          )}
         </div>
 
-        {/* Aggregate Stats */}
-        {!isStudioMode && (
-      <div className="flex items-center gap-4 bg-slate-50 dark:bg-slate-800/60 p-2.5 px-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80">
-        
-          <div>
-            <div className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Regular Monthly</div>
-            <div className="text-lg font-black text-indigo-600 dark:text-indigo-400">
-              £{Math.round(totalMonthlyRegular).toLocaleString()} <span className="text-xs font-normal text-slate-400">/mo</span>
+        {/* Aggregate Stats or Studio Add Button */}
+        {isStudioMode ? (
+          <button
+            type="button"
+            onClick={() => openAddModal('custom')}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs hover:shadow-md cursor-pointer shrink-0 self-start sm:self-auto"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add Contribution</span>
+          </button>
+        ) : (
+          <div className="flex items-center gap-4 bg-slate-50 dark:bg-slate-800/60 p-2.5 px-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80">
+            <div>
+              <div className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Regular Monthly</div>
+              <div className="text-lg font-black text-indigo-600 dark:text-indigo-400">
+                £{Math.round(totalMonthlyRegular).toLocaleString()} <span className="text-xs font-normal text-slate-400">/mo</span>
+              </div>
+            </div>
+            <div className="h-8 w-px bg-slate-200 dark:bg-slate-700" />
+            <div>
+              <div className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Planned Lump Sums</div>
+              <div className="text-lg font-black text-slate-900 dark:text-slate-100">£{totalLumpSums.toLocaleString()}</div>
             </div>
           </div>
-          <div className="h-8 w-px bg-slate-200 dark:bg-slate-700" />
-          <div>
-            <div className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Planned Lump Sums</div>
-            <div className="text-lg font-black text-slate-900 dark:text-slate-100">£{totalLumpSums.toLocaleString()}</div>
-          </div>
-        
+        )}
       </div>
-    )}
-    </div>
     {/* Person Filter Tabs */}
       {isCouple && (
         <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-indigo-50/60 dark:bg-slate-800/60 p-2.5 sm:p-1.5 rounded-2xl border border-indigo-200/70 dark:border-slate-700 text-xs font-bold gap-2">
@@ -274,38 +283,48 @@ export const InvestmentContributionManager: React.FC<InvestmentContributionManag
         </div>
       )}
 
-      {!isStudioMode && ( <div className="space-y-2">
-        {/* Quick Presets */}
-      <div className="space-y-2">
-        <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Quick Presets:</div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <button onClick={() => openAddModal('workplace')} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 rounded-xl text-xs font-bold border border-indigo-200 dark:border-indigo-800/60 transition-colors cursor-pointer">
-            <Briefcase className="w-3.5 h-3.5" /><span>+ Regular Workplace Pension</span>
-          </button>
-          <button onClick={() => openAddModal('monthly_sipp')} className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 rounded-xl text-xs font-bold border border-emerald-200 dark:border-emerald-800/60 transition-colors cursor-pointer">
-            <RefreshCw className="w-3.5 h-3.5" /><span>+ Monthly SIPP / ISA Savings</span>
-          </button>
-          <button onClick={() => openAddModal('bonus')} className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/60 rounded-xl text-xs font-bold border border-amber-200 dark:border-amber-800/60 transition-colors cursor-pointer">
-            <Sparkles className="w-3.5 h-3.5" /><span>+ Lump Sum Bonus (£15k)</span>
-          </button>
-          <button onClick={() => openAddModal('downsizing')} className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-50 dark:bg-teal-950/60 text-teal-800 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/60 rounded-xl text-xs font-bold border border-teal-200 dark:border-teal-800/60 transition-colors cursor-pointer">
-            <Landmark className="w-3.5 h-3.5" /><span>+ Property Sale (£75k)</span>
-          </button>
-          <button onClick={() => openAddModal('custom')} className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 dark:bg-indigo-600 text-white hover:bg-slate-800 dark:hover:bg-indigo-500 rounded-xl text-xs font-bold transition-colors cursor-pointer shadow-xs ml-auto">
-            <Plus className="w-3.5 h-3.5" /><span>Add Custom Item</span>
-          </button>
+      {!isStudioMode && (
+        <div className="space-y-2">
+          {/* Quick Presets */}
+          <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Quick Presets:</div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button type="button" onClick={() => openAddModal('workplace')} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 rounded-xl text-xs font-bold border border-indigo-200 dark:border-indigo-800/60 transition-colors cursor-pointer">
+              <Briefcase className="w-3.5 h-3.5" /><span>+ Regular Workplace Pension</span>
+            </button>
+            <button type="button" onClick={() => openAddModal('monthly_sipp')} className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 rounded-xl text-xs font-bold border border-emerald-200 dark:border-emerald-800/60 transition-colors cursor-pointer">
+              <RefreshCw className="w-3.5 h-3.5" /><span>+ Monthly SIPP / ISA Savings</span>
+            </button>
+            <button type="button" onClick={() => openAddModal('bonus')} className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/60 rounded-xl text-xs font-bold border border-amber-200 dark:border-amber-800/60 transition-colors cursor-pointer">
+              <Sparkles className="w-3.5 h-3.5" /><span>+ Lump Sum Bonus (£15k)</span>
+            </button>
+            <button type="button" onClick={() => openAddModal('downsizing')} className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-50 dark:bg-teal-950/60 text-teal-800 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/60 rounded-xl text-xs font-bold border border-teal-200 dark:border-teal-800/60 transition-colors cursor-pointer">
+              <Landmark className="w-3.5 h-3.5" /><span>+ Property Sale (£75k)</span>
+            </button>
+            <button type="button" onClick={() => openAddModal('custom')} className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 dark:bg-indigo-600 text-white hover:bg-slate-800 dark:hover:bg-indigo-500 rounded-xl text-xs font-bold transition-colors cursor-pointer shadow-xs ml-auto">
+              <Plus className="w-3.5 h-3.5" /><span>Add Custom Item</span>
+            </button>
+          </div>
         </div>
-      </div>
-
-      {/* Contribution List */}
-      </div>)} 
+      )} 
       {filteredContribs.length === 0 ? (
-        <div className="p-8 text-center bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 space-y-2">
+        <div className="p-8 text-center bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 space-y-3">
           <Coins className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto" />
           <p className="text-xs font-bold text-slate-600 dark:text-slate-300">No investment contributions added yet</p>
-          <p className="text-[11px] text-slate-400 dark:text-slate-500 max-w-md mx-auto">
-            Add regular monthly workplace pension contributions, monthly ISA savings, or future lump sum investments above!
-          </p>
+          {!isStudioMode && (
+            <>
+              <p className="text-[11px] text-slate-400 dark:text-slate-500 max-w-md mx-auto">
+                Add regular monthly workplace pension contributions, monthly ISA savings, or future lump sum investments!
+              </p>
+              <button
+                type="button"
+                onClick={() => openAddModal('custom')}
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add Contribution</span>
+              </button>
+            </>
+          )}
         </div>
       ) : (
         <div className="space-y-3">
@@ -340,7 +359,7 @@ export const InvestmentContributionManager: React.FC<InvestmentContributionManag
                     )}
                   </div>
                   <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-3 flex-wrap">
-                    <span>{getPotLabel(item.targetPot)}</span>
+                    {!isStudioMode && <span>{getPotLabel(item.targetPot)}</span>}
                     {isCouple && <span className="font-medium text-indigo-600 dark:text-indigo-400">{ownerName}</span>}
                     {frequency === 'regular_monthly' ? (
                       isWorkplace ? (
@@ -381,7 +400,7 @@ export const InvestmentContributionManager: React.FC<InvestmentContributionManag
       )}
 
       {/* Summary Footer */}
-      {contributions.length > 0 && (
+      {contributions.length > 0 && !isStudioMode && (
         <div className="p-3 bg-indigo-50/60 dark:bg-indigo-950/40 rounded-2xl border border-indigo-100 dark:border-indigo-800/60 flex items-center gap-2 text-xs text-indigo-900 dark:text-indigo-200 font-semibold">
           <ShieldCheck className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
           <span>Regular monthly inputs and lump sum investments are automatically factored into your tax calculations, retirement cash flows, and projection timeline.</span>

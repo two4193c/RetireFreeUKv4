@@ -101,23 +101,27 @@ export const DbPensionManager: React.FC<DbPensionManagerProps> = ({ profile, onC
           <div>
             <h2 className="font-extrabold text-slate-800 dark:text-slate-100 text-base flex items-center gap-2">
               <span>Defined Benefit Pensions</span>
-              <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-200 px-2.5 py-0.5 rounded-full border border-amber-200/50 dark:border-amber-800/50">
-                Guaranteed Income
-              </span>
+              {!isStudioMode && (
+                <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-200 px-2.5 py-0.5 rounded-full border border-amber-200/50 dark:border-amber-800/50">
+                  Guaranteed Income
+                </span>
+              )}
             </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Add NHS, Civil Service, Teachers, Armed Forces, or Company Final Salary pensions
-            </p>
+            {!isStudioMode && (
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Add NHS, Civil Service, Teachers, Armed Forces, or Company Final Salary pensions
+              </p>
+            )}
           </div>
         </div>
 
-        {!isStudioMode && ( <button
+        <button
           onClick={openAddModal}
-          className="flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 dark:bg-amber-600 dark:hover:bg-amber-500 text-white text-xs font-bold rounded-xl transition-all shadow-xs hover:shadow-md cursor-pointer shrink-0"
+          className="flex items-center gap-2 px-3.5 py-2 bg-amber-600 hover:bg-amber-700 dark:bg-amber-600 dark:hover:bg-amber-500 text-white text-xs font-bold rounded-xl transition-all shadow-xs hover:shadow-md cursor-pointer shrink-0"
         >
           <Plus className="w-4 h-4" />
-          <span>Add DB Pension Scheme</span>
-        </button> )}
+          <span>{isStudioMode ? 'Add Scheme' : 'Add DB Pension Scheme'}</span>
+        </button>
       </div>
 
       {/* Person Filter Tabs (Couple Planning) */}
@@ -163,7 +167,7 @@ export const DbPensionManager: React.FC<DbPensionManagerProps> = ({ profile, onC
       )}
 
       {/* Summary Metrics Banner */}
-      {dbPensions.length > 0 && (
+      {dbPensions.length > 0 && !isStudioMode && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 flex items-center justify-between">
             <div>
@@ -199,17 +203,21 @@ export const DbPensionManager: React.FC<DbPensionManagerProps> = ({ profile, onC
           </div>
           <div>
             <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">No Defined Benefit Pensions Added</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto mt-1">
-              If you have a career average or final salary pension (such as NHS, Civil Service, or Teachers scheme), add it here to incorporate guaranteed retirement income & tax-free cash payouts into your projections.
-            </p>
+            {!isStudioMode && (
+              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto mt-1">
+                If you have a career average or final salary pension (such as NHS, Civil Service, or Teachers scheme), add it here to incorporate guaranteed retirement income & tax-free cash payouts into your projections.
+              </p>
+            )}
           </div>
-          <button
-            onClick={openAddModal}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 dark:bg-amber-600 text-white text-xs font-bold rounded-xl hover:bg-slate-800 dark:hover:bg-amber-500 transition-all cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Add DB Pension</span>
-          </button>
+          {!isStudioMode && (
+            <button
+              onClick={openAddModal}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 dark:bg-amber-600 text-white text-xs font-bold rounded-xl hover:bg-slate-800 dark:hover:bg-amber-500 transition-all cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add DB Pension</span>
+            </button>
+          )}
         </div>
       ) : (
         /* List of DB Pensions (Compact Read-Only) */
@@ -258,12 +266,14 @@ export const DbPensionManager: React.FC<DbPensionManagerProps> = ({ profile, onC
       )}
 
       {/* Educational Note */}
-      <div className="bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-start gap-2.5 text-xs text-slate-600 dark:text-slate-300 mt-4">
-        <AlertCircle className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0 mt-0.5" />
-        <p>
-          <strong>Defined Benefit vs Defined Contribution:</strong> DB pensions pay a guaranteed index-linked income for life based on salary & service length, unlike DC pensions which depend on investment pot value. The tax-free lump sum reduces required DC drawdown and boosts tax-sheltered ISA/cash reserves upon commencement.
-        </p>
-      </div>
+      {!isStudioMode && (
+        <div className="bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-start gap-2.5 text-xs text-slate-600 dark:text-slate-300 mt-4">
+          <AlertCircle className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0 mt-0.5" />
+          <p>
+            <strong>Defined Benefit vs Defined Contribution:</strong> DB pensions pay a guaranteed index-linked income for life based on salary & service length, unlike DC pensions which depend on investment pot value. The tax-free lump sum reduces required DC drawdown and boosts tax-sheltered ISA/cash reserves upon commencement.
+          </p>
+        </div>
+      )}
 
       {/* Modal for Add / Edit */}
       {editItem && (

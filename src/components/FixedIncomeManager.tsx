@@ -150,13 +150,17 @@ export const FixedIncomeManager: React.FC<FixedIncomeManagerProps> = ({ profile,
           <div>
             <h2 className="font-extrabold text-slate-800 dark:text-slate-100 text-base flex items-center gap-2">
               <span>Fixed Income & Disability Benefits</span>
-              <span className="text-[10px] font-bold uppercase tracking-wider bg-indigo-100 dark:bg-indigo-950 text-indigo-900 dark:text-indigo-200 px-2.5 py-0.5 rounded-full border border-indigo-200/50 dark:border-indigo-800/50">
-                Taxable & Tax-Free PIP
-              </span>
+              {!isStudioMode && (
+                <span className="text-[10px] font-bold uppercase tracking-wider bg-indigo-100 dark:bg-indigo-950 text-indigo-900 dark:text-indigo-200 px-2.5 py-0.5 rounded-full border border-indigo-200/50 dark:border-indigo-800/50">
+                  Taxable & Tax-Free PIP
+                </span>
+              )}
             </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Add Personal Independence Payment (PIP), disability benefits, rental income, or consulting fees
-            </p>
+            {!isStudioMode && (
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Add Personal Independence Payment (PIP), disability benefits, rental income, or consulting fees
+              </p>
+            )}
           </div>
         </div>
 
@@ -225,7 +229,7 @@ export const FixedIncomeManager: React.FC<FixedIncomeManagerProps> = ({ profile,
       )}
 
       {/* Summary KPI Cards */}
-      {streams.length > 0 && (
+      {streams.length > 0 && !isStudioMode && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 flex items-center justify-between">
             <div>
@@ -264,28 +268,32 @@ export const FixedIncomeManager: React.FC<FixedIncomeManagerProps> = ({ profile,
           </div>
           <div>
             <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">No Fixed Income Streams Added</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto mt-1">
-              Add non-pension fixed income streams like Personal Independence Payment (PIP), Attendance Allowance, rental property income, or part-time consulting.
-            </p>
+            {!isStudioMode && (
+              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto mt-1">
+                Add non-pension fixed income streams like Personal Independence Payment (PIP), Attendance Allowance, rental property income, or part-time consulting.
+              </p>
+            )}
           </div>
           
-          <div className="flex justify-center gap-3 flex-wrap">
-            <button
-              onClick={() => openAddModal('pip')}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer"
-            >
-              <HeartHandshake className="w-4 h-4" />
-              <span>Add Tax-Free PIP Payment</span>
-            </button>
+          {!isStudioMode && (
+            <div className="flex justify-center gap-3 flex-wrap">
+              <button
+                onClick={() => openAddModal('pip')}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer"
+              >
+                <HeartHandshake className="w-4 h-4" />
+                <span>Add Tax-Free PIP Payment</span>
+              </button>
 
-            <button
-              onClick={() => openAddModal('rental')}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 dark:bg-indigo-600 hover:bg-slate-800 dark:hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Add Rental / Consulting Income</span>
-            </button>
-          </div>
+              <button
+                onClick={() => openAddModal('rental')}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 dark:bg-indigo-600 hover:bg-slate-800 dark:hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Add Rental / Consulting Income</span>
+              </button>
+            </div>
+          )}
         </div>
       ) : (
         /* List of Streams (Compact Read-Only) */
@@ -340,17 +348,19 @@ export const FixedIncomeManager: React.FC<FixedIncomeManagerProps> = ({ profile,
       )}
 
       {/* Tax Notice & Guidance */}
-      <div className="bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-1.5 text-xs text-slate-600 dark:text-slate-300 mt-4">
-        <div className="flex items-center gap-2 text-slate-800 dark:text-slate-100 font-bold">
-          <Info className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
-          <span>UK Tax Guidance for Personal Independence Payment (PIP) & Fixed Income</span>
+      {!isStudioMode && (
+        <div className="bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-1.5 text-xs text-slate-600 dark:text-slate-300 mt-4">
+          <div className="flex items-center gap-2 text-slate-800 dark:text-slate-100 font-bold">
+            <Info className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
+            <span>UK Tax Guidance for Personal Independence Payment (PIP) & Fixed Income</span>
+          </div>
+          <p className="pl-6 text-slate-500 dark:text-slate-400 leading-relaxed">
+            • <strong>Tax-Free Income (PIP / DLA / Attendance Allowance):</strong> Personal Independence Payment is completely tax-free under UK tax rules and is not counted towards your Personal Allowance. In this retirement model, PIP offsets your required drawdown goal £1-for-£ with zero income tax liability.
+            <br />
+            • <strong>Taxable Fixed Income (Rental / Freelance / Consulting):</strong> Property rental and freelance earnings are subject to standard UK Income Tax rules and absorb available Personal Allowance before pension drawdown tax calculations.
+          </p>
         </div>
-        <p className="pl-6 text-slate-500 dark:text-slate-400 leading-relaxed">
-          • <strong>Tax-Free Income (PIP / DLA / Attendance Allowance):</strong> Personal Independence Payment is completely tax-free under UK tax rules and is not counted towards your Personal Allowance. In this retirement model, PIP offsets your required drawdown goal £1-for-£ with zero income tax liability.
-          <br />
-          • <strong>Taxable Fixed Income (Rental / Freelance / Consulting):</strong> Property rental and freelance earnings are subject to standard UK Income Tax rules and absorb available Personal Allowance before pension drawdown tax calculations.
-        </p>
-      </div>
+      )}
 
       {/* Modal for Add / Edit */}
       {editItem && (

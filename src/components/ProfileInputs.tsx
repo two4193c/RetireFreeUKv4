@@ -83,48 +83,52 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
             <h2 className="font-bold text-slate-800 dark:text-slate-100 text-base">
               Personal Profile & NMPA Timeline
             </h2>
-            <p className="text-xs text-slate-400 dark:text-slate-500">
-              {isCouple
-                ? 'Primary & Partner ages, earnings, NMPA pension access rules & tax parameters'
-                : 'Date of birth, salary, target retirement age, pension access & tax parameters'}
-            </p>
+            {!isStudioMode && (
+              <p className="text-xs text-slate-400 dark:text-slate-500">
+                {isCouple
+                  ? 'Primary & Partner ages, earnings, NMPA pension access rules & tax parameters'
+                  : 'Date of birth, salary, target retirement age, pension access & tax parameters'}
+              </p>
+            )}
           </div>
         </div>
 
         {/* NMPA Access Age Badges */}
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 px-3 py-1.5 rounded-2xl">
-            <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-            <div className="text-xs">
-              <span className="text-slate-500 dark:text-slate-400 font-medium">
-                {isCouple ? `${profile.name || 'Primary'}: ` : 'Pension Access Age: '}
-              </span>
-              <span className="font-extrabold text-emerald-700 dark:text-emerald-400">
-                {primaryAccessAge}
-              </span>
-              <span className="text-[10px] text-slate-400 dark:text-slate-500 ml-1">
-                ({primaryAccessAge === 57 ? 'Born ≥ 6 Apr 1971' : 'Born < 6 Apr 1971'})
-              </span>
-            </div>
-          </div>
-
-          {isCouple && (
-            <div className="flex items-center gap-2 bg-indigo-50/80 dark:bg-indigo-950/60 border border-indigo-200/80 dark:border-indigo-800/60 px-3 py-1.5 rounded-2xl">
-              <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500/20" />
+        {!isStudioMode && (
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 px-3 py-1.5 rounded-2xl">
+              <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               <div className="text-xs">
-                <span className="text-indigo-900 dark:text-indigo-300 font-medium">
-                  {profile.partnerName || 'Partner'}:{' '}
+                <span className="text-slate-500 dark:text-slate-400 font-medium">
+                  {isCouple ? `${profile.name || 'Primary'}: ` : 'Pension Access Age: '}
                 </span>
-                <span className="font-extrabold text-indigo-700 dark:text-indigo-400">
-                  {partnerAccessAge}
+                <span className="font-extrabold text-emerald-700 dark:text-emerald-400">
+                  {primaryAccessAge}
                 </span>
-                <span className="text-[10px] text-indigo-400 dark:text-indigo-400/80 ml-1">
-                  ({partnerAccessAge === 57 ? 'Born ≥ 6 Apr 1971' : 'Born < 6 Apr 1971'})
+                <span className="text-[10px] text-slate-400 dark:text-slate-500 ml-1">
+                  ({primaryAccessAge === 57 ? 'Born ≥ 6 Apr 1971' : 'Born < 6 Apr 1971'})
                 </span>
               </div>
             </div>
-          )}
-        </div>
+
+            {isCouple && (
+              <div className="flex items-center gap-2 bg-indigo-50/80 dark:bg-indigo-950/60 border border-indigo-200/80 dark:border-indigo-800/60 px-3 py-1.5 rounded-2xl">
+                <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500/20" />
+                <div className="text-xs">
+                  <span className="text-indigo-900 dark:text-indigo-300 font-medium">
+                    {profile.partnerName || 'Partner'}:{' '}
+                  </span>
+                  <span className="font-extrabold text-indigo-700 dark:text-indigo-400">
+                    {partnerAccessAge}
+                  </span>
+                  <span className="text-[10px] text-indigo-400 dark:text-indigo-400/80 ml-1">
+                    ({partnerAccessAge === 57 ? 'Born ≥ 6 Apr 1971' : 'Born < 6 Apr 1971'})
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* PRIMARY & PARTNER PROFILE INPUTS */}

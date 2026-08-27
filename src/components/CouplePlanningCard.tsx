@@ -20,35 +20,50 @@ export const CouplePlanningCard: React.FC<CouplePlanningCardProps> = ({ profile,
 
   if (isStudioMode) {
     return (
-      <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-sm border border-slate-200 dark:border-slate-800 transition-colors">
-        <div className="flex flex-col gap-3">
-          <h2 className="font-bold text-slate-800 dark:text-slate-100 text-sm">Planning Mode</h2>
-          <div className="inline-flex p-1 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200/80 dark:border-slate-700 w-full">
-            <button
-              type="button"
-              onClick={() => updateProfile({ isCouplePlanning: false })}
-              className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all ${
-                !isCouple
-                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm border border-slate-200 dark:border-slate-700'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
-              }`}
-            >
-              <User className="w-4 h-4" />
-              <span>Single</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => updateProfile({ isCouplePlanning: true })}
-              className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all ${
-                isCouple
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
-              }`}
-            >
-              <Heart className={`w-4 h-4 ${isCouple ? 'text-pink-300 fill-pink-300' : ''}`} />
-              <span>Joint</span>
-            </button>
+      <div id="card-inputs-couple" className="bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-xs border border-slate-200 dark:border-slate-800 transition-colors space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className={`w-7 h-7 rounded-xl flex items-center justify-center transition-colors ${
+              isCouple ? 'bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
+            }`}>
+              {isCouple ? <Users className="w-4 h-4 text-indigo-600 dark:text-indigo-400" /> : <User className="w-4 h-4 text-slate-600 dark:text-slate-400" />}
+            </div>
+            <h2 className="font-bold text-slate-800 dark:text-slate-100 text-xs sm:text-sm">Planning Mode</h2>
           </div>
+          <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md ${
+            isCouple ? 'bg-indigo-50 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+          }`}>
+            {isCouple ? 'Joint' : 'Single'}
+          </span>
+        </div>
+
+        <div className="inline-flex p-1 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200/80 dark:border-slate-700 w-full">
+          <button
+            type="button"
+            onClick={() => updateProfile({ isCouplePlanning: false })}
+            className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              !isCouple
+                ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs border border-slate-200 dark:border-slate-700'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+            }`}
+            aria-pressed={!isCouple}
+          >
+            <User className="w-3.5 h-3.5" />
+            <span>Single Planner</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => updateProfile({ isCouplePlanning: true })}
+            className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              isCouple
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+            }`}
+            aria-pressed={isCouple}
+          >
+            <Heart className={`w-3.5 h-3.5 ${isCouple ? 'text-pink-300 fill-pink-300' : ''}`} />
+            <span>Couple / Joint</span>
+          </button>
         </div>
       </div>
     );

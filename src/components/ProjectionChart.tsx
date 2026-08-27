@@ -31,6 +31,7 @@ interface ProjectionChartProps {
 }
 
 export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, profile, pots, onChange, onOpenMaximizedSpendModal, showAllCharts = false, appMode = 'basic' }) => {
+  const isStudioMode = appMode === 'studio';
   const [chartMode, setChartMode] = useState<'pots' | 'income' | 'shortfall'>('pots');
   const [potChartType, setPotChartType] = useState<'area' | 'line'>('area');
   const [portfolioViewMode, setPortfolioViewMode] = useState<'combined' | 'primary' | 'partner'>('combined');
@@ -668,28 +669,30 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
       className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-xs border border-slate-200 dark:border-slate-800 space-y-6 transition-colors"
     >
       {/* Chart Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
-        <div>
-          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-            Age {profile.currentAge} to {projections[projections.length - 1]?.age || 100} deterministic trajectory
-          </p>
-        </div>
+      {!isStudioMode && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
+          <div>
+            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+              Age {profile.currentAge} to {projections[projections.length - 1]?.age || 100} deterministic trajectory
+            </p>
+          </div>
 
-        <div className="flex items-center gap-2 flex-wrap text-xs">
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-extrabold border border-emerald-200 dark:border-emerald-800/80">
-            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-            Retire: Age {primaryRetireAge} {isCouple && `(Partner: ${profile.partnerTargetRetirementAge || 60})`}
-          </span>
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 font-extrabold border border-sky-200 dark:border-sky-800/80">
-            <span className="w-2 h-2 rounded-full bg-sky-500"></span>
-            Private Pension Access: Age {primaryAccessAge} {isCouple && `(Partner: ${partnerAccessAgeRaw})`}
-          </span>
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 font-extrabold border border-purple-200 dark:border-purple-800/80">
-            <span className="w-2 h-2 rounded-full bg-purple-500"></span>
-            State Pension: Age {primarySpa} {isCouple && `(Partner: ${profile.partnerStatePensionAge || 67})`}
-          </span>
+          <div className="flex items-center gap-2 flex-wrap text-xs">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-extrabold border border-emerald-200 dark:border-emerald-800/80">
+              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+              Retire: Age {primaryRetireAge} {isCouple && `(Partner: ${profile.partnerTargetRetirementAge || 60})`}
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 font-extrabold border border-sky-200 dark:border-sky-800/80">
+              <span className="w-2 h-2 rounded-full bg-sky-500"></span>
+              Private Pension Access: Age {primaryAccessAge} {isCouple && `(Partner: ${partnerAccessAgeRaw})`}
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 font-extrabold border border-purple-200 dark:border-purple-800/80">
+              <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+              State Pension: Age {primarySpa} {isCouple && `(Partner: ${profile.partnerStatePensionAge || 67})`}
+            </span>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* OVERVIEW SECTION AT TOP (PLAN STATUS & RISK COMMENT) */}
       <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-700/60 space-y-4">
@@ -701,9 +704,11 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
               Deterministic Overview & Plan Status
             </h3>
           </div>
-          <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
-            Smoothed Growth ({profile.expectedInvestmentReturn ?? 6.5}% Pre / {profile.postRetirementReturn ?? 4.5}% Post-Ret, CPI {profile.expectedInflationRate ?? 2.5}%)
-          </span>
+          {!isStudioMode && (
+            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
+              Smoothed Growth ({profile.expectedInvestmentReturn ?? 6.5}% Pre / {profile.postRetirementReturn ?? 4.5}% Post-Ret, CPI {profile.expectedInflationRate ?? 2.5}%)
+            </span>
+          )}
         </div>
 
         {/* Plan Status Banner */}
@@ -765,70 +770,74 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
         </div>
 
         {/* Overview Key Metrics Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800">
-            <div className="text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider">
-              Target Age {profile.targetRetirementAge} Pot
+        {!isStudioMode && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800">
+              <div className="text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider">
+                Target Age {profile.targetRetirementAge} Pot
+              </div>
+              <div className="text-base font-black text-slate-900 dark:text-white mt-0.5">
+                {formatCurrency(displayedRetirementPot)}
+              </div>
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+                {adjustInflation ? "Real Terms (Today's £)" : "Nominal £"}
+              </p>
             </div>
-            <div className="text-base font-black text-slate-900 dark:text-white mt-0.5">
-              {formatCurrency(displayedRetirementPot)}
-            </div>
-            <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
-              {adjustInflation ? "Real Terms (Today's £)" : "Nominal £"}
-            </p>
-          </div>
 
-          <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800">
-            <div className="text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider">
-              Target Income Goal
+            <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800">
+              <div className="text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider">
+                Target Income Goal
+              </div>
+              <div className="text-base font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
+                £{targetIncomeGoal.toLocaleString()}/yr
+              </div>
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+                {adjustInflation ? "Real Terms (Today's £)" : "Nominal £"}
+              </p>
             </div>
-            <div className="text-base font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
-              £{targetIncomeGoal.toLocaleString()}/yr
-            </div>
-            <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
-              {adjustInflation ? "Real Terms (Today's £)" : "Nominal £"}
-            </p>
-          </div>
 
-          <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800">
-            <div className="text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider">
-              Pension Asset Share
+            <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800">
+              <div className="text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider">
+                Pension Asset Share
+              </div>
+              <div className="text-base font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
+                {retirementYear?.totalPot
+                  ? `${Math.round((retirementYear.pensionPot / retirementYear.totalPot) * 100)}%`
+                  : '0%'}
+              </div>
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+                Tax-deferred portion
+              </p>
             </div>
-            <div className="text-base font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
-              {retirementYear?.totalPot
-                ? `${Math.round((retirementYear.pensionPot / retirementYear.totalPot) * 100)}%`
-                : '0%'}
-            </div>
-            <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
-              Tax-deferred portion
-            </p>
-          </div>
 
-          <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800">
-            <div className="text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider">
-              ISA Asset Share
+            <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800">
+              <div className="text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider">
+                ISA Asset Share
+              </div>
+              <div className="text-base font-black text-indigo-600 dark:text-indigo-400 mt-0.5">
+                {retirementYear?.totalPot
+                  ? `${Math.round((retirementYear.isaPot / retirementYear.totalPot) * 100)}%`
+                  : '0%'}
+              </div>
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+                Tax-free shelter portion
+              </p>
             </div>
-            <div className="text-base font-black text-indigo-600 dark:text-indigo-400 mt-0.5">
-              {retirementYear?.totalPot
-                ? `${Math.round((retirementYear.isaPot / retirementYear.totalPot) * 100)}%`
-                : '0%'}
-            </div>
-            <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
-              Tax-free shelter portion
-            </p>
           </div>
-        </div>
+        )}
 
         {/* Comment Regarding Risk */}
-        <div className="bg-amber-50/90 dark:bg-amber-950/40 p-3.5 rounded-xl border border-amber-200/80 dark:border-amber-800/60 text-xs text-amber-950 dark:text-amber-200 space-y-1">
-          <div className="flex items-center gap-1.5 font-extrabold text-amber-900 dark:text-amber-200">
-            <ShieldAlert className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-            <span>Deterministic Model Risk &amp; Volatility Consideration</span>
+        {!isStudioMode && (
+          <div className="bg-amber-50/90 dark:bg-amber-950/40 p-3.5 rounded-xl border border-amber-200/80 dark:border-amber-800/60 text-xs text-amber-950 dark:text-amber-200 space-y-1">
+            <div className="flex items-center gap-1.5 font-extrabold text-amber-900 dark:text-amber-200">
+              <ShieldAlert className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+              <span>Deterministic Model Risk &amp; Volatility Consideration</span>
+            </div>
+            <p className="leading-relaxed text-[11px] text-amber-900/90 dark:text-amber-200/90">
+              <strong>Important Risk Note:</strong> This deterministic projection assumes smooth, constant annual return trajectories ({profile.expectedInvestmentReturn ?? 6.5}% p.a. pre-retirement growth, {profile.postRetirementReturn ?? 4.5}% p.a. post-retirement growth, and {profile.expectedInflationRate ?? 2.5}% p.a. CPI inflation). It does not reflect market volatility, sequence of returns risk (the danger of market downturns early in retirement), or macroeconomic shocks. To stress-test your plan against market fluctuations, market crashes, and 1,000+ stochastic scenarios, navigate to the <strong>Risk &amp; Monte Carlo</strong> tab.
+            </p>
           </div>
-          <p className="leading-relaxed text-[11px] text-amber-900/90 dark:text-amber-200/90">
-            <strong>Important Risk Note:</strong> This deterministic projection assumes smooth, constant annual return trajectories ({profile.expectedInvestmentReturn ?? 6.5}% p.a. pre-retirement growth, {profile.postRetirementReturn ?? 4.5}% p.a. post-retirement growth, and {profile.expectedInflationRate ?? 2.5}% p.a. CPI inflation). It does not reflect market volatility, sequence of returns risk (the danger of market downturns early in retirement), or macroeconomic shocks. To stress-test your plan against market fluctuations, market crashes, and 1,000+ stochastic scenarios, navigate to the <strong>Risk &amp; Monte Carlo</strong> tab.
-          </p>
-        </div>
+        )}
       </div>
 
       {/* PLAN FEASIBILITY & FAILURE HIGHLIGHT BANNER */}
@@ -1090,250 +1099,252 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
       )}
 
       {/* RETIREMENT START POT BREAKDOWN (PRIMARY & PARTNER) */}
-      <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-700/60 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-200/80 dark:border-slate-700/60">
-          <div className="flex items-center gap-2">
-            <PieChart className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-            <h3 className="font-extrabold text-slate-900 dark:text-white text-sm">
-              Retirement Start Pot Breakdown (Age {profile.targetRetirementAge} / {retirementYear?.year || ''})
-            </h3>
-          </div>
-
-          <div className="flex items-center gap-3">
-            {hasPurchasedAnnuity && (
-              <label className="flex items-center gap-1.5 text-xs text-pink-700 dark:text-pink-300 font-extrabold bg-pink-50 dark:bg-pink-950/80 px-2.5 py-1 rounded-xl border border-pink-200 dark:border-pink-800/80 cursor-pointer shadow-2xs">
-                <input
-                  type="checkbox"
-                  checked={showAnnuitiesInPotBreakdown}
-                  onChange={(e) => setShowAnnuitiesInPotBreakdown(e.target.checked)}
-                  className="w-3.5 h-3.5 text-pink-600 rounded border-pink-300 focus:ring-pink-500 cursor-pointer"
-                />
-                <span>🌸 Display Purchased Annuity</span>
-              </label>
-            )}
-            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
-              Total Capital: <strong className="text-emerald-600 dark:text-emerald-400 font-black text-xs">£{(displayedRetirementPot || 0).toLocaleString()}</strong> ({adjustInflation ? "Real Terms" : "Nominal"})
-            </span>
-          </div>
-        </div>
-
-        {profile.isCouplePlanning ? (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3.5">
-            {/* Combined Household Card */}
-            <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4 text-emerald-500" />
-                  <span className="font-bold text-xs text-slate-800 dark:text-slate-100">Combined Household</span>
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full">
-                  100% Total
-                </span>
-              </div>
-              <div className="text-2xl font-black text-slate-900 dark:text-white">
-                £{(combinedTotalPotAtRetirement || 0).toLocaleString()}
-              </div>
-              <div className="space-y-1.5 text-xs pt-2 border-t border-slate-100 dark:border-slate-800">
-                <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
-                  <span className="flex items-center gap-1.5 font-medium">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                    Pension Pot
-                  </span>
-                  <span className="font-bold text-slate-900 dark:text-white">£{(combinedPensionPotAtRetirement || 0).toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
-                  <span className="flex items-center gap-1.5 font-medium">
-                    <span className="w-2 h-2 rounded-full bg-indigo-500" />
-                    ISA Pot
-                  </span>
-                  <span className="font-bold text-slate-900 dark:text-white">£{(combinedIsaPotAtRetirement || 0).toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
-                  <span className="flex items-center gap-1.5 font-medium">
-                    <span className="w-2 h-2 rounded-full bg-amber-500" />
-                    Cash / GIA Pot
-                  </span>
-                  <span className="font-bold text-slate-900 dark:text-white">£{(combinedCashGiaPotAtRetirement || 0).toLocaleString()}</span>
-                </div>
-                {showAnnuitiesInPotBreakdown && hasPurchasedAnnuity && (
-                  <div className="flex justify-between items-center text-pink-700 dark:text-pink-300 pt-1 border-t border-pink-100 dark:border-pink-950 font-bold">
-                    <span className="flex items-center gap-1.5 font-bold">
-                      <span className="w-2 h-2 rounded-full bg-pink-500" />
-                      Guaranteed Annuity
-                    </span>
-                    <span className="font-extrabold text-pink-600 dark:text-pink-400">
-                      £{(retirementAnnuityIncome || maxAnnuityIncomeAcrossTimeline || 0).toLocaleString()}/yr
-                    </span>
-                  </div>
-                )}
-              </div>
+      {!isStudioMode && (
+        <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-700/60 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-200/80 dark:border-slate-700/60">
+            <div className="flex items-center gap-2">
+              <PieChart className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <h3 className="font-extrabold text-slate-900 dark:text-white text-sm">
+                Retirement Start Pot Breakdown (Age {profile.targetRetirementAge} / {retirementYear?.year || ''})
+              </h3>
             </div>
 
-            {/* Primary User Card */}
-            <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-indigo-200 dark:border-indigo-900/60 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <User className="w-4 h-4 text-indigo-500" />
-                  <span className="font-bold text-xs text-indigo-950 dark:text-indigo-200">{profile.name || 'Primary User'}</span>
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-wider bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-full">
-                  {(primarySharePct || 0).toFixed(0)}% Share
-                </span>
-              </div>
-              <div className="text-2xl font-black text-indigo-950 dark:text-indigo-100">
-                £{(primaryTotalPotAtRetirement || 0).toLocaleString()}
-              </div>
-              <div className="space-y-1.5 text-xs pt-2 border-t border-slate-100 dark:border-slate-800">
-                <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
-                  <span className="font-medium">Pension Pot</span>
-                  <span className="font-bold text-slate-900 dark:text-white">£{(primaryPensionPotAtRetirement || 0).toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
-                  <span className="font-medium">ISA Pot Total</span>
-                  <span className="font-bold text-slate-900 dark:text-white">£{(primaryIsaPotAtRetirement || 0).toLocaleString()}</span>
-                </div>
-                {(primarySsIsaPotAtRetirement > 0 || primaryCashIsaPotAtRetirement > 0 || primaryLisaPotAtRetirement > 0) && (
-                  <div className="pl-2 border-l-2 border-indigo-200 dark:border-indigo-800 space-y-0.5 text-[11px] text-slate-500 dark:text-slate-400">
-                    <div className="flex justify-between"><span>S&S ISA:</span><span className="font-semibold text-slate-700 dark:text-slate-300">£{(primarySsIsaPotAtRetirement || 0).toLocaleString()}</span></div>
-                    <div className="flex justify-between"><span>Cash ISA:</span><span className="font-semibold text-slate-700 dark:text-slate-300">£{(primaryCashIsaPotAtRetirement || 0).toLocaleString()}</span></div>
-                    <div className="flex justify-between"><span>LISA:</span><span className="font-semibold text-slate-700 dark:text-slate-300">£{(primaryLisaPotAtRetirement || 0).toLocaleString()}</span></div>
-                  </div>
-                )}
-                <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
-                  <span className="font-medium">Cash / GIA Pot</span>
-                  <span className="font-bold text-slate-900 dark:text-white">£{(primaryCashGiaPotAtRetirement || 0).toLocaleString()}</span>
-                </div>
-                {showAnnuitiesInPotBreakdown && hasPurchasedAnnuity && (profile.incomeProductOption === 'annuity' || profile.incomeProductOption === 'hybrid') && (
-                  <div className="flex justify-between items-center text-pink-700 dark:text-pink-300 pt-1 border-t border-pink-100 dark:border-pink-950 font-bold">
-                    <span className="font-bold">Annuity Payout</span>
-                    <span className="font-extrabold text-pink-600 dark:text-pink-400">
-                      £{(retirementAnnuityIncome || maxAnnuityIncomeAcrossTimeline || 0).toLocaleString()}/yr
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Partner Card */}
-            <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-rose-200 dark:border-rose-900/60 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Heart className="w-4 h-4 text-rose-500 fill-rose-500/20" />
-                  <span className="font-bold text-xs text-rose-950 dark:text-rose-200">{profile.partnerName || 'Partner'}</span>
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-wider bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 px-2 py-0.5 rounded-full">
-                  {(partnerSharePct || 0).toFixed(0)}% Share
-                </span>
-              </div>
-              <div className="text-2xl font-black text-rose-950 dark:text-rose-100">
-                £{(partnerTotalPotAtRetirement || 0).toLocaleString()}
-              </div>
-              <div className="space-y-1.5 text-xs pt-2 border-t border-slate-100 dark:border-slate-800">
-                <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
-                  <span className="font-medium">Pension Pot</span>
-                  <span className="font-bold text-slate-900 dark:text-white">£{(partnerPensionPotAtRetirement || 0).toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
-                  <span className="font-medium">ISA Pot Total</span>
-                  <span className="font-bold text-slate-900 dark:text-white">£{(partnerIsaPotAtRetirement || 0).toLocaleString()}</span>
-                </div>
-                {(partnerSsIsaPotAtRetirement > 0 || partnerCashIsaPotAtRetirement > 0 || partnerLisaPotAtRetirement > 0) && (
-                  <div className="pl-2 border-l-2 border-rose-200 dark:border-rose-800 space-y-0.5 text-[11px] text-slate-500 dark:text-slate-400">
-                    <div className="flex justify-between"><span>S&S ISA:</span><span className="font-semibold text-slate-700 dark:text-slate-300">£{(partnerSsIsaPotAtRetirement || 0).toLocaleString()}</span></div>
-                    <div className="flex justify-between"><span>Cash ISA:</span><span className="font-semibold text-slate-700 dark:text-slate-300">£{(partnerCashIsaPotAtRetirement || 0).toLocaleString()}</span></div>
-                    <div className="flex justify-between"><span>LISA:</span><span className="font-semibold text-slate-700 dark:text-slate-300">£{(partnerLisaPotAtRetirement || 0).toLocaleString()}</span></div>
-                  </div>
-                )}
-                <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
-                  <span className="font-medium">Cash / GIA Pot</span>
-                  <span className="font-bold text-slate-900 dark:text-white">£{(partnerCashGiaPotAtRetirement || 0).toLocaleString()}</span>
-                </div>
-                {showAnnuitiesInPotBreakdown && hasPurchasedAnnuity && (profile.partnerIncomeProductOption === 'annuity' || profile.partnerIncomeProductOption === 'hybrid') && (
-                  <div className="flex justify-between items-center text-pink-700 dark:text-pink-300 pt-1 border-t border-pink-100 dark:border-pink-950 font-bold">
-                    <span className="font-bold">Annuity Payout</span>
-                    <span className="font-extrabold text-pink-600 dark:text-pink-400">Active</span>
-                  </div>
-                )}
-              </div>
+            <div className="flex items-center gap-3">
+              {hasPurchasedAnnuity && (
+                <label className="flex items-center gap-1.5 text-xs text-pink-700 dark:text-pink-300 font-extrabold bg-pink-50 dark:bg-pink-950/80 px-2.5 py-1 rounded-xl border border-pink-200 dark:border-pink-800/80 cursor-pointer shadow-2xs">
+                  <input
+                    type="checkbox"
+                    checked={showAnnuitiesInPotBreakdown}
+                    onChange={(e) => setShowAnnuitiesInPotBreakdown(e.target.checked)}
+                    className="w-3.5 h-3.5 text-pink-600 rounded border-pink-300 focus:ring-pink-500 cursor-pointer"
+                  />
+                  <span>🌸 Display Purchased Annuity</span>
+                </label>
+              )}
+              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                Total Capital: <strong className="text-emerald-600 dark:text-emerald-400 font-black text-xs">£{(displayedRetirementPot || 0).toLocaleString()}</strong> ({adjustInflation ? "Real Terms" : "Nominal"})
+              </span>
             </div>
           </div>
-        ) : (
-          /* Single User Breakdown */
-          <div className={`grid grid-cols-1 ${showAnnuitiesInPotBreakdown && hasPurchasedAnnuity ? 'sm:grid-cols-4' : 'sm:grid-cols-3'} gap-3.5`}>
-            <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-emerald-200 dark:border-emerald-800/80 space-y-1">
-              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                <span>Workplace & SIPP Pension</span>
+
+          {profile.isCouplePlanning ? (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3.5">
+              {/* Combined Household Card */}
+              <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-emerald-500" />
+                    <span className="font-bold text-xs text-slate-800 dark:text-slate-100">Combined Household</span>
+                  </div>
+                  <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full">
+                    100% Total
+                  </span>
+                </div>
+                <div className="text-2xl font-black text-slate-900 dark:text-white">
+                  £{(combinedTotalPotAtRetirement || 0).toLocaleString()}
+                </div>
+                <div className="space-y-1.5 text-xs pt-2 border-t border-slate-100 dark:border-slate-800">
+                  <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
+                    <span className="flex items-center gap-1.5 font-medium">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                      Pension Pot
+                    </span>
+                    <span className="font-bold text-slate-900 dark:text-white">£{(combinedPensionPotAtRetirement || 0).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
+                    <span className="flex items-center gap-1.5 font-medium">
+                      <span className="w-2 h-2 rounded-full bg-indigo-500" />
+                      ISA Pot
+                    </span>
+                    <span className="font-bold text-slate-900 dark:text-white">£{(combinedIsaPotAtRetirement || 0).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
+                    <span className="flex items-center gap-1.5 font-medium">
+                      <span className="w-2 h-2 rounded-full bg-amber-500" />
+                      Cash / GIA Pot
+                    </span>
+                    <span className="font-bold text-slate-900 dark:text-white">£{(combinedCashGiaPotAtRetirement || 0).toLocaleString()}</span>
+                  </div>
+                  {showAnnuitiesInPotBreakdown && hasPurchasedAnnuity && (
+                    <div className="flex justify-between items-center text-pink-700 dark:text-pink-300 pt-1 border-t border-pink-100 dark:border-pink-950 font-bold">
+                      <span className="flex items-center gap-1.5 font-bold">
+                        <span className="w-2 h-2 rounded-full bg-pink-500" />
+                        Guaranteed Annuity
+                      </span>
+                      <span className="font-extrabold text-pink-600 dark:text-pink-400">
+                        £{(retirementAnnuityIncome || maxAnnuityIncomeAcrossTimeline || 0).toLocaleString()}/yr
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">
-                £{(combinedPensionPotAtRetirement || 0).toLocaleString()}
+
+              {/* Primary User Card */}
+              <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-indigo-200 dark:border-indigo-900/60 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <User className="w-4 h-4 text-indigo-500" />
+                    <span className="font-bold text-xs text-indigo-950 dark:text-indigo-200">{profile.name || 'Primary User'}</span>
+                  </div>
+                  <span className="text-[10px] font-black uppercase tracking-wider bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-full">
+                    {(primarySharePct || 0).toFixed(0)}% Share
+                  </span>
+                </div>
+                <div className="text-2xl font-black text-indigo-950 dark:text-indigo-100">
+                  £{(primaryTotalPotAtRetirement || 0).toLocaleString()}
+                </div>
+                <div className="space-y-1.5 text-xs pt-2 border-t border-slate-100 dark:border-slate-800">
+                  <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
+                    <span className="font-medium">Pension Pot</span>
+                    <span className="font-bold text-slate-900 dark:text-white">£{(primaryPensionPotAtRetirement || 0).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
+                    <span className="font-medium">ISA Pot Total</span>
+                    <span className="font-bold text-slate-900 dark:text-white">£{(primaryIsaPotAtRetirement || 0).toLocaleString()}</span>
+                  </div>
+                  {(primarySsIsaPotAtRetirement > 0 || primaryCashIsaPotAtRetirement > 0 || primaryLisaPotAtRetirement > 0) && (
+                    <div className="pl-2 border-l-2 border-indigo-200 dark:border-indigo-800 space-y-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+                      <div className="flex justify-between"><span>S&S ISA:</span><span className="font-semibold text-slate-700 dark:text-slate-300">£{(primarySsIsaPotAtRetirement || 0).toLocaleString()}</span></div>
+                      <div className="flex justify-between"><span>Cash ISA:</span><span className="font-semibold text-slate-700 dark:text-slate-300">£{(primaryCashIsaPotAtRetirement || 0).toLocaleString()}</span></div>
+                      <div className="flex justify-between"><span>LISA:</span><span className="font-semibold text-slate-700 dark:text-slate-300">£{(primaryLisaPotAtRetirement || 0).toLocaleString()}</span></div>
+                    </div>
+                  )}
+                  <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
+                    <span className="font-medium">Cash / GIA Pot</span>
+                    <span className="font-bold text-slate-900 dark:text-white">£{(primaryCashGiaPotAtRetirement || 0).toLocaleString()}</span>
+                  </div>
+                  {showAnnuitiesInPotBreakdown && hasPurchasedAnnuity && (profile.incomeProductOption === 'annuity' || profile.incomeProductOption === 'hybrid') && (
+                    <div className="flex justify-between items-center text-pink-700 dark:text-pink-300 pt-1 border-t border-pink-100 dark:border-pink-950 font-bold">
+                      <span className="font-bold">Annuity Payout</span>
+                      <span className="font-extrabold text-pink-600 dark:text-pink-400">
+                        £{(retirementAnnuityIncome || maxAnnuityIncomeAcrossTimeline || 0).toLocaleString()}/yr
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="text-[11px] text-slate-500 font-medium">
-                {combinedTotalPotAtRetirement > 0 ? `${((combinedPensionPotAtRetirement / combinedTotalPotAtRetirement) * 100).toFixed(1)}% of total portfolio` : '0%'}
+
+              {/* Partner Card */}
+              <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-rose-200 dark:border-rose-900/60 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Heart className="w-4 h-4 text-rose-500 fill-rose-500/20" />
+                    <span className="font-bold text-xs text-rose-950 dark:text-rose-200">{profile.partnerName || 'Partner'}</span>
+                  </div>
+                  <span className="text-[10px] font-black uppercase tracking-wider bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 px-2 py-0.5 rounded-full">
+                    {(partnerSharePct || 0).toFixed(0)}% Share
+                  </span>
+                </div>
+                <div className="text-2xl font-black text-rose-950 dark:text-rose-100">
+                  £{(partnerTotalPotAtRetirement || 0).toLocaleString()}
+                </div>
+                <div className="space-y-1.5 text-xs pt-2 border-t border-slate-100 dark:border-slate-800">
+                  <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
+                    <span className="font-medium">Pension Pot</span>
+                    <span className="font-bold text-slate-900 dark:text-white">£{(partnerPensionPotAtRetirement || 0).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
+                    <span className="font-medium">ISA Pot Total</span>
+                    <span className="font-bold text-slate-900 dark:text-white">£{(partnerIsaPotAtRetirement || 0).toLocaleString()}</span>
+                  </div>
+                  {(partnerSsIsaPotAtRetirement > 0 || partnerCashIsaPotAtRetirement > 0 || partnerLisaPotAtRetirement > 0) && (
+                    <div className="pl-2 border-l-2 border-rose-200 dark:border-rose-800 space-y-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+                      <div className="flex justify-between"><span>S&S ISA:</span><span className="font-semibold text-slate-700 dark:text-slate-300">£{(partnerSsIsaPotAtRetirement || 0).toLocaleString()}</span></div>
+                      <div className="flex justify-between"><span>Cash ISA:</span><span className="font-semibold text-slate-700 dark:text-slate-300">£{(partnerCashIsaPotAtRetirement || 0).toLocaleString()}</span></div>
+                      <div className="flex justify-between"><span>LISA:</span><span className="font-semibold text-slate-700 dark:text-slate-300">£{(partnerLisaPotAtRetirement || 0).toLocaleString()}</span></div>
+                    </div>
+                  )}
+                  <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
+                    <span className="font-medium">Cash / GIA Pot</span>
+                    <span className="font-bold text-slate-900 dark:text-white">£{(partnerCashGiaPotAtRetirement || 0).toLocaleString()}</span>
+                  </div>
+                  {showAnnuitiesInPotBreakdown && hasPurchasedAnnuity && (profile.partnerIncomeProductOption === 'annuity' || profile.partnerIncomeProductOption === 'hybrid') && (
+                    <div className="flex justify-between items-center text-pink-700 dark:text-pink-300 pt-1 border-t border-pink-100 dark:border-pink-950 font-bold">
+                      <span className="font-bold">Annuity Payout</span>
+                      <span className="font-extrabold text-pink-600 dark:text-pink-400">Active</span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-
-            <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-indigo-200 dark:border-indigo-800/80 space-y-1.5">
-              <div className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider flex items-center justify-between">
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-indigo-500" />
-                  <span>Total ISA Portfolio</span>
-                </span>
-                <span className="text-[10px] font-extrabold bg-indigo-100 dark:bg-indigo-950 px-1.5 py-0.5 rounded">
-                  {combinedTotalPotAtRetirement > 0 ? `${((combinedIsaPotAtRetirement / combinedTotalPotAtRetirement) * 100).toFixed(1)}%` : '0%'}
-                </span>
-              </div>
-              <div className="text-xl font-extrabold text-indigo-600 dark:text-indigo-400">
-                £{(combinedIsaPotAtRetirement || 0).toLocaleString()}
-              </div>
-
-              {/* Sub-breakdown of ISA types */}
-              <div className="pt-1.5 border-t border-slate-100 dark:border-slate-800 space-y-1 text-[11px]">
-                <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
-                  <span>📈 Stocks & Shares ISA:</span>
-                  <span className="font-bold">£{(combinedSsIsaPotAtRetirement || 0).toLocaleString()}</span>
+          ) : (
+            /* Single User Breakdown */
+            <div className={`grid grid-cols-1 ${showAnnuitiesInPotBreakdown && hasPurchasedAnnuity ? 'sm:grid-cols-4' : 'sm:grid-cols-3'} gap-3.5`}>
+              <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-emerald-200 dark:border-emerald-800/80 space-y-1">
+                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                  <span>Workplace & SIPP Pension</span>
                 </div>
-                <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
-                  <span>🏦 Cash ISA:</span>
-                  <span className="font-bold">£{(combinedCashIsaPotAtRetirement || 0).toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
-                  <span>🎁 Lifetime ISA (LISA):</span>
-                  <span className="font-bold">£{(combinedLisaPotAtRetirement || 0).toLocaleString()}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-amber-200 dark:border-amber-800/80 space-y-1">
-              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-                <span>Unsheltered Cash & GIA</span>
-              </div>
-              <div className="text-xl font-extrabold text-amber-600 dark:text-amber-400">
-                £{(combinedCashGiaPotAtRetirement || 0).toLocaleString()}
-              </div>
-              <div className="text-[11px] text-slate-500 font-medium">
-                {combinedTotalPotAtRetirement > 0 ? `${((combinedCashGiaPotAtRetirement / combinedTotalPotAtRetirement) * 100).toFixed(1)}% of total portfolio` : '0%'}
-              </div>
-            </div>
-
-            {showAnnuitiesInPotBreakdown && hasPurchasedAnnuity && (
-              <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-pink-200 dark:border-pink-800/80 space-y-1">
-                <div className="text-[10px] font-bold text-pink-600 dark:text-pink-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-pink-500" />
-                  <span>Guaranteed Annuity Stream</span>
-                </div>
-                <div className="text-xl font-extrabold text-pink-600 dark:text-pink-400">
-                  £{(retirementAnnuityIncome || maxAnnuityIncomeAcrossTimeline || 0).toLocaleString()}/yr
+                <div className="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">
+                  £{(combinedPensionPotAtRetirement || 0).toLocaleString()}
                 </div>
                 <div className="text-[11px] text-slate-500 font-medium">
-                  {retirementAnnuityCapital > 0 ? `£${(retirementAnnuityCapital || 0).toLocaleString()} pension capital converted` : 'Guaranteed income for life'}
+                  {combinedTotalPotAtRetirement > 0 ? `${((combinedPensionPotAtRetirement / combinedTotalPotAtRetirement) * 100).toFixed(1)}% of total portfolio` : '0%'}
                 </div>
               </div>
-            )}
-          </div>
-        )}
-      </div>
+
+              <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-indigo-200 dark:border-indigo-800/80 space-y-1.5">
+                <div className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-indigo-500" />
+                    <span>Total ISA Portfolio</span>
+                  </span>
+                  <span className="text-[10px] font-extrabold bg-indigo-100 dark:bg-indigo-950 px-1.5 py-0.5 rounded">
+                    {combinedTotalPotAtRetirement > 0 ? `${((combinedIsaPotAtRetirement / combinedTotalPotAtRetirement) * 100).toFixed(1)}%` : '0%'}
+                  </span>
+                </div>
+                <div className="text-xl font-extrabold text-indigo-600 dark:text-indigo-400">
+                  £{(combinedIsaPotAtRetirement || 0).toLocaleString()}
+                </div>
+
+                {/* Sub-breakdown of ISA types */}
+                <div className="pt-1.5 border-t border-slate-100 dark:border-slate-800 space-y-1 text-[11px]">
+                  <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
+                    <span>📈 Stocks & Shares ISA:</span>
+                    <span className="font-bold">£{(combinedSsIsaPotAtRetirement || 0).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
+                    <span>🏦 Cash ISA:</span>
+                    <span className="font-bold">£{(combinedCashIsaPotAtRetirement || 0).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
+                    <span>🎁 Lifetime ISA (LISA):</span>
+                    <span className="font-bold">£{(combinedLisaPotAtRetirement || 0).toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-amber-200 dark:border-amber-800/80 space-y-1">
+                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+                  <span>Unsheltered Cash & GIA</span>
+                </div>
+                <div className="text-xl font-extrabold text-amber-600 dark:text-amber-400">
+                  £{(combinedCashGiaPotAtRetirement || 0).toLocaleString()}
+                </div>
+                <div className="text-[11px] text-slate-500 font-medium">
+                  {combinedTotalPotAtRetirement > 0 ? `${((combinedCashGiaPotAtRetirement / combinedTotalPotAtRetirement) * 100).toFixed(1)}% of total portfolio` : '0%'}
+                </div>
+              </div>
+
+              {showAnnuitiesInPotBreakdown && hasPurchasedAnnuity && (
+                <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-pink-200 dark:border-pink-800/80 space-y-1">
+                  <div className="text-[10px] font-bold text-pink-600 dark:text-pink-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-pink-500" />
+                    <span>Guaranteed Annuity Stream</span>
+                  </div>
+                  <div className="text-xl font-extrabold text-pink-600 dark:text-pink-400">
+                    £{(retirementAnnuityIncome || maxAnnuityIncomeAcrossTimeline || 0).toLocaleString()}/yr
+                  </div>
+                  <div className="text-[11px] text-slate-500 font-medium">
+                    {retirementAnnuityCapital > 0 ? `£${(retirementAnnuityCapital || 0).toLocaleString()} pension capital converted` : 'Guaranteed income for life'}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* CHART RENDERING CONTAINER */}
       {showAllCharts ? (

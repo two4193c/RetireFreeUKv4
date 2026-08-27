@@ -4,6 +4,8 @@ import { describe, it, expect, vi } from 'vitest';
 import { CashFlowSankeyCard } from '../CashFlowSankeyCard';
 import { UserProfile, YearProjection } from '../../types';
 
+import { DEFAULT_PROFILE } from '../../utils/defaultData';
+
 // Mock ResizeObserver for Recharts / Responsive components if any
 class MockResizeObserver {
   observe() {}
@@ -13,6 +15,7 @@ class MockResizeObserver {
 window.ResizeObserver = MockResizeObserver;
 
 const mockProfile: UserProfile = {
+  ...DEFAULT_PROFILE,
   currentAge: 30,
   targetRetirementAge: 60,
   isCouplePlanning: true,

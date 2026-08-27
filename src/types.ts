@@ -1,6 +1,6 @@
 export type UKTaxRegion = 'england_ni_wales' | 'scotland';
 
-export type AppMode = 'basic' | 'advanced';
+export type AppMode = 'basic' | 'advanced' | 'studio';
 
 export type ContributionMethod = 'salary_sacrifice' | 'relief_at_source' | 'net_pay';
 

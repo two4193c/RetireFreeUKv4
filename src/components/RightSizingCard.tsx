@@ -84,9 +84,11 @@ export const RightSizingCard: React.FC<RightSizingCardProps> = ({ profile, onCha
             </div>
             Right-Sizing Your Home
           </h2>
-          <p className="text-slate-500 dark:text-slate-400 mt-1.5 text-sm sm:text-base max-w-2xl">
-            Model selling your primary residence to release equity. We calculate future property growth, moving costs, and UK Stamp Duty.
-          </p>
+          {!isStudioMode && (
+            <p className="text-slate-500 dark:text-slate-400 mt-1.5 text-sm sm:text-base max-w-2xl">
+              Model selling your primary residence to release equity. We calculate future property growth, moving costs, and UK Stamp Duty.
+            </p>
+          )}
         </div>
 
         <button

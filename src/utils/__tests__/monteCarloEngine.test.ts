@@ -102,7 +102,7 @@ describe('monteCarloEngine - massive market crashes and percentile edge cases', 
         expectedInvestmentReturn: 5,
         targetRetirementAge: 60,
         essentialRetirementAnnualSpend: 100000 // Huge spend to force depletion
-      }, 
+      } as any, 
       {
         ...DEFAULT_POTS,
         primaryWorkplacePensionBalance: 100000, // Small pot to deplete quickly
@@ -111,7 +111,7 @@ describe('monteCarloEngine - massive market crashes and percentile edge cases', 
         cashIsaBalance: 0,
         stocksSharesIsaBalance: 0,
         giaBalance: 0,
-      }, 
+      } as any, 
       taxResult, 
       {
         numSimulations: 10,
@@ -142,11 +142,11 @@ describe('monteCarloEngine - massive market crashes and percentile edge cases', 
         expectedInvestmentReturn: 0,
         targetRetirementAge: 65,
         essentialRetirementAnnualSpend: 200000 
-      }, 
+      } as any, 
       {
         ...DEFAULT_POTS,
         primaryWorkplacePensionBalance: 150000, 
-      }, 
+      } as any, 
       taxResult, 
       {
         numSimulations: 10,
@@ -170,8 +170,8 @@ describe('monteCarloEngine - missing areas', () => {
   it('covers drawdown strategies inside the loop', () => {
     ['tax_optimizer', 'pension_first', 'cash_first', 'proportional', 'basic_rate_bracket', 'higher_rate_bracket'].forEach(strategy => {
       const result = runMonteCarloSimulation(
-        { ...DEFAULT_PROFILE, drawdownStrategy: strategy, targetRetirementAge: 60, currentAge: 59 },
-        { ...DEFAULT_POTS, primaryWorkplacePensionBalance: 100000, cashSavingsBalance: 50000, stocksSharesIsaBalance: 50000 },
+        { ...DEFAULT_PROFILE, drawdownStrategy: strategy, targetRetirementAge: 60, currentAge: 59 } as any,
+        { ...DEFAULT_POTS, primaryWorkplacePensionBalance: 100000, cashSavingsBalance: 50000, stocksSharesIsaBalance: 50000 } as any,
         calculateUKTax(DEFAULT_PROFILE, DEFAULT_POTS),
         { numSimulations: 2, maxAge: 65, marketScenario: 'standard' }
       );
@@ -190,14 +190,14 @@ describe('monteCarloEngine - missing areas', () => {
         targetRetirementAge: 62,
         partnerDrawdownStrategy: 'tax_optimizer',
         drawdownStrategy: 'pension_first'
-      },
+      } as any,
       { 
         ...DEFAULT_POTS, 
         primaryWorkplacePensionBalance: 100000,
         partnerWorkplacePensionBalance: 100000,
         cashSavingsBalance: 50000,
         partnerCashSavingsBalance: 50000 
-      },
+      } as any,
       calculateUKTax(DEFAULT_PROFILE, DEFAULT_POTS),
       { numSimulations: 2, maxAge: 70, marketScenario: 'standard' }
     );
@@ -217,7 +217,7 @@ describe('monteCarloEngine - missing areas', () => {
           targetRetirementAge: 65,
           essentialRetirementAnnualSpend: 10000,
           statePensionAmountAnnual: 20000,
-        },
+        } as any,
         DEFAULT_POTS,
         calculateUKTax(DEFAULT_PROFILE, DEFAULT_POTS),
         { numSimulations: 2, maxAge: 70 }
@@ -232,8 +232,8 @@ describe('monteCarloEngine - missing areas', () => {
         ...DEFAULT_PROFILE, 
         currentAge: 60, 
         targetRetirementAge: 60,
-      },
-      { ...DEFAULT_POTS, cashSavingsBalance: 100000, giaBalance: 50000, stocksSharesIsaBalance: 50000 },
+      } as any,
+      { ...DEFAULT_POTS, cashSavingsBalance: 100000, giaBalance: 50000, stocksSharesIsaBalance: 50000 } as any,
       calculateUKTax(DEFAULT_PROFILE, DEFAULT_POTS),
       { 
         numSimulations: 2, 
@@ -255,8 +255,8 @@ describe('monteCarloEngine - missing areas', () => {
         targetRetirementAge: 60,
         crystallisationMode: 'phased_tranches',
         crystallisationTranches: [
-          { age: 60, amount: 50000, pclsPercent: 25, targetPot: 'cash_savings', owner: 'primary', enabled: true },
-          { age: 61, amount: 50000, pclsPercent: 25, targetPot: 'stocks_and_shares_isa', owner: 'primary', enabled: true }
+          { id: 't1', age: 60, amount: 50000, pclsPercent: 25, targetPot: 'cash_savings', owner: 'primary', enabled: true },
+          { id: 't2', age: 61, amount: 50000, pclsPercent: 25, targetPot: 'stocks_and_shares_isa', owner: 'primary', enabled: true }
         ],
         partnerCrystallisationMode: 'upfront',
         partnerTakeLumpSumAtStart: true,
@@ -264,12 +264,12 @@ describe('monteCarloEngine - missing areas', () => {
         partnerCurrentAge: 60,
         partnerTargetRetirementAge: 60,
         partnerPclsLumpSumPercent: 25
-      },
+      } as any,
       {
         ...DEFAULT_POTS,
         primaryWorkplacePensionBalance: 200000,
         partnerWorkplacePensionBalance: 200000
-      },
+      } as any,
       calculateUKTax(DEFAULT_PROFILE, DEFAULT_POTS),
       { numSimulations: 2, maxAge: 65 }
     );
@@ -283,17 +283,17 @@ describe('monteCarloEngine - missing areas', () => {
         currentAge: 60,
         targetRetirementAge: 60,
         annuities: [
-          { enabled: true, purchaseAge: 62, purchaseAmount: 50000, type: 'inflation_linked', durationOption: 'life', owner: 'primary' },
-          { enabled: true, purchaseAge: 63, purchaseAmount: 50000, type: 'level', durationOption: 'fixed_term', durationUntilAge: 75, owner: 'partner' }
+          { id: 'a1', enabled: true, purchaseAge: 62, purchaseAmount: 50000, type: 'inflation_linked', durationOption: 'life', owner: 'primary' },
+          { id: 'a2', enabled: true, purchaseAge: 63, purchaseAmount: 50000, type: 'level', durationOption: 'fixed_term', durationUntilAge: 75, owner: 'partner' }
         ],
         isCouplePlanning: true,
         partnerCurrentAge: 60
-      },
+      } as any,
       {
         ...DEFAULT_POTS,
         primaryWorkplacePensionBalance: 200000,
         partnerWorkplacePensionBalance: 200000
-      },
+      } as any,
       calculateUKTax(DEFAULT_PROFILE, DEFAULT_POTS),
       { numSimulations: 2, maxAge: 70 }
     );
@@ -307,14 +307,14 @@ describe('monteCarloEngine - missing areas', () => {
         currentAge: 60,
         targetRetirementAge: 60,
         decumulationLifeEvents: [
-          { enabled: true, type: 'income', age: 61, amount: 20000, targetPot: 'cash_savings', owner: 'primary' },
-          { enabled: true, type: 'expense', age: 62, amount: 15000, targetPot: 'stocks_and_shares_isa', owner: 'primary' },
-          { enabled: true, type: 'income', age: 63, amount: 20000, targetPot: 'sipp', owner: 'partner' }
+          { id: 'le1', name: 'Event 1', enabled: true, type: 'income', age: 61, amount: 20000, targetPot: 'cash_savings', owner: 'primary' },
+          { id: 'le2', name: 'Event 2', enabled: true, type: 'expense', age: 62, amount: 15000, targetPot: 'stocks_and_shares_isa', owner: 'primary' },
+          { id: 'le3', name: 'Event 3', enabled: true, type: 'income', age: 63, amount: 20000, targetPot: 'sipp', owner: 'partner' }
         ],
         isCouplePlanning: true,
         partnerCurrentAge: 60
-      },
-      { ...DEFAULT_POTS, cashSavingsBalance: 50000, stocksSharesIsaBalance: 50000 },
+      } as any,
+      { ...DEFAULT_POTS, cashSavingsBalance: 50000, stocksSharesIsaBalance: 50000 } as any,
       calculateUKTax(DEFAULT_PROFILE, DEFAULT_POTS),
       { numSimulations: 2, maxAge: 65 }
     );
@@ -331,22 +331,22 @@ describe('monteCarloEngine - missing areas', () => {
         partnerCurrentAge: 60,
         partnerTargetRetirementAge: 60,
         fixedIncomeStreams: [
-          { enabled: true, owner: 'primary', startAge: 61, annualAmount: 5000, type: 'taxable', inflationLinked: true },
-          { enabled: true, owner: 'partner', startAge: 61, endAge: 68, annualAmount: 5000, type: 'tax_free', inflationLinked: false }
+          { id: 'fi1', name: 'FI 1', enabled: true, owner: 'primary', startAge: 61, annualAmount: 5000, type: 'taxable', inflationLinked: true },
+          { id: 'fi2', name: 'FI 2', enabled: true, owner: 'partner', startAge: 61, endAge: 68, annualAmount: 5000, type: 'tax_free', inflationLinked: false }
         ],
         dbPensions: [
-          { enabled: true, owner: 'primary', startAge: 61, annualIncome: 5000, inflationLinked: true, taxFreeLumpSum: 10000, targetPot: 'cash_savings' },
-          { enabled: true, owner: 'partner', startAge: 61, annualIncome: 5000, inflationLinked: false, taxFreeLumpSum: 0 }
+          { id: 'db1', name: 'DB 1', enabled: true, owner: 'primary', startAge: 61, annualIncome: 5000, inflationLinked: true, taxFreeLumpSum: 10000, targetPot: 'cash_savings' },
+          { id: 'db2', name: 'DB 2', enabled: true, owner: 'partner', startAge: 61, annualIncome: 5000, inflationLinked: false, taxFreeLumpSum: 0 }
         ],
         potTransfers: [
-          { enabled: true, sourcePot: 'workplace_pension', destinationPot: 'sipp', transferAge: 62, amount: 10000, owner: 'primary' },
-          { enabled: true, sourcePot: 'stocks_and_shares_isa', destinationPot: 'cash_isa', transferAge: 62, amount: 5000, owner: 'partner' }
+          { id: 'pt1', name: 'PT 1', enabled: true, sourcePot: 'workplace_pension', destinationPot: 'sipp', transferAge: 62, amount: 10000, owner: 'primary' },
+          { id: 'pt2', name: 'PT 2', enabled: true, sourcePot: 'stocks_and_shares_isa', destinationPot: 'cash_isa', transferAge: 62, amount: 5000, owner: 'partner' }
         ],
         oneOffContributions: [
-          { enabled: true, targetPot: 'sipp', date: String(new Date().getFullYear() + 2), grossAmount: 10000, owner: 'primary', frequency: 'one_off' }
+          { id: 'oc1', name: 'OC 1', enabled: true, targetPot: 'sipp', date: String(new Date().getFullYear() + 2), grossAmount: 10000, owner: 'primary', frequency: 'one_off' }
         ]
-      },
-      { ...DEFAULT_POTS, primaryWorkplacePensionBalance: 100000, partnerWorkplacePensionBalance: 100000, stocksSharesIsaBalance: 50000 },
+      } as any,
+      { ...DEFAULT_POTS, primaryWorkplacePensionBalance: 100000, partnerWorkplacePensionBalance: 100000, stocksSharesIsaBalance: 50000 } as any,
       calculateUKTax(DEFAULT_PROFILE, DEFAULT_POTS),
       { numSimulations: 2, maxAge: 65 }
     );
@@ -375,7 +375,7 @@ describe('monteCarloEngine - specific missing lines for >80% coverage', () => {
           drawdownStrategy: 'tax_optimizer',
           partnerDrawdownStrategy: 'tax_optimizer',
           maximizedSpendConfig: { reinvestExcessDrawdown: true, reinvestDestinationPot: potType }
-        },
+        } as any,
         { 
           ...DEFAULT_POTS, 
           primaryWorkplacePensionBalance: 100000,
@@ -384,7 +384,7 @@ describe('monteCarloEngine - specific missing lines for >80% coverage', () => {
           partnerCashSavingsBalance: 50000,
           stocksSharesIsaBalance: 50000,
           giaBalance: 50000
-        },
+        } as any,
         calculateUKTax(DEFAULT_PROFILE, DEFAULT_POTS),
         { numSimulations: 2, maxAge: 70 }
       );
@@ -403,13 +403,13 @@ describe('monteCarloEngine - specific missing lines for >80% coverage', () => {
           currentAge: 60,
           targetRetirementAge: 60,
           essentialRetirementAnnualSpend: 50000, 
-        },
+        } as any,
         { 
           ...DEFAULT_POTS, 
           primaryWorkplacePensionBalance: 100000,
           stocksSharesIsaBalance: 100000,
           cashSavingsBalance: 100000,
-        },
+        } as any,
         calculateUKTax(DEFAULT_PROFILE, DEFAULT_POTS),
         { numSimulations: 2, maxAge: 65 }
       );
@@ -421,7 +421,7 @@ describe('monteCarloEngine - specific missing lines for >80% coverage', () => {
     const result = runMonteCarloSimulation(
       { 
         ...DEFAULT_PROFILE, 
-        isCouplePlanning: true,
+        isCouplePlanning: true, 
         currentAge: 60,
         partnerCurrentAge: 60,
         targetRetirementAge: 60,
@@ -430,20 +430,20 @@ describe('monteCarloEngine - specific missing lines for >80% coverage', () => {
         partnerDrawdownStrategy: 'proportional',
         essentialRetirementAnnualSpend: 100000, // force drawdown
         dbPensions: [
-          { enabled: true, startAge: 61, owner: 'partner', taxFreeLumpSum: 10000, annualIncome: 5000, inflationLinked: false, targetPot: 'cash_isa' }
+          { id: 'db1', name: 'DB 1', enabled: true, startAge: 61, owner: 'partner', taxFreeLumpSum: 10000, annualIncome: 5000, inflationLinked: false, targetPot: 'cash_isa' }
         ],
         annuities: [
-          { enabled: true, purchaseAge: 61, purchaseAmount: 20000, durationOption: 'fixed_term', durationUntilAge: 75, type: 'level', owner: 'primary' },
-          { enabled: true, purchaseAge: 61, purchaseAmount: 20000, durationOption: 'life', type: 'inflation_linked_3', owner: 'partner' }
+          { id: 'a1', enabled: true, purchaseAge: 61, purchaseAmount: 20000, durationOption: 'fixed_term', durationUntilAge: 75, type: 'level', owner: 'primary' },
+          { id: 'a2', enabled: true, purchaseAge: 61, purchaseAmount: 20000, durationOption: 'life', type: 'inflation_linked_3', owner: 'partner' }
         ]
-      },
+      } as any,
       { 
         ...DEFAULT_POTS, 
         primaryWorkplacePensionBalance: 200000,
         partnerWorkplacePensionBalance: 200000,
         stocksSharesIsaBalance: 50000,
         cashSavingsBalance: 50000
-      },
+      } as any,
       calculateUKTax(DEFAULT_PROFILE, DEFAULT_POTS),
       { numSimulations: 2, maxAge: 65, marketScenario: 'early_crash', crashStartAge: 60 }
     );
@@ -467,9 +467,9 @@ describe('monteCarloEngine - missing lines chunk 3', () => {
         partnerEnableTripleLock: true,
         fullStatePensionAmount: 10000,
         partnerFullStatePensionAmount: 10000,
-        dbPensions: [{ enabled: true, startAge: 68, annualIncome: 5000, inflationLinked: true }],
-        fixedIncomeStreams: [{ enabled: true, startAge: 68, endAge: 80, annualAmount: 5000, inflationLinked: false }]
-      },
+        dbPensions: [{ id: 'db1', name: 'DB 1', enabled: true, startAge: 68, annualIncome: 5000, inflationLinked: true, taxFreeLumpSum: 0 } as any],
+        fixedIncomeStreams: [{ id: 'fi1', name: 'FI 1', enabled: true, type: 'taxable', startAge: 68, endAge: 80, annualAmount: 5000, inflationLinked: false } as any]
+      } as any,
       DEFAULT_POTS,
       68, // crashStartAge
       3,
@@ -485,7 +485,7 @@ describe('monteCarloEngine - missing lines chunk 3', () => {
         currentAge: 60,
         targetRetirementAge: 60,
         essentialRetirementAnnualSpend: 100000
-      },
+      } as any,
       {
         ...DEFAULT_POTS,
         cashSavingsBalance: 0,
@@ -493,7 +493,7 @@ describe('monteCarloEngine - missing lines chunk 3', () => {
         cashIsaBalance: 0,
         stocksSharesIsaBalance: 50000,
         primaryWorkplacePensionBalance: 200000,
-      },
+      } as any,
       calculateUKTax(DEFAULT_PROFILE, DEFAULT_POTS),
       {
         numSimulations: 2,
@@ -517,17 +517,17 @@ describe('monteCarloEngine - missing lines chunk 3', () => {
         incomeProductOption: 'hybrid',
         partnerIncomeProductOption: 'hybrid',
         annuityTranches: [
-          { enabled: true, owner: 'primary', purchaseAge: 60, allocationPercent: 50, annuityRatePercent: 5, annuityType: 'level', durationOption: 'lifetime' },
-          { enabled: true, owner: 'partner', purchaseAge: 60, allocationPercent: 50, annuityRatePercent: 5, annuityType: 'inflation_linked', durationOption: 'fixed_term', durationUntilAge: 75 }
+          { id: 'at1', enabled: true, owner: 'primary', purchaseAge: 60, allocationPercent: 50, annuityRatePercent: 5, annuityType: 'level_single', durationOption: 'lifetime' },
+          { id: 'at2', enabled: true, owner: 'partner', purchaseAge: 60, allocationPercent: 50, annuityRatePercent: 5, annuityType: 'inflation_linked_single', durationOption: 'until_age', durationUntilAge: 75 }
         ],
         targetRetirementAge: 60,
         partnerTargetRetirementAge: 60
-      },
+      } as any,
       {
         ...DEFAULT_POTS,
         primaryWorkplacePensionBalance: 100000,
         partnerWorkplacePensionBalance: 100000
-      },
+      } as any,
       calculateUKTax(DEFAULT_PROFILE, DEFAULT_POTS),
       { numSimulations: 2, maxAge: 65 }
     );
@@ -545,14 +545,14 @@ describe('monteCarloEngine - missing lines chunk 3', () => {
         targetRetirementAge: 60,
         partnerTargetRetirementAge: 60,
         essentialRetirementAnnualSpend: 100000
-      },
+      } as any,
       {
         ...DEFAULT_POTS,
         primaryWorkplacePensionBalance: 100000,
         partnerWorkplacePensionBalance: 100000,
         stocksSharesIsaBalance: 50000,
         cashSavingsBalance: 50000
-      },
+      } as any,
       calculateUKTax(DEFAULT_PROFILE, DEFAULT_POTS),
       { numSimulations: 2, maxAge: 65 }
     );

@@ -15,7 +15,7 @@ import {
   CartesianGrid,
   ReferenceLine,
 } from 'recharts';
-import { UserProfile, InvestmentPots, TaxCalculationResult } from '../types';
+import { UserProfile, InvestmentPots, TaxCalculationResult, AppMode } from '../types';
 import { getPensionAccessAge, getPartnerPensionAccessAge } from '../utils/ukTaxEngine';
 import {
   runHistoricSimulation,
@@ -49,6 +49,7 @@ interface HistoricModelingCardProps {
   pots: InvestmentPots;
   taxResult: TaxCalculationResult;
   onChange?: (updatedProfile: UserProfile) => void;
+  appMode?: AppMode;
 }
 
 export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
@@ -56,7 +57,9 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
   pots,
   taxResult,
   onChange,
+  appMode = 'basic',
 }) => {
+  const isStudioMode = appMode === 'studio';
   const minHorizonAge = Math.max(profile.currentAge + 1, profile.targetRetirementAge || 55);
 
   // Asset Allocation State (default 75% equity, 15% bond, 10% cash)
@@ -326,9 +329,11 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
                 </span>
               )}
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Simulates your exact strategy 75 times across every historical 75-year sequence starting from 1950 to 2024 (looping data for long horizons).
-            </p>
+            {!isStudioMode && (
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Simulates your exact strategy 75 times across every historical 75-year sequence starting from 1950 to 2024 (looping data for long horizons).
+              </p>
+            )}
           </div>
         </div>
 

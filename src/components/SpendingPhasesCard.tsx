@@ -253,8 +253,14 @@ export function getInitialSpendingRanges(profile: UserProfile): SpendingAgeRange
   ];
 }
 
-export const SpendingPhasesCard: React.FC<SpendingPhasesCardProps> = ({ profile, onChange, onOpenMaximizedSpendModal, appMode = 'basic' ,
-  isStudioMode}) => {
+export const SpendingPhasesCard: React.FC<SpendingPhasesCardProps> = ({
+  profile,
+  onChange,
+  onOpenMaximizedSpendModal,
+  appMode = 'basic',
+  isStudioMode,
+}) => {
+  const isStudio = Boolean(isStudioMode || appMode === 'studio');
   const retAge = profile.targetRetirementAge || 60;
   const baseTarget = profile.targetRetirementIncomeAnnual || 35000;
 
@@ -609,19 +615,23 @@ export const SpendingPhasesCard: React.FC<SpendingPhasesCardProps> = ({ profile,
               <h3 className="text-sm font-extrabold text-slate-800 dark:text-slate-100 uppercase tracking-wider">
                 Retirement Income Requirement
               </h3>
-              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-900 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/50">
-                Income Strategy
-              </span>
+              {!isStudio && (
+                <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-900 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/50">
+                  Income Strategy
+                </span>
+              )}
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Specify your annual household income requirement in today's money, choosing between flat spending or flexible age-based options.
-            </p>
+            {!isStudio && (
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Specify your annual household income requirement in today's money, choosing between flat spending or flexible age-based options.
+              </p>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Spending Mode Options (Flat Spending vs Flexible Age-Based in Advanced Mode) */}
-      {appMode === 'advanced' && (
+      {/* Spending Mode Options (Flat Spending vs Flexible Age-Based) */}
+      {(appMode === 'advanced' || isStudio) && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {/* Option 1: Flat Spending */}
           <button
@@ -645,9 +655,11 @@ export const SpendingPhasesCard: React.FC<SpendingPhasesCardProps> = ({ profile,
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                 )}
               </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug">
-                Single constant target income across all retirement years.
-              </p>
+              {!isStudio && (
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug">
+                  Single constant target income across all retirement years.
+                </p>
+              )}
             </div>
           </button>
 
@@ -673,9 +685,11 @@ export const SpendingPhasesCard: React.FC<SpendingPhasesCardProps> = ({ profile,
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                 )}
               </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug">
-                Varying annual target incomes across custom age stages (e.g. Start to 55, 56–74, 75+).
-              </p>
+              {!isStudio && (
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug">
+                  Varying annual target incomes across custom age stages (e.g. Start to 55, 56–74, 75+).
+                </p>
+              )}
             </div>
           </button>
         </div>
@@ -687,7 +701,7 @@ export const SpendingPhasesCard: React.FC<SpendingPhasesCardProps> = ({ profile,
           <label className="text-xs font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
             <Landmark className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
             <span>Target Annual Household Income</span>
-            <span className="text-[10px] text-slate-400 font-normal">(In today's £)</span>
+            {!isStudio && <span className="text-[10px] text-slate-400 font-normal">(In today's £)</span>}
           </label>
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-1 rounded-xl border border-emerald-200/60 dark:border-emerald-800/60">
@@ -714,16 +728,18 @@ export const SpendingPhasesCard: React.FC<SpendingPhasesCardProps> = ({ profile,
           />
         </div>
 
-        <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-          <Info className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-          <span>
-            {phasesConfig.enabled
-              ? 'This baseline income target serves as the default benchmark when configuring flexible age ranges.'
-              : 'This flat target will be automatically adjusted for expected inflation across all retirement years.'}
-          </span>
-        </p>
+        {!isStudio && (
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+            <Info className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+            <span>
+              {phasesConfig.enabled
+                ? 'This baseline income target serves as the default benchmark when configuring flexible age ranges.'
+                : 'This flat target will be automatically adjusted for expected inflation across all retirement years.'}
+            </span>
+          </p>
+        )}
 
-        {appMode === 'advanced' && (
+        {!isStudio && appMode === 'advanced' && (
           <div className="pt-3 mt-3 border-t border-slate-200 dark:border-slate-700/80 space-y-2">
             <label className="text-xs font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
               <TrendingUp className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
@@ -767,84 +783,88 @@ export const SpendingPhasesCard: React.FC<SpendingPhasesCardProps> = ({ profile,
       {phasesConfig.enabled ? (
         <div className="space-y-4 pt-2 border-t border-slate-200/80 dark:border-slate-800">
           {/* Quick Presets Toolbar */}
-          <div className="flex flex-wrap items-center justify-between gap-2 bg-white dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-200/70 dark:border-slate-700/70">
-            <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
-              <span>Quick Presets:</span>
-            </span>
-            <div className="flex flex-wrap items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => handleApplyPreset('early55')}
-                className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-200 dark:hover:bg-emerald-900 transition-all cursor-pointer border border-emerald-300 dark:border-emerald-800"
-              >
-                ★ Start to Age 55
-              </button>
-              <button
-                type="button"
-                onClick={() => handleApplyPreset('gogo')}
-                className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-emerald-100 dark:hover:bg-emerald-950 hover:text-emerald-800 dark:hover:text-emerald-300 transition-all cursor-pointer"
-              >
-                Go / Slow / No-Go (74 / 84 / 85+)
-              </button>
-              <button
-                type="button"
-                onClick={() => handleApplyPreset('twostage')}
-                className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-indigo-100 dark:hover:bg-indigo-950 hover:text-indigo-800 dark:hover:text-indigo-300 transition-all cursor-pointer"
-              >
-                2-Stage (Early vs Core)
-              </button>
-              <button
-                type="button"
-                onClick={() => handleApplyPreset('decades')}
-                className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-purple-100 dark:hover:bg-purple-950 hover:text-purple-800 dark:hover:text-purple-300 transition-all cursor-pointer"
-              >
-                Decade Step-Downs
-              </button>
-              <button
-                type="button"
-                onClick={handleAutoAlign}
-                className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900 transition-all cursor-pointer flex items-center gap-1 ml-auto sm:ml-0"
-              >
-                <RotateCcw className="w-3 h-3" />
-                <span>Auto-Align Ages</span>
-              </button>
+          {!isStudio && (
+            <div className="flex flex-wrap items-center justify-between gap-2 bg-white dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-200/70 dark:border-slate-700/70">
+              <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
+                <span>Quick Presets:</span>
+              </span>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => handleApplyPreset('early55')}
+                  className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-200 dark:hover:bg-emerald-900 transition-all cursor-pointer border border-emerald-300 dark:border-emerald-800"
+                >
+                  ★ Start to Age 55
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleApplyPreset('gogo')}
+                  className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-emerald-100 dark:hover:bg-emerald-950 hover:text-emerald-800 dark:hover:text-emerald-300 transition-all cursor-pointer"
+                >
+                  Go / Slow / No-Go (74 / 84 / 85+)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleApplyPreset('twostage')}
+                  className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-indigo-100 dark:hover:bg-indigo-950 hover:text-indigo-800 dark:hover:text-indigo-300 transition-all cursor-pointer"
+                >
+                  2-Stage (Early vs Core)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleApplyPreset('decades')}
+                  className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-purple-100 dark:hover:bg-purple-950 hover:text-purple-800 dark:hover:text-purple-300 transition-all cursor-pointer"
+                >
+                  Decade Step-Downs
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAutoAlign}
+                  className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900 transition-all cursor-pointer flex items-center gap-1 ml-auto sm:ml-0"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  <span>Auto-Align Ages</span>
+                </button>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Visual Timeline Bar */}
-          <div className="bg-white dark:bg-slate-800/80 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-2">
-            <div className="flex items-center justify-between text-[11px] font-bold text-slate-600 dark:text-slate-300">
-              <span className="flex items-center gap-1">
-                <Calendar className="w-3.5 h-3.5 text-emerald-500" />
-                <span>Age Spending Timeline</span>
-              </span>
-              <span className="text-slate-400 text-[10px]">Today's £ values</span>
-            </div>
+          {!isStudio && (
+            <div className="bg-white dark:bg-slate-800/80 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-2">
+              <div className="flex items-center justify-between text-[11px] font-bold text-slate-600 dark:text-slate-300">
+                <span className="flex items-center gap-1">
+                  <Calendar className="w-3.5 h-3.5 text-emerald-500" />
+                  <span>Age Spending Timeline</span>
+                </span>
+                <span className="text-slate-400 text-[10px]">Today's £ values</span>
+              </div>
 
-            <div className="flex w-full h-8 rounded-xl overflow-hidden p-0.5 bg-slate-100 dark:bg-slate-900 gap-0.5 border border-slate-200/60 dark:border-slate-700/60">
-              {sortedRanges.map((range, index) => {
-                const color = RANGE_COLORS[index % RANGE_COLORS.length];
-                const start = range.startAge;
-                const end = range.endAge || 100;
-                const span = Math.max(1, end - start + 1);
+              <div className="flex w-full h-8 rounded-xl overflow-hidden p-0.5 bg-slate-100 dark:bg-slate-900 gap-0.5 border border-slate-200/60 dark:border-slate-700/60">
+                {sortedRanges.map((range, index) => {
+                  const color = RANGE_COLORS[index % RANGE_COLORS.length];
+                  const start = range.startAge;
+                  const end = range.endAge || 100;
+                  const span = Math.max(1, end - start + 1);
 
-                return (
-                  <div
-                    key={range.id}
-                    className={`h-full ${color.barBg} flex items-center justify-between px-2 text-white font-black text-[10px] transition-all relative group rounded-md`}
-                    style={{ flex: span }}
-                    title={`${range.name}: Age ${start} to ${range.endAge ? range.endAge : '100+'} - £${(range.annualTargetIncome || 0).toLocaleString()}/yr`}
-                  >
-                    <span className="truncate max-w-[120px]">{range.name}</span>
-                    <span className="bg-black/30 px-1.5 py-0.5 rounded text-[9px] shrink-0 font-extrabold">
-                      £{Math.round(range.annualTargetIncome / 1000)}k/yr
-                    </span>
-                  </div>
-                );
-              })}
+                  return (
+                    <div
+                      key={range.id}
+                      className={`h-full ${color.barBg} flex items-center justify-between px-2 text-white font-black text-[10px] transition-all relative group rounded-md`}
+                      style={{ flex: span }}
+                      title={`${range.name}: Age ${start} to ${range.endAge ? range.endAge : '100+'} - £${(range.annualTargetIncome || 0).toLocaleString()}/yr`}
+                    >
+                      <span className="truncate max-w-[120px]">{range.name}</span>
+                      <span className="bg-black/30 px-1.5 py-0.5 rounded text-[9px] shrink-0 font-extrabold">
+                        £{Math.round(range.annualTargetIncome / 1000)}k/yr
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* List of Custom Age Ranges */}
           <div className="space-y-3">
@@ -857,9 +877,9 @@ export const SpendingPhasesCard: React.FC<SpendingPhasesCardProps> = ({ profile,
                   key={range.id}
                   className={`bg-white dark:bg-slate-800/90 p-4 rounded-2xl border ${color.border} shadow-xs space-y-3 transition-all relative`}
                 >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-100 dark:border-slate-700/60">
-                    <div className="flex items-center gap-2.5 flex-1">
-                      <span className={`text-[10px] font-black px-2.5 py-1 rounded-lg ${color.badgeBg} ${color.badgeText}`}>
+                  <div className="flex flex-wrap items-center justify-between gap-2.5 pb-2.5 border-b border-slate-100 dark:border-slate-700/60">
+                    <div className="flex items-center gap-2.5 flex-1 min-w-[200px]">
+                      <span className={`text-[10px] font-black px-2.5 py-1 rounded-lg shrink-0 ${color.badgeBg} ${color.badgeText}`}>
                         Stage {index + 1}
                       </span>
                       <input
@@ -867,19 +887,19 @@ export const SpendingPhasesCard: React.FC<SpendingPhasesCardProps> = ({ profile,
                         value={range.name}
                         onChange={(e) => handleUpdateRange(range.id, { name: e.target.value })}
                         placeholder="Phase Name (e.g. Start to 55)"
-                        className="font-extrabold text-xs text-slate-800 dark:text-slate-100 bg-transparent border-b border-dashed border-slate-300 dark:border-slate-600 focus:border-emerald-500 focus:outline-none px-1 py-0.5 flex-1 max-w-xs"
+                        className="font-extrabold text-xs text-slate-800 dark:text-slate-100 bg-transparent border-b border-dashed border-slate-300 dark:border-slate-600 focus:border-emerald-500 focus:outline-none px-1 py-0.5 w-full max-w-xs"
                       />
                     </div>
 
-                    <div className="flex items-center gap-2 self-end sm:self-auto">
-                      <span className={`text-xs font-extrabold ${color.accentText} bg-slate-50 dark:bg-slate-900 px-2.5 py-1 rounded-xl border border-slate-200 dark:border-slate-700`}>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className={`text-xs font-extrabold ${color.accentText} bg-slate-50 dark:bg-slate-900 px-2.5 py-1 rounded-xl border border-slate-200 dark:border-slate-700 whitespace-nowrap`}>
                         Age {range.startAge} – {isOngoing ? 'Ongoing (Late Retirement)' : range.endAge}
                       </span>
                       {sortedRanges.length > 1 && (
                         <button
                           type="button"
                           onClick={() => handleRemoveRange(range.id)}
-                          className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-lg transition-all cursor-pointer"
+                          className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-lg transition-all cursor-pointer shrink-0"
                           title="Delete Age Range"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -888,15 +908,15 @@ export const SpendingPhasesCard: React.FC<SpendingPhasesCardProps> = ({ profile,
                     </div>
                   </div>
 
-                  {/* Range Inputs Grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  {/* Range Inputs Grid - Clean flex / aligned grid layout */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 items-start">
                     {/* Start Age */}
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-slate-600 dark:text-slate-300 flex justify-between">
-                        <span>Start Age</span>
-                        <span className="text-slate-400 font-normal">From age</span>
-                      </label>
+                    <div className="space-y-1.5">
+                      <div className="flex justify-between items-center h-5 text-[11px] font-bold text-slate-600 dark:text-slate-300">
+                        <label htmlFor={`range-start-${range.id}`} className="cursor-pointer">Start Age</label>
+                      </div>
                       <input
+                        id={`range-start-${range.id}`}
                         type="number"
                         min={18}
                         max={100}
@@ -912,17 +932,15 @@ export const SpendingPhasesCard: React.FC<SpendingPhasesCardProps> = ({ profile,
                           val = Math.max(18, Math.min(120, val));
                           handleUpdateRange(range.id, { startAge: val });
                         }}
-                        className={`w-full px-2.5 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none ${color.focusRing}`}
+                        className={`w-full h-10 px-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none ${color.focusRing}`}
                       />
                     </div>
 
                     {/* End Age */}
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between">
-                        <label className="text-[10px] font-bold text-slate-600 dark:text-slate-300">
-                          End Age
-                        </label>
-                        <label className="flex items-center gap-1 text-[10px] font-semibold text-slate-500 dark:text-slate-400 cursor-pointer select-none">
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between h-5 text-[11px] font-bold text-slate-600 dark:text-slate-300">
+                        <label htmlFor={`range-end-${range.id}`} className="cursor-pointer">End Age</label>
+                        <label className="flex items-center gap-1.5 text-[10px] font-semibold text-slate-500 dark:text-slate-400 cursor-pointer select-none">
                           <input
                             type="checkbox"
                             checked={isOngoing}
@@ -941,10 +959,12 @@ export const SpendingPhasesCard: React.FC<SpendingPhasesCardProps> = ({ profile,
 
                       <div className="relative">
                         <input
+                          id={`range-end-${range.id}`}
                           type="number"
                           min={range.startAge}
                           max={100}
                           placeholder={isOngoing ? "Ongoing (100+)" : "e.g. 55"}
+                          disabled={isOngoing}
                           value={isOngoing ? '' : (range.endAge ?? '')}
                           onChange={(e) => {
                             const valStr = e.target.value;
@@ -963,20 +983,20 @@ export const SpendingPhasesCard: React.FC<SpendingPhasesCardProps> = ({ profile,
                             val = Math.min(120, val);
                             handleUpdateRange(range.id, { endAge: val });
                           }}
-                          className={`w-full px-2.5 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none ${color.focusRing}`}
+                          className={`w-full h-10 px-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none disabled:opacity-40 disabled:cursor-not-allowed ${color.focusRing}`}
                         />
                       </div>
                     </div>
 
                     {/* Annual Target Income */}
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-slate-600 dark:text-slate-300 flex justify-between">
-                        <span>Annual Target Income</span>
-                        <span className="text-slate-400 font-normal">In today's £</span>
-                      </label>
-                      <div className="relative">
-                        <span className="absolute left-2.5 top-1.5 text-slate-400 font-bold text-xs">£</span>
+                    <div className="space-y-1.5">
+                      <div className="flex justify-between items-center h-5 text-[11px] font-bold text-slate-600 dark:text-slate-300">
+                        <label htmlFor={`range-target-${range.id}`} className="cursor-pointer whitespace-nowrap">Annual Target</label>
+                      </div>
+                      <div className="relative flex items-center">
+                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs pointer-events-none select-none">£</span>
                         <input
+                          id={`range-target-${range.id}`}
                           type="number"
                           step={1000}
                           min={0}
@@ -992,20 +1012,23 @@ export const SpendingPhasesCard: React.FC<SpendingPhasesCardProps> = ({ profile,
                             val = Math.max(0, val);
                             handleUpdateRange(range.id, { annualTargetIncome: val });
                           }}
-                          className={`w-full pl-6 pr-2.5 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-extrabold text-slate-900 dark:text-slate-100 focus:outline-none ${color.focusRing}`}
+                          className={`w-full h-10 pl-8 pr-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-extrabold text-slate-900 dark:text-slate-100 focus:outline-none ${color.focusRing}`}
                         />
                       </div>
                     </div>
 
                     {/* Description / Notes */}
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-slate-600 dark:text-slate-300">Notes / Lifestyle Goal</label>
+                    <div className="space-y-1.5">
+                      <div className="flex items-center h-5 text-[11px] font-bold text-slate-600 dark:text-slate-300">
+                        <label htmlFor={`range-desc-${range.id}`} className="cursor-pointer">Notes</label>
+                      </div>
                       <input
+                        id={`range-desc-${range.id}`}
                         type="text"
                         value={range.description || ''}
                         onChange={(e) => handleUpdateRange(range.id, { description: e.target.value })}
-                        placeholder="e.g. Travel & early active years"
-                        className={`w-full px-2.5 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-700 dark:text-slate-300 focus:outline-none ${color.focusRing}`}
+                        placeholder="e.g. Active travel & lifestyle"
+                        className={`w-full h-10 px-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-700 dark:text-slate-300 focus:outline-none ${color.focusRing}`}
                       />
                     </div>
                   </div>
@@ -1024,13 +1047,6 @@ export const SpendingPhasesCard: React.FC<SpendingPhasesCardProps> = ({ profile,
               <Plus className="w-4 h-4" />
               <span>Add Custom Spending Age Range</span>
             </button>
-
-            <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-              <TrendingUp className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-              <span>
-                All target amounts automatically indexed for <strong>{profile.expectedInflationRate}% annual inflation</strong>.
-              </span>
-            </div>
           </div>
         </div>
       ) : null}

@@ -12,10 +12,10 @@ import {
   CartesianGrid,
   ReferenceLine,
 } from 'recharts';
-import { UserProfile, InvestmentPots, TaxCalculationResult } from '../types';
+import { UserProfile, InvestmentPots, TaxCalculationResult, AppMode } from '../types';
 import { runMonteCarloSimulation, MonteCarloParams, MarketScenario, calculateCashBufferRequiredDetails } from '../utils/monteCarloEngine';
 import { getPensionAccessAge, getPartnerPensionAccessAge } from '../utils/ukTaxEngine';
-import { Dices, ShieldAlert, Sparkles, Sliders, TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, Zap } from 'lucide-react';
+import { Dices, ShieldAlert, Sparkles, Sliders, TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, Zap, RefreshCw } from 'lucide-react';
 
 interface MonteCarloCardProps {
   profile: UserProfile;
@@ -23,9 +23,11 @@ interface MonteCarloCardProps {
   taxResult: TaxCalculationResult;
   onChange?: (updatedProfile: UserProfile) => void;
   showAllScenarios?: boolean;
+  appMode?: AppMode;
 }
 
-export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, taxResult, onChange, showAllScenarios = false }) => {
+export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, taxResult, onChange, showAllScenarios = false, appMode = 'basic' }) => {
+  const isStudioMode = appMode === 'studio';
   const targetHorizonAge = profile.maximizedSpendConfig?.targetEndAge || profile.lifeExpectancyAge || 95;
 
   const [params, setParams] = useState<MonteCarloParams>({
@@ -202,26 +204,44 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
 
   if (!taxResult) {
     return (
-      <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 sm:p-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
-          <Dices className="h-6 w-6 mr-3 text-purple-600" />
+      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 sm:p-8">
+        <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center">
+          <Dices className="h-6 w-6 mr-3 text-indigo-600 dark:text-indigo-400" />
           Stochastic Projections
         </h2>
-        <div className="text-gray-500">Awaiting tax calculation data...</div>
+        <div className="text-slate-500 dark:text-slate-400">Awaiting tax calculation data...</div>
       </div>
     );
   }
 
   if (!hasRun || !mcResult || !baseResult || !stressedResult || !crashResult) {
     return (
-      <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 sm:p-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
-          <Dices className="h-6 w-6 mr-3 text-purple-600" />
-          Stochastic Projections
-        </h2>
-        <div className="flex flex-col items-center justify-center p-8 space-y-4">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 sm:p-8 space-y-6 transition-colors">
+        <div className="flex items-center gap-2 pb-4 border-b border-slate-100 dark:border-slate-800">
+          <div className="p-2 bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 rounded-xl">
+            <Dices className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="font-extrabold text-slate-800 dark:text-slate-100 text-base flex items-center gap-2">
+              <span>Monte Carlo Volatility &amp; Risk Simulation</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider bg-indigo-100 dark:bg-indigo-950 text-indigo-800 dark:text-indigo-300 px-2.5 py-0.5 rounded-full border border-indigo-200/50 dark:border-indigo-800/50">
+                Stochastic Model
+              </span>
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Simulates {params.numSimulations} market scenarios across accumulation &amp; decumulation phases
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-col items-center justify-center py-10 px-4 space-y-4 text-center">
+          <p className="text-xs text-slate-600 dark:text-slate-400 max-w-md">
+            Click below to execute {params.numSimulations} randomized market return iterations across standard, stressed, and crash scenarios.
+          </p>
           {isSimulating ? (
-            <div className="text-indigo-600 font-bold">Loading...</div>
+            <div className="text-indigo-600 dark:text-indigo-400 font-bold flex items-center gap-2 text-sm">
+              <RefreshCw className="w-4 h-4 animate-spin" />
+              <span>Running Simulation...</span>
+            </div>
           ) : (
             <button
               onClick={() => {
@@ -231,9 +251,10 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
                   setIsSimulating(false);
                 }, 100);
               }}
-              className="bg-indigo-600 text-white font-bold px-6 py-3 rounded-xl hover:bg-indigo-700 transition-colors"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-3 rounded-2xl transition-all shadow-sm hover:shadow-md cursor-pointer flex items-center gap-2 text-sm"
             >
-              Run Simulation
+              <Dices className="w-4 h-4" />
+              <span>Run Simulation</span>
             </button>
           )}
         </div>
@@ -274,9 +295,11 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
                   Stochastic Model
                 </span>
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Simulates {params.numSimulations} market scenarios across accumulation & decumulation phases
-              </p>
+              {!isStudioMode && (
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Simulates {params.numSimulations} market scenarios across accumulation & decumulation phases
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -1323,28 +1346,32 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
       )}
 
       {/* Dynamic Scenario Insight Banner */}
-      {localParams.marketScenario === 'stressed' ? (
-        <div className="bg-amber-50 dark:bg-amber-950/40 p-3 rounded-2xl border border-amber-200 dark:border-amber-800/60 flex items-start gap-2 text-xs text-amber-950 dark:text-amber-200 font-medium">
-          <TrendingDown className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-          <p>
-            <strong>Stressed Market Model Active:</strong> Reduces expected annual growth by {(localParams.stressedReturnDropPercent ?? 2.0).toFixed(1)}% p.a. across all years ({Math.max(0, (profile.expectedInvestmentReturn || 6) - (localParams.stressedReturnDropPercent ?? 2.0)).toFixed(1)}% pre-retirement / {Math.max(0, (profile.postRetirementReturn || 4.5) - (localParams.stressedReturnDropPercent ?? 2.0)).toFixed(1)}% post-retirement). This tests how your portfolio holds up under lower growth or sustained inflationary drag.
-          </p>
-        </div>
-      ) : params.marketScenario === 'early_crash' ? (
-        <div className="bg-rose-50 dark:bg-rose-950/40 p-3 rounded-2xl border border-rose-200 dark:border-rose-800/60 flex items-start gap-2 text-xs text-rose-950 dark:text-rose-200 font-medium">
-          <ShieldAlert className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
-          <p>
-            <strong>Sequence Risk ({crashSummaryText} Market Crash) Active:</strong> Simulates a market crash across {currentCrashDuration} year(s) starting at Age {currentCrashStartAge} ({crashSummaryText}). This tests whether your initial cash savings and portfolio survive severe market drawdown.
-          </p>
-        </div>
-      ) : (
-        <div className="bg-indigo-50/60 dark:bg-indigo-950/40 p-3 rounded-2xl border border-indigo-100 dark:border-indigo-800/60 flex items-start gap-2 text-xs text-indigo-900 dark:text-indigo-200 font-medium">
-          <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" />
-          <p>
-            <strong>Standard Volatility Model:</strong> Compounding returns fluctuate randomly around your expected annual growth rates ({profile.expectedInvestmentReturn || 6}% pre-retirement / {profile.postRetirementReturn || 4.5}% post-retirement).
-            The <strong>10th percentile</strong> shows a pessimistic sequence, while the <strong>90th percentile</strong> represents optimistic market conditions.
-          </p>
-        </div>
+      {!isStudioMode && (
+        <>
+          {localParams.marketScenario === 'stressed' ? (
+            <div className="bg-amber-50 dark:bg-amber-950/40 p-3 rounded-2xl border border-amber-200 dark:border-amber-800/60 flex items-start gap-2 text-xs text-amber-950 dark:text-amber-200 font-medium">
+              <TrendingDown className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+              <p>
+                <strong>Stressed Market Model Active:</strong> Reduces expected annual growth by {(localParams.stressedReturnDropPercent ?? 2.0).toFixed(1)}% p.a. across all years ({Math.max(0, (profile.expectedInvestmentReturn || 6) - (localParams.stressedReturnDropPercent ?? 2.0)).toFixed(1)}% pre-retirement / {Math.max(0, (profile.postRetirementReturn || 4.5) - (localParams.stressedReturnDropPercent ?? 2.0)).toFixed(1)}% post-retirement). This tests how your portfolio holds up under lower growth or sustained inflationary drag.
+              </p>
+            </div>
+          ) : params.marketScenario === 'early_crash' ? (
+            <div className="bg-rose-50 dark:bg-rose-950/40 p-3 rounded-2xl border border-rose-200 dark:border-rose-800/60 flex items-start gap-2 text-xs text-rose-950 dark:text-rose-200 font-medium">
+              <ShieldAlert className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+              <p>
+                <strong>Sequence Risk ({crashSummaryText} Market Crash) Active:</strong> Simulates a market crash across {currentCrashDuration} year(s) starting at Age {currentCrashStartAge} ({crashSummaryText}). This tests whether your initial cash savings and portfolio survive severe market drawdown.
+              </p>
+            </div>
+          ) : (
+            <div className="bg-indigo-50/60 dark:bg-indigo-950/40 p-3 rounded-2xl border border-indigo-100 dark:border-indigo-800/60 flex items-start gap-2 text-xs text-indigo-900 dark:text-indigo-200 font-medium">
+              <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" />
+              <p>
+                <strong>Standard Volatility Model:</strong> Compounding returns fluctuate randomly around your expected annual growth rates ({profile.expectedInvestmentReturn || 6}% pre-retirement / {profile.postRetirementReturn || 4.5}% post-retirement).
+                The <strong>10th percentile</strong> shows a pessimistic sequence, while the <strong>90th percentile</strong> represents optimistic market conditions.
+              </p>
+            </div>
+          )}
+        </>
       )}
 
     </div>

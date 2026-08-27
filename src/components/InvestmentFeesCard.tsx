@@ -52,7 +52,7 @@ export const InvestmentFeesCard: React.FC<InvestmentFeesCardProps> = ({ profile,
 
   const preReturn = profile.expectedInvestmentReturn ?? 6.5;
   const postReturn = profile.postRetirementReturn ?? 4.5;
-  const globalFeePercent = getTotalFeePercent(feeConfig, pots || profile.pots, profile.partnerPots);
+  const globalFeePercent = getTotalFeePercent(feeConfig);
 
   const updateFeeConfig = (updated: InvestmentFeeConfig) => {
     onChange({
@@ -369,13 +369,17 @@ export const InvestmentFeesCard: React.FC<InvestmentFeesCardProps> = ({ profile,
               <h3 className="font-extrabold text-slate-900 dark:text-slate-100 text-base">
                 Investment, Platform & Adviser Fees
               </h3>
-              <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-950 text-indigo-800 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
-                Fee Drag Model & Visualiser
-              </span>
+              {!isStudioMode && (
+                <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-950 text-indigo-800 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                  Fee Drag Model & Visualiser
+                </span>
+              )}
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Quantify and visualise the compound drag of platform custody, fund management (OCF/AMC), and ongoing adviser fees.
-            </p>
+            {!isStudioMode && (
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Quantify and visualise the compound drag of platform custody, fund management (OCF/AMC), and ongoing adviser fees.
+              </p>
+            )}
           </div>
         </div>
 
@@ -642,40 +646,42 @@ export const InvestmentFeesCard: React.FC<InvestmentFeesCardProps> = ({ profile,
       </div>
     )}
           {/* Mode Selector: Uniform vs Per-Pot & Person */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200/80 dark:border-slate-700/80">
+          <div className={`flex flex-col ${isStudioMode ? 'gap-2.5' : 'sm:flex-row items-start sm:items-center justify-between gap-3'} p-3 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200/80 dark:border-slate-700/80`}>
             <div className="space-y-0.5">
               <span className="text-xs font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                 <Sliders className="w-3.5 h-3.5 text-indigo-500" />
                 Fee Granularity Mode
               </span>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                Choose between a simple uniform global fee or custom fees per pension pot and person.
-              </p>
+              {!isStudioMode && (
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Choose between a simple uniform global fee or custom fees per pension pot and person.
+                </p>
+              )}
             </div>
 
-            <div className="inline-flex p-1 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shrink-0">
+            <div className={`grid grid-cols-2 p-1 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 ${isStudioMode ? 'w-full' : 'w-full sm:w-auto inline-flex shrink-0'}`}>
               <button
                 type="button"
                 onClick={() => updateFeeConfig({ ...feeConfig, perPotFeesEnabled: false })}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer text-center justify-center flex items-center ${
                   !perPotFeesEnabled
                     ? 'bg-indigo-600 text-white shadow-xs'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
-                Uniform Fee Across All Pots
+                {isStudioMode ? 'Uniform (All Pots)' : 'Uniform Fee Across All Pots'}
               </button>
               <button
                 type="button"
                 onClick={() => updateFeeConfig({ ...feeConfig, perPotFeesEnabled: true })}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 text-center ${
                   perPotFeesEnabled
                     ? 'bg-indigo-600 text-white shadow-xs'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
                 <Layers className="w-3.5 h-3.5" />
-                Custom Fees per Pot & Person
+                <span>{isStudioMode ? 'Custom per Pot' : 'Custom Fees per Pot & Person'}</span>
               </button>
             </div>
           </div>
@@ -684,34 +690,36 @@ export const InvestmentFeesCard: React.FC<InvestmentFeesCardProps> = ({ profile,
             /* UNIFORM GLOBAL FEE SECTION */
             <div className="space-y-4">
               {/* Presets */}
-              <div className="space-y-1.5">
-                <span className="text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 tracking-wider block">
-                  Quick Fee Presets:
-                </span>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => updateFeeConfig({ ...feeConfig, enabled: true, platformFeePercent: 0.15, fundFeePercent: 0.15, advisorFeePercent: 0.0 })}
-                    className="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 hover:border-indigo-300 transition-colors cursor-pointer"
-                  >
-                    ⚡ Low-Cost DIY Trackers (0.15% Plat + 0.15% Fund = 0.30% p.a.)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => updateFeeConfig({ ...feeConfig, enabled: true, platformFeePercent: 0.25, fundFeePercent: 0.40, advisorFeePercent: 0.0 })}
-                    className="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 text-indigo-800 dark:text-indigo-200 hover:bg-indigo-100 transition-colors cursor-pointer"
-                  >
-                    ⚖️ Typical DIY Active/Passive (0.25% Plat + 0.40% Fund = 0.65% p.a.)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => updateFeeConfig({ ...feeConfig, enabled: true, platformFeePercent: 0.25, fundFeePercent: 0.45, advisorFeePercent: 0.75 })}
-                    className="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-purple-50 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-800 text-purple-800 dark:text-purple-200 hover:bg-purple-100 transition-colors cursor-pointer"
-                  >
-                    💼 Advised Portfolio (0.25% Plat + 0.45% Fund + 0.75% Adviser = 1.45% p.a.)
-                  </button>
+              {!isStudioMode && (
+                <div className="space-y-1.5">
+                  <span className="text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 tracking-wider block">
+                    Quick Fee Presets:
+                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => updateFeeConfig({ ...feeConfig, enabled: true, platformFeePercent: 0.15, fundFeePercent: 0.15, advisorFeePercent: 0.0 })}
+                      className="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 hover:border-indigo-300 transition-colors cursor-pointer"
+                    >
+                      ⚡ Low-Cost DIY Trackers (0.15% Plat + 0.15% Fund = 0.30% p.a.)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => updateFeeConfig({ ...feeConfig, enabled: true, platformFeePercent: 0.25, fundFeePercent: 0.40, advisorFeePercent: 0.0 })}
+                      className="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 text-indigo-800 dark:text-indigo-200 hover:bg-indigo-100 transition-colors cursor-pointer"
+                    >
+                      ⚖️ Typical DIY Active/Passive (0.25% Plat + 0.40% Fund = 0.65% p.a.)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => updateFeeConfig({ ...feeConfig, enabled: true, platformFeePercent: 0.25, fundFeePercent: 0.45, advisorFeePercent: 0.75 })}
+                      className="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-purple-50 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-800 text-purple-800 dark:text-purple-200 hover:bg-purple-100 transition-colors cursor-pointer"
+                    >
+                      💼 Advised Portfolio (0.25% Plat + 0.45% Fund + 0.75% Adviser = 1.45% p.a.)
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* 3 Fee Inputs */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
@@ -733,9 +741,11 @@ export const InvestmentFeesCard: React.FC<InvestmentFeesCardProps> = ({ profile,
                     />
                     <span className="text-xs text-slate-400 font-bold">%</span>
                   </div>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
-                    Platform custody fee e.g. Vanguard (0.15%), AJ Bell (0.25%), HL (0.45%).
-                  </p>
+                  {!isStudioMode && (
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
+                      Platform custody fee e.g. Vanguard (0.15%), AJ Bell (0.25%), HL (0.45%).
+                    </p>
+                  )}
                 </div>
 
                 {/* Fund Fee */}
@@ -756,9 +766,11 @@ export const InvestmentFeesCard: React.FC<InvestmentFeesCardProps> = ({ profile,
                     />
                     <span className="text-xs text-slate-400 font-bold">%</span>
                   </div>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
-                    Ongoing Charge Figure (OCF) / AMC for ETFs or active funds (0.05% - 0.85%).
-                  </p>
+                  {!isStudioMode && (
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
+                      Ongoing Charge Figure (OCF) / AMC for ETFs or active funds (0.05% - 0.85%).
+                    </p>
+                  )}
                 </div>
 
                 {/* Adviser Fee */}
@@ -779,9 +791,11 @@ export const InvestmentFeesCard: React.FC<InvestmentFeesCardProps> = ({ profile,
                     />
                     <span className="text-xs text-slate-400 font-bold">%</span>
                   </div>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
-                    Ongoing wealth adviser fee (0.0% if self-managed DIY).
-                  </p>
+                  {!isStudioMode && (
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
+                      Ongoing wealth adviser fee (0.0% if self-managed DIY).
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -868,7 +882,7 @@ export const InvestmentFeesCard: React.FC<InvestmentFeesCardProps> = ({ profile,
                           <span className="text-xs font-black text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/80 px-2.5 py-1 rounded-xl border border-indigo-200/50 dark:border-indigo-800/50">
                             Total: {totalFeeForPot.toFixed(2)}% p.a.
                           </span>
-                          {annualDragPounds > 0 && (
+                          {annualDragPounds > 0 && !isStudioMode && (
                             <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300">
                               (~£{annualDragPounds.toLocaleString()}/yr)
                             </span>
@@ -946,30 +960,34 @@ export const InvestmentFeesCard: React.FC<InvestmentFeesCardProps> = ({ profile,
           )}
 
           {/* Fee Impact Summary Banner */}
-          <div className="p-4 bg-indigo-50/80 dark:bg-indigo-950/60 rounded-2xl border border-indigo-200 dark:border-indigo-800/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
-            <div className="space-y-0.5">
-              <div className="flex items-center gap-2">
-                <span className="font-extrabold text-indigo-900 dark:text-indigo-200 text-sm">
-                  {perPotFeesEnabled ? `Average Portfolio Fee Drag: ~${averageOverallFeePercent.toFixed(2)}% p.a.` : `Total Fee Drag: ${globalFeePercent.toFixed(2)}% p.a.`}
-                </span>
-                <span className="bg-indigo-200 dark:bg-indigo-900 text-indigo-900 dark:text-indigo-100 text-[10px] font-black px-2 py-0.5 rounded-full">
-                  Deducted from Growth
-                </span>
+          {!isStudioMode && (
+            <div className="p-4 bg-indigo-50/80 dark:bg-indigo-950/60 rounded-2xl border border-indigo-200 dark:border-indigo-800/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <span className="font-extrabold text-indigo-900 dark:text-indigo-200 text-sm">
+                    {perPotFeesEnabled ? `Average Portfolio Fee Drag: ~${averageOverallFeePercent.toFixed(2)}% p.a.` : `Total Fee Drag: ${globalFeePercent.toFixed(2)}% p.a.`}
+                  </span>
+                  <span className="bg-indigo-200 dark:bg-indigo-900 text-indigo-900 dark:text-indigo-100 text-[10px] font-black px-2 py-0.5 rounded-full">
+                    Deducted from Growth
+                  </span>
+                </div>
+                <p className="text-[11px] text-indigo-800/80 dark:text-indigo-300/80">
+                  Gross Pre-Retirement: {preReturn}% p.a. • Gross Post-Retirement: {postReturn}% p.a.
+                </p>
               </div>
-              <p className="text-[11px] text-indigo-800/80 dark:text-indigo-300/80">
-                Gross Pre-Retirement: {preReturn}% p.a. • Gross Post-Retirement: {postReturn}% p.a.
-              </p>
+              {totalAnnualFeeDragPounds > 0 && (
+                <div className="px-3.5 py-2 bg-indigo-600 text-white font-extrabold rounded-xl text-xs shrink-0 shadow-xs">
+                  ~£{totalAnnualFeeDragPounds.toLocaleString()} / year total fee drag
+                </div>
+              )}
             </div>
-            {totalAnnualFeeDragPounds > 0 && (
-              <div className="px-3.5 py-2 bg-indigo-600 text-white font-extrabold rounded-xl text-xs shrink-0 shadow-xs">
-                ~£{totalAnnualFeeDragPounds.toLocaleString()} / year total fee drag
-              </div>
-            )}
-          </div>
+          )}
         </div>
       ) : (
         <div className="p-3.5 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 text-center text-xs text-slate-500 dark:text-slate-400">
-          Fee drag modeling is currently disabled. Enable to subtract platform, fund, and adviser charges from net pot growth and view comparative wealth trajectory visualisations.
+          {isStudioMode
+            ? 'Fee drag modeling is disabled.'
+            : 'Fee drag modeling is currently disabled. Enable to subtract platform, fund, and adviser charges from net pot growth and view comparative wealth trajectory visualisations.'}
         </div>
       )}
     </div>

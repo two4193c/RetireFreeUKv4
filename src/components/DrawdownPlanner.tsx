@@ -215,6 +215,7 @@ interface DrawdownPlannerProps {
   onCreateStrategyVariants?: (baseScenarioId: string, strategiesToCreate: DrawdownStrategy[]) => void;
   onNavigateToCompare?: () => void;
   appMode?: AppMode;
+  isStudioMode?: boolean;
 }
 
 export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
@@ -228,6 +229,7 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
   onCreateStrategyVariants,
   onNavigateToCompare,
   appMode = 'basic',
+  isStudioMode,
 }) => {
   const [activeLumpSumPerson, setActiveLumpSumPerson] = useState<'primary' | 'partner'>('primary');
   const [activeIncomePerson, setActiveIncomePerson] = useState<'primary' | 'partner'>('primary');
@@ -501,11 +503,13 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
           </div>
           <div>
             <h2 className="font-bold text-slate-800 dark:text-slate-100 text-base">Tax Free Lump Sum and Excess Income Destination</h2>
-            <p className="text-xs text-slate-400 dark:text-slate-500">Flexi-access drawdown, annuity options, and maximum tax-free cash (PCLS)</p>
+            {!isStudioMode && (
+              <p className="text-xs text-slate-400 dark:text-slate-500">Flexi-access drawdown, annuity options, and maximum tax-free cash (PCLS)</p>
+            )}
           </div>
         </div>
 
-        {bridgeYears > 0 && (
+        {!isStudioMode && bridgeYears > 0 && (
           <span className="bg-amber-100 dark:bg-amber-950/80 text-amber-900 dark:text-amber-300 text-xs font-bold px-3 py-1 rounded-full border border-amber-300 dark:border-amber-800/80">
             {bridgeYears}-Year Bridge Before State Pension
           </span>
@@ -934,48 +938,51 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1 border-b border-slate-200/60 dark:border-slate-700/60">
             <div className="flex flex-wrap items-center gap-2">
               <span className="font-bold text-xs text-slate-800 dark:text-slate-200">Tax-Free Lump Sum (PCLS & LSA)</span>
-              {isCouple ? (
-                <>
-                  <span className="text-[10px] font-extrabold text-amber-800 dark:text-amber-300 bg-amber-100 dark:bg-amber-950 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-800/50">
-                    Couple Tax-Free Cash: £{Math.round((primaryActualLumpSum + partnerActualLumpSum) || 0).toLocaleString()}
-                  </span>
+              {!(isStudioMode || appMode === 'studio') && (
+                isCouple ? (
+                  <>
+                    <span className="text-[10px] font-extrabold text-amber-800 dark:text-amber-300 bg-amber-100 dark:bg-amber-950 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-800/50">
+                      Couple Tax-Free Cash: £{Math.round((primaryActualLumpSum + partnerActualLumpSum) || 0).toLocaleString()}
+                    </span>
+                    <span className="text-[10px] font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-100 dark:bg-indigo-950 px-2 py-0.5 rounded-md border border-indigo-200/50 dark:border-indigo-800/50">
+                      {profile.name || 'Primary'}: £{Math.round(primaryActualLumpSum || 0).toLocaleString()}
+                    </span>
+                    <span className="text-[10px] font-bold text-rose-700 dark:text-rose-300 bg-rose-100 dark:bg-rose-950 px-2 py-0.5 rounded-md border border-rose-200/50 dark:border-rose-800/50">
+                      {profile.partnerName || 'Partner'}: £{Math.round(partnerActualLumpSum || 0).toLocaleString()}
+                    </span>
+                  </>
+                ) : (
                   <span className="text-[10px] font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-100 dark:bg-indigo-950 px-2 py-0.5 rounded-md border border-indigo-200/50 dark:border-indigo-800/50">
-                    {profile.name || 'Primary'}: £{Math.round(primaryActualLumpSum || 0).toLocaleString()}
+                    Max Tax-Free Cash: £{Math.round(primaryActualLumpSum || 0).toLocaleString()}
                   </span>
-                  <span className="text-[10px] font-bold text-rose-700 dark:text-rose-300 bg-rose-100 dark:bg-rose-950 px-2 py-0.5 rounded-md border border-rose-200/50 dark:border-rose-800/50">
-                    {profile.partnerName || 'Partner'}: £{Math.round(partnerActualLumpSum || 0).toLocaleString()}
-                  </span>
-                </>
-              ) : (
-                <span className="text-[10px] font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-100 dark:bg-indigo-950 px-2 py-0.5 rounded-md border border-indigo-200/50 dark:border-indigo-800/50">
-                  Max Tax-Free Cash: £{Math.round(primaryActualLumpSum || 0).toLocaleString()}
-                </span>
+                )
               )}
             </div>
           </div>
 
           {/* Person Selector Tabs for Couple Planning */}
           {isCouple && (
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-white dark:bg-slate-900 p-1.5 sm:p-1 rounded-2xl border border-slate-200 dark:border-slate-700 text-xs font-bold shadow-xs">
-              <span className="text-slate-500 dark:text-slate-400 px-2 sm:px-3 text-[11px] uppercase tracking-wider font-extrabold">Configure For:</span>
+            <div className="flex items-center bg-slate-100 dark:bg-slate-900/80 p-1 rounded-xl border border-slate-200/80 dark:border-slate-700/80 text-xs font-bold w-full sm:w-fit shadow-xs">
               <div className="flex items-center gap-1 w-full sm:w-auto">
                 <button
+                  type="button"
                   onClick={() => setActiveLumpSumPerson('primary')}
-                  className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+                  className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-1.5 rounded-lg transition-all cursor-pointer ${
                     activeLumpSumPerson === 'primary'
-                      ? 'bg-indigo-600 text-white shadow-xs'
-                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                      ? 'bg-indigo-600 text-white shadow-xs font-extrabold'
+                      : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800'
                   }`}
                 >
                   <User className="w-3.5 h-3.5 text-indigo-200 shrink-0" />
                   <span className="truncate">{profile.name || 'Primary'}</span>
                 </button>
                 <button
+                  type="button"
                   onClick={() => setActiveLumpSumPerson('partner')}
-                  className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+                  className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-1.5 rounded-lg transition-all cursor-pointer ${
                     activeLumpSumPerson === 'partner'
-                      ? 'bg-rose-600 text-white shadow-xs'
-                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                      ? 'bg-rose-600 text-white shadow-xs font-extrabold'
+                      : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800'
                   }`}
                 >
                   <Heart className="w-3.5 h-3.5 text-rose-200 fill-rose-200 shrink-0" />
@@ -1221,33 +1228,9 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
                     } {profile.lumpSumTiming === 'access_age' || !profile.lumpSumTiming ? `(when private pension is first accessed at age ${primaryPensionAccessAge})` : `(age ${primaryLumpSumTakeAge})`}.
                   </span>
                 ) : profile.crystallisationMode === 'phased_tranches' ? (
-                  (() => {
-                    const activeTranches = (profile.crystallisationTranches || []).filter((t) => t.owner !== 'partner' && t.enabled);
-                    const totalCryst = activeTranches.reduce((sum, t) => sum + (t.amount || 0), 0);
-                    const totalPcls = activeTranches.reduce((sum, t) => sum + Math.round((t.amount || 0) * ((t.pclsPercent ?? 25) / 100)), 0);
-                    const totalDrawdown = totalCryst - totalPcls;
-                    const uncrystBal = Math.max(0, (primaryProjectedPot || primaryCurrentPot || 0) - totalCryst);
-                    const remLsa = Math.max(0, primaryLsaLimit - totalPcls);
-
-                    return (
-                      <div className="space-y-1">
-                        <span>
-                          <strong>Phased Crystallisation ({profile.name || 'Primary'}):</strong> Pension pot is split into <em>Uncrystallised</em> (retains 25% tax-free growth potential) and <em>Crystallised Drawdown</em> sub-pots.
-                        </span>
-                        <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px]">
-                          <span className="px-2 py-0.5 rounded-md bg-purple-100 dark:bg-purple-900/60 text-purple-900 dark:text-purple-200 font-bold">
-                            Uncrystallised: £{Math.round(uncrystBal).toLocaleString()}
-                          </span>
-                          <span className="px-2 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-900/60 text-indigo-900 dark:text-indigo-200 font-bold">
-                            Crystallised Drawdown: £{Math.round(totalDrawdown).toLocaleString()}
-                          </span>
-                          <span className="px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-900/60 text-emerald-900 dark:text-emerald-200 font-bold">
-                            Remaining LSA: £{Math.round(remLsa).toLocaleString()} (of £{(primaryLsaLimit || 0).toLocaleString()})
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })()
+                  <span>
+                    <strong>Phased Crystallisation ({profile.name || 'Primary'}):</strong> Pension pot is split into <em>Uncrystallised</em> (retains 25% tax-free growth potential) and <em>Crystallised Drawdown</em> sub-pots.
+                  </span>
                 ) : (
                   <span>
                     <strong>UFPLS Drip-Feed ({profile.name || 'Primary'}):</strong> 25% of each withdrawal is tax-free up to £{(primaryLsaLimit || 0).toLocaleString()} total, leaving 75% taxable. Keeps capital compounding tax-sheltered inside pension until drawn!
@@ -1488,33 +1471,9 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
                     } {profile.partnerLumpSumTiming === 'access_age' || !profile.partnerLumpSumTiming ? `(when partner's private pension is first accessed at age ${partnerPensionAccessAge})` : `(age ${partnerLumpSumTakeAge})`}.
                   </span>
                 ) : profile.partnerCrystallisationMode === 'phased_tranches' ? (
-                  (() => {
-                    const activeTranches = (profile.partnerCrystallisationTranches || profile.crystallisationTranches || []).filter((t) => t.owner === 'partner' && t.enabled);
-                    const totalCryst = activeTranches.reduce((sum, t) => sum + (t.amount || 0), 0);
-                    const totalPcls = activeTranches.reduce((sum, t) => sum + Math.round((t.amount || 0) * ((t.pclsPercent ?? 25) / 100)), 0);
-                    const totalDrawdown = totalCryst - totalPcls;
-                    const uncrystBal = Math.max(0, (partnerProjectedPot || partnerCurrentPot || 0) - totalCryst);
-                    const remLsa = Math.max(0, partnerLsaLimit - totalPcls);
-
-                    return (
-                      <div className="space-y-1">
-                        <span>
-                          <strong>Partner Phased Crystallisation ({profile.partnerName || 'Partner'}):</strong> Pension pot is split into <em>Uncrystallised</em> (retains 25% tax-free growth potential) and <em>Crystallised Drawdown</em> sub-pots.
-                        </span>
-                        <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px]">
-                          <span className="px-2 py-0.5 rounded-md bg-purple-100 dark:bg-purple-900/60 text-purple-900 dark:text-purple-200 font-bold">
-                            Uncrystallised: £{Math.round(uncrystBal).toLocaleString()}
-                          </span>
-                          <span className="px-2 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-900/60 text-indigo-900 dark:text-indigo-200 font-bold">
-                            Crystallised Drawdown: £{Math.round(totalDrawdown).toLocaleString()}
-                          </span>
-                          <span className="px-2 py-0.5 rounded-md bg-rose-100 dark:bg-rose-900/60 text-rose-900 dark:text-rose-200 font-bold">
-                            Remaining LSA: £{Math.round(remLsa).toLocaleString()} (of £{(partnerLsaLimit || 0).toLocaleString()})
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })()
+                  <span>
+                    <strong>Partner Phased Crystallisation ({profile.partnerName || 'Partner'}):</strong> Pension pot is split into <em>Uncrystallised</em> (retains 25% tax-free growth potential) and <em>Crystallised Drawdown</em> sub-pots.
+                  </span>
                 ) : (
                   <span>
                     <strong>Partner UFPLS Drip-Feed ({profile.partnerName || 'Partner'}):</strong> 25% of each partner withdrawal is tax-free up to £{(partnerLsaLimit || 0).toLocaleString()} total, leaving 75% taxable.

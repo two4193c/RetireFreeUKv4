@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { AppMode } from '../types';
 import { 
   HelpCircle, 
   Compass, 
@@ -26,7 +27,12 @@ import {
   Download,
   Bot,
   FileSpreadsheet,
-  Share2
+  Share2,
+  Columns,
+  Maximize2,
+  LayoutDashboard,
+  ExternalLink,
+  Keyboard
 } from 'lucide-react';
 
 interface GuideSection {
@@ -39,8 +45,8 @@ interface GuideSection {
 }
 
 interface UserGuideCardProps {
-  appMode?: 'basic' | 'advanced';
-  onToggleAppMode?: (mode: 'basic' | 'advanced') => void;
+  appMode?: AppMode;
+  onToggleAppMode?: (mode: AppMode) => void;
 }
 
 export const UserGuideCard: React.FC<UserGuideCardProps> = ({
@@ -48,12 +54,12 @@ export const UserGuideCard: React.FC<UserGuideCardProps> = ({
   onToggleAppMode
 }) => {
   const [openSectionId, setOpenSectionId] = useState<string | null>('getting-started');
-  const [internalMode, setInternalMode] = useState<'basic' | 'advanced'>('basic');
+  const [internalMode, setInternalMode] = useState<AppMode>('basic');
 
   const currentMode = externalAppMode ?? internalMode;
   const isBasic = currentMode === 'basic';
 
-  const handleModeToggle = (mode: 'basic' | 'advanced') => {
+  const handleModeToggle = (mode: AppMode) => {
     if (onToggleAppMode) {
       onToggleAppMode(mode);
     } else {
@@ -94,14 +100,24 @@ export const UserGuideCard: React.FC<UserGuideCardProps> = ({
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => handleModeToggle('advanced')}
-              className="px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Switch to Advanced Mode ✨</span>
-            </button>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => handleModeToggle('advanced')}
+                className="px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Advanced ✨</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleModeToggle('studio')}
+                className="px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
+              >
+                <Columns className="w-3.5 h-3.5" />
+                <span>Studio 🚀</span>
+              </button>
+            </div>
           </div>
 
           {/* Basic Mode 4 Steps */}
@@ -578,14 +594,24 @@ export const UserGuideCard: React.FC<UserGuideCardProps> = ({
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => handleModeToggle('basic')}
-              className="px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white shadow-xs"
-            >
-              <Zap className="w-3.5 h-3.5" />
-              <span>Switch to Basic Mode ⚡</span>
-            </button>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => handleModeToggle('basic')}
+                className="px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white shadow-xs"
+              >
+                <Zap className="w-3.5 h-3.5" />
+                <span>Basic ⚡</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleModeToggle('studio')}
+                className="px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
+              >
+                <Columns className="w-3.5 h-3.5" />
+                <span>Studio 🚀</span>
+              </button>
+            </div>
           </div>
 
           {/* Advanced Mode 5 Steps */}
@@ -1134,7 +1160,180 @@ export const UserGuideCard: React.FC<UserGuideCardProps> = ({
     }
   ];
 
-  const sections = isBasic ? basicSections : advancedSections;
+  const studioSections: GuideSection[] = [
+    {
+      id: 'getting-started',
+      title: '1. Getting Started & Studio Mode Dual-Pane Workflow',
+      icon: Compass,
+      badge: 'Studio Suite 🚀',
+      summary: 'Pro-grade dual-pane workflow: continuous parameters stack on the left, live real-time analytics on the right, and dedicated pop-out analytical windows.',
+      content: (
+        <div className="space-y-4 text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+          <p>
+            Welcome to <strong>RetireFree UK Studio Mode</strong> — an adviser-grade dual-pane financial modeling workspace with real-time reactive recalculations and pop-out window capabilities.
+          </p>
+
+          {/* Current Mode Indicator Banner */}
+          <div className="p-3.5 rounded-2xl border flex flex-col sm:flex-row items-center justify-between gap-3 text-xs bg-emerald-50/90 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-xl text-white bg-emerald-600">
+                <Columns className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="font-extrabold text-slate-900 dark:text-white block">
+                  Quick Start Guide — Studio Mode Active 🚀
+                </span>
+                <span className="text-slate-500 dark:text-slate-400 text-[11px]">
+                  Dual-pane continuous workflow: adjust inputs on the left, inspect live charts on the right, and launch focused pop-out modals.
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => handleModeToggle('basic')}
+                className="px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white shadow-xs"
+              >
+                <Zap className="w-3.5 h-3.5" />
+                <span>Basic ⚡</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleModeToggle('advanced')}
+                className="px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Advanced ✨</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Studio Mode 4 Key Pillars */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 my-4">
+            <div className="p-3.5 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
+              <div className="w-7 h-7 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 font-extrabold flex items-center justify-center text-xs">
+                1
+              </div>
+              <h4 className="font-bold text-slate-900 dark:text-white">Left Parameters Pane</h4>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                18 interactive parameter modules in a continuous vertical scroll with instant sidebar jump anchors.
+              </p>
+            </div>
+
+            <div className="p-3.5 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
+              <div className="w-7 h-7 rounded-xl bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400 font-extrabold flex items-center justify-center text-xs">
+                2
+              </div>
+              <h4 className="font-bold text-slate-900 dark:text-white">Right Analysis Pane</h4>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Live KPI Scorecard, Drawdown Strategy Planner, Asset Layer Chart, and Monte Carlo risk probability cones.
+              </p>
+            </div>
+
+            <div className="p-3.5 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
+              <div className="w-7 h-7 rounded-xl bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 font-extrabold flex items-center justify-center text-xs">
+                3
+              </div>
+              <h4 className="font-bold text-slate-900 dark:text-white">Pop-Out Windows</h4>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Launch Executive Summary, Scenario Comparer, Mortgage Amortization, and Documentation in spacious pop-outs.
+              </p>
+            </div>
+
+            <div className="p-3.5 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
+              <div className="w-7 h-7 rounded-xl bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400 font-extrabold flex items-center justify-center text-xs">
+                4
+              </div>
+              <h4 className="font-bold text-slate-900 dark:text-white">Formulas & AI Export</h4>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Export live Excel workbooks with genuine dynamic formulas or generate presentation-ready PDF strategy packs.
+              </p>
+            </div>
+          </div>
+        </div>
+      )
+    },
+    {
+      id: 'studio-popouts',
+      title: '2. Dedicated Pop-Out Analytical Windows',
+      icon: Maximize2,
+      badge: 'Pop-Out Windows 🗗',
+      summary: 'Executive Summary and Scenario Comparison open in focused modal windows, maintaining your active place in the workspace.',
+      content: (
+        <div className="space-y-4 text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+          <p>
+            Studio Mode features dedicated pop-out windows so you can dive deep into executive dashboards, plan comparisons, and specialized tools without leaving your parameter workflow.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+            <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                  <LayoutDashboard className="w-4 h-4 text-emerald-600" />
+                  Executive Summary Pop-Out
+                </span>
+                <span className="text-[10px] uppercase font-extrabold bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-md">
+                  Tabbed Views
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                Clicking Summary in the sidebar opens the full Executive Summary window with sub-tabs for Plan Insights, Strategy Dashboard, Projections, Stress-Testing, and April 2027 Inheritance Tax liability estimates.
+              </p>
+            </div>
+
+            <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                  <ArrowRightLeft className="w-4 h-4 text-indigo-600" />
+                  Scenario Comparer Pop-Out
+                </span>
+                <span className="text-[10px] uppercase font-extrabold bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-md">
+                  Side-by-Side
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                Clicking Compare in the sidebar opens a dedicated comparison pop-out. Evaluate retirement age changes, drawdown ordering trade-offs, and longevity safety margins with visual delta scorecards.
+              </p>
+            </div>
+
+            <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                  <BookOpen className="w-4 h-4 text-purple-600" />
+                  Documentation Modal
+                </span>
+                <span className="text-[10px] uppercase font-extrabold bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded-md">
+                  25+ Guides
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                Access UK tax thresholds, tapered allowance formulas, sequence of returns studies, DB scheme transfers, and emergency cash buffer strategies in an instant searchable dialog.
+              </p>
+            </div>
+
+            <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                  <Zap className="w-4 h-4 text-amber-600" />
+                  Genetic Solver &amp; AI Advisor
+                </span>
+                <span className="text-[10px] uppercase font-extrabold bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-md">
+                  Optimization
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                Run the Maximized Spend Genetic Algorithm solver to calculate precise sustainable spending limits, or launch the AI Tax Advisor for automated allowance leak audits.
+              </p>
+            </div>
+          </div>
+        </div>
+      )
+    },
+    ...advancedSections.slice(1)
+  ];
+
+  const sections = currentMode === 'studio' ? studioSections : (currentMode === 'advanced' ? advancedSections : basicSections);
 
   return (
     <div id="card-other-userguide" className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
