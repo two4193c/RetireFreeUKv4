@@ -72,15 +72,17 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
   const isPartnerEarlyRetirement = isCouple && partnerRetireAge < partnerAccessAge;
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-xs border border-slate-200 dark:border-slate-800 space-y-6 transition-colors">
+    <div className={`bg-white dark:bg-slate-900 shadow-xs border border-slate-200 dark:border-slate-800 transition-colors ${
+      isStudioMode ? 'rounded-2xl p-4 sm:p-5 space-y-4' : 'rounded-3xl p-6 space-y-6'
+    }`}>
       {/* SECTION HEADER & NMPA BADGES */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-400 flex items-center justify-center border border-emerald-200/50 dark:border-emerald-800/50">
-            <User className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-400 flex items-center justify-center border border-emerald-200/50 dark:border-emerald-800/50 shrink-0">
+            <User className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
           </div>
           <div>
-            <h2 className="font-bold text-slate-800 dark:text-slate-100 text-base">
+            <h2 className="font-bold text-slate-800 dark:text-slate-100 text-sm sm:text-base">
               Personal Profile & NMPA Timeline
             </h2>
             {!isStudioMode && (
@@ -94,7 +96,30 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
         </div>
 
         {/* NMPA Access Age Badges */}
-        {!isStudioMode && (
+        {isStudioMode ? (
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            <div className="flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200/80 dark:border-emerald-800/60 px-2.5 py-1 rounded-xl">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <span className="text-[11px] text-slate-600 dark:text-slate-300 font-medium">
+                {isCouple ? `${profile.name || 'Primary'}:` : 'NMPA Access:'}
+              </span>
+              <span className="text-[11px] font-extrabold text-emerald-700 dark:text-emerald-400">
+                {profile.pensionAccessAge ?? profile.protectedPensionAccessAge ?? primaryAccessAge}
+              </span>
+            </div>
+            {isCouple && (
+              <div className="flex items-center gap-1.5 bg-indigo-50/80 dark:bg-indigo-950/60 border border-indigo-200/80 dark:border-indigo-800/60 px-2.5 py-1 rounded-xl">
+                <Heart className="w-3 h-3 text-rose-500 fill-rose-500/20 shrink-0" />
+                <span className="text-[11px] text-indigo-900 dark:text-indigo-300 font-medium">
+                  {profile.partnerName || 'Partner'}:
+                </span>
+                <span className="text-[11px] font-extrabold text-indigo-700 dark:text-indigo-400">
+                  {profile.partnerPensionAccessAge ?? profile.partnerProtectedPensionAccessAge ?? partnerAccessAge}
+                </span>
+              </div>
+            )}
+          </div>
+        ) : (
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 px-3 py-1.5 rounded-2xl">
               <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
@@ -135,7 +160,7 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
       {isCouple ? (
         <div className={`grid grid-cols-1 gap-6 ${isStudioMode ? "" : "lg:grid-cols-2"}`}>
           {/* PRIMARY USER CARD */}
-          <div className="bg-slate-50/70 dark:bg-slate-800/40 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-700/60 space-y-4">
+          <div className="bg-slate-50/70 dark:bg-slate-800/40 rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-700/60 space-y-4">
             <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-slate-700/60">
               <div className="flex items-center gap-2">
                 <User className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
@@ -148,7 +173,7 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
               </span>
             </div>
 
-            <div className={`grid grid-cols-1 gap-4 ${isStudioMode ? "" : "sm:grid-cols-2"}`}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Primary Name */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Primary Name</label>
@@ -165,7 +190,7 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
               <div className="space-y-1.5">
                 <label htmlFor="primary-dob" className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
                   <span>Date of Birth</span>
-                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase">Age {profile.currentAge}</span>
+                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase bg-emerald-50 dark:bg-emerald-950/80 px-1.5 py-0.5 rounded-md border border-emerald-200/60 dark:border-emerald-800/60">Age {profile.currentAge}</span>
                 </label>
                 <input
                   id="primary-dob"
@@ -188,6 +213,7 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
                     id="primary-salary"
                     type="number"
                     step="1000"
+                    min="0"
                     value={profile.grossAnnualSalary}
                     onChange={(e) => updateField('grossAnnualSalary', Math.max(0, Number(e.target.value)))}
                     className="w-full pl-7 pr-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
@@ -199,7 +225,9 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
               <div className="space-y-1.5">
                 <label htmlFor="primary-retire-age" className="text-xs font-bold text-slate-700 dark:text-slate-300 flex justify-between">
                   <span>Target Retire Age</span>
-                  <span className="text-emerald-600 dark:text-emerald-400 font-extrabold text-[10px]">{profile.targetRetirementAge || ''} yrs</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-extrabold text-[10px] bg-emerald-50 dark:bg-emerald-950/80 px-1.5 py-0.5 rounded-md border border-emerald-200/60 dark:border-emerald-800/60">
+                    {profile.targetRetirementAge || ''} yrs ({(profile.targetRetirementAge || 60) - profile.currentAge}y away)
+                  </span>
                 </label>
                 <input
                   id="primary-retire-age"
@@ -236,11 +264,11 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
                     <HelpCircle className="w-3.5 h-3.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300" />
                     <div className="absolute right-0 top-5 hidden group-hover:block w-72 p-3 bg-slate-900 text-white text-[11px] rounded-xl shadow-xl z-20 font-normal leading-relaxed border border-slate-800">
                       Standard UK NMPA is <strong>55</strong> (born &lt; 6 Apr 1971) or <strong>57</strong> (born ≥ 6 Apr 1971).
-                      You can enter any custom age if your scheme permits or if you hold a protected pension age (e.g. 50, 55, 56, 58).
+                      You can enter any custom age if your scheme permits or if you hold a protected pension age (e.g. 50, 55, 56, 58, 60).
                     </div>
                   </div>
                 </label>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <input
                     type="number"
                     min="50"
@@ -252,66 +280,30 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
                       updateField('protectedPensionAccessAge', val > 0 ? val : undefined);
                     }}
                     placeholder={`e.g. ${primaryAccessAge}`}
-                    className="w-28 px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-extrabold text-emerald-600 dark:text-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                    className="w-24 px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-extrabold text-emerald-600 dark:text-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
                   />
                   <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        updateField('pensionAccessAge', 55);
-                        updateField('protectedPensionAccessAge', 55);
-                      }}
-                      className={`px-2 py-1 text-[11px] font-bold rounded-lg border transition-all cursor-pointer ${
-                        (profile.pensionAccessAge ?? profile.protectedPensionAccessAge ?? primaryAccessAge) === 55
-                          ? 'bg-emerald-600 text-white border-emerald-600'
-                          : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'
-                      }`}
-                    >
-                      55
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        updateField('pensionAccessAge', 57);
-                        updateField('protectedPensionAccessAge', 57);
-                      }}
-                      className={`px-2 py-1 text-[11px] font-bold rounded-lg border transition-all cursor-pointer ${
-                        (profile.pensionAccessAge ?? profile.protectedPensionAccessAge ?? primaryAccessAge) === 57
-                          ? 'bg-emerald-600 text-white border-emerald-600'
-                          : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'
-                      }`}
-                    >
-                      57
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        updateField('pensionAccessAge', 58);
-                        updateField('protectedPensionAccessAge', 58);
-                      }}
-                      className={`px-2 py-1 text-[11px] font-bold rounded-lg border transition-all cursor-pointer ${
-                        (profile.pensionAccessAge ?? profile.protectedPensionAccessAge ?? primaryAccessAge) === 58
-                          ? 'bg-emerald-600 text-white border-emerald-600'
-                          : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'
-                      }`}
-                    >
-                      58
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        updateField('pensionAccessAge', 60);
-                        updateField('protectedPensionAccessAge', 60);
-                      }}
-                      className={`px-2 py-1 text-[11px] font-bold rounded-lg border transition-all cursor-pointer ${
-                        (profile.pensionAccessAge ?? profile.protectedPensionAccessAge ?? primaryAccessAge) === 60
-                          ? 'bg-emerald-600 text-white border-emerald-600'
-                          : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'
-                      }`}
-                    >
-                      60
-                    </button>
+                    {[55, 57, 58, 60].map((age) => (
+                      <button
+                        key={age}
+                        type="button"
+                        onClick={() => {
+                          updateField('pensionAccessAge', age);
+                          updateField('protectedPensionAccessAge', age);
+                        }}
+                        className={`px-2.5 py-1.5 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
+                          (profile.pensionAccessAge ?? profile.protectedPensionAccessAge ?? primaryAccessAge) === age
+                            ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                            : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'
+                        }`}
+                      >
+                        {age}
+                      </button>
+                    ))}
                   </div>
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+                    (Standard NMPA: Age {primaryAccessAge})
+                  </span>
                 </div>
               </div>
             </div>
@@ -332,7 +324,7 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
           </div>
 
           {/* PARTNER USER CARD */}
-          <div className="bg-indigo-50/50 dark:bg-indigo-950/30 rounded-2xl p-5 border border-indigo-100 dark:border-indigo-900/50 space-y-4">
+          <div className="bg-indigo-50/50 dark:bg-indigo-950/30 rounded-2xl p-4 sm:p-5 border border-indigo-100 dark:border-indigo-900/50 space-y-4">
             <div className="flex items-center justify-between pb-2 border-b border-indigo-100 dark:border-indigo-900/50">
               <div className="flex items-center gap-2">
                 <Heart className="w-4 h-4 text-rose-500 fill-rose-500/20" />
@@ -345,7 +337,7 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
               </span>
             </div>
 
-            <div className={`grid grid-cols-1 gap-4 ${isStudioMode ? "" : "sm:grid-cols-2"}`}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Partner Name */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Partner Name</label>
@@ -362,7 +354,7 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
                   <span>Partner Date of Birth</span>
-                  <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold uppercase">Age {partnerAge}</span>
+                  <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold uppercase bg-indigo-50 dark:bg-indigo-950/80 px-1.5 py-0.5 rounded-md border border-indigo-200/60 dark:border-indigo-800/60">Age {partnerAge}</span>
                 </label>
                 <input
                   type="date"
@@ -376,7 +368,7 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex justify-between">
                   <span>Partner Annual Salary</span>
-                  <span className="text-slate-400 dark:text-slate-500 text-[10px]">Pre-tax</span>
+                  <span className="text-slate-400 dark:text-slate-500 text-[10px] uppercase font-semibold">Pre-tax</span>
                 </label>
                 <div className="relative">
                   <span className="absolute left-3 top-2 text-slate-400 dark:text-slate-500 font-bold text-xs">£</span>
@@ -395,7 +387,9 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex justify-between">
                   <span>Partner Target Retire Age</span>
-                  <span className="text-indigo-600 dark:text-indigo-400 font-extrabold text-[10px]">{profile.partnerTargetRetirementAge || ''} yrs</span>
+                  <span className="text-indigo-600 dark:text-indigo-400 font-extrabold text-[10px] bg-indigo-50 dark:bg-indigo-950/80 px-1.5 py-0.5 rounded-md border border-indigo-200/60 dark:border-indigo-800/60">
+                    {profile.partnerTargetRetirementAge || ''} yrs ({((profile.partnerTargetRetirementAge ?? 60) - partnerAge)}y away)
+                  </span>
                 </label>
                 <input
                   type="number"
@@ -432,11 +426,11 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
                     <HelpCircle className="w-3.5 h-3.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300" />
                     <div className="absolute right-0 top-5 hidden group-hover:block w-72 p-3 bg-slate-900 text-white text-[11px] rounded-xl shadow-xl z-20 font-normal leading-relaxed border border-slate-800">
                       Standard UK NMPA is <strong>55</strong> or <strong>57</strong>.
-                      Enter any custom age if partner holds a scheme protected age (e.g. 50, 55, 56, 58).
+                      Enter any custom age if partner holds a scheme protected age (e.g. 50, 55, 56, 58, 60).
                     </div>
                   </div>
                 </label>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <input
                     type="number"
                     min="50"
@@ -448,66 +442,30 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
                       updateField('partnerProtectedPensionAccessAge', val > 0 ? val : undefined);
                     }}
                     placeholder={`e.g. ${partnerAccessAge}`}
-                    className="w-28 px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-extrabold text-indigo-600 dark:text-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    className="w-24 px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-extrabold text-indigo-600 dark:text-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                   />
                   <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        updateField('partnerPensionAccessAge', 55);
-                        updateField('partnerProtectedPensionAccessAge', 55);
-                      }}
-                      className={`px-2 py-1 text-[11px] font-bold rounded-lg border transition-all cursor-pointer ${
-                        (profile.partnerPensionAccessAge ?? profile.partnerProtectedPensionAccessAge ?? partnerAccessAge) === 55
-                          ? 'bg-indigo-600 text-white border-indigo-600'
-                          : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'
-                      }`}
-                    >
-                      55
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        updateField('partnerPensionAccessAge', 57);
-                        updateField('partnerProtectedPensionAccessAge', 57);
-                      }}
-                      className={`px-2 py-1 text-[11px] font-bold rounded-lg border transition-all cursor-pointer ${
-                        (profile.partnerPensionAccessAge ?? profile.partnerProtectedPensionAccessAge ?? partnerAccessAge) === 57
-                          ? 'bg-indigo-600 text-white border-indigo-600'
-                          : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'
-                      }`}
-                    >
-                      57
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        updateField('partnerPensionAccessAge', 58);
-                        updateField('partnerProtectedPensionAccessAge', 58);
-                      }}
-                      className={`px-2 py-1 text-[11px] font-bold rounded-lg border transition-all cursor-pointer ${
-                        (profile.partnerPensionAccessAge ?? profile.partnerProtectedPensionAccessAge ?? partnerAccessAge) === 58
-                          ? 'bg-indigo-600 text-white border-indigo-600'
-                          : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'
-                      }`}
-                    >
-                      58
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        updateField('partnerPensionAccessAge', 60);
-                        updateField('partnerProtectedPensionAccessAge', 60);
-                      }}
-                      className={`px-2 py-1 text-[11px] font-bold rounded-lg border transition-all cursor-pointer ${
-                        (profile.partnerPensionAccessAge ?? profile.partnerProtectedPensionAccessAge ?? partnerAccessAge) === 60
-                          ? 'bg-indigo-600 text-white border-indigo-600'
-                          : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'
-                      }`}
-                    >
-                      60
-                    </button>
+                    {[55, 57, 58, 60].map((age) => (
+                      <button
+                        key={age}
+                        type="button"
+                        onClick={() => {
+                          updateField('partnerPensionAccessAge', age);
+                          updateField('partnerProtectedPensionAccessAge', age);
+                        }}
+                        className={`px-2.5 py-1.5 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
+                          (profile.partnerPensionAccessAge ?? profile.partnerProtectedPensionAccessAge ?? partnerAccessAge) === age
+                            ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                            : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'
+                        }`}
+                      >
+                        {age}
+                      </button>
+                    ))}
                   </div>
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+                    (Standard NMPA: Age {partnerAccessAge})
+                  </span>
                 </div>
               </div>
             </div>
@@ -529,66 +487,82 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
         </div>
       ) : (
         /* SINGLE PLANNER DEMOGRAPHICS */
-        <div className={`grid grid-cols-1 gap-4 ${isStudioMode ? "" : "sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5"}`}>
-          {/* Full Name */}
-          <div className="space-y-1.5">
-            <label htmlFor="single-name" className="text-xs font-bold text-slate-700 dark:text-slate-300">
-              Full Name / Preferred Name
-            </label>
-            <input
-              id="single-name"
-              type="text"
-              value={profile.name || ''}
-              onChange={(e) => updateField('name', e.target.value)}
-              placeholder="e.g. Alex"
-              className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-            />
+        <div className="bg-slate-50/70 dark:bg-slate-800/40 rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-700/60 space-y-4">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-slate-700/60">
+            <div className="flex items-center gap-2">
+              <User className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-sm">
+                Personal Profile & Demographics
+              </h3>
+            </div>
+            <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full">
+              Single Planner
+            </span>
           </div>
 
-          {/* Date of Birth & Derived Age */}
-          <div className="space-y-1.5">
-            <label htmlFor="single-dob" className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
-              <span>Date of Birth</span>
-              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase">Age {profile.currentAge}</span>
-            </label>
-            <input
-              id="single-dob"
-              type="date"
-              value={profile.dateOfBirth || ''}
-              onChange={(e) => handleDobChange(e.target.value)}
-              className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-            />
-          </div>
-
-          {/* Gross Annual Salary */}
-          <div className="space-y-1.5">
-            <label htmlFor="single-salary" className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
-              <span>Gross Annual Salary</span>
-              <span className="text-[10px] text-slate-400 dark:text-slate-500 uppercase font-semibold">Pre-tax</span>
-            </label>
-            <div className="relative rounded-xl">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 dark:text-slate-500 font-bold text-sm">
-                £
-              </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Full Name */}
+            <div className="space-y-1.5">
+              <label htmlFor="single-name" className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                Full Name / Preferred Name
+              </label>
               <input
-                id="single-salary"
-                type="number"
-                step="1000"
-                value={profile.grossAnnualSalary}
-                onChange={(e) => updateField('grossAnnualSalary', Math.max(0, Number(e.target.value)))}
-                className="w-full pl-8 pr-3 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                id="single-name"
+                type="text"
+                value={profile.name || ''}
+                onChange={(e) => updateField('name', e.target.value)}
+                placeholder="e.g. Alex"
+                className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
               />
             </div>
-          </div>
 
-          {/* Target Retirement Age */}
-          <div className="space-y-1.5">
-            <div className="flex justify-between items-center text-xs font-bold text-slate-700 dark:text-slate-300">
-              <span>Retirement Age</span>
-              <span className="text-slate-400 dark:text-slate-500 text-[11px] font-normal">{(profile.targetRetirementAge || 60) - profile.currentAge} yrs away</span>
-            </div>
-            <div className="flex items-center gap-2 pt-1">
+            {/* Date of Birth & Derived Age */}
+            <div className="space-y-1.5">
+              <label htmlFor="single-dob" className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                <span>Date of Birth</span>
+                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase bg-emerald-50 dark:bg-emerald-950/80 px-1.5 py-0.5 rounded-md border border-emerald-200/60 dark:border-emerald-800/60">
+                  Age {profile.currentAge}
+                </span>
+              </label>
               <input
+                id="single-dob"
+                type="date"
+                value={profile.dateOfBirth || ''}
+                onChange={(e) => handleDobChange(e.target.value)}
+                className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+              />
+            </div>
+
+            {/* Gross Annual Salary */}
+            <div className="space-y-1.5">
+              <label htmlFor="single-salary" className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                <span>Gross Annual Salary</span>
+                <span className="text-[10px] text-slate-400 dark:text-slate-500 uppercase font-semibold">Pre-tax</span>
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-2 text-slate-400 dark:text-slate-500 font-bold text-xs">£</span>
+                <input
+                  id="single-salary"
+                  type="number"
+                  step="1000"
+                  min="0"
+                  value={profile.grossAnnualSalary}
+                  onChange={(e) => updateField('grossAnnualSalary', Math.max(0, Number(e.target.value)))}
+                  className="w-full pl-7 pr-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                />
+              </div>
+            </div>
+
+            {/* Target Retirement Age */}
+            <div className="space-y-1.5">
+              <label htmlFor="single-retire-age" className="text-xs font-bold text-slate-700 dark:text-slate-300 flex justify-between">
+                <span>Target Retire Age</span>
+                <span className="text-emerald-600 dark:text-emerald-400 font-extrabold text-[10px] bg-emerald-50 dark:bg-emerald-950/80 px-1.5 py-0.5 rounded-md border border-emerald-200/60 dark:border-emerald-800/60">
+                  {profile.targetRetirementAge || 60} yrs ({(profile.targetRetirementAge || 60) - profile.currentAge}y away)
+                </span>
+              </label>
+              <input
+                id="single-retire-age"
                 type="number"
                 min={profile.currentAge + 1}
                 max="90"
@@ -610,100 +584,65 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
                   val = Math.min(90, val);
                   updateField('targetRetirementAge', val);
                 }}
-                className="w-18 px-2.5 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-              />
-              <input
-                type="range"
-                min={profile.currentAge + 1}
-                max="80"
-                value={Math.max(profile.currentAge + 1, profile.targetRetirementAge || 60)}
-                onChange={(e) => updateField('targetRetirementAge', Number(e.target.value))}
-                className="flex-1 accent-emerald-600 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg cursor-pointer"
+                className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
               />
             </div>
-            <div className="flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500 pt-0.5">
-              <span>Min: {profile.currentAge + 1}</span>
-              <span>Target: {profile.targetRetirementAge || ''}</span>
-              <span>Max: 80</span>
-            </div>
-          </div>
 
-          {/* Private Pension Access Age Input */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
-              <span>Pension Access Age (NMPA)</span>
-              <div className="group relative cursor-pointer">
-                <HelpCircle className="w-3.5 h-3.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300" />
-                <div className="absolute right-0 top-5 hidden group-hover:block w-72 p-3 bg-slate-900 text-white text-[11px] rounded-xl shadow-xl z-20 font-normal leading-relaxed border border-slate-800">
-                  Standard UK NMPA is <strong>55</strong> (born &lt; 6 Apr 1971) or <strong>57</strong> (born ≥ 6 Apr 1971).
-                  Enter any custom age if your scheme permits or if you hold a protected pension age (e.g. 50, 55, 56, 58).
+            {/* Private Pension Access Age Input */}
+            <div className="space-y-1.5 sm:col-span-2">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                <span>Private Pension Access Age (NMPA / Scheme Age)</span>
+                <div className="group relative cursor-pointer">
+                  <HelpCircle className="w-3.5 h-3.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300" />
+                  <div className="absolute right-0 top-5 hidden group-hover:block w-72 p-3 bg-slate-900 text-white text-[11px] rounded-xl shadow-xl z-20 font-normal leading-relaxed border border-slate-800">
+                    Standard UK NMPA is <strong>55</strong> (born &lt; 6 Apr 1971) or <strong>57</strong> (born ≥ 6 Apr 1971).
+                    You can enter any custom age if your scheme permits or if you hold a protected pension age (e.g. 50, 55, 56, 58, 60).
+                  </div>
                 </div>
-              </div>
-            </label>
-            <div className="flex items-center gap-1.5">
-              <input
-                type="number"
-                min="50"
-                max="75"
-                value={profile.pensionAccessAge ?? profile.protectedPensionAccessAge ?? primaryAccessAge}
-                onChange={(e) => {
-                  const val = Number(e.target.value);
-                  updateField('pensionAccessAge', val > 0 ? val : undefined);
-                  updateField('protectedPensionAccessAge', val > 0 ? val : undefined);
-                }}
-                placeholder={`e.g. ${primaryAccessAge}`}
-                className="w-20 px-2.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-extrabold text-emerald-600 dark:text-emerald-400 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-              />
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => {
-                    updateField('pensionAccessAge', 55);
-                    updateField('protectedPensionAccessAge', 55);
+              </label>
+              <div className="flex flex-wrap items-center gap-2">
+                <input
+                  type="number"
+                  min="50"
+                  max="75"
+                  value={profile.pensionAccessAge ?? profile.protectedPensionAccessAge ?? primaryAccessAge}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    updateField('pensionAccessAge', val > 0 ? val : undefined);
+                    updateField('protectedPensionAccessAge', val > 0 ? val : undefined);
                   }}
-                  className={`px-1.5 py-1 text-[10px] font-bold rounded-md border transition-all cursor-pointer ${
-                    (profile.pensionAccessAge ?? profile.protectedPensionAccessAge ?? primaryAccessAge) === 55
-                      ? 'bg-emerald-600 text-white border-emerald-600'
-                      : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'
-                  }`}
-                >
-                  55
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    updateField('pensionAccessAge', 57);
-                    updateField('protectedPensionAccessAge', 57);
-                  }}
-                  className={`px-1.5 py-1 text-[10px] font-bold rounded-md border transition-all cursor-pointer ${
-                    (profile.pensionAccessAge ?? profile.protectedPensionAccessAge ?? primaryAccessAge) === 57
-                      ? 'bg-emerald-600 text-white border-emerald-600'
-                      : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'
-                  }`}
-                >
-                  57
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    updateField('pensionAccessAge', 58);
-                    updateField('protectedPensionAccessAge', 58);
-                  }}
-                  className={`px-1.5 py-1 text-[10px] font-bold rounded-md border transition-all cursor-pointer ${
-                    (profile.pensionAccessAge ?? profile.protectedPensionAccessAge ?? primaryAccessAge) === 58
-                      ? 'bg-emerald-600 text-white border-emerald-600'
-                      : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'
-                  }`}
-                >
-                  58
-                </button>
+                  placeholder={`e.g. ${primaryAccessAge}`}
+                  className="w-24 px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-extrabold text-emerald-600 dark:text-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                />
+                <div className="flex items-center gap-1">
+                  {[55, 57, 58, 60].map((age) => (
+                    <button
+                      key={age}
+                      type="button"
+                      onClick={() => {
+                        updateField('pensionAccessAge', age);
+                        updateField('protectedPensionAccessAge', age);
+                      }}
+                      className={`px-2.5 py-1.5 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
+                        (profile.pensionAccessAge ?? profile.protectedPensionAccessAge ?? primaryAccessAge) === age
+                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                          : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'
+                      }`}
+                    >
+                      {age}
+                    </button>
+                  ))}
+                </div>
+                <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+                  (Standard NMPA: Age {primaryAccessAge})
+                </span>
               </div>
             </div>
           </div>
 
           {/* Primary Early Retirement Access Notice for Single Mode */}
           {isPrimaryEarlyRetirement && (
-            <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-2xl p-3.5 flex items-start gap-3 text-xs text-amber-900 dark:text-amber-200 mt-3 sm:col-span-2 lg:col-span-3 xl:col-span-5">
+            <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-2xl p-3.5 flex items-start gap-3 text-xs text-amber-900 dark:text-amber-200 mt-3">
               <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
               <div>
                 <p className="font-bold">Early Retirement Access Notice ({profile.name || 'Primary User'})</p>
@@ -718,17 +657,17 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
       )}
 
       {/* TAX REGION & TAX RELIEF METHOD */}
-      <div className={`grid grid-cols-1 gap-4 pt-3 border-t border-slate-100 dark:border-slate-800 ${isStudioMode ? "" : "sm:grid-cols-2"}`}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-slate-100 dark:border-slate-800">
         {/* UK Tax Region */}
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+          <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
             <span>UK Tax Region</span>
             <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold uppercase">Rates</span>
           </label>
           <select
             value={profile.taxRegion}
             onChange={(e) => updateField('taxRegion', e.target.value as any)}
-            className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer"
+            className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer"
           >
             <option value="england_ni_wales">England, NI & Wales (20/40/45%)</option>
             <option value="scotland">Scotland (19/20/21/42/45/48%)</option>
@@ -737,7 +676,7 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
 
         {/* Tax Relief Method */}
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+          <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
             <span>Tax Relief Method</span>
             <div className="group relative cursor-pointer">
               <HelpCircle className="w-3.5 h-3.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300" />
@@ -751,7 +690,7 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
           <select
             value={profile.pensionContributionMethod}
             onChange={(e) => updateField('pensionContributionMethod', e.target.value as any)}
-            className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer"
+            className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer"
           >
             <option value="salary_sacrifice">Salary Sacrifice (Tax + NI Saved)</option>
             <option value="relief_at_source">Relief at Source (SIPP / Personal)</option>
