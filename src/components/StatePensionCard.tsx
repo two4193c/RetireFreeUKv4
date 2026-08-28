@@ -134,7 +134,7 @@ export const StatePensionCard: React.FC<StatePensionCardProps> = ({ profile, onC
                 </div>
               </div>
 
-              <div className={`grid gap-3 ${isStudioMode ? "grid-cols-1" : "grid-cols-3"}`}>
+              <div className={`grid grid-cols-2 gap-3 sm:grid-cols-3`}>
                 {/* Qualifying Years */}
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
@@ -210,7 +210,7 @@ export const StatePensionCard: React.FC<StatePensionCardProps> = ({ profile, onC
               )}
 
               {/* Computed Entitlement Result Callout */}
-              <div className={`p-3 rounded-xl border flex items-center justify-between text-xs ${
+              <div className={`p-3 rounded-xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1 text-xs ${
                 primaryYears > 0 && primaryYears < 10
                   ? 'bg-amber-50/80 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800'
                   : 'bg-emerald-100/70 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-800'
@@ -222,7 +222,7 @@ export const StatePensionCard: React.FC<StatePensionCardProps> = ({ profile, onC
                 }`}>
                   Calculated Entitlement ({primaryYears}/35 Yrs):
                 </span>
-                <div className="text-right">
+                <div className="sm:text-right">
                   <span className={`font-extrabold text-sm ${
                     primaryYears > 0 && primaryYears < 10
                       ? 'text-amber-700 dark:text-amber-400'
@@ -387,7 +387,7 @@ export const StatePensionCard: React.FC<StatePensionCardProps> = ({ profile, onC
                   </div>
                 )}
 
-                <div className={`p-3 rounded-xl border flex items-center justify-between text-xs ${
+                <div className={`p-3 rounded-xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1 text-xs ${
                   partnerYears > 0 && partnerYears < 10
                     ? 'bg-amber-50/80 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800'
                     : 'bg-indigo-100/80 dark:bg-indigo-950/60 border-indigo-200 dark:border-indigo-800'
@@ -399,7 +399,7 @@ export const StatePensionCard: React.FC<StatePensionCardProps> = ({ profile, onC
                   }`}>
                     Calculated Entitlement ({partnerYears}/35 Yrs):
                   </span>
-                  <div className="text-right">
+                  <div className="sm:text-right">
                     <span className={`font-extrabold text-sm ${
                       partnerYears > 0 && partnerYears < 10
                         ? 'text-amber-700 dark:text-amber-400'

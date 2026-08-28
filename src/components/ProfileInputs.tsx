@@ -158,7 +158,7 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
 
       {/* PRIMARY & PARTNER PROFILE INPUTS */}
       {isCouple ? (
-        <div className={`grid grid-cols-1 gap-6 ${isStudioMode ? "" : "lg:grid-cols-2"}`}>
+        <div className={`grid grid-cols-1 gap-4 lg:grid-cols-2`}>
           {/* PRIMARY USER CARD */}
           <div className="bg-slate-50/70 dark:bg-slate-800/40 rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-700/60 space-y-4">
             <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-slate-700/60">
@@ -173,7 +173,7 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
               </span>
             </div>
 
-            <div className={`grid grid-cols-1 gap-4 ${isStudioMode ? "" : "sm:grid-cols-2"}`}>
+            <div className={`grid grid-cols-1 gap-4 sm:grid-cols-2`}>
               {/* Primary Name */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Primary Name</label>
@@ -337,7 +337,7 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
               </span>
             </div>
 
-            <div className={`grid grid-cols-1 gap-4 ${isStudioMode ? "" : "sm:grid-cols-2"}`}>
+            <div className={`grid grid-cols-1 gap-4 sm:grid-cols-2`}>
               {/* Partner Name */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Partner Name</label>
@@ -500,7 +500,7 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
             </span>
           </div>
 
-          <div className={`grid grid-cols-1 gap-4 ${isStudioMode ? "" : "sm:grid-cols-2"}`}>
+          <div className={`grid grid-cols-1 gap-4 sm:grid-cols-2`}>
             {/* Full Name */}
             <div className="space-y-1.5">
               <label htmlFor="single-name" className="text-xs font-bold text-slate-700 dark:text-slate-300">
@@ -657,7 +657,7 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
       )}
 
       {/* TAX REGION & TAX RELIEF METHOD */}
-      <div className={`grid grid-cols-1 gap-4 pt-3 border-t border-slate-100 dark:border-slate-800 ${isStudioMode ? "" : "sm:grid-cols-2"}`}>
+      <div className={`grid grid-cols-1 gap-4 pt-3 border-t border-slate-100 dark:border-slate-800 sm:grid-cols-2`}>
         {/* UK Tax Region */}
         <div className="space-y-1.5">
           <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">

@@ -120,7 +120,7 @@ export const DbPensionManager: React.FC<DbPensionManagerProps> = ({ profile, onC
           className="flex items-center gap-2 px-3.5 py-2 bg-amber-600 hover:bg-amber-700 dark:bg-amber-600 dark:hover:bg-amber-500 text-white text-xs font-bold rounded-xl transition-all shadow-xs hover:shadow-md cursor-pointer shrink-0"
         >
           <Plus className="w-4 h-4" />
-          <span>{isStudioMode ? 'Add Scheme' : 'Add DB Pension Scheme'}</span>
+          {!isStudioMode && <span>Add DB Pension Scheme</span>}
         </button>
       </div>
 
@@ -128,7 +128,7 @@ export const DbPensionManager: React.FC<DbPensionManagerProps> = ({ profile, onC
       {isCouple && (
         <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-amber-50/60 dark:bg-slate-800/60 p-2.5 sm:p-1.5 rounded-2xl border border-amber-200/70 dark:border-slate-700 text-xs font-bold gap-2">
           {!isStudioMode && <span className="text-amber-900 dark:text-amber-300 px-1 sm:px-3 text-[11px] uppercase tracking-wider font-extrabold shrink-0">Filter Person:</span>}
-          <div className="grid grid-cols-3 sm:flex items-center gap-1.5 w-full sm:w-auto">
+          <div className={`grid ${isStudioMode ? "grid-cols-1" : "grid-cols-3"} sm:flex items-center gap-1.5 w-full sm:w-auto`}>
             <button
               onClick={() => setActivePersonFilter('all')}
               className={`flex items-center justify-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-xl transition-all cursor-pointer min-w-0 ${

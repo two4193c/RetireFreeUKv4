@@ -190,7 +190,7 @@ export const FixedIncomeManager: React.FC<FixedIncomeManagerProps> = ({ profile,
       {isCouple && (
         <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-indigo-50/60 dark:bg-slate-800/60 p-2.5 sm:p-1.5 rounded-2xl border border-indigo-200/70 dark:border-slate-700 text-xs font-bold gap-2">
           {!isStudioMode && <span className="text-indigo-900 dark:text-indigo-300 px-1 sm:px-3 text-[11px] uppercase tracking-wider font-extrabold shrink-0">Filter Person:</span>}
-          <div className="grid grid-cols-3 sm:flex items-center gap-1.5 w-full sm:w-auto">
+          <div className={`grid ${isStudioMode ? "grid-cols-1" : "grid-cols-3"} sm:flex items-center gap-1.5 w-full sm:w-auto`}>
             <button
               onClick={() => setActivePersonFilter('all')}
               className={`flex items-center justify-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-xl transition-all cursor-pointer min-w-0 ${
