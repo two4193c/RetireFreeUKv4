@@ -1123,7 +1123,9 @@ function parseAnnuityTypeConfig(type?: string) {
         );
 
         const requiredNetIncomeTarget = actualSpendingBase * inflationFactor + lifeEventsExpenseThisYear;
-        const drawdownNetTarget = isReinvestExcess ? (maxDrawdownIncomeTarget * inflationFactor + lifeEventsExpenseThisYear) : requiredNetIncomeTarget;
+              const isBracketStrategy = ['tax_optimizer', 'tax_free_bracket', 'basic_rate_bracket', 'higher_rate_bracket'].includes(profile.drawdownStrategy || 'isa_first');
+      const effectiveReinvestExcess = isReinvestExcess || isBracketStrategy;
+      const drawdownNetTarget = effectiveReinvestExcess ? (maxDrawdownIncomeTarget * inflationFactor + lifeEventsExpenseThisYear) : requiredNetIncomeTarget;
 
         // State Pension (Primary + Partner if couple mode)
         let primaryStatePension = 0;
@@ -1398,22 +1400,23 @@ function parseAnnuityTypeConfig(type?: string) {
 
             const remLsa = Math.max(0, (isPrimary ? maxLsa : partnerMaxLsa) - (isPrimary ? primaryCumulativeTaxFreeDrawn : partnerCumulativeTaxFreeDrawn));
 
-            let maxGrossForBracket = 0;
-            if (room > 0) {
-              if (remLsa >= room / 3) {
-                maxGrossForBracket = room / 0.75;
-              } else {
-                maxGrossForBracket = room + remLsa;
+            const crystPot = 0; // MonteCarlo does not track crystallised separately
+
+            const getGrossForTaxableTarget = (taxableTarget: number, cryst: number, remainingLsa: number): number => {
+              if (taxableTarget <= cryst) return taxableTarget;
+              let targetUncrystTaxable = taxableTarget - cryst;
+              const maxUncrystTaxableWithPcls = remainingLsa * 3;
+              if (targetUncrystTaxable <= maxUncrystTaxableWithPcls) {
+                return cryst + (targetUncrystTaxable / 0.75);
               }
-            }
+              targetUncrystTaxable -= maxUncrystTaxableWithPcls;
+              return cryst + (maxUncrystTaxableWithPcls / 0.75) + targetUncrystTaxable;
+            };
 
+            const maxGrossForBracket = hasAccess ? getGrossForTaxableTarget(room, crystPot, remLsa) : 0;
             let targetGross = Math.min(hasAccess ? pPot : 0, maxGrossForBracket);
-            if (!isReinvestExcess) {
-               const neededForRemaining = getGrossPensionNeededForNetForOwner(remaining, pPot, owner);
-               targetGross = Math.min(targetGross, neededForRemaining);
-            }
 
-            if (targetGross > 0 && (remaining > 0 || isReinvestExcess)) {
+            if (targetGross > 0) {
                executePensionDeduct(targetGross);
             }
             if (iPot > 0 && remaining > 0) {
@@ -1493,7 +1496,7 @@ function parseAnnuityTypeConfig(type?: string) {
         remainingNeeded = Math.max(0, drawdownNetTarget - netGuaranteedIncomeSecured - totalNetAchieved);
 
         // Handle Reinvest Surplus (drawdown excess only � guaranteed surplus already reinvested above)
-        if (isReinvestExcess && !isCashBufferActiveYr) {
+        if (effectiveReinvestExcess && !isCashBufferActiveYr) {
             const guaranteedAlreadyReinvested = Math.max(0, netGuaranteedIncomeSecured - requiredNetIncomeTarget);
             const actualNetSecured = netGuaranteedIncomeSecured + totalNetAchieved;
             if (actualNetSecured > requiredNetIncomeTarget) {

@@ -737,7 +737,7 @@ function parseAnnuityTypeConfig(type?: string) {
         partnerCashIContribThisYr = partnerRegCashIsaContrib;
         partnerLisaContribThisYr = partnerRegLisaContrib + partnerTaxThisYr.lisaGovernmentBonusAnnual;
         partnerIContribThisYr = partnerSsIContribThisYr + partnerCashIContribThisYr + partnerLisaContribThisYr;
-        partnerCContribThisYr = partnerTaxThisYr.regularCashGiaContributionsAnnual ?? partnerTaxThisYr.totalCashGiaContributionsAnnual;
+        partnerCContribThisYr = partnerTaxThisYr.regularCashGiaContributionsAnnual ?? partnerTaxThisYr.totalCashGiaContributionsAnnual ?? 0;
         partnerGiaContribThisYr = partnerTaxThisYr.regularGiaContributionsAnnual ?? 0;
         partnerCashSavingsContribThisYr = partnerTaxThisYr.regularCashSavingsContributionsAnnual ?? 0;
       }
@@ -2261,7 +2261,9 @@ function parseAnnuityTypeConfig(type?: string) {
       }
 
       const requiredNetIncomeTarget = actualSpendingBase * incomeIncreaseFactor;
-      const drawdownNetTarget = isReinvestExcess ? (maxDrawdownIncomeTarget * incomeIncreaseFactor) : requiredNetIncomeTarget;
+            const isBracketStrategy = ['tax_optimizer', 'tax_free_bracket', 'basic_rate_bracket', 'higher_rate_bracket'].includes(profile.drawdownStrategy || 'isa_first');
+      const effectiveReinvestExcess = isReinvestExcess || isBracketStrategy;
+      const drawdownNetTarget = effectiveReinvestExcess ? (maxDrawdownIncomeTarget * incomeIncreaseFactor) : requiredNetIncomeTarget;
 
       // Individual Personal Allowance — indexed with CPI inflation or frozen at base level based on user preference
       const paBase = profile.customTaxBands?.enabled ? (profile.customTaxBands.personalAllowance ?? PERSONAL_ALLOWANCE) : PERSONAL_ALLOWANCE;
@@ -2542,19 +2544,22 @@ function parseAnnuityTypeConfig(type?: string) {
             const remLsa = Math.max(0, (isPrimary ? primaryMaxLsa : partnerMaxLsa) - (isPrimary ? primaryCumulativeTaxFreeDrawn : partnerCumulativeTaxFreeDrawn));
             const crystPot = isPrimary ? primaryCrystallisedPot : partnerCrystallisedPot;
 
-            let maxGrossForBracket = 0;
-            if (room > 0) {
-              if (remLsa >= room / 3) {
-                maxGrossForBracket = room / 0.75;
-              } else {
-                maxGrossForBracket = room + remLsa;
+            const getGrossForTaxableTarget = (taxableTarget: number, cryst: number, remainingLsa: number): number => {
+              if (taxableTarget <= cryst) return taxableTarget;
+              let targetUncrystTaxable = taxableTarget - cryst;
+              const maxUncrystTaxableWithPcls = remainingLsa * 3;
+              if (targetUncrystTaxable <= maxUncrystTaxableWithPcls) {
+                return cryst + (targetUncrystTaxable / 0.75);
               }
-            }
+              targetUncrystTaxable -= maxUncrystTaxableWithPcls;
+              return cryst + (maxUncrystTaxableWithPcls / 0.75) + targetUncrystTaxable;
+            };
 
+            const maxGrossForBracket = hasAccess ? getGrossForTaxableTarget(room, crystPot, remLsa) : 0;
             let targetGross = Math.min(hasAccess ? pPot : 0, maxGrossForBracket);
+
+            // Do not limit targetGross to remaining if they chose a tax bracket strategy
             if (targetGross > 0) {
-               const maxNet = approximateNetFromGrossForOwner(targetGross, owner);
-               if (maxNet > remaining) targetGross = getGrossPensionNeededForNetForOwner(remaining, pPot, owner);
                executePensionDeduct(targetGross);
             }
             if (iPot > 0 && remaining > 0) {
