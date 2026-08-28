@@ -803,11 +803,17 @@ export function runHistoricModelingSimulation(
           }
         }
 
-        const requiredNetIncomeTarget = actualSpendingBase * cumulativeInflationFactor + lifeEventsExpenseThisYear;
+        let incomeIncreaseFactor = cumulativeInflationFactor;
+        if (profile.incomeIncreaseMode === 'custom') {
+          const customRate = (profile.customIncomeIncreasePercent ?? 0) / 100;
+          incomeIncreaseFactor = Math.pow(1 + customRate, yr);
+        }
+
+        const requiredNetIncomeTarget = actualSpendingBase * incomeIncreaseFactor + lifeEventsExpenseThisYear;
         const isBracketStrategy = ['tax_optimizer', 'tax_free_bracket', 'basic_rate_bracket', 'higher_rate_bracket'].includes(profile.drawdownStrategy || 'isa_first');
         const effectiveReinvestExcess = isReinvestExcess || isBracketStrategy;
         const drawdownNetTarget = effectiveReinvestExcess
-          ? (maxDrawdownIncomeTarget * cumulativeInflationFactor + lifeEventsExpenseThisYear)
+          ? (maxDrawdownIncomeTarget * incomeIncreaseFactor + lifeEventsExpenseThisYear)
           : requiredNetIncomeTarget;
 
         const guaranteedIncome = statePensionThisYr + annuityIncomeThisYear + dbIncomeThisYr + fixedIncomeThisYr;

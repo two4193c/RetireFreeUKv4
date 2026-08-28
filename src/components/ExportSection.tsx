@@ -4434,7 +4434,21 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
 
       // Y-Axis Grid Lines & Scales for Nominal Income Chart (£0 to £60k+)
       const nomIncomes = (projections || []).filter((p) => p.isRetired).map((p) => p.netRetirementIncome || 0);
-      const nomTargets = (projections || []).filter((p) => p.isRetired).map((p) => p.targetRetirementIncome || getTargetIncomeForAge(profile, p.age));
+      
+      const getNominalTarget = (p, age) => {
+        let nominal = p?.targetRetirementIncome;
+        if (!nominal) {
+          const infFact = Math.pow(1 + profile.expectedInflationRate / 100, Math.max(0, age - profile.currentAge));
+          let increaseFact = infFact;
+          if (profile.incomeIncreaseMode === 'custom') {
+            increaseFact = Math.pow(1 + (profile.customIncomeIncreasePercent ?? 0)/100, Math.max(0, age - profile.currentAge));
+          }
+          nominal = getTargetIncomeForAge(profile, age) * increaseFact;
+        }
+        return nominal;
+      };
+
+      const nomTargets = (projections || []).filter((p) => p.isRetired).map((p) => getNominalTarget(p, p.age));
       const maxRetIncNom = Math.max(40000, ...nomIncomes, ...nomTargets);
 
       doc.setDrawColor(226, 232, 240);
@@ -4452,7 +4466,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       // Target Requirement Line & Markers per age bar (Rose)
       const targetPointsNom = d3Ages.map((item) => {
         const p = (projections || []).find((proj) => proj.age === item.age) || retirementYear;
-        const targetVal = p.targetRetirementIncome || getTargetIncomeForAge(profile, item.age);
+        const targetVal = getNominalTarget(p, item.age);
         const y = d3BoxY + 6 + (1 - Math.min(1, targetVal / (maxRetIncNom || 1))) * 40;
         return { x: item.x, y, targetVal };
       });
@@ -4581,7 +4595,11 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
         const infFact = Math.pow(1 + (profile.expectedInflationRate || 2.5) / 100, p.age - currentAge);
         return p.purchasingPowerAdjustedIncome || ((p.netRetirementIncome || 0) / infFact);
       });
-      const realTargets = (projections || []).filter((p) => p.isRetired).map((p) => getTargetIncomeForAge(profile, p.age));
+      
+      const realTargets = (projections || []).filter((p) => p.isRetired).map((p) => {
+        const infFact = Math.pow(1 + profile.expectedInflationRate / 100, Math.max(0, p.age - profile.currentAge));
+        return getNominalTarget(p, p.age) / infFact;
+      });
       const maxRetIncReal = Math.max(35000, ...realIncomes, ...realTargets);
 
       doc.setDrawColor(226, 232, 240);
@@ -4597,7 +4615,10 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
 
       // Target Requirement Line & Markers per age bar for Real Terms (Rose)
       const targetPointsReal = d3Ages.map((item) => {
-        const targetVal = getTargetIncomeForAge(profile, item.age);
+        
+        const p = (projections || []).find((proj) => proj.age === item.age) || retirementYear;
+        const infFact = Math.pow(1 + profile.expectedInflationRate / 100, Math.max(0, item.age - profile.currentAge));
+        const targetVal = getNominalTarget(p, item.age) / infFact;
         const y = d4BoxY + 6 + (1 - Math.min(1, targetVal / (maxRetIncReal || 1))) * 40;
         return { x: item.x, y, targetVal };
       });
