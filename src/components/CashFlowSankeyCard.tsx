@@ -176,6 +176,8 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
 
     const p = selectedProjection;
     const inflationFactor = Math.pow(1 + (profile.expectedInflationRate || 2.5) / 100, p.age - profile.currentAge);
+      const scale = adjustInflation ? 1 / inflationFactor : 1;
+      const scaledMortgageAnnual = mortgagePaymentAnnual * scale;
     const partnerAgeDiff = (profile.partnerCurrentAge ?? profile.currentAge) - profile.currentAge;
     const partnerAge = p.age + partnerAgeDiff;
 
@@ -227,8 +229,8 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
         const totalSavingsInvested = priPensionTotal + partPensionTotal + priIsaContribs + partIsaContribs + priCashGiaContribs + partCashGiaContribs;
 
         // Mortgage shares
-        const priMortgageShare = totalSalary > 0 ? (priSalary / totalSalary) * mortgagePaymentAnnual : mortgagePaymentAnnual * 0.5;
-        const partMortgageShare = totalSalary > 0 ? (partSalary / totalSalary) * mortgagePaymentAnnual : mortgagePaymentAnnual * 0.5;
+        const priMortgageShare = totalSalary > 0 ? (priSalary / totalSalary) * scaledMortgageAnnual : scaledMortgageAnnual * 0.5;
+        const partMortgageShare = totalSalary > 0 ? (partSalary / totalSalary) * scaledMortgageAnnual : scaledMortgageAnnual * 0.5;
         const priMortgageAlloc = Math.min(priNetTakeHome, priMortgageShare);
         const partMortgageAlloc = Math.min(partNetTakeHome, partMortgageShare);
         const totalMortgageAlloc = priMortgageAlloc + partMortgageAlloc;
@@ -560,7 +562,7 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
       let curIsaContribs = priIsaContribs + partIsaContribs;
       let curCashGiaContribs = priCashGiaContribs + partCashGiaContribs;
       let curNetTakeHome = priNetTakeHome + partNetTakeHome;
-      let curMortgageShare = mortgagePaymentAnnual;
+      let curMortgageShare = scaledMortgageAnnual;
 
       if (activeViewMode === 'primary') {
         curSalary = priSalary;
@@ -927,8 +929,8 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
         const totalNetRetire = priNetTotal + partNetTotal;
 
         // Mortgage split
-        const priMortgageShare = mortgagePaymentAnnual * 0.5;
-        const partMortgageShare = mortgagePaymentAnnual * 0.5;
+        const priMortgageShare = scaledMortgageAnnual * 0.5;
+        const partMortgageShare = scaledMortgageAnnual * 0.5;
         const priMortgageAlloc = Math.min(priNetTotal, priMortgageShare);
         const partMortgageAlloc = Math.min(partNetTotal, partMortgageShare);
         const totalMortgageAlloc = priMortgageAlloc + partMortgageAlloc;
@@ -1380,7 +1382,7 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
       let isaDrawdown = (p.isaDrawdown || 0);
       let cashDrawdown = (p.cashDrawdown || 0);
       let totalTaxPaid = (p.totalTaxPaid || p.taxOnWithdrawal || 0);
-      let curMortgageShare = mortgagePaymentAnnual;
+      let curMortgageShare = scaledMortgageAnnual;
 
       if (activeViewMode === 'primary') {
         statePension = priStatePension;
@@ -1398,7 +1400,7 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
         lifeEventsInc = priLifeEventsInc;
         downsizeInc = priDownsizeInc;
         totalTaxPaid = priTaxPaid;
-        curMortgageShare = isCouple ? mortgagePaymentAnnual * 0.5 : mortgagePaymentAnnual;
+        curMortgageShare = isCouple ? scaledMortgageAnnual * 0.5 : scaledMortgageAnnual;
       } else if (activeViewMode === 'partner') {
         statePension = partStatePension;
         dbPension = partDbPension;
@@ -1415,7 +1417,7 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
         lifeEventsInc = 0;
         downsizeInc = partDownsizeInc;
         totalTaxPaid = partTaxPaid;
-        curMortgageShare = mortgagePaymentAnnual * 0.5;
+        curMortgageShare = scaledMortgageAnnual * 0.5;
       }
 
       const totalGrossRetirementInflows =
