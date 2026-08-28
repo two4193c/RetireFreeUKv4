@@ -722,7 +722,7 @@ export const InvestmentFeesCard: React.FC<InvestmentFeesCardProps> = ({ profile,
               )}
 
               {/* 3 Fee Inputs */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
+              <div className={`grid grid-cols-1 gap-4 pt-1 ${isStudioMode ? "" : "sm:grid-cols-3"}`}>
                 {/* Platform Fee */}
                 <div className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700/80 space-y-1.5">
                   <label className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
@@ -891,7 +891,7 @@ export const InvestmentFeesCard: React.FC<InvestmentFeesCardProps> = ({ profile,
                       </div>
 
                       {/* 3 Fee Inputs Grid */}
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className={`grid grid-cols-1 gap-3 ${isStudioMode ? "" : "sm:grid-cols-3"}`}>
                         {/* Platform Fee */}
                         <div className="space-y-1">
                           <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 block">

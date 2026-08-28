@@ -147,7 +147,7 @@ export const PotManager: React.FC<PotManagerProps> = ({
 
       {/* PORTFOLIO SUMMARY CARDS: COMBINED, PRIMARY, & PARTNER */}
       {isCouple ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
+        <div className={`grid grid-cols-1 gap-3 sm:gap-4 ${isStudioMode ? "" : "md:grid-cols-3"}`}>
           {/* Card 1: Combined Household Portfolio */}
           <div className="p-3.5 sm:p-4 rounded-2xl bg-emerald-50/80 dark:bg-slate-950 text-slate-900 dark:text-white border border-emerald-200 dark:border-slate-800 shadow-md space-y-2 relative overflow-hidden transition-colors">
             <div className="flex items-center justify-between gap-2 text-xs">
@@ -245,7 +245,7 @@ export const PotManager: React.FC<PotManagerProps> = ({
         </div>
       ) : (
         /* Single User Portfolio Summary Bar */
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50 dark:bg-slate-800/50 p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80">
+        <div className={`grid grid-cols-1 gap-3 bg-slate-50 dark:bg-slate-800/50 p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 ${isStudioMode ? "" : "sm:grid-cols-3"}`}>
           <div>
             <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Total Portfolio Balance</div>
             <div className="text-xl font-black text-slate-900 dark:text-white">
@@ -375,7 +375,7 @@ export const PotManager: React.FC<PotManagerProps> = ({
       {/* TAB CONTENT: ISAs */}
       {(isStudioMode || activeTab === 'isa') && (
         <div className="space-y-4 pt-1">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className={`grid grid-cols-1 gap-4 ${isStudioMode ? "" : "md:grid-cols-3"}`}>
             {/* Stocks & Shares ISA */}
             <div className="p-4 sm:p-5 bg-slate-50/80 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
               <span className="font-bold text-xs text-slate-800 dark:text-slate-100 block">Stocks & Shares ISA Starting Balance</span>
