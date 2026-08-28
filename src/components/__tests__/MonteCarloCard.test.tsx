@@ -60,7 +60,7 @@ describe('MonteCarloCard', () => {
     const runBtn = screen.getByRole('button', { name: /Run Simulation/i });
     fireEvent.click(runBtn);
 
-    expect(screen.getByText(/Loading/i)).toBeInTheDocument();
+    expect(screen.getByText(/Running Simulation/i)).toBeInTheDocument();
   });
 
   it('successfully displays success rate percentage and charts when results are populated', async () => {
