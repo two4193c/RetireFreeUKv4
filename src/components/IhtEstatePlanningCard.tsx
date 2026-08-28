@@ -299,7 +299,7 @@ export const IhtEstatePlanningCard: React.FC<IhtEstatePlanningCardProps> = ({
       <div className="space-y-6">
         {/* Controls Bar for Beneficiary & Exemptions */}
           {!hideInputs && (
-            <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
+            <div className={`bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700 grid grid-cols-1 gap-4 text-xs ${isStudioMode ? "" : "sm:grid-cols-2 lg:grid-cols-3"}`}>
               
               {/* Primary Residence Current Value */}
               <div className="space-y-1.5">
@@ -520,7 +520,7 @@ export const IhtEstatePlanningCard: React.FC<IhtEstatePlanningCardProps> = ({
 
           {/* Non-Pension Asset Specific Controls */}
           {!hideInputs && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700 text-xs">
+            <div className={`grid grid-cols-1 gap-4 bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700 text-xs ${isStudioMode ? "" : "md:grid-cols-2 lg:grid-cols-3"}`}>
               
               {/* Business Relief / AIM ISA Amount */}
               <div className="space-y-1.5">
@@ -584,7 +584,7 @@ export const IhtEstatePlanningCard: React.FC<IhtEstatePlanningCardProps> = ({
 
           {/* Asset-by-Asset Breakdown Cards */}
           {!isStudioMode && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className={`grid grid-cols-1 gap-4 ${isStudioMode ? "" : "md:grid-cols-3"}`}>
               
               {/* Stocks & Shares ISAs */}
               <div className="bg-white dark:bg-slate-900 p-4.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-3">
@@ -1002,7 +1002,7 @@ export const IhtEstatePlanningCard: React.FC<IhtEstatePlanningCardProps> = ({
                 </h4>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+              <div className={`grid grid-cols-1 gap-4 text-xs ${isStudioMode ? "" : "md:grid-cols-2"}`}>
                 
                 {/* Pensions Column */}
                 <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2.5">

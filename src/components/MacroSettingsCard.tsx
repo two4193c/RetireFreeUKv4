@@ -155,7 +155,7 @@ export const MacroSettingsCard: React.FC<MacroSettingsCardProps> = ({ profile, p
       )}
 
       {/* Baseline Macro Settings Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
+      <div className={`grid grid-cols-1 ${isStudioMode ? "" : "md:grid-cols-3"} gap-4 pt-1`}>
         
         {/* Pre-Retirement Return Rate */}
         <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-2.5">

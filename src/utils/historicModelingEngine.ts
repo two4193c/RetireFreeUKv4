@@ -949,16 +949,26 @@ export function runHistoricModelingSimulation(
               }
             }
           } else if (strategy === 'tax_optimizer' || strategy === 'tax_free_bracket' || strategy === 'basic_rate_bracket' || strategy === 'higher_rate_bracket') {
-            const isScot = isPrimary ? profile.taxRegion === 'scotland' : (profile.partnerTaxRegion || profile.taxRegion) === 'scotland';
-            const indexTaxBands = profile.indexTaxBands ?? true;
-            const inflMult = indexTaxBands ? cumulativeInflationFactor : 1;
+              const isScot = isPrimary ? profile.taxRegion === 'scotland' : (profile.partnerTaxRegion || profile.taxRegion) === 'scotland';
+              const indexTaxBands = profile.indexTaxBands ?? true;
+              const inflMult = indexTaxBands ? cumulativeInflationFactor : 1;
+  
+              const cb = profile.customTaxBands;
+              const cEnabled = cb?.enabled;
+              const paBase = cEnabled ? (cb.personalAllowance ?? 12570) : 12570;
+              const singlePersonalAllowance = paBase * inflMult;
+              
+              const rukBasicThresh = cEnabled && cb.basicRateThreshold != null ? cb.basicRateThreshold : RUK_BASIC_THRESHOLD;
+              const rukAddThresh = cEnabled && cb.higherRateThreshold != null ? cb.higherRateThreshold : RUK_ADDITIONAL_THRESHOLD;
+              const scotIntThresh = cEnabled && cb.scotIntermediateThreshold != null ? cb.scotIntermediateThreshold : SCOT_INTERMEDIATE_THRESHOLD;
+              const scotHigherThresh = cEnabled && cb.scotHigherThreshold != null ? cb.scotHigherThreshold : SCOT_HIGHER_THRESHOLD;
 
-            let thresholdGross = 12570 * inflMult;
-            if (strategy === 'tax_optimizer' || strategy === 'basic_rate_bracket') {
-              thresholdGross = (12570 + (isScot ? SCOT_INTERMEDIATE_THRESHOLD : RUK_BASIC_THRESHOLD)) * inflMult;
-            } else if (strategy === 'higher_rate_bracket') {
-              thresholdGross = (isScot ? (12570 + SCOT_HIGHER_THRESHOLD) : RUK_ADDITIONAL_THRESHOLD) * inflMult;
-            }
+              let thresholdGross = singlePersonalAllowance;
+              if (strategy === 'tax_optimizer' || strategy === 'basic_rate_bracket') {
+                thresholdGross = singlePersonalAllowance + ((isScot ? scotIntThresh : rukBasicThresh) * inflMult);
+              } else if (strategy === 'higher_rate_bracket') {
+                thresholdGross = (isScot ? (singlePersonalAllowance + (scotHigherThresh * inflMult)) : (rukAddThresh * inflMult));
+              }
 
             const incomeAlready = isPrimary ? (statePensionThisYr / (profile.isCouplePlanning ? 2 : 1) + (annuityIncomeThisYear + dbIncomeThisYr + (fixedIncomeThisYr || 0)) / (profile.isCouplePlanning ? 2 : 1)) : (profile.isCouplePlanning ? (statePensionThisYr / 2 + (annuityIncomeThisYear + dbIncomeThisYr + (fixedIncomeThisYr || 0)) / 2) : 0);
             const room = Math.max(0, thresholdGross - incomeAlready);
