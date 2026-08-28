@@ -340,7 +340,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
       const inflationFactor = Math.pow(1 + profile.expectedInflationRate / 100, yearOffset);
       const scale = adjustInflation ? 1 / inflationFactor : 1;
 
-      const rawTarget = getTargetIncomeForAge(profile, p.age) * (adjustInflation ? 1 : inflationFactor);
+      const rawTarget = p.targetRetirementIncome !== undefined ? (p.targetRetirementIncome * scale) : (getTargetIncomeForAge(profile, p.age) * (adjustInflation ? 1 : inflationFactor));
       const targetIncome = Math.round(rawTarget);
       const totalIncome = Math.round(p.netRetirementIncome * scale);
       const incomeShortfall = Math.round((p.incomeShortfall || 0) * scale);
