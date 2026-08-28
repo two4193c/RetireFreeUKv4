@@ -173,7 +173,7 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className={`grid grid-cols-1 gap-4 ${isStudioMode ? "" : "sm:grid-cols-2"}`}>
               {/* Primary Name */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Primary Name</label>
@@ -337,7 +337,7 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className={`grid grid-cols-1 gap-4 ${isStudioMode ? "" : "sm:grid-cols-2"}`}>
               {/* Partner Name */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Partner Name</label>
@@ -500,7 +500,7 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
             </span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className={`grid grid-cols-1 gap-4 ${isStudioMode ? "" : "sm:grid-cols-2"}`}>
             {/* Full Name */}
             <div className="space-y-1.5">
               <label htmlFor="single-name" className="text-xs font-bold text-slate-700 dark:text-slate-300">
@@ -657,7 +657,7 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
       )}
 
       {/* TAX REGION & TAX RELIEF METHOD */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-slate-100 dark:border-slate-800">
+      <div className={`grid grid-cols-1 gap-4 pt-3 border-t border-slate-100 dark:border-slate-800 ${isStudioMode ? "" : "sm:grid-cols-2"}`}>
         {/* UK Tax Region */}
         <div className="space-y-1.5">
           <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
