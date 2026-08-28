@@ -131,7 +131,8 @@ export function computeCashFlowSankeyData(
 
   const adjustInflation = profile.adjustForInflation ?? false;
   const formatGBP = (val: number) => `£${Math.round(val).toLocaleString()}`;
-  const mortgagePaymentAnnual = calculateMortgagePaymentForAge(profile, p.age);
+  const scale = adjustInflation ? 1 / inflationFactor : 1;
+  const mortgagePaymentAnnual = calculateMortgagePaymentForAge(profile, p.age) * scale;
 
   if (!p.isRetired) {
     // ==========================================
@@ -690,20 +691,20 @@ export function computeCashFlowSankeyData(
     const inflatedEssentialTarget = adjustInflation ? effectiveEssentialFloor : (effectiveEssentialFloor * inflationFactor);
 
     // Primary components
-    const priStatePension = p.primaryStatePensionReceived ?? p.statePensionReceived ?? 0;
-    const priDbPension = p.primaryDbPensionIncomeReceived ?? p.dbPensionIncomeReceived ?? 0;
-    const priAnnuity = p.primaryAnnuityIncomeReceived ?? p.annuityIncomeReceived ?? 0;
-    const priGiltLadder = p.primaryGiltLadderIncomeReceived ?? (isCouple ? ((p.giltLadderIncomeReceived || 0) * 0.5) : (p.giltLadderIncomeReceived || 0));
-    const priTaxableFixed = p.primaryTaxableFixedIncomeReceived ?? (isCouple ? ((p.taxableFixedIncomeReceived || 0) * 0.5) : (p.taxableFixedIncomeReceived || 0));
-    const priTaxFreeFixed = p.primaryTaxFreeFixedIncomeReceived ?? (isCouple ? ((p.taxFreeFixedIncomeReceived || 0) * 0.5) : (p.taxFreeFixedIncomeReceived || 0));
-    const priPensionDrawdownTaxable = p.primaryPensionDrawdownTaxable ?? (isCouple ? ((p.pensionDrawdownTaxable || 0) * 0.5) : (p.pensionDrawdownTaxable || 0));
-    const priPensionDrawdownTaxFree = p.primaryPensionDrawdownTaxFree ?? (isCouple ? ((p.pensionDrawdownTaxFree || 0) * 0.5) : (p.pensionDrawdownTaxFree || 0));
-    const priPensionDrawdownTotal = p.primaryPensionDrawdown ?? (priPensionDrawdownTaxable + priPensionDrawdownTaxFree);
-    const priIsaDrawdown = p.primaryIsaDrawdown ?? (isCouple ? ((p.isaDrawdown || 0) * 0.5) : (p.isaDrawdown || 0));
-    const priCashDrawdown = p.primaryCashDrawdown ?? (isCouple ? ((p.cashDrawdown || 0) * 0.5) : (p.cashDrawdown || 0));
-    const priLifeEventsInc = p.primaryLifeEventsIncome ?? (isCouple ? ((p.lifeEventsIncome || 0) * 0.5) : (p.lifeEventsIncome || 0));
-    const priDownsizeInc = p.propertyDownsizeEquityReleased ? (isCouple ? p.propertyDownsizeEquityReleased * 0.5 : p.propertyDownsizeEquityReleased) : 0;
-    const priTaxPaid = p.primaryTaxPaid ?? (isCouple ? ((p.totalTaxPaid || 0) * 0.5) : (p.totalTaxPaid || 0));
+    const priStatePension = (p.primaryStatePensionReceived ?? p.statePensionReceived ?? 0) * scale;
+    const priDbPension = (p.primaryDbPensionIncomeReceived ?? p.dbPensionIncomeReceived ?? 0) * scale;
+    const priAnnuity = (p.primaryAnnuityIncomeReceived ?? p.annuityIncomeReceived ?? 0) * scale;
+    const priGiltLadder = (p.primaryGiltLadderIncomeReceived ?? (isCouple ? ((p.giltLadderIncomeReceived || 0) * 0.5) : (p.giltLadderIncomeReceived || 0))) * scale;
+    const priTaxableFixed = (p.primaryTaxableFixedIncomeReceived ?? (isCouple ? ((p.taxableFixedIncomeReceived || 0) * 0.5) : (p.taxableFixedIncomeReceived || 0))) * scale;
+    const priTaxFreeFixed = (p.primaryTaxFreeFixedIncomeReceived ?? (isCouple ? ((p.taxFreeFixedIncomeReceived || 0) * 0.5) : (p.taxFreeFixedIncomeReceived || 0))) * scale;
+    const priPensionDrawdownTaxable = (p.primaryPensionDrawdownTaxable ?? (isCouple ? ((p.pensionDrawdownTaxable || 0) * 0.5) : (p.pensionDrawdownTaxable || 0))) * scale;
+    const priPensionDrawdownTaxFree = (p.primaryPensionDrawdownTaxFree ?? (isCouple ? ((p.pensionDrawdownTaxFree || 0) * 0.5) : (p.pensionDrawdownTaxFree || 0))) * scale;
+    const priPensionDrawdownTotal = (p.primaryPensionDrawdown ?? (priPensionDrawdownTaxable + priPensionDrawdownTaxFree)) * scale;
+    const priIsaDrawdown = (p.primaryIsaDrawdown ?? (isCouple ? ((p.isaDrawdown || 0) * 0.5) : (p.isaDrawdown || 0))) * scale;
+    const priCashDrawdown = (p.primaryCashDrawdown ?? (isCouple ? ((p.cashDrawdown || 0) * 0.5) : (p.cashDrawdown || 0))) * scale;
+    const priLifeEventsInc = (p.primaryLifeEventsIncome ?? (isCouple ? ((p.lifeEventsIncome || 0) * 0.5) : (p.lifeEventsIncome || 0))) * scale;
+    const priDownsizeInc = (p.propertyDownsizeEquityReleased ? (isCouple ? p.propertyDownsizeEquityReleased * 0.5 : p.propertyDownsizeEquityReleased) : 0) * scale;
+    const priTaxPaid = (p.primaryTaxPaid ?? (isCouple ? ((p.totalTaxPaid || 0) * 0.5) : (p.totalTaxPaid || 0))) * scale;
 
     const priGrossTotal =
       priStatePension +
@@ -720,20 +721,20 @@ export function computeCashFlowSankeyData(
     const priNetTotal = Math.max(0, priGrossTotal - priTaxPaid);
 
     // Partner components
-    const partStatePension = isCouple ? (p.partnerStatePensionReceived || 0) : 0;
-    const partDbPension = isCouple ? (p.partnerDbPensionIncomeReceived || 0) : 0;
-    const partAnnuity = isCouple ? (p.partnerAnnuityIncomeReceived || 0) : 0;
-    const partGiltLadder = isCouple ? (p.partnerGiltLadderIncomeReceived || 0) : 0;
-    const partTaxableFixed = isCouple ? (p.partnerTaxableFixedIncomeReceived || 0) : 0;
-    const partTaxFreeFixed = isCouple ? (p.partnerTaxFreeFixedIncomeReceived || 0) : 0;
-    const partPensionDrawdownTaxable = isCouple ? (p.partnerPensionDrawdownTaxable || 0) : 0;
-    const partPensionDrawdownTaxFree = isCouple ? (p.partnerPensionDrawdownTaxFree || 0) : 0;
-    const partPensionDrawdownTotal = isCouple ? (p.partnerPensionDrawdown ?? (partPensionDrawdownTaxable + partPensionDrawdownTaxFree)) : 0;
-    const partIsaDrawdown = isCouple ? (p.partnerIsaDrawdown || 0) : 0;
-    const partCashDrawdown = isCouple ? (p.partnerCashDrawdown || 0) : 0;
-    const partLifeEventsInc = isCouple ? (p.partnerLifeEventsIncome ?? 0) : 0;
-    const partDownsizeInc = isCouple && p.propertyDownsizeEquityReleased ? p.propertyDownsizeEquityReleased * 0.5 : 0;
-    const partTaxPaid = isCouple ? (p.partnerTaxPaid || 0) : 0;
+    const partStatePension = isCouple ? ((p.partnerStatePensionReceived || 0) * scale) : 0;
+    const partDbPension = isCouple ? ((p.partnerDbPensionIncomeReceived || 0) * scale) : 0;
+    const partAnnuity = isCouple ? ((p.partnerAnnuityIncomeReceived || 0) * scale) : 0;
+    const partGiltLadder = isCouple ? ((p.partnerGiltLadderIncomeReceived || 0) * scale) : 0;
+    const partTaxableFixed = isCouple ? ((p.partnerTaxableFixedIncomeReceived || 0) * scale) : 0;
+    const partTaxFreeFixed = isCouple ? ((p.partnerTaxFreeFixedIncomeReceived || 0) * scale) : 0;
+    const partPensionDrawdownTaxable = isCouple ? ((p.partnerPensionDrawdownTaxable || 0) * scale) : 0;
+    const partPensionDrawdownTaxFree = isCouple ? ((p.partnerPensionDrawdownTaxFree || 0) * scale) : 0;
+    const partPensionDrawdownTotal = isCouple ? ((p.partnerPensionDrawdown ?? (partPensionDrawdownTaxable + partPensionDrawdownTaxFree)) * scale) : 0;
+    const partIsaDrawdown = isCouple ? ((p.partnerIsaDrawdown || 0) * scale) : 0;
+    const partCashDrawdown = isCouple ? ((p.partnerCashDrawdown || 0) * scale) : 0;
+    const partLifeEventsInc = isCouple ? ((p.partnerLifeEventsIncome ?? 0) * scale) : 0;
+    const partDownsizeInc = (isCouple && p.propertyDownsizeEquityReleased) ? p.propertyDownsizeEquityReleased * 0.5 * scale : 0;
+    const partTaxPaid = isCouple ? ((p.partnerTaxPaid || 0) * scale) : 0;
 
     const partGrossTotal =
       partStatePension +
