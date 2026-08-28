@@ -804,7 +804,9 @@ export function runHistoricModelingSimulation(
         }
 
         const requiredNetIncomeTarget = actualSpendingBase * cumulativeInflationFactor + lifeEventsExpenseThisYear;
-        const drawdownNetTarget = isReinvestExcess
+        const isBracketStrategy = ['tax_optimizer', 'tax_free_bracket', 'basic_rate_bracket', 'higher_rate_bracket'].includes(profile.drawdownStrategy || 'isa_first');
+        const effectiveReinvestExcess = isReinvestExcess || isBracketStrategy;
+        const drawdownNetTarget = effectiveReinvestExcess
           ? (maxDrawdownIncomeTarget * cumulativeInflationFactor + lifeEventsExpenseThisYear)
           : requiredNetIncomeTarget;
 
