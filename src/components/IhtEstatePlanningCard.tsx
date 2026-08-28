@@ -262,7 +262,7 @@ export const IhtEstatePlanningCard: React.FC<IhtEstatePlanningCardProps> = ({
     <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-sm border border-slate-200/80 dark:border-slate-800 space-y-6 transition-colors">
       
       {/* Module Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
+      <div className={`flex flex-col justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800 ${isStudioMode ? "" : "lg:flex-row lg:items-center"}`}>
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 border border-indigo-200/50 dark:border-indigo-800/50 flex items-center justify-center shrink-0">
             <Scale className="w-5 h-5" />
@@ -287,7 +287,7 @@ export const IhtEstatePlanningCard: React.FC<IhtEstatePlanningCardProps> = ({
         </div>
 
         {/* Spousal Exemption Indicator */}
-        <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs shrink-0 self-start lg:self-center">
+        <div className={`flex items-center gap-2 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs shrink-0 self-start ${isStudioMode ? "" : "lg:self-center"}`}>
           <Heart className="w-4 h-4 text-rose-500 fill-rose-500" />
           <span className="font-bold text-slate-700 dark:text-slate-300">
             {isCouple ? 'Couple Planning (2x Allowances: £1,000,000)' : 'Single Planning (1x Allowance: £500,000)'}

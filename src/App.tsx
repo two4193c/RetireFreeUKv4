@@ -1091,7 +1091,7 @@ function App() {
                     </div>
                     {/* 16. AI Tax & Pension Advisor */}
                     <div id="card-ai-advisor" className="scroll-mt-24 transition-all duration-300">
-                      <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className={`bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 shadow-xs flex flex-col justify-between gap-4 ${studioMode ? "" : "sm:flex-row sm:items-center"}`}>
                         <div className="flex items-center gap-3">
                           <div className="p-2.5 bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 rounded-2xl shrink-0">
                             <Sparkles className="w-5 h-5" />
@@ -1433,7 +1433,7 @@ function App() {
                   <SwrUkUsBenchmarkCard />
                 </div>
                 <div id="card-ai-advisor" className="scroll-mt-24 transition-all duration-300">
-                  <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className={`bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 shadow-xs flex flex-col justify-between gap-4 ${studioMode ? "" : "sm:flex-row sm:items-center"}`}>
                     <div className="flex items-center gap-3">
                       <div className="p-2.5 bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 rounded-2xl shrink-0">
                         <Sparkles className="w-5 h-5" />
