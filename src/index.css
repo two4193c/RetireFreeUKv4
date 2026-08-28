@@ -57,38 +57,3 @@
 .dark .custom-scrollbar::-webkit-scrollbar-thumb {
   background-color: rgba(51, 65, 85, 0.5);
 }
-/* Studio Mode Left Pane Compaction */
-.studio-mode-left .bg-white, .studio-mode-left .dark\:bg-slate-900 {
-  padding: 0.75rem;
-  border-radius: 0.75rem;
-}
-.studio-mode-left .space-y-8 > * + * {
-  margin-top: 0.5rem;
-}
-.studio-mode-left .space-y-6 > * + * {
-  margin-top: 0.5rem;
-}
-.studio-mode-left .p-6 {
-  padding: 0.75rem;
-}
-.studio-mode-left .gap-6 {
-  gap: 0.5rem;
-}
-.studio-mode-left .p-4 {
-  padding: 0.5rem;
-}
-.studio-mode-left h2, .studio-mode-left h3 {
-  font-size: 0.85rem;
-}
-.studio-mode-left input, .studio-mode-left select {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.75rem;
-}
-.studio-mode-left label {
-  font-size: 0.7rem;
-}
-.studio-mode-left button[role="switch"] {
-  transform: scale(0.9);
-  transform-origin: left center;
-}
-
