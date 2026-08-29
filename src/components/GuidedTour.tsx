@@ -84,7 +84,7 @@ export const GuidedTour: React.FC<GuidedTourProps> = ({ run, onFinish, theme = '
     }
   ];
 
-    useEffect(() => {
+      useEffect(() => {
     if (!run) {
       setCurrentStep(0);
       return;
@@ -100,18 +100,21 @@ export const GuidedTour: React.FC<GuidedTourProps> = ({ run, onFinish, theme = '
     // Scroll to the current target after a short delay to allow tab render
     const currentTarget = step.target;
     if (currentTarget !== 'body') {
-      setTimeout(() => {
+      const timerId = setTimeout(() => {
         const element = document.getElementById(currentTarget);
         if (element) {
-          // Add a temporary highlight class
           element.scrollIntoView({ behavior: 'smooth', block: 'center' });
           element.classList.add('ring-4', 'ring-indigo-500', 'ring-offset-4', 'ring-offset-slate-100', 'dark:ring-offset-slate-900', 'transition-all', 'duration-500');
-          
-          setTimeout(() => {
-            element.classList.remove('ring-4', 'ring-indigo-500', 'ring-offset-4', 'ring-offset-slate-100', 'dark:ring-offset-slate-900', 'transition-all', 'duration-500');
-          }, 3000);
         }
       }, 100);
+
+      return () => {
+        clearTimeout(timerId);
+        const element = document.getElementById(currentTarget);
+        if (element) {
+          element.classList.remove('ring-4', 'ring-indigo-500', 'ring-offset-4', 'ring-offset-slate-100', 'dark:ring-offset-slate-900', 'transition-all', 'duration-500');
+        }
+      };
     }
   }, [run, currentStep, onSetTab]);
 
