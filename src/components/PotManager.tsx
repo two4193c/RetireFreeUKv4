@@ -148,12 +148,12 @@ export const PotManager: React.FC<PotManagerProps> = ({
       {/* PORTFOLIO SUMMARY CARDS: COMBINED, PRIMARY, & PARTNER */}
       {isCouple ? (
         <div className={`grid grid-cols-1 gap-3 sm:gap-4 ${isStudioMode ? "" : "md:grid-cols-3"}`}>
-          {/* Card 1: Combined Household Portfolio */}
+          {/* Card 1: Household Portfolio */}
           <div className="p-3.5 sm:p-4 rounded-2xl bg-primary-50/80 dark:bg-slate-950 text-slate-900 dark:text-white border border-primary-200 dark:border-slate-800 shadow-md space-y-2 relative overflow-hidden transition-colors">
             <div className="flex items-center justify-between gap-2 text-xs">
               <span className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 uppercase tracking-wider text-[10px] min-w-0">
                 <Users className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400 shrink-0" />
-                <span className="truncate">Combined Household Starting Balance</span>
+                <span className="truncate">Household Starting Balance</span>
               </span>
               <span className="bg-primary-100 dark:bg-primary-500/20 text-primary-800 dark:text-primary-300 border border-primary-300 dark:border-primary-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0">
                 Joint Total

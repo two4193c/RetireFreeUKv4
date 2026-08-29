@@ -420,7 +420,7 @@ export const TaxOptimizerCard: React.FC<TaxOptimizerCardProps> = ({
               }`}
             >
               <Users className="w-3.5 h-3.5" />
-              <span>Combined Household</span>
+              <span>Household</span>
             </button>
 
             <button

@@ -70,7 +70,7 @@ export const CoupleGuideCard: React.FC = () => {
           <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 space-y-1">
             <span className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
               <Users className="w-3.5 h-3.5 text-teal-600" />
-              Combined Household View
+              Household View
             </span>
             <p className="text-slate-600 dark:text-slate-400">
               Aggregates all income sources and pots across both partners, comparing household net take-home against the total combined Essential Floor.

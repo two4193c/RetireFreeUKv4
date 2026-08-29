@@ -2057,7 +2057,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
           : `• LSA Cap: £${(partnerMaxPcls.lsaLimit / 1000).toFixed(1)}k (Uncapped)`;
         doc.text(partLsaCapText, partColX + 3, subY + 20.5);
 
-        // Combined Household Strip at bottom of box
+        // Household Strip at bottom of box
         const combY = p2Y + 33.5;
         doc.setFillColor(254, 240, 138);
         doc.roundedRect(18, combY, 174, 6.5, 1, 1, 'F');
@@ -2066,7 +2066,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
         doc.setTextColor(4, 120, 87);
         const totalPcls = Math.round(primaryMaxPcls.maxTaxFreeCash + partnerMaxPcls.maxTaxFreeCash);
         const totalLsa = primaryMaxPcls.lsaLimit + partnerMaxPcls.lsaLimit;
-        doc.text(`• Combined Household Tax-Free Lump Sum: £${totalPcls.toLocaleString()} | Combined LSA Cap: £${totalLsa.toLocaleString()} (Destinations: ${primaryDestStr} / ${partnerDestStr})`, 21, combY + 4.2);
+        doc.text(`• Household Tax-Free Lump Sum: £${totalPcls.toLocaleString()} | Combined LSA Cap: £${totalLsa.toLocaleString()} (Destinations: ${primaryDestStr} / ${partnerDestStr})`, 21, combY + 4.2);
 
       } else {
         // Single member full width

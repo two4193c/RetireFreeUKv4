@@ -217,7 +217,7 @@ export const MonthlySavingsRateCard: React.FC<MonthlySavingsRateCardProps> = ({ 
     const partnerTotalSavingsRate = partnerMonthlyGrossSalary > 0 ? (partnerTotalMonthlySavings / partnerMonthlyGrossSalary) * 100 : 0;
     const partnerEmployerSavingsRate = partnerMonthlyGrossSalary > 0 ? (partnerEmployerPensionMonthly / partnerMonthlyGrossSalary) * 100 : 0;
 
-    // Combined Household Calculations
+    // Household Calculations
     const combinedSalary = grossSalary + partnerSalary;
     const combinedMonthlySavings = totalMonthlySavings + partnerTotalMonthlySavings;
     const combinedPersonalMonthly = personalMonthlySavings + partnerPersonalMonthlySavings;
@@ -528,7 +528,7 @@ export const MonthlySavingsRateCard: React.FC<MonthlySavingsRateCardProps> = ({ 
             }`}
           >
             <Users className="w-3.5 h-3.5" />
-            <span>Combined Household</span>
+            <span>Household</span>
             <span className="bg-slate-200 dark:bg-slate-950/40 text-primary-900 dark:text-primary-100 text-[10px] px-1.5 py-0.5 rounded-md font-bold">
               £{Math.round(combinedMonthlySavings || 0).toLocaleString()}/mo ({(combinedSalary > 0 ? (combinedMonthlySavings / (combinedSalary / 12)) * 100 : 0).toFixed(1)}%)
             </span>

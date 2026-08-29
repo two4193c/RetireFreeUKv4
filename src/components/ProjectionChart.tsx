@@ -1129,12 +1129,12 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
 
           {profile.isCouplePlanning ? (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-3.5">
-              {/* Combined Household Card */}
+              {/* Household Card */}
               <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Users className="w-4 h-4 text-primary-500" />
-                    <span className="font-bold text-xs text-slate-800 dark:text-slate-100">Combined Household</span>
+                    <span className="font-bold text-xs text-slate-800 dark:text-slate-100">Household</span>
                   </div>
                   <span className="text-[10px] font-black uppercase tracking-wider bg-primary-100 dark:bg-primary-950 text-primary-700 dark:text-primary-300 px-2 py-0.5 rounded-full">
                     100% Total
@@ -1359,7 +1359,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
               <div className="flex gap-2 self-start sm:self-auto">
                 {profile.isCouplePlanning && (
                   <div className="bg-slate-200/80 dark:bg-slate-700/80 p-0.5 rounded-xl flex items-center text-[11px] font-bold border border-slate-300/50 dark:border-slate-600/50">
-                    <button type="button" onClick={() => setPortfolioViewMode('combined')} className={`px-2.5 py-0.5 rounded-lg transition-all cursor-pointer ${portfolioViewMode === 'combined' ? 'bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-400 shadow-xs font-black' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'}`}>Combined</button>
+                    <button type="button" onClick={() => setPortfolioViewMode('combined')} className={`px-2.5 py-0.5 rounded-lg transition-all cursor-pointer ${portfolioViewMode === 'combined' ? 'bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-400 shadow-xs font-black' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'}`}>Household</button>
                     <button type="button" onClick={() => setPortfolioViewMode('primary')} className={`px-2.5 py-0.5 rounded-lg transition-all cursor-pointer ${portfolioViewMode === 'primary' ? 'bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-400 shadow-xs font-black' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'}`}>Primary</button>
                     <button type="button" onClick={() => setPortfolioViewMode('partner')} className={`px-2.5 py-0.5 rounded-lg transition-all cursor-pointer ${portfolioViewMode === 'partner' ? 'bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-400 shadow-xs font-black' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'}`}>Partner</button>
                   </div>
@@ -1559,7 +1559,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
               </h4>
               {profile.isCouplePlanning && (
                 <div className="bg-slate-200/80 dark:bg-slate-800 p-0.5 rounded-xl flex items-center text-[11px] font-bold border border-slate-300/50 dark:border-slate-700 self-start sm:self-auto">
-                  <button type="button" onClick={() => setPortfolioViewMode('combined')} className={`px-2.5 py-0.5 rounded-md transition-all cursor-pointer ${portfolioViewMode === 'combined' ? 'bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-400 shadow-xs font-black' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>Combined</button>
+                  <button type="button" onClick={() => setPortfolioViewMode('combined')} className={`px-2.5 py-0.5 rounded-md transition-all cursor-pointer ${portfolioViewMode === 'combined' ? 'bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-400 shadow-xs font-black' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>Household</button>
                   <button type="button" onClick={() => setPortfolioViewMode('primary')} className={`px-2.5 py-0.5 rounded-md transition-all cursor-pointer ${portfolioViewMode === 'primary' ? 'bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-400 shadow-xs font-black' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>Primary ({profile.name || 'Primary'})</button>
                   <button type="button" onClick={() => setPortfolioViewMode('partner')} className={`px-2.5 py-0.5 rounded-md transition-all cursor-pointer ${portfolioViewMode === 'partner' ? 'bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-400 shadow-xs font-black' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>Partner ({profile.partnerName || 'Partner'})</button>
                 </div>
@@ -1628,7 +1628,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
               <div className="flex gap-2">
                 {profile.isCouplePlanning && (
                   <div className="bg-slate-200/80 dark:bg-slate-800 p-0.5 rounded-xl flex items-center text-[11px] font-bold border border-slate-300/50 dark:border-slate-700">
-                    <button type="button" onClick={() => setPortfolioViewMode('combined')} className={`px-2.5 py-0.5 rounded-md transition-all cursor-pointer ${portfolioViewMode === 'combined' ? 'bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-400 shadow-xs font-black' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>Combined</button>
+                    <button type="button" onClick={() => setPortfolioViewMode('combined')} className={`px-2.5 py-0.5 rounded-md transition-all cursor-pointer ${portfolioViewMode === 'combined' ? 'bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-400 shadow-xs font-black' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>Household</button>
                     <button type="button" onClick={() => setPortfolioViewMode('primary')} className={`px-2.5 py-0.5 rounded-md transition-all cursor-pointer ${portfolioViewMode === 'primary' ? 'bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-400 shadow-xs font-black' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>Primary ({profile.name || 'Primary'})</button>
                     <button type="button" onClick={() => setPortfolioViewMode('partner')} className={`px-2.5 py-0.5 rounded-md transition-all cursor-pointer ${portfolioViewMode === 'partner' ? 'bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-400 shadow-xs font-black' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>Partner ({profile.partnerName || 'Partner'})</button>
                   </div>
@@ -1670,7 +1670,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
               </div>
               {profile.isCouplePlanning && (
                 <div className="bg-slate-200/80 dark:bg-slate-800 p-0.5 rounded-xl flex items-center text-[11px] font-bold border border-slate-300/50 dark:border-slate-700">
-                  <button type="button" onClick={() => setPortfolioViewMode('combined')} className={`px-2.5 py-0.5 rounded-md transition-all cursor-pointer ${portfolioViewMode === 'combined' ? 'bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-400 shadow-xs font-black' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>Combined</button>
+                  <button type="button" onClick={() => setPortfolioViewMode('combined')} className={`px-2.5 py-0.5 rounded-md transition-all cursor-pointer ${portfolioViewMode === 'combined' ? 'bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-400 shadow-xs font-black' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>Household</button>
                   <button type="button" onClick={() => setPortfolioViewMode('primary')} className={`px-2.5 py-0.5 rounded-md transition-all cursor-pointer ${portfolioViewMode === 'primary' ? 'bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-400 shadow-xs font-black' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>Primary ({profile.name || 'Primary'})</button>
                   <button type="button" onClick={() => setPortfolioViewMode('partner')} className={`px-2.5 py-0.5 rounded-md transition-all cursor-pointer ${portfolioViewMode === 'partner' ? 'bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-400 shadow-xs font-black' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>Partner ({profile.partnerName || 'Partner'})</button>
                 </div>

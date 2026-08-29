@@ -2594,7 +2594,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
                 <td className="py-3 px-4 text-slate-900 dark:text-slate-100">
                   <div className="font-extrabold flex items-center gap-1.5">
                     <Sparkles className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
-                    <span>Combined Household Tax-Free Lump Sum</span>
+                    <span>Household Tax-Free Lump Sum</span>
                   </div>
                   <div className="text-[10px] text-slate-500 dark:text-slate-400 font-normal">Total liquid 0% tax cash available at access ages</div>
                 </td>
