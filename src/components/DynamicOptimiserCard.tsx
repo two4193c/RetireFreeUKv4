@@ -181,24 +181,34 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
   }, [retRows]);
 
   const streamData = useMemo(() =>
-    retRows.map((r, i) => {
-      const gross = r.totalWithdrawalAmount ?? 0;
-      const sp = (r.primaryStatePensionReceived ?? 0) + (r.partnerStatePensionReceived ?? 0);
-      const prevIsa = i > 0 ? (retRows[i - 1].isaPot ?? r.isaPot) : r.isaPot;
-      const isa = Math.max(0, Math.min(prevIsa - r.isaPot, gross - sp));
-      const pa = Math.max(0, Math.min(PA, gross) - sp - isa);
-      const basic = Math.min(Math.max(0, gross - PA), BASIC_CEIL - PA);
-      const higher = Math.max(0, gross - BASIC_CEIL);
+    retRows.map((r) => {
+      const sp = (r.statePensionReceived || 0);
+      const nonTaxable = (r.taxFreeFixedIncomeReceived || 0) + (r.giltLadderIncomeReceived || 0) + (r.isaDrawdown || 0) + (r.cashDrawdown || 0) + (r.pensionDrawdownTaxFree || 0);
+      
+      const paCap = isCouple ? PA * 2 : PA;
+      const basicCap = isCouple ? BASIC_CEIL * 2 : BASIC_CEIL;
+
+      const taxableRemaining = (r.dbPensionIncomeReceived || 0) + (r.taxableFixedIncomeReceived || 0) + (r.annuityIncomeReceived || 0) + (r.pensionDrawdownTaxable || 0);
+
+      const paAvailable = Math.max(0, paCap - sp);
+      const pa = Math.min(taxableRemaining, paAvailable);
+      
+      const taxableAfterPA = Math.max(0, taxableRemaining - paAvailable);
+      const basicAvailable = basicCap - paCap;
+      const basic = Math.min(taxableAfterPA, basicAvailable);
+      
+      const higher = Math.max(0, taxableAfterPA - basicAvailable);
+
       return {
         age: r.age,
         'State Pension': Math.round(sp),
-        'ISA Bridge': Math.round(isa),
+        'ISA Bridge': Math.round(nonTaxable),
         'Personal Allowance (0%)': Math.round(pa),
         'Basic Rate (20%)': Math.round(basic),
         'Higher Rate': Math.round(higher),
       };
     }),
-  [retRows]);
+  [retRows, isCouple]);
 
   const radarData = useMemo(() => {
     const totalGross = retRows.reduce((s, r) => s + (r.totalWithdrawalAmount ?? 0), 0);
@@ -523,13 +533,15 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
                     <div className="flex-1 flex gap-[1px] h-4">
                       {streamData.map((r) => {
                         let val = r[band.key as keyof typeof r] as number;
+                        const hrThreshold = isCouple ? 100000 : 50000;
                         if (band.label === '60% Trap / Addt.') {
-                           val = val > 50000 ? val - 50000 : 0;
+                           val = val > hrThreshold ? val - hrThreshold : 0;
                         } else if (band.label === 'Higher (40%)') {
-                           val = Math.min(val, 50000);
+                           val = Math.min(val, hrThreshold);
                         }
                         
-                        const intensity = val > 0 ? Math.max(0.15, Math.min(1, val / band.limit)) : 0.03;
+                        const actualLimit = isCouple ? band.limit * 2 : band.limit;
+                        const intensity = val > 0 ? Math.max(0.15, Math.min(1, val / actualLimit)) : 0.03;
                         const isZero = val === 0;
                         
                         return (
@@ -537,7 +549,7 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
                             key={r.age} 
                             className={`flex-1 rounded-sm ${isZero ? 'bg-slate-100 dark:bg-slate-800/50' : ''}`}
                             style={isZero ? {} : { backgroundColor: `rgba(${band.color}, ${intensity})` }}
-                            title={`Age ${r.age}: A�${val}`}
+                            title={`Age ${r.age}: £${val}`}
                           />
                         );
                       })}
