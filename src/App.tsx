@@ -752,7 +752,6 @@ function App() {
       {/* Left Collapsible Navigation Sidebar (Flush against left edge) */}
       <SidebarNav
         studioMode={studioMode}
-          onStartTour={() => setRunTour(true)}
         activeTab={activeTab}
         onSelectTab={(tab) => {
           if (appMode === 'studio' && tab === 'documentation') {
@@ -1833,7 +1832,7 @@ function App() {
       </footer>
 
       {/* Modals */}
-      <GuidedTour run={runTour} onFinish={() => setRunTour(false)} theme={theme} />
+      <GuidedTour run={runTour} onFinish={() => setRunTour(false)} theme={theme} onSetTab={setActiveTab} />
 
         {showAiModal && (
         <AiTaxAdvisorModal

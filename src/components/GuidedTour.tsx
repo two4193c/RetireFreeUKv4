@@ -5,71 +5,87 @@ interface GuidedTourProps {
   run: boolean;
   onFinish: () => void;
   theme?: 'light' | 'dark';
+  onSetTab?: (tab: any) => void;
 }
 
-export const GuidedTour: React.FC<GuidedTourProps> = ({ run, onFinish, theme = 'dark' }) => {
+export const GuidedTour: React.FC<GuidedTourProps> = ({ run, onFinish, theme = 'dark', onSetTab }) => {
   const [currentStep, setCurrentStep] = useState(0);
   
-      const steps = [
+        const steps = [
     {
       target: 'body',
+      tab: 'inputs',
       title: 'Welcome to RetireFree UK!',
       titleColor: 'text-indigo-600 dark:text-indigo-400',
       content: 'Let\'s take a quick interactive tour to show you how to build your perfect retirement plan. Click Next to begin.',
     },
     {
       target: 'card-inputs-couple',
+      tab: 'inputs',
       title: 'Step 1: Planning Mode',
       titleColor: 'text-violet-600 dark:text-violet-400',
       content: 'Toggle between Single Planning or Couple Planning. In Couple Mode, you can track joint incomes, spousal allowances, and shared pots.',
     },
     {
       target: 'card-inputs-profile',
+      tab: 'inputs',
       title: 'Step 2: Your Profile',
       titleColor: 'text-emerald-600 dark:text-emerald-400',
       content: 'Enter your age, salary, and target retirement age. These form the foundation of your projection.',
     },
     {
       target: 'card-inputs-pots',
+      tab: 'inputs',
       title: 'Step 3: Investment Pots',
       titleColor: 'text-emerald-600 dark:text-emerald-400',
       content: 'Add your current ISA, Pension (SIPP/Workplace), and Cash balances here. You can also edit growth rates.',
     },
     {
       target: 'card-strat-planner',
+      tab: 'strategy',
       title: 'Step 4: Strategy & Income',
       titleColor: 'text-indigo-600 dark:text-indigo-400',
       content: 'Set your desired retirement income target, choose a drawdown strategy (e.g., Tax-Free Bracket fill), and model state pensions.',
     },
     {
       target: 'card-proj-chart',
+      tab: 'projections',
       title: 'Step 5: The Projection',
       titleColor: 'text-amber-600 dark:text-amber-400',
       content: 'Watch your wealth grow! See exactly when you might run out of money, or how large your estate will be at age 100.',
     }
   ];
 
-  useEffect(() => {
+    useEffect(() => {
     if (!run) {
       setCurrentStep(0);
       return;
     }
 
-    // Scroll to the current target
-    const currentTarget = steps[currentStep].target;
-    if (currentTarget !== 'body') {
-      const element = document.getElementById(currentTarget);
-      if (element) {
-        // Add a temporary highlight class
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        element.classList.add('ring-4', 'ring-indigo-500', 'ring-offset-4', 'ring-offset-slate-100', 'dark:ring-offset-slate-900', 'transition-all', 'duration-500');
-        
-        return () => {
-          element.classList.remove('ring-4', 'ring-indigo-500', 'ring-offset-4', 'ring-offset-slate-100', 'dark:ring-offset-slate-900', 'transition-all', 'duration-500');
-        };
-      }
+    const step = steps[currentStep];
+
+    // Change tab if needed (and available)
+    if (step.tab && onSetTab) {
+      onSetTab(step.tab);
     }
-  }, [run, currentStep]);
+
+    // Scroll to the current target after a short delay to allow tab render
+    const currentTarget = step.target;
+    if (currentTarget !== 'body') {
+      setTimeout(() => {
+        const element = document.getElementById(currentTarget);
+        if (element) {
+          // Add a temporary highlight class
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          element.classList.add('ring-4', 'ring-indigo-500', 'ring-offset-4', 'ring-offset-slate-100', 'dark:ring-offset-slate-900', 'transition-all', 'duration-500');
+          
+          setTimeout(() => {
+            element.classList.remove('ring-4', 'ring-indigo-500', 'ring-offset-4', 'ring-offset-slate-100', 'dark:ring-offset-slate-900', 'transition-all', 'duration-500');
+          }, 3000);
+        }
+      }, 100);
+    }
+  }, [run, currentStep, onSetTab]);
 
   if (!run) return null;
 
