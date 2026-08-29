@@ -752,6 +752,7 @@ function App() {
       {/* Left Collapsible Navigation Sidebar (Flush against left edge) */}
       <SidebarNav
         studioMode={studioMode}
+          onStartTour={() => setRunTour(true)}
         activeTab={activeTab}
         onSelectTab={(tab) => {
           if (appMode === 'studio' && tab === 'documentation') {
