@@ -183,22 +183,29 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
 
   const streamData = useMemo(() =>
     retRows.map((r) => {
-      let sp = 0, nonTaxable = 0, taxableRemaining = 0, paCap = 0, basicCap = 0;
+      let sp = 0, taxableRemaining = 0, paCap = 0, basicCap = 0;
+      let isaDrawdown = 0, cashWithdrawal = 0, pensionTaxFree = 0;
       if (viewMode === 'combined') {
         sp = r.statePensionReceived || 0;
-        nonTaxable = (r.taxFreeFixedIncomeReceived || 0) + (r.giltLadderIncomeReceived || 0) + (r.isaDrawdown || 0) + (r.cashDrawdown || 0) + (r.pensionDrawdownTaxFree || 0);
+        isaDrawdown = r.isaDrawdown || 0;
+        cashWithdrawal = (r.cashDrawdown || 0) + (r.taxFreeFixedIncomeReceived || 0) + (r.giltLadderIncomeReceived || 0);
+        pensionTaxFree = r.pensionDrawdownTaxFree || 0;
         paCap = isCouple ? PA * 2 : PA;
         basicCap = isCouple ? BASIC_CEIL * 2 : BASIC_CEIL;
         taxableRemaining = (r.dbPensionIncomeReceived || 0) + (r.taxableFixedIncomeReceived || 0) + (r.annuityIncomeReceived || 0) + (r.pensionDrawdownTaxable || 0);
       } else if (viewMode === 'primary') {
         sp = r.primaryStatePensionReceived || 0;
-        nonTaxable = (r.primaryTaxFreeFixedIncomeReceived || 0) + (r.primaryGiltLadderIncomeReceived || 0) + (r.primaryIsaDrawdown || 0) + (r.primaryCashDrawdown || 0) + (r.primaryPensionDrawdownTaxFree || 0);
+        isaDrawdown = r.primaryIsaDrawdown || 0;
+        cashWithdrawal = (r.primaryCashDrawdown || 0) + (r.primaryTaxFreeFixedIncomeReceived || 0) + (r.primaryGiltLadderIncomeReceived || 0);
+        pensionTaxFree = r.primaryPensionDrawdownTaxFree || 0;
         paCap = PA;
         basicCap = BASIC_CEIL;
         taxableRemaining = (r.primaryDbPensionIncomeReceived || 0) + (r.primaryTaxableFixedIncomeReceived || 0) + (r.primaryAnnuityIncomeReceived || 0) + (r.primaryPensionDrawdownTaxable || 0);
       } else if (viewMode === 'partner') {
         sp = r.partnerStatePensionReceived || 0;
-        nonTaxable = (r.partnerTaxFreeFixedIncomeReceived || 0) + (r.partnerGiltLadderIncomeReceived || 0) + (r.partnerIsaDrawdown || 0) + (r.partnerCashDrawdown || 0) + (r.partnerPensionDrawdownTaxFree || 0);
+        isaDrawdown = r.partnerIsaDrawdown || 0;
+        cashWithdrawal = (r.partnerCashDrawdown || 0) + (r.partnerTaxFreeFixedIncomeReceived || 0) + (r.partnerGiltLadderIncomeReceived || 0);
+        pensionTaxFree = r.partnerPensionDrawdownTaxFree || 0;
         paCap = PA;
         basicCap = BASIC_CEIL;
         taxableRemaining = (r.partnerDbPensionIncomeReceived || 0) + (r.partnerTaxableFixedIncomeReceived || 0) + (r.partnerAnnuityIncomeReceived || 0) + (r.partnerPensionDrawdownTaxable || 0);
@@ -216,7 +223,9 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
       return {
         age: r.age,
         'State Pension': Math.round(sp),
-        'Tax-Free (ISA/Cash)': Math.round(nonTaxable),
+        'ISA': Math.round(isaDrawdown),
+        'Other Tax-Free': Math.round(cashWithdrawal),
+        'Tax-Free Pension': Math.round(pensionTaxFree),
         'Personal Allowance (0%)': Math.round(pa),
         'Basic Rate (20%)': Math.round(basic),
         'Higher Rate': Math.round(higher),
@@ -300,25 +309,29 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
 
   const incomeData = useMemo(() =>
     retRows.map((r) => {
-      let taxable = 0, isa = 0, taxFreeCash = 0;
+      let taxable = 0, isa = 0, taxFreeCash = 0, taxFreePension = 0;
       if (viewMode === 'combined') {
         taxable = (r.statePensionReceived || 0) + (r.dbPensionIncomeReceived || 0) + (r.taxableFixedIncomeReceived || 0) + (r.annuityIncomeReceived || 0) + (r.pensionDrawdownTaxable || 0);
         isa = r.isaDrawdown || 0;
-        taxFreeCash = (r.taxFreeFixedIncomeReceived || 0) + (r.giltLadderIncomeReceived || 0) + (r.cashDrawdown || 0) + (r.pensionDrawdownTaxFree || 0);
+        taxFreeCash = (r.taxFreeFixedIncomeReceived || 0) + (r.giltLadderIncomeReceived || 0) + (r.cashDrawdown || 0);
+        taxFreePension = r.pensionDrawdownTaxFree || 0;
       } else if (viewMode === 'primary') {
         taxable = (r.primaryStatePensionReceived || 0) + (r.primaryDbPensionIncomeReceived || 0) + (r.primaryTaxableFixedIncomeReceived || 0) + (r.primaryAnnuityIncomeReceived || 0) + (r.primaryPensionDrawdownTaxable || 0);
         isa = r.primaryIsaDrawdown || 0;
-        taxFreeCash = (r.primaryTaxFreeFixedIncomeReceived || 0) + (r.primaryGiltLadderIncomeReceived || 0) + (r.primaryCashDrawdown || 0) + (r.primaryPensionDrawdownTaxFree || 0);
+        taxFreeCash = (r.primaryTaxFreeFixedIncomeReceived || 0) + (r.primaryGiltLadderIncomeReceived || 0) + (r.primaryCashDrawdown || 0);
+        taxFreePension = r.primaryPensionDrawdownTaxFree || 0;
       } else if (viewMode === 'partner') {
         taxable = (r.partnerStatePensionReceived || 0) + (r.partnerDbPensionIncomeReceived || 0) + (r.partnerTaxableFixedIncomeReceived || 0) + (r.partnerAnnuityIncomeReceived || 0) + (r.partnerPensionDrawdownTaxable || 0);
         isa = r.partnerIsaDrawdown || 0;
-        taxFreeCash = (r.partnerTaxFreeFixedIncomeReceived || 0) + (r.partnerGiltLadderIncomeReceived || 0) + (r.partnerCashDrawdown || 0) + (r.partnerPensionDrawdownTaxFree || 0);
+        taxFreeCash = (r.partnerTaxFreeFixedIncomeReceived || 0) + (r.partnerGiltLadderIncomeReceived || 0) + (r.partnerCashDrawdown || 0);
+        taxFreePension = r.partnerPensionDrawdownTaxFree || 0;
       }
       return {
         age: r.age,
         Taxable: Math.round(taxable),
         ISA: Math.round(isa),
-        'Tax-Free Cash': Math.round(taxFreeCash),
+        'Other Tax-Free': Math.round(taxFreeCash),
+        'Tax-Free Pension': Math.round(taxFreePension),
       };
     }),
   [retRows, viewMode]);
@@ -462,9 +475,11 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
                     <defs>
                       {[
                         ['spG', '#8b5cf6'],
-                        ['isaG', '#f59e0b'],
-                        ['paG', '#10b981'],
-                        ['brG', '#38bdf8'],
+                        ['isaG', '#10b981'],
+                        ['otfG', '#f59e0b'],
+                        ['tfpG', '#eab308'],
+                        ['paG', '#0ea5e9'],
+                        ['brG', '#3b82f6'],
                         ['hrG', '#ef4444'],
                       ].map(([id, c]) => (
                         <linearGradient key={id} id={id} x1="0" y1="0" x2="0" y2="1">
@@ -479,9 +494,11 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
                     <Tooltip content={<CurrencyTooltip />} />
                     <Legend wrapperStyle={{ fontSize: 10, paddingTop: 8 }} />
                     <Area type="monotone" dataKey="State Pension" stackId="1" fill="url(#spG)" stroke="#8b5cf6" strokeWidth={0} />
-                    <Area type="monotone" dataKey="Tax-Free (ISA/Cash)" stackId="1" fill="url(#isaG)" stroke="#f59e0b" strokeWidth={0} />
-                    <Area type="monotone" dataKey="Personal Allowance (0%)" stackId="1" fill="url(#paG)" stroke="#10b981" strokeWidth={0} />
-                    <Area type="monotone" dataKey="Basic Rate (20%)" stackId="1" fill="url(#brG)" stroke="#38bdf8" strokeWidth={0} />
+                    <Area type="monotone" dataKey="ISA" stackId="1" fill="url(#isaG)" stroke="#10b981" strokeWidth={0} />
+                    <Area type="monotone" dataKey="Other Tax-Free" stackId="1" fill="url(#otfG)" stroke="#f59e0b" strokeWidth={0} />
+                    <Area type="monotone" dataKey="Tax-Free Pension" stackId="1" fill="url(#tfpG)" stroke="#eab308" strokeWidth={0} />
+                    <Area type="monotone" dataKey="Personal Allowance (0%)" stackId="1" fill="url(#paG)" stroke="#0ea5e9" strokeWidth={0} />
+                    <Area type="monotone" dataKey="Basic Rate (20%)" stackId="1" fill="url(#brG)" stroke="#3b82f6" strokeWidth={0} />
                     <Area type="monotone" dataKey="Higher Rate" stackId="1" fill="url(#hrG)" stroke="#ef4444" strokeWidth={0} />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -710,7 +727,8 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
                 <ReferenceLine y={PA} stroke="#10b981" strokeDasharray="5 4" strokeWidth={1.5} label={{ value: 'PA £12,570', position: 'insideTopLeft', fontSize: 9, fill: '#10b981' }} />
                 <Bar dataKey="Taxable" stackId="a" fill="#38bdf8" radius={[0, 0, 0, 0]} maxBarSize={16} />
                 <Bar dataKey="ISA" stackId="a" fill="#10b981" radius={[0, 0, 0, 0]} maxBarSize={16} />
-                <Bar dataKey="Tax-Free Cash" stackId="a" fill="#f59e0b" radius={[3, 3, 0, 0]} maxBarSize={16} />
+                <Bar dataKey="Other Tax-Free" stackId="a" fill="#f59e0b" radius={[0, 0, 0, 0]} maxBarSize={16} />
+                <Bar dataKey="Tax-Free Pension" stackId="a" fill="#eab308" radius={[3, 3, 0, 0]} maxBarSize={16} />
               </BarChart>
             </ResponsiveContainer>
           </Panel>
