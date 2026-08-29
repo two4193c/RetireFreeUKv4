@@ -193,6 +193,14 @@ function App() {
   const [colorTheme, setColorTheme] = useState<ColorTheme>(() => {
     return (localStorage.getItem('retireready_colorTheme') as ColorTheme) || 'emerald';
   });
+  const [appName, setAppName] = useState<string>(() => {
+    return localStorage.getItem('retireready_appName') || 'RetireFree UK';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('retireready_appName', appName || 'RetireFree UK');
+  }, [appName]);
+
   const [uiScale, setUiScale] = useState<UiScale>(() => {
     return (localStorage.getItem('retireready_uiScale') as UiScale) || 'normal';
   });
@@ -768,6 +776,7 @@ function App() {
       
       {/* Left Collapsible Navigation Sidebar (Flush against left edge) */}
       <SidebarNav
+          appName={appName || 'RetireFree UK'}
         studioMode={studioMode}
         activeTab={activeTab}
         onSelectTab={(tab) => {
@@ -1247,7 +1256,7 @@ function App() {
                     </div>
                     {/* Full PDF Report & Export Hub */}
                     <div id="card-output-pdf" className="scroll-mt-24 transition-all duration-300">
-                      <ExportSection
+                      <ExportSection appName={appName || "RetireFree UK"}
                         variant="all"
                         profile={profile}
                         pots={pots}
@@ -1575,7 +1584,7 @@ function App() {
             {!studioMode && activeTab === 'output' && (
               <div className="space-y-6">
                 <div id="card-output-pdf" className="scroll-mt-24 transition-all duration-300">
-                  <ExportSection
+                  <ExportSection appName={appName || "RetireFree UK"}
                     variant="pdf_only"
                     profile={profile}
                     pots={pots}
@@ -1586,7 +1595,7 @@ function App() {
                 </div>
 
                 <div id="card-output-csv" className="scroll-mt-24 transition-all duration-300">
-                  <ExportSection
+                  <ExportSection appName={appName || "RetireFree UK"}
                     variant="data_only"
                     profile={profile}
                     pots={pots}
@@ -1604,7 +1613,7 @@ function App() {
             {!studioMode && activeTab === 'compare' && (
               <div className="space-y-6">
                 <div id="card-compare-scenarios" className="scroll-mt-24 transition-all duration-300">
-                  <ScenarioComparer
+                  <ScenarioComparer appName={appName || "RetireFree UK"}
                     scenarios={scenarios}
                     activeScenarioId={activeScenarioId}
                     scenarioAId={effectiveCompareAId}
@@ -1855,6 +1864,8 @@ function App() {
         onUiScaleChange={setUiScale}
         theme={theme}
         onThemeChange={handleToggleTheme}
+        appName={appName}
+        onAppNameChange={setAppName}
       />
       {/* Modals */}
       <GuidedTour run={runTour} onFinish={() => setRunTour(false)} theme={theme} onSetTab={setActiveTab} />

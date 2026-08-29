@@ -65,6 +65,7 @@ interface ScenarioComparerProps {
   onSelectScenarioA?: (id: string) => void;
   onSelectScenarioB?: (id: string) => void;
   onClose: () => void;
+  appName?: string;
 }
 
 interface GuaranteedStreamItem {
@@ -85,6 +86,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
   onSelectScenarioA,
   onSelectScenarioB,
   onClose,
+  appName = "RetireFree UK",
 }) => {
   // Container ref
   const containerRef = useRef<HTMLDivElement>(null);
@@ -918,7 +920,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
         pdf.setTextColor(255, 255, 255);
         pdf.setFontSize(8.5);
         pdf.setFont('helvetica', 'bold');
-        pdf.text(`RetireFree UK • ${title}`, margin, 7.5);
+        pdf.text(`${appName} • ${title}`, margin, 7.5);
         if (subtitle) {
           pdf.setFont('helvetica', 'normal');
           pdf.setFontSize(7.5);
@@ -1134,11 +1136,11 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
       pdf.setFontSize(8);
       pdf.setFont('helvetica', 'normal');
       pdf.setTextColor(mutedSlate[0], mutedSlate[1], mutedSlate[2]);
-      pdf.text('RetireFree UK v2 — Professional Strategic Retirement Comparison Document', margin, pageHeight - 10);
+      pdf.text(`${appName} v2 - Professional Strategic Retirement Comparison Document`, margin, pageHeight - 10);
 
       const safeNameA = scenarioA.name.replace(/[^a-zA-Z0-9_-]/g, '_');
       const safeNameB = scenarioB.name.replace(/[^a-zA-Z0-9_-]/g, '_');
-      pdf.save(`RetireFree_UK_Comparison_${safeNameA}_vs_${safeNameB}${showScenarioC ? '_vs_' + scenarioC.name.replace(/[^a-zA-Z0-9_-]/g, '_') : ''}.pdf`);
+      pdf.save(`${appName.replace(/\s+/g, '_')}_Comparison_${safeNameA}_vs_${safeNameB}${showScenarioC ? '_vs_' + scenarioC.name.replace(/[^a-zA-Z0-9_-]/g, '_') : ''}.pdf`);
       setExportSuccessMsg('Comparison PDF report exported successfully!');
       setTimeout(() => setExportSuccessMsg(null), 4000);
     } catch (err) {

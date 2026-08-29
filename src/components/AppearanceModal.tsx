@@ -13,6 +13,8 @@ interface AppearanceModalProps {
   onUiScaleChange: (scale: UiScale) => void;
   theme: 'light' | 'dark';
   onThemeChange: () => void;
+  appName?: string;
+  onAppNameChange?: (name: string) => void;
 }
 
 export const AppearanceModal: React.FC<AppearanceModalProps> = ({
@@ -24,6 +26,8 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({
   onUiScaleChange,
   theme,
   onThemeChange,
+  appName = "RetireFree UK",
+  onAppNameChange = (name: string) => {},
 }) => {
   if (!isOpen) return null;
 
@@ -63,6 +67,23 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({
 
         <div className="space-y-5">
           
+          {/* App Branding Picker */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
+              <Monitor className="w-4 h-4 text-slate-400" />
+              <span>Application Branding</span>
+            </div>
+            <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+              <input
+                type="text"
+                value={appName}
+                onChange={(e) => onAppNameChange(e.target.value)}
+                placeholder="RetireFree UK"
+                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500/50"
+              />
+            </div>
+          </div>
+
           {/* Dark Mode Picker */}
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
