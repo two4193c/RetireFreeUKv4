@@ -32,6 +32,7 @@ import {
   Zap,
   SlidersHorizontal,
   ExternalLink,
+  Map
 } from 'lucide-react';
 
 export interface CardSubItem {
