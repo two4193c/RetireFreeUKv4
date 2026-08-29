@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { AppMode } from '../types';
-import { 
+import { Palette, Map, 
   HelpCircle, 
   Compass, 
   Layers, 
@@ -1333,7 +1333,52 @@ export const UserGuideCard: React.FC<UserGuideCardProps> = ({
     ...advancedSections.slice(1)
   ];
 
+
+  const globalSection: GuideSection = {
+    id: 'global-settings',
+    title: 'App Styling & Guided Tour',
+    icon: Palette,
+    badge: 'Settings & Tour',
+    summary: 'Customize the application theme, user interface scale, and access the interactive Guided Tour.',
+    content: (
+      <div className="space-y-4 text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+        <p>
+          RetireFree UK features comprehensive styling controls and an interactive onboarding tour to get you up to speed quickly.
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+          <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
+            <h4 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <Palette className="w-4 h-4 text-primary-500" />
+              Appearance Options
+            </h4>
+            <p className="text-xs text-slate-600 dark:text-slate-400">
+              Click the <strong>Palette</strong> icon in the sidebar to open <strong>Appearance Settings</strong>. From there, you can choose from various accent color themes (Emerald, Blue, Indigo, Rose, Amber) and adjust the <strong>Interface Density</strong> (Compact, Comfortable, Large) to fit more data on your screen or increase readability.
+            </p>
+          </div>
+
+          <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
+            <h4 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <Map className="w-4 h-4 text-indigo-500" />
+              Guided Tour
+            </h4>
+            <p className="text-xs text-slate-600 dark:text-slate-400">
+              Click the <strong>Map</strong> icon in the sidebar to launch the <strong>Interactive Guided Tour</strong>. This draggable 10-step popup window highlights key sections of the app and walks you through setting up your first retirement plan, right up to analyzing your final projections.
+            </p>
+          </div>
+        </div>
+      </div>
+    )
+  };
+
   const sections = currentMode === 'studio' ? studioSections : (currentMode === 'advanced' ? advancedSections : basicSections);
+  
+  // Append global setting section with dynamic numbering
+  sections.push({
+    ...globalSection,
+    title: `${sections.length + 1}. ${globalSection.title}`
+  });
+
 
   return (
     <div id="card-other-userguide" className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
