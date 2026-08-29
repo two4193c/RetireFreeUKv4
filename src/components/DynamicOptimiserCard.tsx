@@ -181,7 +181,9 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
       const qGross = (r.partnerStatePensionReceived || 0) + (r.partnerDbPensionIncomeReceived || 0) + (r.partnerTaxableFixedIncomeReceived || 0) + (r.partnerAnnuityIncomeReceived || 0) + (r.partnerPensionDrawdownTaxable || 0);
 
       if (viewMode === 'combined') {
-        totalGross += r.totalWithdrawalAmount ?? 0;
+        const pTotal = (r.primaryNetRetirementIncome ?? 0) + (r.primaryTaxPaid ?? 0);
+        const qTotal = (r.partnerNetRetirementIncome ?? 0) + (r.partnerTaxPaid ?? 0);
+        totalGross += pTotal + qTotal;
         totalTax += r.totalTaxPaid ?? 0;
         if (pGross >= PA || (isCouple && qGross >= PA)) {
           paCap++;
