@@ -84,7 +84,6 @@ export interface GuideOption {
 export const ALL_GUIDE_OPTIONS: GuideOption[] = [
   // 1. Foundations & Getting Started
   { id: 'user_guide', label: 'Quick Start Guide', category: '1. Foundations' },
-  { id: 'studio_guide', label: 'Studio Mode Workspace Guide', category: '1. Foundations' },
   { id: 'features_guide', label: 'App Features & Capabilities', category: '1. Foundations' },
   { id: 'cash_buffer_guide', label: 'Emergency Fund & Cash Buffer Guide', category: '1. Foundations' },
   { id: 'state_pension_ni_guide', label: 'State Pension & Voluntary NI Guide', category: '1. Foundations' },
