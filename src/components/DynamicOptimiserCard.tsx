@@ -203,7 +203,7 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
     const paRate = retRows.length > 0 ? (paCap / retRows.length) * 100 : 0;
     const taxSaved = Math.max(0, totalGross * 0.2 - totalTax);
     
-    return { taxSaved, avgRate, paRate };
+    return { taxSaved, avgRate, paRate, totalGross, totalTax };
   }, [retRows, viewMode, isCouple]);
 
   const streamData = useMemo(() =>
@@ -261,35 +261,53 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
   [retRows, isCouple, viewMode, profile.currentAge, profile.partnerCurrentAge]);
 
   const radarData = useMemo(() => {
-    const totalGross = retRows.reduce((s, r) => s + (r.totalWithdrawalAmount ?? 0), 0);
-    const totalTax = retRows.reduce((s, r) => s + (r.totalTaxPaid ?? 0), 0);
+    const totalGross = kpis?.totalGross ?? 0;
+    const totalTax = kpis?.totalTax ?? 0;
+    
+    let finalPot = 0;
+    let initialPot = 1;
+    let initialWithdrawal = 0;
+    let sp = 0;
+    const targetIncome = profile.targetAnnualSpendRetirement ?? 30000;
+    let effectiveTarget = targetIncome;
+
+    if (retRows.length > 0) {
+      if (viewMode === 'combined') {
+        finalPot = retRows[retRows.length - 1]?.totalPot ?? 0;
+        initialPot = retRows[0]?.totalPot ?? 1;
+        initialWithdrawal = retRows[0]?.totalWithdrawalAmount ?? 0;
+        sp = (profile.includeStatePension ? profile.statePensionAmountAnnual ?? 0 : 0) + (isCouple && profile.partnerIncludeStatePension ? profile.partnerStatePensionAmountAnnual ?? 0 : 0);
+      } else if (viewMode === 'primary') {
+        finalPot = retRows[retRows.length - 1]?.primaryTotalPot ?? 0;
+        initialPot = retRows[0]?.primaryTotalPot ?? 1;
+        initialWithdrawal = (retRows[0]?.primaryPensionDrawdown ?? 0) + (retRows[0]?.primaryIsaDrawdown ?? 0) + (retRows[0]?.primaryCashDrawdown ?? 0);
+        sp = profile.includeStatePension ? profile.statePensionAmountAnnual ?? 0 : 0;
+        effectiveTarget = targetIncome / 2;
+      } else if (viewMode === 'partner') {
+        finalPot = retRows[retRows.length - 1]?.partnerTotalPot ?? 0;
+        initialPot = retRows[0]?.partnerTotalPot ?? 1;
+        initialWithdrawal = (retRows[0]?.partnerPensionDrawdown ?? 0) + (retRows[0]?.partnerIsaDrawdown ?? 0) + (retRows[0]?.partnerCashDrawdown ?? 0);
+        sp = isCouple && profile.partnerIncludeStatePension ? profile.partnerStatePensionAmountAnnual ?? 0 : 0;
+        effectiveTarget = targetIncome / 2;
+      }
+    }
+
     const taxEff = totalGross > 0 ? Math.round((1 - totalTax / totalGross) * 100) : 80;
-    const longevity =
-      mcSuccessRate !== undefined
-        ? mcSuccessRate
-        : retRows.length > 0 && (retRows[retRows.length - 1].totalPot ?? 0) > 0
-        ? 85
-        : 40;
-    const finalPot = retRows[retRows.length - 1]?.totalPot ?? 0;
-    const nrb = isCouple ? 650000 : 325000;
+    const longevity = mcSuccessRate !== undefined ? mcSuccessRate : retRows.length > 0 && finalPot > 0 ? 85 : 40;
+    const nrb = isCouple && viewMode === 'combined' ? 650000 : 325000;
     const iht = clamp(Math.round((finalPot / nrb) * 60), 0, 100);
-    const swr =
-      (retRows[0]?.totalPot ?? 1) > 0
-        ? ((retRows[0]?.totalWithdrawalAmount ?? 0) / (retRows[0]?.totalPot ?? 1)) * 100
-        : 4;
+    const swr = initialPot > 0 ? (initialWithdrawal / initialPot) * 100 : 4;
     const volRes = clamp(Math.round((3.5 / Math.max(swr, 0.1)) * 70), 0, 100);
-    const sp =
-      (profile.includeStatePension ? profile.statePensionAmountAnnual ?? 0 : 0) +
-      (isCouple && profile.partnerIncludeStatePension ? profile.partnerStatePensionAmountAnnual ?? 0 : 0);
-    const floor = clamp(Math.round((sp / Math.max(profile.targetAnnualSpendRetirement ?? 30000, 1)) * 100), 0, 100);
+    const floor = clamp(Math.round((sp / Math.max(effectiveTarget, 1)) * 100), 0, 100);
+
     return [
-      { subject: 'Tax\nEfficiency', score: taxEff },
-      { subject: 'Longevity\nSafety', score: longevity },
-      { subject: 'IHT\nPreservation', score: iht },
+      { subject: 'Tax\nEfficiency', score: clamp(taxEff, 0, 100) },
+      { subject: 'Longevity\nSafety', score: clamp(longevity, 0, 100) },
+      { subject: 'IHT\nPreservation', score: clamp(100 - iht, 0, 100) },
       { subject: 'Volatility\nResilience', score: volRes },
       { subject: 'Income\nFloor', score: floor },
     ];
-  }, [retRows, isCouple, mcSuccessRate, profile]);
+  }, [retRows, mcSuccessRate, isCouple, profile, viewMode, kpis]);
 
   const matrixRows = useMemo(() =>
     retRows.map((r) => {
