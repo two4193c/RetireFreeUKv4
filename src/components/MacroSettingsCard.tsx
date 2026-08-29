@@ -318,7 +318,7 @@ export const MacroSettingsCard: React.FC<MacroSettingsCardProps> = ({ profile, p
       <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-4">
         
         {/* Toggle Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-emerald-50/70 dark:bg-emerald-950/40 p-4 rounded-2xl border border-emerald-200/60 dark:border-emerald-800/60">
+        <div className={`flex flex-col justify-between gap-3 bg-emerald-50/70 dark:bg-emerald-950/40 p-4 rounded-2xl border border-emerald-200/60 dark:border-emerald-800/60 ${isStudioMode ? "" : "sm:flex-row sm:items-center"}`}>
           <div className="flex items-center gap-3">
             <PieChart className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
             <div>
@@ -386,7 +386,7 @@ export const MacroSettingsCard: React.FC<MacroSettingsCardProps> = ({ profile, p
             </div>
 
             {/* Side-by-Side Dual Allocation Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className={`grid grid-cols-1 gap-4 ${isStudioMode ? "" : "md:grid-cols-2"}`}>
               
               {/* CARD A: ACCUMULATION PHASE (PRE-RETIREMENT) */}
               <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-emerald-200 dark:border-emerald-900/50 space-y-3 shadow-xs">
