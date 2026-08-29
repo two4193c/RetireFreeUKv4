@@ -144,6 +144,7 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
   const [showMatrix, setShowMatrix] = useState(false);
   const [mcRunning, setMcRunning] = useState(false);
   const [mcSuccessRate, setMcSuccessRate] = useState<number | undefined>(undefined);
+  const [viewMode, setViewMode] = useState<'combined' | 'primary' | 'partner'>('combined');
 
   const isCouple = !!profile.isCouplePlanning;
   const retRows = useMemo(() => projections.filter((p) => p.isRetired), [projections]);
@@ -182,14 +183,27 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
 
   const streamData = useMemo(() =>
     retRows.map((r) => {
-      const sp = (r.statePensionReceived || 0);
-      const nonTaxable = (r.taxFreeFixedIncomeReceived || 0) + (r.giltLadderIncomeReceived || 0) + (r.isaDrawdown || 0) + (r.cashDrawdown || 0) + (r.pensionDrawdownTaxFree || 0);
+      let sp = 0, nonTaxable = 0, taxableRemaining = 0, paCap = 0, basicCap = 0;
+      if (viewMode === 'combined') {
+        sp = r.statePensionReceived || 0;
+        nonTaxable = (r.taxFreeFixedIncomeReceived || 0) + (r.giltLadderIncomeReceived || 0) + (r.isaDrawdown || 0) + (r.cashDrawdown || 0) + (r.pensionDrawdownTaxFree || 0);
+        paCap = isCouple ? PA * 2 : PA;
+        basicCap = isCouple ? BASIC_CEIL * 2 : BASIC_CEIL;
+        taxableRemaining = (r.dbPensionIncomeReceived || 0) + (r.taxableFixedIncomeReceived || 0) + (r.annuityIncomeReceived || 0) + (r.pensionDrawdownTaxable || 0);
+      } else if (viewMode === 'primary') {
+        sp = r.primaryStatePensionReceived || 0;
+        nonTaxable = (r.primaryTaxFreeFixedIncomeReceived || 0) + (r.primaryGiltLadderIncomeReceived || 0) + (r.primaryIsaDrawdown || 0) + (r.primaryCashDrawdown || 0) + (r.primaryPensionDrawdownTaxFree || 0);
+        paCap = PA;
+        basicCap = BASIC_CEIL;
+        taxableRemaining = (r.primaryDbPensionIncomeReceived || 0) + (r.primaryTaxableFixedIncomeReceived || 0) + (r.primaryAnnuityIncomeReceived || 0) + (r.primaryPensionDrawdownTaxable || 0);
+      } else if (viewMode === 'partner') {
+        sp = r.partnerStatePensionReceived || 0;
+        nonTaxable = (r.partnerTaxFreeFixedIncomeReceived || 0) + (r.partnerGiltLadderIncomeReceived || 0) + (r.partnerIsaDrawdown || 0) + (r.partnerCashDrawdown || 0) + (r.partnerPensionDrawdownTaxFree || 0);
+        paCap = PA;
+        basicCap = BASIC_CEIL;
+        taxableRemaining = (r.partnerDbPensionIncomeReceived || 0) + (r.partnerTaxableFixedIncomeReceived || 0) + (r.partnerAnnuityIncomeReceived || 0) + (r.partnerPensionDrawdownTaxable || 0);
+      }
       
-      const paCap = isCouple ? PA * 2 : PA;
-      const basicCap = isCouple ? BASIC_CEIL * 2 : BASIC_CEIL;
-
-      const taxableRemaining = (r.dbPensionIncomeReceived || 0) + (r.taxableFixedIncomeReceived || 0) + (r.annuityIncomeReceived || 0) + (r.pensionDrawdownTaxable || 0);
-
       const paAvailable = Math.max(0, paCap - sp);
       const pa = Math.min(taxableRemaining, paAvailable);
       
@@ -202,13 +216,13 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
       return {
         age: r.age,
         'State Pension': Math.round(sp),
-        'ISA Bridge': Math.round(nonTaxable),
+        'Tax-Free (ISA/Cash)': Math.round(nonTaxable),
         'Personal Allowance (0%)': Math.round(pa),
         'Basic Rate (20%)': Math.round(basic),
         'Higher Rate': Math.round(higher),
       };
     }),
-  [retRows, isCouple]);
+  [retRows, isCouple, viewMode]);
 
   const radarData = useMemo(() => {
     const totalGross = retRows.reduce((s, r) => s + (r.totalWithdrawalAmount ?? 0), 0);
@@ -286,15 +300,28 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
 
   const incomeData = useMemo(() =>
     retRows.map((r) => {
-      const taxable = (r.statePensionReceived || 0) + (r.dbPensionIncomeReceived || 0) + (r.taxableFixedIncomeReceived || 0) + (r.annuityIncomeReceived || 0) + (r.pensionDrawdownTaxable || 0);
-      const nonTaxable = (r.taxFreeFixedIncomeReceived || 0) + (r.giltLadderIncomeReceived || 0) + (r.isaDrawdown || 0) + (r.cashDrawdown || 0) + (r.pensionDrawdownTaxFree || 0);
+      let taxable = 0, isa = 0, taxFreeCash = 0;
+      if (viewMode === 'combined') {
+        taxable = (r.statePensionReceived || 0) + (r.dbPensionIncomeReceived || 0) + (r.taxableFixedIncomeReceived || 0) + (r.annuityIncomeReceived || 0) + (r.pensionDrawdownTaxable || 0);
+        isa = r.isaDrawdown || 0;
+        taxFreeCash = (r.taxFreeFixedIncomeReceived || 0) + (r.giltLadderIncomeReceived || 0) + (r.cashDrawdown || 0) + (r.pensionDrawdownTaxFree || 0);
+      } else if (viewMode === 'primary') {
+        taxable = (r.primaryStatePensionReceived || 0) + (r.primaryDbPensionIncomeReceived || 0) + (r.primaryTaxableFixedIncomeReceived || 0) + (r.primaryAnnuityIncomeReceived || 0) + (r.primaryPensionDrawdownTaxable || 0);
+        isa = r.primaryIsaDrawdown || 0;
+        taxFreeCash = (r.primaryTaxFreeFixedIncomeReceived || 0) + (r.primaryGiltLadderIncomeReceived || 0) + (r.primaryCashDrawdown || 0) + (r.primaryPensionDrawdownTaxFree || 0);
+      } else if (viewMode === 'partner') {
+        taxable = (r.partnerStatePensionReceived || 0) + (r.partnerDbPensionIncomeReceived || 0) + (r.partnerTaxableFixedIncomeReceived || 0) + (r.partnerAnnuityIncomeReceived || 0) + (r.partnerPensionDrawdownTaxable || 0);
+        isa = r.partnerIsaDrawdown || 0;
+        taxFreeCash = (r.partnerTaxFreeFixedIncomeReceived || 0) + (r.partnerGiltLadderIncomeReceived || 0) + (r.partnerCashDrawdown || 0) + (r.partnerPensionDrawdownTaxFree || 0);
+      }
       return {
         age: r.age,
         Taxable: Math.round(taxable),
-        NonTaxable: Math.round(nonTaxable),
+        ISA: Math.round(isa),
+        'Tax-Free Cash': Math.round(taxFreeCash),
       };
     }),
-  [retRows]);
+  [retRows, viewMode]);
 
   if (retRows.length === 0) {
     return (
@@ -353,6 +380,30 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
 
       {expanded && (
         <div className="p-6 space-y-8">
+          {isCouple && (
+            <div className="flex justify-end -mt-2 mb-2">
+              <div className="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-1 text-xs">
+                <button
+                  className={`px-3 py-1 rounded-md transition-colors ${viewMode === 'combined' ? 'bg-white dark:bg-slate-700 shadow-sm font-bold text-slate-800 dark:text-slate-100' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                  onClick={() => setViewMode('combined')}
+                >
+                  Household
+                </button>
+                <button
+                  className={`px-3 py-1 rounded-md transition-colors ${viewMode === 'primary' ? 'bg-white dark:bg-slate-700 shadow-sm font-bold text-slate-800 dark:text-slate-100' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                  onClick={() => setViewMode('primary')}
+                >
+                  Primary
+                </button>
+                <button
+                  className={`px-3 py-1 rounded-md transition-colors ${viewMode === 'partner' ? 'bg-white dark:bg-slate-700 shadow-sm font-bold text-slate-800 dark:text-slate-100' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                  onClick={() => setViewMode('partner')}
+                >
+                  Partner
+                </button>
+              </div>
+            </div>
+          )}
           {kpis && (
             <div className="flex flex-wrap gap-3">
               <KpiPill
@@ -428,7 +479,7 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
                     <Tooltip content={<CurrencyTooltip />} />
                     <Legend wrapperStyle={{ fontSize: 10, paddingTop: 8 }} />
                     <Area type="monotone" dataKey="State Pension" stackId="1" fill="url(#spG)" stroke="#8b5cf6" strokeWidth={0} />
-                    <Area type="monotone" dataKey="ISA Bridge" stackId="1" fill="url(#isaG)" stroke="#f59e0b" strokeWidth={0} />
+                    <Area type="monotone" dataKey="Tax-Free (ISA/Cash)" stackId="1" fill="url(#isaG)" stroke="#f59e0b" strokeWidth={0} />
                     <Area type="monotone" dataKey="Personal Allowance (0%)" stackId="1" fill="url(#paG)" stroke="#10b981" strokeWidth={0} />
                     <Area type="monotone" dataKey="Basic Rate (20%)" stackId="1" fill="url(#brG)" stroke="#38bdf8" strokeWidth={0} />
                     <Area type="monotone" dataKey="Higher Rate" stackId="1" fill="url(#hrG)" stroke="#ef4444" strokeWidth={0} />
@@ -533,14 +584,14 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
                     <div className="flex-1 flex gap-[1px] h-4">
                       {streamData.map((r) => {
                         let val = r[band.key as keyof typeof r] as number;
-                        const hrThreshold = isCouple ? 100000 : 50000;
+                        const hrThreshold = isCouple && viewMode === 'combined' ? 100000 : 50000;
                         if (band.label === '60% Trap / Addt.') {
                            val = val > hrThreshold ? val - hrThreshold : 0;
                         } else if (band.label === 'Higher (40%)') {
                            val = Math.min(val, hrThreshold);
                         }
                         
-                        const actualLimit = isCouple ? band.limit * 2 : band.limit;
+                        const actualLimit = isCouple && viewMode === 'combined' ? band.limit * 2 : band.limit;
                         const intensity = val > 0 ? Math.max(0.15, Math.min(1, val / actualLimit)) : 0.03;
                         const isZero = val === 0;
                         
@@ -658,7 +709,8 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
                 <ReferenceLine y={BASIC_CEIL} stroke="#ef4444" strokeDasharray="5 4" strokeWidth={1.5} label={{ value: '40% cliff £50,270', position: 'insideTopLeft', fontSize: 9, fill: '#ef4444' }} />
                 <ReferenceLine y={PA} stroke="#10b981" strokeDasharray="5 4" strokeWidth={1.5} label={{ value: 'PA £12,570', position: 'insideTopLeft', fontSize: 9, fill: '#10b981' }} />
                 <Bar dataKey="Taxable" stackId="a" fill="#38bdf8" radius={[0, 0, 0, 0]} maxBarSize={16} />
-                <Bar dataKey="NonTaxable" stackId="a" fill="#10b981" radius={[3, 3, 0, 0]} maxBarSize={16} />
+                <Bar dataKey="ISA" stackId="a" fill="#10b981" radius={[0, 0, 0, 0]} maxBarSize={16} />
+                <Bar dataKey="Tax-Free Cash" stackId="a" fill="#f59e0b" radius={[3, 3, 0, 0]} maxBarSize={16} />
               </BarChart>
             </ResponsiveContainer>
           </Panel>
