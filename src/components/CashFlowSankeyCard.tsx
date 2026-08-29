@@ -2289,7 +2289,7 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           
           {/* Main Year Stepper & Slider */}
-          <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
+          <div className="flex items-center gap-3 flex-wrap w-full lg:w-auto flex-1">
             {/* Year Stepper Box */}
             <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xs shrink-0">
               <button
@@ -2341,7 +2341,7 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
           </div>
 
           {/* Essential Floor Numerical Control */}
-          <div className="flex items-center gap-2 sm:gap-3 self-stretch lg:self-auto bg-white dark:bg-slate-900 px-3.5 py-2 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xs text-xs justify-between lg:justify-start flex-wrap sm:flex-nowrap">
+          <div className="flex items-center gap-2 sm:gap-3 self-stretch lg:self-auto bg-white dark:bg-slate-900 px-3.5 py-2 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xs text-xs justify-between lg:justify-start flex-wrap">
             <div className="flex items-center gap-1.5 shrink-0">
               <Scale className="w-3.5 h-3.5 text-teal-500" />
               <span className="text-slate-600 dark:text-slate-300 font-semibold">
