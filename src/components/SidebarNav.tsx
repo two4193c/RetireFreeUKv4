@@ -321,6 +321,7 @@ interface SidebarNavProps {
   // Theme control props
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
+  onStartTour?: () => void;
   studioMode?: boolean;
   // Plan & file management props
   scenarios: PlannerScenario[];
@@ -346,6 +347,7 @@ export function SidebarNav({
   onSetAppMode,
   theme,
   onToggleTheme,
+  onStartTour,
   studioMode,
   scenarios,
   activeScenarioId,
@@ -720,6 +722,16 @@ export function SidebarNav({
           )}
 
           <div className="flex items-center gap-2">
+            {onStartTour && (
+              <button
+                onClick={onStartTour}
+                className="w-8 h-8 rounded-xl flex items-center justify-center text-indigo-400 hover:text-indigo-300 hover:bg-slate-800 transition-all border border-transparent hover:border-slate-700 cursor-pointer shadow-xs"
+                title="Start Guided Tour"
+              >
+                <Map className="w-4 h-4" />
+              </button>
+            )}
+            
             {/* Theme Toggle - Icon Only */}
             <button
               onClick={onToggleTheme}

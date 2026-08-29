@@ -19,6 +19,7 @@ interface HeaderProps {
   onOpenMaximizedSpendModal?: () => void;
   theme?: 'light' | 'dark';
   onToggleTheme?: () => void;
+  onStartTour?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({

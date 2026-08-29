@@ -11,6 +11,7 @@ import { calculateUKTax } from './utils/ukTaxEngine';
 import { generateProjections } from './utils/projectionEngine';
 import { solveMaximizedSpend, disableMaximizedSpend } from './utils/maximizedSpendSolver';
 import { Header } from './components/Header';
+import { GuidedTour } from './components/GuidedTour';
 import { ProfileInputs } from './components/ProfileInputs';
 import { InvestmentContributionManager } from './components/InvestmentContributionManager';
 import { CouplePlanningCard } from './components/CouplePlanningCard';
@@ -316,6 +317,7 @@ function App() {
   const [isMaximizedSpendModalOpen, setIsMaximizedSpendModalOpen] = useState(false);
   const [planToDelete, setPlanToDelete] = useState<{ id: string; name: string } | null>(null);
   const [isManagePlansModalOpen, setIsManagePlansModalOpen] = useState(false);
+  const [runTour, setRunTour] = useState(false);
   const [managePlansInitialTab, setManagePlansInitialTab] = useState<ManagePlansTab>('overview');
   const [isResetPresetsModalOpen, setIsResetPresetsModalOpen] = useState(false);
 
@@ -911,6 +913,7 @@ function App() {
         onSetAppMode={setAppMode}
         theme={theme}
         onToggleTheme={handleToggleTheme}
+        onStartTour={() => setRunTour(true)}
         scenarios={scenarios}
         activeScenarioId={activeScenarioId}
         onSelectScenario={handleSelectScenario}
@@ -1829,7 +1832,9 @@ function App() {
       </footer>
 
       {/* Modals */}
-      {showAiModal && (
+      <GuidedTour run={runTour} onFinish={() => setRunTour(false)} theme={theme} />
+
+        {showAiModal && (
         <AiTaxAdvisorModal
           profile={profile}
           pots={pots}
