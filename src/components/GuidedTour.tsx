@@ -11,7 +11,7 @@ interface GuidedTourProps {
 export const GuidedTour: React.FC<GuidedTourProps> = ({ run, onFinish, theme = 'dark', onSetTab }) => {
   const [currentStep, setCurrentStep] = useState(0);
   
-        const steps = [
+          const steps = [
     {
       target: 'body',
       tab: 'inputs',
@@ -41,16 +41,44 @@ export const GuidedTour: React.FC<GuidedTourProps> = ({ run, onFinish, theme = '
       content: 'Add your current ISA, Pension (SIPP/Workplace), and Cash balances here. You can also edit growth rates.',
     },
     {
+      target: 'card-inputs-oneoff',
+      tab: 'inputs',
+      title: 'Step 4: Contributions',
+      titleColor: 'text-teal-600 dark:text-teal-400',
+      content: 'Schedule specific one-off contributions into your investment pots over time.',
+    },
+    {
+      target: 'card-inputs-dbpension',
+      tab: 'inputs',
+      title: 'Step 5: DB Pensions',
+      titleColor: 'text-blue-600 dark:text-blue-400',
+      content: 'Add any Defined Benefit (Final Salary) pensions you are entitled to, including their payment age and inflation linking.',
+    },
+    {
+      target: 'card-inputs-fixedincome',
+      tab: 'inputs',
+      title: 'Step 6: Fixed Income',
+      titleColor: 'text-cyan-600 dark:text-cyan-400',
+      content: 'Include rental properties, annuities, side-hustles, or any other fixed income streams you anticipate in retirement.',
+    },
+    {
+      target: 'card-strat-phases',
+      tab: 'strategy',
+      title: 'Step 7: Income Requirements',
+      titleColor: 'text-indigo-600 dark:text-indigo-400',
+      content: 'Model variable spending needs over time by setting up specific spending phases like "Go-Go", "Slow-Go", and "No-Go" years.',
+    },
+    {
       target: 'card-strat-planner',
       tab: 'strategy',
-      title: 'Step 4: Strategy & Income',
+      title: 'Step 8: Strategy & Drawdown',
       titleColor: 'text-indigo-600 dark:text-indigo-400',
-      content: 'Set your desired retirement income target, choose a drawdown strategy (e.g., Tax-Free Bracket fill), and model state pensions.',
+      content: 'Choose how your wealth is drawn down (e.g., Tax-Free Bracket fill), and configure your state pension rules.',
     },
     {
       target: 'card-proj-chart',
       tab: 'projections',
-      title: 'Step 5: The Projection',
+      title: 'Step 9: The Projection',
       titleColor: 'text-amber-600 dark:text-amber-400',
       content: 'Watch your wealth grow! See exactly when you might run out of money, or how large your estate will be at age 100.',
     }
