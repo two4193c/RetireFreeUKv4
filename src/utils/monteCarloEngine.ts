@@ -161,7 +161,16 @@ export function calculateCashBufferRequiredDetails(
     });
 
     const totalGuaranteedIncome = statePension + dbIncome + fixedIncome;
-    const netCashBufferRequired = Math.max(0, targetNetIncome - totalGuaranteedIncome);
+    let taxFreePensionAvoided = 0;
+    const isBracketStrategy = ['tax_optimizer', 'tax_free_bracket', 'basic_rate_bracket', 'higher_rate_bracket'].includes(profile.drawdownStrategy || 'isa_first');
+    
+    if (isBracketStrategy) {
+      const paRoom = 12570 * inflationFactor;
+      const availablePA = Math.max(0, paRoom - totalGuaranteedIncome);
+      taxFreePensionAvoided = Math.min(availablePA, Math.max(0, targetNetIncome - totalGuaranteedIncome));
+    }
+
+    const netCashBufferRequired = Math.max(0, targetNetIncome - totalGuaranteedIncome - taxFreePensionAvoided);
 
     // Approximate gross pension needed if drawn from pension
     const grossPensionAvoided = netCashBufferRequired > 0 ? (netCashBufferRequired / 0.85) : 0;
@@ -1320,7 +1329,8 @@ function parseAnnuityTypeConfig(type?: string) {
           let remaining = targetNetNeeded;
           let netAchieved = 0;
 
-          const activeStrategy = isCashBufferActiveYr ? 'cash_first' : strategy;
+          const isBracketStrategy = ['tax_optimizer', 'tax_free_bracket', 'basic_rate_bracket', 'higher_rate_bracket'].includes(strategy);
+          const activeStrategy = isCashBufferActiveYr ? (isBracketStrategy ? 'tax_free_then_cash' : 'cash_first') : strategy;
           const doReinvest = isCashBufferActiveYr ? false : isReinvestExcess;
 
           const executePensionDeduct = (grossDrawNeeded: number) => {
@@ -1384,7 +1394,7 @@ function parseAnnuityTypeConfig(type?: string) {
                 executePensionDeduct(grossDrawNeeded);
               }
             }
-          } else if (activeStrategy === 'tax_optimizer' || activeStrategy === 'tax_free_bracket' || activeStrategy === 'basic_rate_bracket' || activeStrategy === 'higher_rate_bracket') {
+          } else if (activeStrategy === 'tax_optimizer' || activeStrategy === 'tax_free_bracket' || activeStrategy === 'basic_rate_bracket' || activeStrategy === 'higher_rate_bracket' || activeStrategy === 'tax_free_then_cash') {
             const isScot = isPrimary ? profile.taxRegion === 'scotland' : (profile.partnerTaxRegion || profile.taxRegion) === 'scotland';
             const inflMult = inflationFactor;
 
@@ -1419,17 +1429,32 @@ function parseAnnuityTypeConfig(type?: string) {
             if (targetGross > 0) {
                executePensionDeduct(targetGross);
             }
-            if (iPot > 0 && remaining > 0) {
-              const draw = Math.min(iPot, remaining);
-              executeDeduct('isa', draw, owner);
-              remaining -= draw;
-              netAchieved += draw;
-            }
-            if (cPot > 0 && remaining > 0) {
-              const draw = Math.min(cPot, remaining);
-              executeDeduct('cashGia', draw, owner);
-              remaining -= draw;
-              netAchieved += draw;
+            if (activeStrategy === 'tax_free_then_cash') {
+              if (cPot > 0 && remaining > 0) {
+                const draw = Math.min(cPot, remaining);
+                executeDeduct('cashGia', draw, owner);
+                remaining -= draw;
+                netAchieved += draw;
+              }
+              if (iPot > 0 && remaining > 0) {
+                const draw = Math.min(iPot, remaining);
+                executeDeduct('isa', draw, owner);
+                remaining -= draw;
+                netAchieved += draw;
+              }
+            } else {
+              if (iPot > 0 && remaining > 0) {
+                const draw = Math.min(iPot, remaining);
+                executeDeduct('isa', draw, owner);
+                remaining -= draw;
+                netAchieved += draw;
+              }
+              if (cPot > 0 && remaining > 0) {
+                const draw = Math.min(cPot, remaining);
+                executeDeduct('cashGia', draw, owner);
+                remaining -= draw;
+                netAchieved += draw;
+              }
             }
           } else if (activeStrategy === 'pro_rata') {
             const totalAccessible = cPot + iPot + (hasAccess ? pPot : 0);
