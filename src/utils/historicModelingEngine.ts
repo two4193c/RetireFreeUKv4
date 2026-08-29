@@ -1103,7 +1103,7 @@ export function runHistoricModelingSimulation(
       }
 
       // Partner Mortality Inheritance
-      if (profile.isCouplePlanning && !partnerDead && partnerAge === (profile.partnerLifeExpectancyAge || 95)) {
+      if (profile.isCouplePlanning && !partnerDead && partnerAge === (profile.partnerLifeExpectancyAge || profile.lifeExpectancyAge || 95)) {
         partnerDead = true;
         
         // Issue 4 Fix: Force inherited pension into crystallised pot to prevent further PCLS
