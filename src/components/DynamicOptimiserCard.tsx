@@ -241,6 +241,8 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
       const basicAvailable = basicCap - paCap;
       const basic = Math.min(taxableAfterPA, basicAvailable);
       
+      const higher = Math.max(0, taxableAfterPA - basicAvailable);
+      
       const displayAge = viewMode === 'partner' ? r.age + ((profile.partnerAge || 30) - (profile.currentAge || 30)) : r.age;
       
       return {
