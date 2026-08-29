@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, ChevronRight, ChevronLeft, Map } from 'lucide-react';
 
 interface GuidedTourProps {
@@ -10,6 +10,40 @@ interface GuidedTourProps {
 
 export const GuidedTour: React.FC<GuidedTourProps> = ({ run, onFinish, theme = 'dark', onSetTab }) => {
   const [currentStep, setCurrentStep] = useState(0);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragRef = useRef<{ startX: number, startY: number, startPosX: number, startPosY: number } | null>(null);
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return;
+    if ((e.target as HTMLElement).closest('button')) return;
+    setIsDragging(true);
+    dragRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      startPosX: position.x,
+      startPosY: position.y
+    };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDragging || !dragRef.current) return;
+    const dx = e.clientX - dragRef.current.startX;
+    const dy = e.clientY - dragRef.current.startY;
+    setPosition({
+      x: dragRef.current.startPosX + dx,
+      y: dragRef.current.startPosY + dy
+    });
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (isDragging) {
+      setIsDragging(false);
+      dragRef.current = null;
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
+  };
   
           const steps = [
     {
@@ -142,10 +176,19 @@ export const GuidedTour: React.FC<GuidedTourProps> = ({ run, onFinish, theme = '
       {/* Dim Overlay Removed to allow interaction */}
       
       {/* Floating Tour Modal */}
-      <div className="fixed bottom-6 right-6 sm:bottom-12 sm:right-12 w-[90%] max-w-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl z-[9999] animate-in slide-in-from-bottom-8 fade-in duration-300 flex flex-col overflow-hidden">
+            <div 
+        className="fixed bottom-6 right-6 sm:bottom-12 sm:right-12 w-[90%] max-w-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl z-[9999] animate-in slide-in-from-bottom-8 fade-in duration-300 flex flex-col overflow-hidden"
+        style={{ transform: `translate(${position.x}px, ${position.y}px)` }}
+      >
         
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
+        <div 
+          className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 cursor-grab active:cursor-grabbing select-none"
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
+        >
           <div className="flex items-center gap-2">
             <div className="p-1.5 bg-indigo-100 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 rounded-lg">
               <Map className="w-4 h-4" />
