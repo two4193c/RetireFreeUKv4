@@ -1821,10 +1821,7 @@ function App() {
 
       {/* Footer */}
       <footer className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 mt-12 py-6 text-center text-xs text-slate-500 dark:text-slate-400 space-y-1">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="font-semibold text-slate-700 dark:text-slate-300">
-            RetireFree UK • Built for UK Tax Year 2024/25 & 2025/26
-          </p>
+        <div className="max-w-7xl mx-auto px-4 flex flex-col items-center justify-center gap-3">
           <p className="text-slate-400 dark:text-slate-500">
             Guidance model for educational purposes. Consult a regulated UK IFA for formal tax advice.
           </p>
