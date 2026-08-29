@@ -906,6 +906,48 @@ export const TaxOptimizerCard: React.FC<TaxOptimizerCardProps> = ({
             </tbody>
           </table>
         </div>
+
+        {isCouple && (
+          <div className="flex justify-end mt-4">
+            <div className="flex items-center gap-1.5 bg-slate-200 dark:bg-slate-800/90 p-1 rounded-xl border border-slate-300 dark:border-slate-700/80 w-full sm:w-auto justify-stretch sm:justify-start">
+              <button
+                onClick={() => setActiveView('combined')}
+                className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                  activeView === 'combined'
+                    ? 'bg-primary-500 text-slate-950 shadow-sm font-extrabold'
+                    : 'text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-300/50 dark:hover:bg-slate-700/50'
+                }`}
+              >
+                <Users className="w-3.5 h-3.5" />
+                <span>Household</span>
+              </button>
+
+              <button
+                onClick={() => setActiveView('primary')}
+                className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                  activeView === 'primary'
+                    ? 'bg-indigo-600 text-white shadow-sm font-extrabold'
+                    : 'text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-300/50 dark:hover:bg-slate-700/50'
+                }`}
+              >
+                <User className="w-3.5 h-3.5" />
+                <span>{profile.name || 'Primary'}</span>
+              </button>
+
+              <button
+                onClick={() => setActiveView('partner')}
+                className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                  activeView === 'partner'
+                    ? 'bg-rose-600 text-white shadow-sm font-extrabold'
+                    : 'text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-300/50 dark:hover:bg-slate-700/50'
+                }`}
+              >
+                <Heart className="w-3.5 h-3.5 fill-current" />
+                <span>{profile.partnerName || 'Partner'}</span>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

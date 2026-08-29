@@ -761,6 +761,31 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
               </BarChart>
             </ResponsiveContainer>
           </Panel>
+
+          {isCouple && (
+            <div className="flex justify-end -mt-4 mb-2">
+              <div className="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-1 text-xs">
+                <button
+                  className={`px-3 py-1 rounded-md transition-colors ${viewMode === 'combined' ? 'bg-white dark:bg-slate-700 shadow-sm font-bold text-slate-800 dark:text-slate-100' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                  onClick={() => setViewMode('combined')}
+                >
+                  Household
+                </button>
+                <button
+                  className={`px-3 py-1 rounded-md transition-colors ${viewMode === 'primary' ? 'bg-white dark:bg-slate-700 shadow-sm font-bold text-slate-800 dark:text-slate-100' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                  onClick={() => setViewMode('primary')}
+                >
+                  Primary
+                </button>
+                <button
+                  className={`px-3 py-1 rounded-md transition-colors ${viewMode === 'partner' ? 'bg-white dark:bg-slate-700 shadow-sm font-bold text-slate-800 dark:text-slate-100' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                  onClick={() => setViewMode('partner')}
+                >
+                  Partner
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
