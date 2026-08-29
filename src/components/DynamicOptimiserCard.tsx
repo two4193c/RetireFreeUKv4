@@ -245,7 +245,7 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
       
       const higher = Math.max(0, taxableAfterPA - basicAvailable);
       
-      const displayAge = viewMode === 'partner' ? r.age + ((profile.partnerAge || 30) - (profile.currentAge || 30)) : r.age;
+      const displayAge = viewMode === 'partner' ? r.age + ((profile.partnerCurrentAge || 30) - (profile.currentAge || 30)) : r.age;
       
       return {
         age: displayAge,
@@ -258,7 +258,7 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
         'Higher Rate': Math.round(higher),
       };
     }),
-  [retRows, isCouple, viewMode, profile.currentAge, profile.partnerAge]);
+  [retRows, isCouple, viewMode, profile.currentAge, profile.partnerCurrentAge]);
 
   const radarData = useMemo(() => {
     const totalGross = retRows.reduce((s, r) => s + (r.totalWithdrawalAmount ?? 0), 0);
@@ -353,7 +353,7 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
         taxFreeCash = (r.partnerTaxFreeFixedIncomeReceived || 0) + (r.partnerGiltLadderIncomeReceived || 0) + (r.partnerCashDrawdown || 0);
         taxFreePension = r.partnerPensionDrawdownTaxFree || 0;
       }
-      const displayAge = viewMode === 'partner' ? r.age + ((profile.partnerAge || 30) - (profile.currentAge || 30)) : r.age;
+      const displayAge = viewMode === 'partner' ? r.age + ((profile.partnerCurrentAge || 30) - (profile.currentAge || 30)) : r.age;
       
       return {
         age: displayAge,
@@ -363,7 +363,7 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
         'Tax-Free Pension': Math.round(taxFreePension),
       };
     }),
-  [retRows, viewMode, profile.currentAge, profile.partnerAge]);
+  [retRows, viewMode, profile.currentAge, profile.partnerCurrentAge]);
 
   if (retRows.length === 0) {
     return (
