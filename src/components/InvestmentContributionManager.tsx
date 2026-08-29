@@ -291,7 +291,7 @@ export const InvestmentContributionManager: React.FC<InvestmentContributionManag
             <button type="button" onClick={() => openAddModal('workplace')} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 rounded-xl text-xs font-bold border border-indigo-200 dark:border-indigo-800/60 transition-colors cursor-pointer">
               <Briefcase className="w-3.5 h-3.5" /><span>+ Regular Workplace Pension</span>
             </button>
-            <button type="button" onClick={() => openAddModal('monthly_sipp')} className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 rounded-xl text-xs font-bold border border-emerald-200 dark:border-emerald-800/60 transition-colors cursor-pointer">
+            <button type="button" onClick={() => openAddModal('monthly_sipp')} className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-50 dark:bg-primary-950/60 text-primary-700 dark:text-primary-300 hover:bg-primary-100 dark:hover:bg-primary-900/60 rounded-xl text-xs font-bold border border-primary-200 dark:border-primary-800/60 transition-colors cursor-pointer">
               <RefreshCw className="w-3.5 h-3.5" /><span>+ Monthly SIPP / ISA Savings</span>
             </button>
             <button type="button" onClick={() => openAddModal('bonus')} className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/60 rounded-xl text-xs font-bold border border-amber-200 dark:border-amber-800/60 transition-colors cursor-pointer">
@@ -483,7 +483,7 @@ export const InvestmentContributionManager: React.FC<InvestmentContributionManag
                 <select
                   value={editItem.sippContributionType || 'net'}
                   onChange={(e) => updateDraft({ sippContributionType: e.target.value as 'net' | 'gross' })}
-                  className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer"
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 cursor-pointer"
                 >
                   <option value="net">Net (Out of Pocket Paid)</option>
                   <option value="gross">Gross (Total added to SIPP)</option>
@@ -550,7 +550,7 @@ export const InvestmentContributionManager: React.FC<InvestmentContributionManag
                     <span>Calculated ({editItem.owner === 'partner' ? profile.partnerName || 'Partner' : profile.name || 'Primary'} salary £{(modalWorkplaceCalc.salary || 0).toLocaleString()}/yr):</span>
                   </div>
                   <span>
-                    <span className="text-emerald-600 dark:text-emerald-400 font-extrabold">£{Math.round(modalWorkplaceCalc.employeeMonthly).toLocaleString()}/mo</span>
+                    <span className="text-primary-600 dark:text-primary-400 font-extrabold">£{Math.round(modalWorkplaceCalc.employeeMonthly).toLocaleString()}/mo</span>
                     <span className="text-slate-400 px-1">+</span>
                     <span className="text-indigo-600 dark:text-indigo-300 font-extrabold">£{Math.round(modalWorkplaceCalc.employerMonthly).toLocaleString()}/mo employer</span>
                     <span className="text-slate-600 dark:text-slate-300 font-black ml-2">= £{Math.round(modalWorkplaceCalc.totalMonthly).toLocaleString()}/mo (£{Math.round(modalWorkplaceCalc.totalAnnual).toLocaleString()}/yr)</span>
@@ -633,29 +633,29 @@ export const InvestmentContributionManager: React.FC<InvestmentContributionManag
 
           {/* SIPP Tax Relief Panel (read-only info) */}
           {editItem.targetPot === 'sipp' && (editItem.grossAmount || 0) > 0 && (
-            <div className="p-3.5 bg-emerald-50/80 dark:bg-emerald-950/40 rounded-xl border border-emerald-200/80 dark:border-emerald-800/60 space-y-2 text-xs">
-              <div className="flex items-center justify-between font-bold text-emerald-950 dark:text-emerald-100">
+            <div className="p-3.5 bg-primary-50/80 dark:bg-primary-950/40 rounded-xl border border-primary-200/80 dark:border-primary-800/60 space-y-2 text-xs">
+              <div className="flex items-center justify-between font-bold text-primary-950 dark:text-primary-100">
                 <span className="flex items-center gap-1.5">
-                  <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <Sparkles className="w-4 h-4 text-primary-600 dark:text-primary-400 shrink-0" />
                   UK Pension Tax Relief Breakdown
                 </span>
-                <span className="bg-emerald-200/90 dark:bg-emerald-900/90 text-emerald-900 dark:text-emerald-100 px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider">+25% HMRC Relief</span>
+                <span className="bg-primary-200/90 dark:bg-primary-900/90 text-primary-900 dark:text-primary-100 px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider">+25% HMRC Relief</span>
               </div>
-              <div className="grid grid-cols-3 gap-2 pt-1.5 border-t border-emerald-200/60 dark:border-emerald-800/60">
-                <div className="bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-emerald-200 dark:border-emerald-800">
+              <div className="grid grid-cols-3 gap-2 pt-1.5 border-t border-primary-200/60 dark:border-primary-800/60">
+                <div className="bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-primary-200 dark:border-primary-800">
                   <div className="text-[10px] text-slate-500 font-bold uppercase">Net Paid</div>
-                  <div className="text-emerald-700 dark:text-emerald-300 font-black text-sm mt-0.5">
+                  <div className="text-primary-700 dark:text-primary-300 font-black text-sm mt-0.5">
                     £{editItem.sippContributionType === 'gross' ? Math.round((editItem.grossAmount || 0) * 0.80).toLocaleString() : Math.round(editItem.grossAmount || 0).toLocaleString()}
                   </div>
                 </div>
-                <div className="bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-emerald-200 dark:border-emerald-800">
-                  <div className="text-[10px] text-emerald-600 font-bold uppercase">+ 20% Relief</div>
-                  <div className="text-emerald-600 font-black text-sm mt-0.5">
+                <div className="bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-primary-200 dark:border-primary-800">
+                  <div className="text-[10px] text-primary-600 font-bold uppercase">+ 20% Relief</div>
+                  <div className="text-primary-600 font-black text-sm mt-0.5">
                     +£{editItem.sippContributionType === 'gross' ? Math.round((editItem.grossAmount || 0) * 0.20).toLocaleString() : Math.round((editItem.grossAmount || 0) * 0.25).toLocaleString()}
                   </div>
                 </div>
-                <div className="bg-emerald-600 text-white p-2.5 rounded-lg shadow-2xs">
-                  <div className="text-[10px] text-emerald-100 font-bold uppercase">Gross in SIPP</div>
+                <div className="bg-primary-600 text-white p-2.5 rounded-lg shadow-2xs">
+                  <div className="text-[10px] text-primary-100 font-bold uppercase">Gross in SIPP</div>
                   <div className="font-black text-sm mt-0.5">
                     £{editItem.sippContributionType === 'gross' ? Math.round(editItem.grossAmount || 0).toLocaleString() : Math.round((editItem.grossAmount || 0) * 1.25).toLocaleString()}
                   </div>

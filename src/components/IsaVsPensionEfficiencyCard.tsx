@@ -76,8 +76,8 @@ export const IsaVsPensionEfficiencyCard: React.FC<IsaVsPensionEfficiencyCardProp
 
         <div className="flex items-center gap-2 self-start sm:self-auto">
           {crossoverAge !== null && (
-            <div className="bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/60 text-emerald-800 dark:text-emerald-300 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5">
-              <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <div className="bg-primary-50 dark:bg-primary-950/60 border border-primary-200 dark:border-primary-800/60 text-primary-800 dark:text-primary-300 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5">
+              <Sparkles className="w-4 h-4 text-primary-600 dark:text-primary-400" />
               <span>Optimal Shift Age: Age {crossoverAge}</span>
             </div>
           )}
@@ -107,10 +107,10 @@ export const IsaVsPensionEfficiencyCard: React.FC<IsaVsPensionEfficiencyCardProp
         <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-xl border border-slate-200 dark:border-slate-700/80 space-y-2">
           <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-semibold">
             <span className="flex items-center gap-1.5">
-              <PiggyBank className="w-4 h-4 text-emerald-500" />
+              <PiggyBank className="w-4 h-4 text-primary-500" />
               Upfront Tax Relief Boost
             </span>
-            <span className="text-[10px] bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-bold px-2 py-0.5 rounded-md">
+            <span className="text-[10px] bg-primary-100 dark:bg-primary-950 text-primary-700 dark:text-primary-300 font-bold px-2 py-0.5 rounded-md">
               {currentMarginalTaxRate}% Tax Band
             </span>
           </div>
@@ -118,7 +118,7 @@ export const IsaVsPensionEfficiencyCard: React.FC<IsaVsPensionEfficiencyCardProp
             <span className="text-2xl font-black text-slate-900 dark:text-slate-100">
               +{pensionAdvantagePercent}%
             </span>
-            <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+            <span className="text-xs font-bold text-primary-600 dark:text-primary-400">
               Pension Net Advantage
             </span>
           </div>
@@ -137,7 +137,7 @@ export const IsaVsPensionEfficiencyCard: React.FC<IsaVsPensionEfficiencyCardProp
             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
               isEarlyRetirement && isaBridgeDeficit > 0
                 ? 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300'
-                : 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300'
+                : 'bg-primary-100 dark:bg-primary-950 text-primary-700 dark:text-primary-300'
             }`}>
               {isEarlyRetirement ? `${isaBridgeYears} Yrs Gap` : 'No Gap'}
             </span>
@@ -161,7 +161,7 @@ export const IsaVsPensionEfficiencyCard: React.FC<IsaVsPensionEfficiencyCardProp
                 <span>£{isaBridgeDeficit.toLocaleString()}</span>
               </div>
             ) : (
-              <div className="flex justify-between font-bold text-emerald-600 dark:text-emerald-400">
+              <div className="flex justify-between font-bold text-primary-600 dark:text-primary-400">
                 <span>Bridge Fully Covered:</span>
                 <span>✓ Fully Funded</span>
               </div>
@@ -193,7 +193,7 @@ export const IsaVsPensionEfficiencyCard: React.FC<IsaVsPensionEfficiencyCardProp
                 title={`Pension: ${recommendedMonthlySplit.pensionPercent}%`}
               />
               <div
-                className="h-full bg-emerald-500 dark:bg-emerald-400 transition-all"
+                className="h-full bg-primary-500 dark:bg-primary-400 transition-all"
                 style={{ width: `${recommendedMonthlySplit.isaPercent}%` }}
                 title={`ISA: ${recommendedMonthlySplit.isaPercent}%`}
               />
@@ -240,7 +240,7 @@ export const IsaVsPensionEfficiencyCard: React.FC<IsaVsPensionEfficiencyCardProp
                   <tr
                     key={row.age}
                     className={`hover:bg-slate-50 dark:hover:bg-slate-800/50 ${
-                      row.age === crossoverAge ? 'bg-emerald-50/80 dark:bg-emerald-950/40 font-semibold' : ''
+                      row.age === crossoverAge ? 'bg-primary-50/80 dark:bg-primary-950/40 font-semibold' : ''
                     }`}
                   >
                     <td className="p-2.5 font-bold">{row.age}</td>
@@ -260,7 +260,7 @@ export const IsaVsPensionEfficiencyCard: React.FC<IsaVsPensionEfficiencyCardProp
                         </span>
                       )}
                     </td>
-                    <td className="p-2.5 font-mono text-emerald-600 dark:text-emerald-400 font-bold">{row.taxReliefPercent}%</td>
+                    <td className="p-2.5 font-mono text-primary-600 dark:text-primary-400 font-bold">{row.taxReliefPercent}%</td>
                     <td className="p-2.5 font-mono text-slate-600 dark:text-slate-400">{row.retirementTaxPercent}%</td>
                     <td className="p-2.5 font-mono font-bold text-indigo-600 dark:text-indigo-400">
                       £{(row.pensionNetReturnRatio).toFixed(3)}
@@ -272,7 +272,7 @@ export const IsaVsPensionEfficiencyCard: React.FC<IsaVsPensionEfficiencyCardProp
                         </span>
                       )}
                       {row.recommendedFocus === 'isa' && (
-                        <span className="text-[10px] font-bold uppercase bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
+                        <span className="text-[10px] font-bold uppercase bg-primary-100 dark:bg-primary-950 text-primary-800 dark:text-primary-300 px-2 py-0.5 rounded border border-primary-200 dark:border-primary-800">
                           ISA Bridge Priority
                         </span>
                       )}

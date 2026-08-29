@@ -204,7 +204,7 @@ export const JsonImportModal: React.FC<JsonImportModalProps> = ({
                             Already Loaded
                           </span>
                         ) : (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-primary-500/20 text-primary-300 border border-primary-500/30">
                             New Plan
                           </span>
                         )}
@@ -366,8 +366,8 @@ export const JsonImportModal: React.FC<JsonImportModalProps> = ({
                   </div>
                 </div>
               ) : (
-                <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl flex items-center gap-2 text-xs text-emerald-300">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                <div className="p-3 bg-primary-500/10 border border-primary-500/30 rounded-xl flex items-center gap-2 text-xs text-primary-300">
+                  <CheckCircle2 className="w-4 h-4 text-primary-400 shrink-0" />
                   <span>No conflicts detected. This plan will be added as a new plan.</span>
                 </div>
               )}

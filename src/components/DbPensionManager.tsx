@@ -174,15 +174,15 @@ export const DbPensionManager: React.FC<DbPensionManagerProps> = ({ profile, onC
               <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Total Active Schemes</div>
               <div className="text-xl font-black text-slate-900 dark:text-slate-100 mt-0.5">{dbPensions.filter(p => p.enabled).length} Active</div>
             </div>
-            <ShieldCheck className="w-6 h-6 text-emerald-600 dark:text-emerald-400 opacity-80" />
+            <ShieldCheck className="w-6 h-6 text-primary-600 dark:text-primary-400 opacity-80" />
           </div>
 
-          <div className="bg-emerald-50/70 dark:bg-emerald-950/40 p-4 rounded-2xl border border-emerald-200/80 dark:border-emerald-800/60 flex items-center justify-between">
+          <div className="bg-primary-50/70 dark:bg-primary-950/40 p-4 rounded-2xl border border-primary-200/80 dark:border-primary-800/60 flex items-center justify-between">
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300">Total DB Annual Income</div>
-              <div className="text-xl font-black text-emerald-900 dark:text-emerald-200 mt-0.5">£{(totalActiveDbIncome || 0).toLocaleString()}/yr</div>
+              <div className="text-[10px] font-bold uppercase tracking-wider text-primary-800 dark:text-primary-300">Total DB Annual Income</div>
+              <div className="text-xl font-black text-primary-900 dark:text-primary-200 mt-0.5">£{(totalActiveDbIncome || 0).toLocaleString()}/yr</div>
             </div>
-            <Building2 className="w-6 h-6 text-emerald-600 dark:text-emerald-400 opacity-80" />
+            <Building2 className="w-6 h-6 text-primary-600 dark:text-primary-400 opacity-80" />
           </div>
 
           <div className="bg-amber-50/70 dark:bg-amber-950/40 p-4 rounded-2xl border border-amber-200/80 dark:border-amber-800/60 flex items-center justify-between">
@@ -247,7 +247,7 @@ export const DbPensionManager: React.FC<DbPensionManagerProps> = ({ profile, onC
                     {isCouple && <span className="opacity-40">•</span>}
                     <span>Starts Age {pension.startAge}</span>
                     <span className="opacity-40">•</span>
-                    <span className="text-emerald-700 dark:text-emerald-400 font-bold">£{pension.annualIncome?.toLocaleString()}/yr</span>
+                    <span className="text-primary-700 dark:text-primary-400 font-bold">£{pension.annualIncome?.toLocaleString()}/yr</span>
                     <span className="opacity-40">•</span>
                     <span>£{pension.taxFreeLumpSum?.toLocaleString()} Lump Sum</span>
                   </div>

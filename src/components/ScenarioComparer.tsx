@@ -1209,7 +1209,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
           </button>
           <button
             onClick={handleExportComparisonCSV}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900 transition-colors cursor-pointer whitespace-nowrap"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-primary-50 dark:bg-primary-950/80 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-800 hover:bg-primary-100 dark:hover:bg-primary-900 transition-colors cursor-pointer whitespace-nowrap"
           >
             <Download className="w-3.5 h-3.5" />
             <span>Export CSV</span>
@@ -1236,8 +1236,8 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
       </div>
 
       {exportSuccessMsg && (
-        <div className="p-3 bg-emerald-100 dark:bg-emerald-950/80 border border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-200 text-xs font-bold rounded-xl flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+        <div className="p-3 bg-primary-100 dark:bg-primary-950/80 border border-primary-300 dark:border-primary-700 text-primary-800 dark:text-primary-200 text-xs font-bold rounded-xl flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 text-primary-600 dark:text-primary-400" />
           <span>{exportSuccessMsg}</span>
         </div>
       )}
@@ -1284,10 +1284,10 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
 
         {/* Optional Scenario C */}
         {showScenarioC && (
-          <div className="p-4 bg-emerald-50/70 dark:bg-emerald-950/40 rounded-2xl border border-emerald-200 dark:border-emerald-800/60 space-y-2">
-            <label className="text-xs font-bold text-emerald-900 dark:text-emerald-300 flex items-center justify-between">
+          <div className="p-4 bg-primary-50/70 dark:bg-primary-950/40 rounded-2xl border border-primary-200 dark:border-primary-800/60 space-y-2">
+            <label className="text-xs font-bold text-primary-900 dark:text-primary-300 flex items-center justify-between">
               <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 dark:bg-emerald-400" />
+                <span className="w-2.5 h-2.5 rounded-full bg-primary-600 dark:bg-primary-400" />
                 <span>Scenario C (3rd Option):</span>
               </div>
               <button
@@ -1301,7 +1301,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
             <select
               value={scenarioCId}
               onChange={(e) => setScenarioCId(e.target.value)}
-              className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-emerald-300 dark:border-emerald-700 rounded-xl text-xs font-bold text-emerald-950 dark:text-emerald-100 focus:ring-emerald-500 cursor-pointer"
+              className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-primary-300 dark:border-primary-700 rounded-xl text-xs font-bold text-primary-950 dark:text-primary-100 focus:ring-primary-500 cursor-pointer"
             >
               {scenarios.map((s) => (
                 <option key={s.id} value={s.id}>
@@ -1362,7 +1362,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
               ⚠️ Longevity Alert: {candidatePots.map((c) => `${c.scenario.name}: ${c.dep ? `Depletes at Age ${c.dep.age}` : 'Sustained past 95'}`).join(' | ')}.
             </span>
           ) : (
-            <span className="block mt-1 text-emerald-700 dark:text-emerald-300 font-semibold">
+            <span className="block mt-1 text-primary-700 dark:text-primary-300 font-semibold">
               ✓ All evaluated plans maintain positive portfolio balances past Age 90.
             </span>
           )}
@@ -1385,7 +1385,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
             </div>
           </div>
           {pot75B !== pot75A && (
-            <div className={`text-[10px] font-extrabold px-2 py-1 rounded-md inline-block whitespace-nowrap ${pot75B > pot75A ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'}`}>
+            <div className={`text-[10px] font-extrabold px-2 py-1 rounded-md inline-block whitespace-nowrap ${pot75B > pot75A ? 'bg-primary-100 text-primary-800 dark:bg-primary-950 dark:text-primary-300' : 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'}`}>
               {pot75B > pot75A ? `+${formatCurrency(pot75B - pot75A)} (+${pot75A > 0 ? ((pot75B - pot75A) / pot75A * 100).toFixed(1) : 0}%)` : `-${formatCurrency(pot75A - pot75B)}`} in Scenario B
             </div>
           )}
@@ -1405,7 +1405,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
             </div>
           </div>
           {pot85B !== pot85A && (
-            <div className={`text-[10px] font-extrabold px-2 py-1 rounded-md inline-block whitespace-nowrap ${pot85B > pot85A ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'}`}>
+            <div className={`text-[10px] font-extrabold px-2 py-1 rounded-md inline-block whitespace-nowrap ${pot85B > pot85A ? 'bg-primary-100 text-primary-800 dark:bg-primary-950 dark:text-primary-300' : 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'}`}>
               {pot85B > pot85A ? `+${formatCurrency(pot85B - pot85A)} (+${pot85A > 0 ? ((pot85B - pot85A) / pot85A * 100).toFixed(1) : 0}%)` : `-${formatCurrency(pot85A - pot85B)}`} in Scenario B
             </div>
           )}
@@ -1425,7 +1425,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
             </div>
           </div>
           {lifetimeTaxB !== lifetimeTaxA && (
-            <div className={`text-[10px] font-extrabold px-2 py-1 rounded-md inline-block whitespace-nowrap ${lifetimeTaxB < lifetimeTaxA ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'}`}>
+            <div className={`text-[10px] font-extrabold px-2 py-1 rounded-md inline-block whitespace-nowrap ${lifetimeTaxB < lifetimeTaxA ? 'bg-primary-100 text-primary-800 dark:bg-primary-950 dark:text-primary-300' : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'}`}>
               {lifetimeTaxB < lifetimeTaxA ? `✓ Save ${formatCurrency(lifetimeTaxA - lifetimeTaxB)} Tax in B` : `+${formatCurrency(lifetimeTaxB - lifetimeTaxA)} Tax in B`}
             </div>
           )}
@@ -1445,7 +1445,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
             </div>
           </div>
           {ihtB85.netPassedToHeirs !== ihtA85.netPassedToHeirs && (
-            <div className={`text-[10px] font-extrabold px-2 py-1 rounded-md inline-block whitespace-nowrap ${ihtB85.netPassedToHeirs > ihtA85.netPassedToHeirs ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'}`}>
+            <div className={`text-[10px] font-extrabold px-2 py-1 rounded-md inline-block whitespace-nowrap ${ihtB85.netPassedToHeirs > ihtA85.netPassedToHeirs ? 'bg-primary-100 text-primary-800 dark:bg-primary-950 dark:text-primary-300' : 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'}`}>
               {ihtB85.netPassedToHeirs > ihtA85.netPassedToHeirs ? `+${formatCurrency(ihtB85.netPassedToHeirs - ihtA85.netPassedToHeirs)} Estate in B` : `-${formatCurrency(ihtA85.netPassedToHeirs - ihtB85.netPassedToHeirs)} Estate in B`}
             </div>
           )}
@@ -1521,8 +1521,8 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
             {scenarioB.name}
           </span>
           {showScenarioC && (
-            <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-              <span className="w-3 h-1 bg-emerald-600 rounded-full inline-block" />
+            <span className="flex items-center gap-1 text-primary-600 dark:text-primary-400">
+              <span className="w-3 h-1 bg-primary-600 rounded-full inline-block" />
               {scenarioC.name}
             </span>
           )}
@@ -1582,7 +1582,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
       <div className="p-5 bg-gradient-to-br from-slate-50 to-indigo-50 dark:from-slate-900 dark:to-indigo-950 text-slate-900 dark:text-white rounded-3xl border border-indigo-200 dark:border-indigo-800/60 space-y-4 shadow-xl transition-colors">
         <div className="flex items-center justify-between border-b border-indigo-200 dark:border-indigo-800/60 pb-3">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            <CheckCircle2 className="w-5 h-5 text-primary-600 dark:text-primary-400" />
             <h3 className="font-extrabold text-sm uppercase tracking-wider text-slate-900 dark:text-white">
               Multi-Dimensional Scenario Recommendation & Trade-Off Scorecard
             </h3>
@@ -1597,13 +1597,13 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
           <div className="p-4 bg-white dark:bg-slate-900/90 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3 shadow-xs flex flex-col justify-between">
             <div className="space-y-2">
               <div className="text-xs font-black text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <ShieldCheck className="w-4 h-4 text-primary-600 dark:text-primary-400 shrink-0" />
                 <span>Capital Longevity</span>
               </div>
-              <div className="flex items-start gap-1.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 px-2.5 py-1.5 rounded-xl text-xs border border-emerald-200 dark:border-emerald-800/80">
-                <Award className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
-                <div className="min-w-0 font-extrabold text-emerald-900 dark:text-emerald-200 whitespace-normal break-words">
-                  <span className="text-[10px] font-black uppercase text-emerald-700 dark:text-emerald-400 mr-1.5">Winner:</span>
+              <div className="flex items-start gap-1.5 bg-primary-50 dark:bg-primary-950/60 text-primary-800 dark:text-primary-300 px-2.5 py-1.5 rounded-xl text-xs border border-primary-200 dark:border-primary-800/80">
+                <Award className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400 shrink-0 mt-0.5" />
+                <div className="min-w-0 font-extrabold text-primary-900 dark:text-primary-200 whitespace-normal break-words">
+                  <span className="text-[10px] font-black uppercase text-primary-700 dark:text-primary-400 mr-1.5">Winner:</span>
                   {longevityWinnerName}
                 </div>
               </div>
@@ -1732,7 +1732,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
                 <th className="py-3 px-4 text-slate-900 dark:text-slate-100">{scenarioA.name}</th>
                 <th className="py-3 px-4 text-indigo-700 dark:text-indigo-300">{scenarioB.name}</th>
                 {showScenarioC && (
-                  <th className="py-3 px-4 text-emerald-700 dark:text-emerald-300">{scenarioC.name}</th>
+                  <th className="py-3 px-4 text-primary-700 dark:text-primary-300">{scenarioC.name}</th>
                 )}
                 <th className="py-3 px-4 text-slate-600 dark:text-slate-400">Strategic Alignment</th>
               </tr>
@@ -1755,7 +1755,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
                   </td>
                   {showScenarioC && (
                     <td className="py-3 px-4">
-                      <span className="font-extrabold text-[10px] px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                      <span className="font-extrabold text-[10px] px-2 py-0.5 rounded-md bg-primary-100 dark:bg-primary-950 text-primary-800 dark:text-primary-300 border border-primary-200 dark:border-primary-800">
                         {scenarioC.profile.isCouplePlanning ? 'Couple Dual Planning' : 'Single Individual Planning'}
                       </span>
                     </td>
@@ -1778,7 +1778,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
                     <div className="text-[10px] text-slate-500 dark:text-slate-400">
                       Retire Age: {scenarioA.profile.targetRetirementAge} | Access: {scenarioA.profile.pensionAccessAge || 57} | State: {scenarioA.profile.statePensionAge || 67}
                     </div>
-                    <div className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                    <div className="text-[10px] font-semibold text-primary-600 dark:text-primary-400">
                       Gross Salary: £{(scenarioA.profile.grossAnnualSalary || 0).toLocaleString()}/yr
                     </div>
                   </td>
@@ -1787,17 +1787,17 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
                     <div className="text-[10px] text-slate-500 dark:text-slate-400">
                       Retire Age: {scenarioB.profile.targetRetirementAge} | Access: {scenarioB.profile.pensionAccessAge || 57} | State: {scenarioB.profile.statePensionAge || 67}
                     </div>
-                    <div className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                    <div className="text-[10px] font-semibold text-primary-600 dark:text-primary-400">
                       Gross Salary: £{(scenarioB.profile.grossAnnualSalary || 0).toLocaleString()}/yr
                     </div>
                   </td>
                   {showScenarioC && (
                     <td className="py-3 px-4">
-                      <div className="font-bold text-emerald-950 dark:text-emerald-100">{scenarioC.profile.name || 'Primary'} (Age {scenarioC.profile.currentAge})</div>
+                      <div className="font-bold text-primary-950 dark:text-primary-100">{scenarioC.profile.name || 'Primary'} (Age {scenarioC.profile.currentAge})</div>
                       <div className="text-[10px] text-slate-500 dark:text-slate-400">
                         Retire Age: {scenarioC.profile.targetRetirementAge} | Access: {scenarioC.profile.pensionAccessAge || 57} | State: {scenarioC.profile.statePensionAge || 67}
                       </div>
-                      <div className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                      <div className="text-[10px] font-semibold text-primary-600 dark:text-primary-400">
                         Gross Salary: £{(scenarioC.profile.grossAnnualSalary || 0).toLocaleString()}/yr
                       </div>
                     </td>
@@ -1849,7 +1849,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
                     <td className="py-3 px-4">
                       {scenarioC.profile.isCouplePlanning ? (
                         <div>
-                          <div className="font-bold text-emerald-950 dark:text-emerald-100">{scenarioC.profile.partnerName || 'Partner'} (Age {scenarioC.profile.partnerCurrentAge || scenarioC.profile.currentAge})</div>
+                          <div className="font-bold text-primary-950 dark:text-primary-100">{scenarioC.profile.partnerName || 'Partner'} (Age {scenarioC.profile.partnerCurrentAge || scenarioC.profile.currentAge})</div>
                           <div className="text-[10px] text-slate-500 dark:text-slate-400">
                             Retire Age: {scenarioC.profile.partnerTargetRetirementAge || scenarioC.profile.targetRetirementAge} | Access: {scenarioC.profile.partnerPensionAccessAge || 57} | State: {scenarioC.profile.partnerStatePensionAge || 67}
                           </div>
@@ -1895,7 +1895,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
                   </td>
                   {showScenarioC && (
                     <td className="py-3 px-4">
-                      <div className="font-extrabold text-emerald-950 dark:text-emerald-100">
+                      <div className="font-extrabold text-primary-950 dark:text-primary-100">
                         £{(((scenarioC.pots.workplacePensionBalance || 0) + (scenarioC.pots.sippBalance || 0) + (scenarioC.pots.stocksAndSharesIsaBalance || 0) + (scenarioC.pots.cashGiaBalance || 0))).toLocaleString()}
                       </div>
                       <div className="text-[10px] text-slate-500 dark:text-slate-400">
@@ -1936,7 +1936,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
                   </td>
                   {showScenarioC && (
                     <td className="py-3 px-4">
-                      <div className="font-extrabold text-emerald-950 dark:text-emerald-100">
+                      <div className="font-extrabold text-primary-950 dark:text-primary-100">
                         £{(((scenarioC.profile.monthlyPensionContribution || 0) + (scenarioC.profile.monthlyIsaContribution || 0))).toLocaleString()}/pm
                       </div>
                       <div className="text-[10px] text-slate-500 dark:text-slate-400">
@@ -1972,9 +1972,9 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
                   </td>
                   {showScenarioC && (
                     <td className="py-3 px-4">
-                      <div>Primary: <strong className="uppercase text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">{scenarioC.profile.incomeProductOption || 'flexi_drawdown'}</strong></div>
+                      <div>Primary: <strong className="uppercase text-[10px] px-1.5 py-0.5 rounded bg-primary-100 dark:bg-primary-950 text-primary-800 dark:text-primary-300">{scenarioC.profile.incomeProductOption || 'flexi_drawdown'}</strong></div>
                       {scenarioC.profile.isCouplePlanning && (
-                        <div className="mt-1">Partner: <strong className="uppercase text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">{scenarioC.profile.partnerIncomeProductOption || scenarioC.profile.incomeProductOption || 'flexi_drawdown'}</strong></div>
+                        <div className="mt-1">Partner: <strong className="uppercase text-[10px] px-1.5 py-0.5 rounded bg-primary-100 dark:bg-primary-950 text-primary-800 dark:text-primary-300">{scenarioC.profile.partnerIncomeProductOption || scenarioC.profile.incomeProductOption || 'flexi_drawdown'}</strong></div>
                       )}
                     </td>
                   )}
@@ -1994,7 +1994,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
                   <td className="py-3 px-4 font-semibold">{formatStrategy(scenarioA.profile.drawdownStrategy)}</td>
                   <td className="py-3 px-4 font-semibold text-indigo-700 dark:text-indigo-300">{formatStrategy(scenarioB.profile.drawdownStrategy)}</td>
                   {showScenarioC && (
-                    <td className="py-3 px-4 font-semibold text-emerald-700 dark:text-emerald-300">{formatStrategy(scenarioC.profile.drawdownStrategy)}</td>
+                    <td className="py-3 px-4 font-semibold text-primary-700 dark:text-primary-300">{formatStrategy(scenarioC.profile.drawdownStrategy)}</td>
                   )}
                   <td className="py-3 px-4 font-medium text-slate-500 dark:text-slate-400">
                     Asset depletion sequence
@@ -2061,7 +2061,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
                     <td className="py-3 px-4">
                       {scenarioC.profile.enableFlexibleSpending ? (
                         <div className="space-y-1">
-                          <div className="font-extrabold text-emerald-950 dark:text-emerald-100">
+                          <div className="font-extrabold text-primary-950 dark:text-primary-100">
                             Go-Go Phase: £{(scenarioC.profile.targetRetirementIncomeAnnual || 32000).toLocaleString()}/yr
                           </div>
                           <div className="text-[10px] text-slate-500 dark:text-slate-400">
@@ -2073,7 +2073,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
                         </div>
                       ) : (
                         <div>
-                          <div className="font-extrabold text-emerald-950 dark:text-emerald-100">
+                          <div className="font-extrabold text-primary-950 dark:text-primary-100">
                             £{(scenarioC.profile.targetRetirementIncomeAnnual || 32000).toLocaleString()}/yr
                           </div>
                           <div className="text-[10px] text-slate-400 italic">Flat Target (Unindexed/Indexed)</div>
@@ -2097,20 +2097,20 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
                 <tr className="bg-slate-50/50 dark:bg-slate-800/30">
                   <td className="py-3 px-4 font-bold text-slate-700 dark:text-slate-300">Pre-Retirement Investment Return</td>
                   <td className="py-3 px-4">
-                    <span className="font-extrabold text-emerald-700 dark:text-emerald-300">{scenarioA.profile.expectedInvestmentReturn ?? 6.5}% p.a.</span>
+                    <span className="font-extrabold text-primary-700 dark:text-primary-300">{scenarioA.profile.expectedInvestmentReturn ?? 6.5}% p.a.</span>
                     <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-0.5">
                       Real: +{((scenarioA.profile.expectedInvestmentReturn ?? 6.5) - (scenarioA.profile.expectedInflationRate ?? 2.5)).toFixed(1)}% p.a.
                     </span>
                   </td>
                   <td className="py-3 px-4">
-                    <span className="font-extrabold text-emerald-700 dark:text-emerald-300">{scenarioB.profile.expectedInvestmentReturn ?? 6.5}% p.a.</span>
+                    <span className="font-extrabold text-primary-700 dark:text-primary-300">{scenarioB.profile.expectedInvestmentReturn ?? 6.5}% p.a.</span>
                     <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-0.5">
                       Real: +{((scenarioB.profile.expectedInvestmentReturn ?? 6.5) - (scenarioB.profile.expectedInflationRate ?? 2.5)).toFixed(1)}% p.a.
                     </span>
                   </td>
                   {showScenarioC && (
                     <td className="py-3 px-4">
-                      <span className="font-extrabold text-emerald-700 dark:text-emerald-300">{scenarioC.profile.expectedInvestmentReturn ?? 6.5}% p.a.</span>
+                      <span className="font-extrabold text-primary-700 dark:text-primary-300">{scenarioC.profile.expectedInvestmentReturn ?? 6.5}% p.a.</span>
                       <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-0.5">
                         Real: +{((scenarioC.profile.expectedInvestmentReturn ?? 6.5) - (scenarioC.profile.expectedInflationRate ?? 2.5)).toFixed(1)}% p.a.
                       </span>
@@ -2187,7 +2187,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
       {/* SECTION 2: ITEMIZED GUARANTEED INCOME FLOORS FOR PRIMARY & PARTNER */}
       <div className="space-y-3">
         <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-2">
-          <ShieldCheck className="w-4 h-4 text-emerald-500" />
+          <ShieldCheck className="w-4 h-4 text-primary-500" />
           <span>2. Itemized Guaranteed Income Floors (Primary & Partner Details)</span>
         </h3>
 
@@ -2197,7 +2197,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
           <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-2">
               <span className="font-extrabold text-xs text-slate-800 dark:text-slate-200">{scenarioA.name} — Guaranteed Income Streams</span>
-              <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${floorStateA.coveragePct >= 100 ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'}`}>
+              <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${floorStateA.coveragePct >= 100 ? 'bg-primary-100 text-primary-800 dark:bg-primary-950 dark:text-primary-300' : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'}`}>
                 {floorStateA.coveragePct}% Floor Coverage @ Age 67
               </span>
             </div>
@@ -2229,7 +2229,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
 
             <div className="flex justify-between items-center pt-2 border-t border-slate-200 dark:border-slate-700 text-xs">
               <span className="font-bold text-slate-600 dark:text-slate-400">Total Guaranteed Floor @ State Age (67):</span>
-              <span className="font-extrabold text-emerald-600 dark:text-emerald-400 text-sm">{formatCurrency(floorStateA.totalFloor)}/yr</span>
+              <span className="font-extrabold text-primary-600 dark:text-primary-400 text-sm">{formatCurrency(floorStateA.totalFloor)}/yr</span>
             </div>
           </div>
 
@@ -2237,7 +2237,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
           <div className="p-4 bg-indigo-50/50 dark:bg-indigo-950/30 rounded-2xl border border-indigo-200 dark:border-indigo-800/60 space-y-3">
             <div className="flex items-center justify-between border-b border-indigo-200/60 dark:border-indigo-800/60 pb-2">
               <span className="font-extrabold text-xs text-indigo-950 dark:text-indigo-100">{scenarioB.name} — Guaranteed Income Streams</span>
-              <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${floorStateB.coveragePct >= 100 ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'}`}>
+              <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${floorStateB.coveragePct >= 100 ? 'bg-primary-100 text-primary-800 dark:bg-primary-950 dark:text-primary-300' : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'}`}>
                 {floorStateB.coveragePct}% Floor Coverage @ Age 67
               </span>
             </div>
@@ -2269,16 +2269,16 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
 
             <div className="flex justify-between items-center pt-2 border-t border-indigo-200 dark:border-indigo-800 text-xs">
               <span className="font-bold text-indigo-900 dark:text-indigo-300">Total Guaranteed Floor @ State Age (67):</span>
-              <span className="font-extrabold text-emerald-600 dark:text-emerald-400 text-sm">{formatCurrency(floorStateB.totalFloor)}/yr</span>
+              <span className="font-extrabold text-primary-600 dark:text-primary-400 text-sm">{formatCurrency(floorStateB.totalFloor)}/yr</span>
             </div>
           </div>
 
           {/* Scenario C Guaranteed Floor Itemized Table */}
           {showScenarioC && floorStateC && (
-            <div className="p-4 bg-emerald-50/50 dark:bg-emerald-950/30 rounded-2xl border border-emerald-200 dark:border-emerald-800/60 space-y-3">
-              <div className="flex items-center justify-between border-b border-emerald-200/60 dark:border-emerald-800/60 pb-2">
-                <span className="font-extrabold text-xs text-emerald-950 dark:text-emerald-100">{scenarioC.name} — Guaranteed Income Streams</span>
-                <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${floorStateC.coveragePct >= 100 ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'}`}>
+            <div className="p-4 bg-primary-50/50 dark:bg-primary-950/30 rounded-2xl border border-primary-200 dark:border-primary-800/60 space-y-3">
+              <div className="flex items-center justify-between border-b border-primary-200/60 dark:border-primary-800/60 pb-2">
+                <span className="font-extrabold text-xs text-primary-950 dark:text-primary-100">{scenarioC.name} — Guaranteed Income Streams</span>
+                <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${floorStateC.coveragePct >= 100 ? 'bg-primary-100 text-primary-800 dark:bg-primary-950 dark:text-primary-300' : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'}`}>
                   {floorStateC.coveragePct}% Floor Coverage @ Age 67
                 </span>
               </div>
@@ -2288,9 +2288,9 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
               ) : (
                 <div className="space-y-2">
                   {streamsC.map((item) => (
-                    <div key={item.id} className="p-2 bg-white dark:bg-slate-900 rounded-xl border border-emerald-200/80 dark:border-emerald-800/80 flex items-center justify-between text-xs">
+                    <div key={item.id} className="p-2 bg-white dark:bg-slate-900 rounded-xl border border-primary-200/80 dark:border-primary-800/80 flex items-center justify-between text-xs">
                       <div>
-                        <div className="font-bold text-emerald-950 dark:text-emerald-100 flex items-center gap-1.5">
+                        <div className="font-bold text-primary-950 dark:text-primary-100 flex items-center gap-1.5">
                           <span className={`text-[9px] font-extrabold px-1.5 py-0.2 rounded ${item.owner === 'Partner' ? 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300' : 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300'}`}>
                             {item.owner}
                           </span>
@@ -2300,7 +2300,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
                           Start: Age {item.startAge} ({item.startYear}) | {item.indexing}
                         </div>
                       </div>
-                      <div className="font-extrabold text-emerald-950 dark:text-emerald-100 text-right">
+                      <div className="font-extrabold text-primary-950 dark:text-primary-100 text-right">
                         {formatCurrency(item.annualAmount)}/yr
                       </div>
                     </div>
@@ -2308,9 +2308,9 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
                 </div>
               )}
 
-              <div className="flex justify-between items-center pt-2 border-t border-emerald-200 dark:border-emerald-800 text-xs">
-                <span className="font-bold text-emerald-900 dark:text-emerald-300">Total Guaranteed Floor @ State Age (67):</span>
-                <span className="font-extrabold text-emerald-600 dark:text-emerald-400 text-sm">{formatCurrency(floorStateC.totalFloor)}/yr</span>
+              <div className="flex justify-between items-center pt-2 border-t border-primary-200 dark:border-primary-800 text-xs">
+                <span className="font-bold text-primary-900 dark:text-primary-300">Total Guaranteed Floor @ State Age (67):</span>
+                <span className="font-extrabold text-primary-600 dark:text-primary-400 text-sm">{formatCurrency(floorStateC.totalFloor)}/yr</span>
               </div>
             </div>
           )}
@@ -2322,7 +2322,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-emerald-500" />
+            <TrendingUp className="w-4 h-4 text-primary-500" />
             <span>3. Portfolio Wealth Breakdown at Key Milestone Ages (57, Start, 67, 80, 90, Age 100)</span>
           </h3>
           <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold">
@@ -2338,7 +2338,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
                 <th className="py-3 px-4 text-slate-900 dark:text-slate-100">{scenarioA.name} Wealth & Pots</th>
                 <th className="py-3 px-4 text-indigo-700 dark:text-indigo-300">{scenarioB.name} Wealth & Pots</th>
                 {showScenarioC && (
-                  <th className="py-3 px-4 text-emerald-700 dark:text-emerald-300">{scenarioC.name} Wealth & Pots</th>
+                  <th className="py-3 px-4 text-primary-700 dark:text-primary-300">{scenarioC.name} Wealth & Pots</th>
                 )}
                 <th className="py-3 px-4 text-right">{showScenarioC ? 'Annual Income Comparison' : 'Wealth Delta (£)'}</th>
               </tr>
@@ -2366,7 +2366,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
                       {formatCurrency(m.potA)}
                     </div>
                     <div className="flex items-center gap-1.5 mt-1 flex-wrap text-[10px] font-bold">
-                      <span className="px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/50">
+                      <span className="px-1.5 py-0.5 rounded bg-primary-50 dark:bg-primary-950 text-primary-700 dark:text-primary-300 border border-primary-200/50 dark:border-primary-800/50">
                         Pension: {formatCurrency(m.penA)}
                       </span>
                       <span className="px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200/50 dark:border-indigo-800/50">
@@ -2386,7 +2386,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
                       {formatCurrency(m.potB)}
                     </div>
                     <div className="flex items-center gap-1.5 mt-1 flex-wrap text-[10px] font-bold">
-                      <span className="px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/50">
+                      <span className="px-1.5 py-0.5 rounded bg-primary-50 dark:bg-primary-950 text-primary-700 dark:text-primary-300 border border-primary-200/50 dark:border-primary-800/50">
                         Pension: {formatCurrency(m.penB)}
                       </span>
                       <span className="px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200/50 dark:border-indigo-800/50">
@@ -2403,11 +2403,11 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
                   {/* Scenario C Pots */}
                   {showScenarioC && (
                     <td className="py-3.5 px-4">
-                      <div className="font-extrabold text-emerald-950 dark:text-emerald-100 text-sm">
+                      <div className="font-extrabold text-primary-950 dark:text-primary-100 text-sm">
                         {formatCurrency(m.potC)}
                       </div>
                       <div className="flex items-center gap-1.5 mt-1 flex-wrap text-[10px] font-bold">
-                        <span className="px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/50">
+                        <span className="px-1.5 py-0.5 rounded bg-primary-50 dark:bg-primary-950 text-primary-700 dark:text-primary-300 border border-primary-200/50 dark:border-primary-800/50">
                           Pension: {formatCurrency(m.penC)}
                         </span>
                         <span className="px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200/50 dark:border-indigo-800/50">
@@ -2428,10 +2428,10 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
                       <div className="text-[11px] font-bold space-y-0.5 text-right">
                         <div>A: {formatCurrency(m.incA)}/yr</div>
                         <div className="text-indigo-600 dark:text-indigo-400">B: {formatCurrency(m.incB)}/yr</div>
-                        <div className="text-emerald-600 dark:text-emerald-400">C: {formatCurrency(m.incC)}/yr</div>
+                        <div className="text-primary-600 dark:text-primary-400">C: {formatCurrency(m.incC)}/yr</div>
                       </div>
                     ) : (
-                      <span className={`font-extrabold text-xs px-2.5 py-1 rounded-xl border ${m.diff > 0 ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800' : m.diff < 0 ? 'bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-300 border-rose-200 dark:border-rose-800' : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200'}`}>
+                      <span className={`font-extrabold text-xs px-2.5 py-1 rounded-xl border ${m.diff > 0 ? 'bg-primary-50 text-primary-700 dark:bg-primary-950 dark:text-primary-300 border-primary-200 dark:border-primary-800' : m.diff < 0 ? 'bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-300 border-rose-200 dark:border-rose-800' : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200'}`}>
                         {m.diff > 0 ? '+' : ''}{formatCurrency(m.diff)}
                       </span>
                     )}
@@ -2463,7 +2463,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
                 <th className="py-3 px-4 text-slate-900 dark:text-slate-100">{scenarioA.name}</th>
                 <th className="py-3 px-4 text-indigo-700 dark:text-indigo-300">{scenarioB.name}</th>
                 {showScenarioC && (
-                  <th className="py-3 px-4 text-emerald-700 dark:text-emerald-300">{scenarioC.name}</th>
+                  <th className="py-3 px-4 text-primary-700 dark:text-primary-300">{scenarioC.name}</th>
                 )}
                 <th className="py-3 px-4 text-slate-600 dark:text-slate-400 text-right">{showScenarioC ? 'Comparison' : 'Tax-Free Delta'}</th>
               </tr>
@@ -2483,7 +2483,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
                   {formatCurrency(pclsB.primaryPensionPotAtTake)}
                 </td>
                 {showScenarioC && pclsC && (
-                  <td className="py-3 px-4 font-extrabold text-emerald-950 dark:text-emerald-100">
+                  <td className="py-3 px-4 font-extrabold text-primary-950 dark:text-primary-100">
                     {formatCurrency(pclsC.primaryPensionPotAtTake)}
                   </td>
                 )}
@@ -2520,7 +2520,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
                 )}
                 <td className="py-3 px-4 text-right">
                   {!showScenarioC && (
-                    <span className={`font-extrabold text-xs px-2.5 py-1 rounded-xl border ${pclsB.primaryMaxTaxFreeCash - pclsA.primaryMaxTaxFreeCash > 0 ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800' : pclsB.primaryMaxTaxFreeCash - pclsA.primaryMaxTaxFreeCash < 0 ? 'bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-300 border-rose-200 dark:border-rose-800' : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200'}`}>
+                    <span className={`font-extrabold text-xs px-2.5 py-1 rounded-xl border ${pclsB.primaryMaxTaxFreeCash - pclsA.primaryMaxTaxFreeCash > 0 ? 'bg-primary-50 text-primary-700 dark:bg-primary-950 dark:text-primary-300 border-primary-200 dark:border-primary-800' : pclsB.primaryMaxTaxFreeCash - pclsA.primaryMaxTaxFreeCash < 0 ? 'bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-300 border-rose-200 dark:border-rose-800' : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200'}`}>
                       {pclsB.primaryMaxTaxFreeCash - pclsA.primaryMaxTaxFreeCash > 0 ? '+' : ''}{formatCurrency(pclsB.primaryMaxTaxFreeCash - pclsA.primaryMaxTaxFreeCash)}
                     </span>
                   )}
@@ -2542,7 +2542,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
                       {formatCurrency(pclsB.partnerPensionPotAtTake)}
                     </td>
                     {showScenarioC && pclsC && (
-                      <td className="py-3 px-4 font-extrabold text-emerald-950 dark:text-emerald-100">
+                      <td className="py-3 px-4 font-extrabold text-primary-950 dark:text-primary-100">
                         {formatCurrency(pclsC.partnerPensionPotAtTake)}
                       </td>
                     )}
@@ -2578,7 +2578,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
                     )}
                     <td className="py-3 px-4 text-right">
                       {!showScenarioC && (
-                        <span className={`font-extrabold text-xs px-2.5 py-1 rounded-xl border ${pclsB.partnerMaxTaxFreeCash - pclsA.partnerMaxTaxFreeCash > 0 ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800' : pclsB.partnerMaxTaxFreeCash - pclsA.partnerMaxTaxFreeCash < 0 ? 'bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-300 border-rose-200 dark:border-rose-800' : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200'}`}>
+                        <span className={`font-extrabold text-xs px-2.5 py-1 rounded-xl border ${pclsB.partnerMaxTaxFreeCash - pclsA.partnerMaxTaxFreeCash > 0 ? 'bg-primary-50 text-primary-700 dark:bg-primary-950 dark:text-primary-300 border-primary-200 dark:border-primary-800' : pclsB.partnerMaxTaxFreeCash - pclsA.partnerMaxTaxFreeCash < 0 ? 'bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-300 border-rose-200 dark:border-rose-800' : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200'}`}>
                           {pclsB.partnerMaxTaxFreeCash - pclsA.partnerMaxTaxFreeCash > 0 ? '+' : ''}{formatCurrency(pclsB.partnerMaxTaxFreeCash - pclsA.partnerMaxTaxFreeCash)}
                         </span>
                       )}
@@ -2588,28 +2588,28 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
               )}
 
               {/* Household Combined Max Tax-Free Cash */}
-              <tr className="bg-emerald-500/10 dark:bg-emerald-950/30 font-bold border-t border-b border-emerald-200 dark:border-emerald-800">
+              <tr className="bg-primary-500/10 dark:bg-primary-950/30 font-bold border-t border-b border-primary-200 dark:border-primary-800">
                 <td className="py-3 px-4 text-slate-900 dark:text-slate-100">
                   <div className="font-extrabold flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                    <Sparkles className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
                     <span>Combined Household Tax-Free Lump Sum</span>
                   </div>
                   <div className="text-[10px] text-slate-500 dark:text-slate-400 font-normal">Total liquid 0% tax cash available at access ages</div>
                 </td>
-                <td className="py-3 px-4 font-black text-emerald-700 dark:text-emerald-300 text-sm">
+                <td className="py-3 px-4 font-black text-primary-700 dark:text-primary-300 text-sm">
                   {formatCurrency(pclsA.combinedMaxTaxFreeCash)}
                 </td>
-                <td className="py-3 px-4 font-black text-emerald-700 dark:text-emerald-300 text-sm">
+                <td className="py-3 px-4 font-black text-primary-700 dark:text-primary-300 text-sm">
                   {formatCurrency(pclsB.combinedMaxTaxFreeCash)}
                 </td>
                 {showScenarioC && pclsC && (
-                  <td className="py-3 px-4 font-black text-emerald-700 dark:text-emerald-300 text-sm">
+                  <td className="py-3 px-4 font-black text-primary-700 dark:text-primary-300 text-sm">
                     {formatCurrency(pclsC.combinedMaxTaxFreeCash)}
                   </td>
                 )}
                 <td className="py-3 px-4 text-right">
                   {!showScenarioC && (
-                    <span className={`font-black text-xs px-2.5 py-1 rounded-xl border ${pclsB.combinedMaxTaxFreeCash - pclsA.combinedMaxTaxFreeCash > 0 ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200 border-emerald-300 dark:border-emerald-700' : pclsB.combinedMaxTaxFreeCash - pclsA.combinedMaxTaxFreeCash < 0 ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-200 border-rose-300 dark:border-rose-700' : 'bg-slate-100 text-slate-700 dark:bg-slate-800'}`}>
+                    <span className={`font-black text-xs px-2.5 py-1 rounded-xl border ${pclsB.combinedMaxTaxFreeCash - pclsA.combinedMaxTaxFreeCash > 0 ? 'bg-primary-100 text-primary-800 dark:bg-primary-950 dark:text-primary-200 border-primary-300 dark:border-primary-700' : pclsB.combinedMaxTaxFreeCash - pclsA.combinedMaxTaxFreeCash < 0 ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-200 border-rose-300 dark:border-rose-700' : 'bg-slate-100 text-slate-700 dark:bg-slate-800'}`}>
                       {pclsB.combinedMaxTaxFreeCash - pclsA.combinedMaxTaxFreeCash > 0 ? '+' : ''}{formatCurrency(pclsB.combinedMaxTaxFreeCash - pclsA.combinedMaxTaxFreeCash)}
                     </span>
                   )}
@@ -2631,9 +2631,9 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
                   <div className="text-[10px] text-indigo-600 dark:text-indigo-400">{formatPclsDestination(pclsB.primaryDestination)}</div>
                 </td>
                 {showScenarioC && pclsC && (
-                  <td className="py-3 px-4 text-emerald-900 dark:text-emerald-200">
+                  <td className="py-3 px-4 text-primary-900 dark:text-primary-200">
                     <div className="font-bold text-[11px]">{formatPclsTiming(pclsC.primaryTiming)}</div>
-                    <div className="text-[10px] text-emerald-600 dark:text-emerald-400">{formatPclsDestination(pclsC.primaryDestination)}</div>
+                    <div className="text-[10px] text-primary-600 dark:text-primary-400">{formatPclsDestination(pclsC.primaryDestination)}</div>
                   </td>
                 )}
                 <td className="py-3 px-4 text-right font-medium text-slate-500 dark:text-slate-400">
@@ -2666,7 +2666,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
                 <th className="py-3 px-4 text-slate-900 dark:text-slate-100">{scenarioA.name}</th>
                 <th className="py-3 px-4 text-indigo-700 dark:text-indigo-300">{scenarioB.name}</th>
                 {showScenarioC && (
-                  <th className="py-3 px-4 text-emerald-700 dark:text-emerald-300">{scenarioC.name}</th>
+                  <th className="py-3 px-4 text-primary-700 dark:text-primary-300">{scenarioC.name}</th>
                 )}
                 <th className="py-3 px-4 text-slate-600 dark:text-slate-400">HMRC Policy & Notes</th>
               </tr>
@@ -2679,31 +2679,31 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
                   <div>Estate Valuation & IHT @ Age 80</div>
                   <div className="text-[10px] text-slate-400 font-normal">Property + Savings + Pensions (if 2027 rule)</div>
                 </td>
-                <td className={`py-3.5 px-4 ${estateWinnerName === scenarioA.name ? 'bg-emerald-100/90 dark:bg-emerald-950/80 text-emerald-900 dark:text-emerald-200 font-black border border-emerald-300 dark:border-emerald-700' : ''}`}>
+                <td className={`py-3.5 px-4 ${estateWinnerName === scenarioA.name ? 'bg-primary-100/90 dark:bg-primary-950/80 text-primary-900 dark:text-primary-200 font-black border border-primary-300 dark:border-primary-700' : ''}`}>
                   <div className="font-extrabold text-slate-900 dark:text-slate-100">Gross: {formatCurrency(iht80A.grossEstate)}</div>
                   <div className="text-[10px] text-rose-600 dark:text-rose-400 font-bold mt-0.5">
                     Est. 40% IHT: {formatCurrency(iht80A.ihtLiability)} ({iht80A.effectiveIhtRate}%)
                   </div>
-                  <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
+                  <div className="text-[10px] text-primary-600 dark:text-primary-400 font-bold">
                     Net to Heirs: {formatCurrency(iht80A.netPassedToHeirs)}
                   </div>
                 </td>
-                <td className={`py-3.5 px-4 ${estateWinnerName === scenarioB.name ? 'bg-emerald-100/90 dark:bg-emerald-950/80 text-emerald-900 dark:text-emerald-200 font-black border border-emerald-300 dark:border-emerald-700' : ''}`}>
+                <td className={`py-3.5 px-4 ${estateWinnerName === scenarioB.name ? 'bg-primary-100/90 dark:bg-primary-950/80 text-primary-900 dark:text-primary-200 font-black border border-primary-300 dark:border-primary-700' : ''}`}>
                   <div className="font-extrabold text-indigo-950 dark:text-indigo-100">Gross: {formatCurrency(iht80B.grossEstate)}</div>
                   <div className="text-[10px] text-rose-600 dark:text-rose-400 font-bold mt-0.5">
                     Est. 40% IHT: {formatCurrency(iht80B.ihtLiability)} ({iht80B.effectiveIhtRate}%)
                   </div>
-                  <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
+                  <div className="text-[10px] text-primary-600 dark:text-primary-400 font-bold">
                     Net to Heirs: {formatCurrency(iht80B.netPassedToHeirs)}
                   </div>
                 </td>
                 {showScenarioC && iht80C && (
-                  <td className={`py-3.5 px-4 ${estateWinnerName === scenarioC.name ? 'bg-emerald-100/90 dark:bg-emerald-950/80 text-emerald-900 dark:text-emerald-200 font-black border border-emerald-300 dark:border-emerald-700' : ''}`}>
-                    <div className="font-extrabold text-emerald-950 dark:text-emerald-100">Gross: {formatCurrency(iht80C.grossEstate)}</div>
+                  <td className={`py-3.5 px-4 ${estateWinnerName === scenarioC.name ? 'bg-primary-100/90 dark:bg-primary-950/80 text-primary-900 dark:text-primary-200 font-black border border-primary-300 dark:border-primary-700' : ''}`}>
+                    <div className="font-extrabold text-primary-950 dark:text-primary-100">Gross: {formatCurrency(iht80C.grossEstate)}</div>
                     <div className="text-[10px] text-rose-600 dark:text-rose-400 font-bold mt-0.5">
                       Est. 40% IHT: {formatCurrency(iht80C.ihtLiability)} ({iht80C.effectiveIhtRate}%)
                     </div>
-                    <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
+                    <div className="text-[10px] text-primary-600 dark:text-primary-400 font-bold">
                       Net to Heirs: {formatCurrency(iht80C.netPassedToHeirs)}
                     </div>
                   </td>
@@ -2724,7 +2724,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
                   <div className="text-[10px] text-rose-600 dark:text-rose-400 font-bold mt-0.5">
                     Est. 40% IHT: {formatCurrency(iht90A.ihtLiability)} ({iht90A.effectiveIhtRate}%)
                   </div>
-                  <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
+                  <div className="text-[10px] text-primary-600 dark:text-primary-400 font-bold">
                     Net to Heirs: {formatCurrency(iht90A.netPassedToHeirs)}
                   </div>
                 </td>
@@ -2733,17 +2733,17 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
                   <div className="text-[10px] text-rose-600 dark:text-rose-400 font-bold mt-0.5">
                     Est. 40% IHT: {formatCurrency(iht90B.ihtLiability)} ({iht90B.effectiveIhtRate}%)
                   </div>
-                  <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
+                  <div className="text-[10px] text-primary-600 dark:text-primary-400 font-bold">
                     Net to Heirs: {formatCurrency(iht90B.netPassedToHeirs)}
                   </div>
                 </td>
                 {showScenarioC && iht90C && (
                   <td className="py-3.5 px-4">
-                    <div className="font-extrabold text-emerald-950 dark:text-emerald-100">Gross: {formatCurrency(iht90C.grossEstate)}</div>
+                    <div className="font-extrabold text-primary-950 dark:text-primary-100">Gross: {formatCurrency(iht90C.grossEstate)}</div>
                     <div className="text-[10px] text-rose-600 dark:text-rose-400 font-bold mt-0.5">
                       Est. 40% IHT: {formatCurrency(iht90C.ihtLiability)} ({iht90C.effectiveIhtRate}%)
                     </div>
-                    <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
+                    <div className="text-[10px] text-primary-600 dark:text-primary-400 font-bold">
                       Net to Heirs: {formatCurrency(iht90C.netPassedToHeirs)}
                     </div>
                   </td>
@@ -2767,7 +2767,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
                   <div className="text-[10px] text-rose-600 dark:text-rose-400 font-bold mt-0.5">
                     Est. 40% IHT: {formatCurrency(iht100A.ihtLiability)} ({iht100A.effectiveIhtRate}%)
                   </div>
-                  <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
+                  <div className="text-[10px] text-primary-600 dark:text-primary-400 font-bold">
                     Net to Heirs: {formatCurrency(iht100A.netPassedToHeirs)}
                   </div>
                 </td>
@@ -2776,17 +2776,17 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
                   <div className="text-[10px] text-rose-600 dark:text-rose-400 font-bold mt-0.5">
                     Est. 40% IHT: {formatCurrency(iht100B.ihtLiability)} ({iht100B.effectiveIhtRate}%)
                   </div>
-                  <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
+                  <div className="text-[10px] text-primary-600 dark:text-primary-400 font-bold">
                     Net to Heirs: {formatCurrency(iht100B.netPassedToHeirs)}
                   </div>
                 </td>
                 {showScenarioC && iht100C && (
                   <td className="py-3.5 px-4">
-                    <div className="font-extrabold text-emerald-950 dark:text-emerald-100">Gross: {formatCurrency(iht100C.grossEstate)}</div>
+                    <div className="font-extrabold text-primary-950 dark:text-primary-100">Gross: {formatCurrency(iht100C.grossEstate)}</div>
                     <div className="text-[10px] text-rose-600 dark:text-rose-400 font-bold mt-0.5">
                       Est. 40% IHT: {formatCurrency(iht100C.ihtLiability)} ({iht100C.effectiveIhtRate}%)
                     </div>
-                    <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
+                    <div className="text-[10px] text-primary-600 dark:text-primary-400 font-bold">
                       Net to Heirs: {formatCurrency(iht100C.netPassedToHeirs)}
                     </div>
                   </td>
@@ -2800,18 +2800,18 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
               <tr className="bg-slate-50/50 dark:bg-slate-800/30">
                 <td className="py-3 px-4 font-bold text-slate-700 dark:text-slate-300">Pensions Taxed in Estate (April 2027 Rule)</td>
                 <td className="py-3 px-4">
-                  <span className={`font-bold text-[10px] px-2 py-0.5 rounded-full ${iht80A.includePensionsInEstate ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'}`}>
+                  <span className={`font-bold text-[10px] px-2 py-0.5 rounded-full ${iht80A.includePensionsInEstate ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' : 'bg-primary-100 text-primary-800 dark:bg-primary-950 dark:text-primary-300'}`}>
                     {iht80A.includePensionsInEstate ? 'Included (40% Taxed)' : 'Exempt (Legacy Pre-2027)'}
                   </span>
                 </td>
                 <td className="py-3 px-4">
-                  <span className={`font-bold text-[10px] px-2 py-0.5 rounded-full ${iht80B.includePensionsInEstate ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'}`}>
+                  <span className={`font-bold text-[10px] px-2 py-0.5 rounded-full ${iht80B.includePensionsInEstate ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' : 'bg-primary-100 text-primary-800 dark:bg-primary-950 dark:text-primary-300'}`}>
                     {iht80B.includePensionsInEstate ? 'Included (40% Taxed)' : 'Exempt (Legacy Pre-2027)'}
                   </span>
                 </td>
                 {showScenarioC && iht80C && (
                   <td className="py-3 px-4">
-                    <span className={`font-bold text-[10px] px-2 py-0.5 rounded-full ${iht80C.includePensionsInEstate ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'}`}>
+                    <span className={`font-bold text-[10px] px-2 py-0.5 rounded-full ${iht80C.includePensionsInEstate ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' : 'bg-primary-100 text-primary-800 dark:bg-primary-950 dark:text-primary-300'}`}>
                       {iht80C.includePensionsInEstate ? 'Included (40% Taxed)' : 'Exempt (Legacy Pre-2027)'}
                     </span>
                   </td>
@@ -2831,7 +2831,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
                   £{(iht80B.primaryResidenceValue || (0) || 0).toLocaleString()} (+{iht80B.annualPropertyGrowthPercent}% p.a.)
                 </td>
                 {showScenarioC && iht80C && (
-                  <td className="py-3 px-4 font-semibold text-emerald-700 dark:text-emerald-300">
+                  <td className="py-3 px-4 font-semibold text-primary-700 dark:text-primary-300">
                     £{(iht80C.primaryResidenceValue || (0) || 0).toLocaleString()} (+{iht80C.annualPropertyGrowthPercent}% p.a.)
                   </td>
                 )}
@@ -2843,14 +2843,14 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
               {/* Annual Gifting Strategy */}
               <tr className="bg-slate-50/50 dark:bg-slate-800/30">
                 <td className="py-3 px-4 font-bold text-slate-700 dark:text-slate-300">Annual Gifting Strategy (£/yr)</td>
-                <td className="py-3 px-4 font-semibold text-emerald-700 dark:text-emerald-300">
+                <td className="py-3 px-4 font-semibold text-primary-700 dark:text-primary-300">
                   £{(iht80A.annualGiftingStrategy || (0) || 0).toLocaleString()}/yr
                 </td>
-                <td className="py-3 px-4 font-semibold text-emerald-700 dark:text-emerald-300">
+                <td className="py-3 px-4 font-semibold text-primary-700 dark:text-primary-300">
                   £{(iht80B.annualGiftingStrategy || (0) || 0).toLocaleString()}/yr
                 </td>
                 {showScenarioC && iht80C && (
-                  <td className="py-3 px-4 font-semibold text-emerald-700 dark:text-emerald-300">
+                  <td className="py-3 px-4 font-semibold text-primary-700 dark:text-primary-300">
                     £{(iht80C.annualGiftingStrategy || (0) || 0).toLocaleString()}/yr
                   </td>
                 )}
@@ -2884,7 +2884,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
                 <th className="py-3 px-4 text-slate-900 dark:text-slate-100">{scenarioA.name}</th>
                 <th className="py-3 px-4 text-indigo-700 dark:text-indigo-300">{scenarioB.name}</th>
                 {showScenarioC && (
-                  <th className="py-3 px-4 text-emerald-700 dark:text-emerald-300">{scenarioC.name}</th>
+                  <th className="py-3 px-4 text-primary-700 dark:text-primary-300">{scenarioC.name}</th>
                 )}
                 <th className="py-3 px-4 text-slate-600 dark:text-slate-400">Risk Winner / Takeaway</th>
               </tr>
@@ -2900,21 +2900,21 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
                   </div>
                   <div className="text-[10px] text-slate-400 font-normal">% of random market trials avoiding pot depletion</div>
                 </td>
-                <td className={`py-3 px-4 ${mcSimA && mcSimB && (mcSimA.successRate >= mcSimB.successRate) && (!mcSimC || mcSimA.successRate >= mcSimC.successRate) ? 'bg-emerald-100/90 dark:bg-emerald-950/80 text-emerald-900 dark:text-emerald-200 font-black border border-emerald-300 dark:border-emerald-700 shadow-2xs' : ''}`}>
+                <td className={`py-3 px-4 ${mcSimA && mcSimB && (mcSimA.successRate >= mcSimB.successRate) && (!mcSimC || mcSimA.successRate >= mcSimC.successRate) ? 'bg-primary-100/90 dark:bg-primary-950/80 text-primary-900 dark:text-primary-200 font-black border border-primary-300 dark:border-primary-700 shadow-2xs' : ''}`}>
                   <div className="text-sm font-black">{mcSimA ? `${mcSimA.successRate}%` : 'N/A'}</div>
                   <div className="text-[10px] text-slate-500 dark:text-slate-400">Median Pot: {formatCurrency(mcSimA?.medianEndPot || 0)}</div>
                 </td>
-                <td className={`py-3 px-4 ${mcSimA && mcSimB && (mcSimB.successRate >= mcSimA.successRate) && (!mcSimC || mcSimB.successRate >= mcSimC.successRate) ? 'bg-emerald-100/90 dark:bg-emerald-950/80 text-emerald-900 dark:text-emerald-200 font-black border border-emerald-300 dark:border-emerald-700 shadow-2xs' : ''}`}>
+                <td className={`py-3 px-4 ${mcSimA && mcSimB && (mcSimB.successRate >= mcSimA.successRate) && (!mcSimC || mcSimB.successRate >= mcSimC.successRate) ? 'bg-primary-100/90 dark:bg-primary-950/80 text-primary-900 dark:text-primary-200 font-black border border-primary-300 dark:border-primary-700 shadow-2xs' : ''}`}>
                   <div className="text-sm font-black">{mcSimB ? `${mcSimB.successRate}%` : 'N/A'}</div>
                   <div className="text-[10px] text-indigo-600 dark:text-indigo-400">Median Pot: {formatCurrency(mcSimB?.medianEndPot || 0)}</div>
                 </td>
                 {showScenarioC && (
-                  <td className={`py-3 px-4 ${mcSimA && mcSimB && mcSimC && (mcSimC.successRate >= mcSimA.successRate) && (mcSimC.successRate >= mcSimB.successRate) ? 'bg-emerald-100/90 dark:bg-emerald-950/80 text-emerald-900 dark:text-emerald-200 font-black border border-emerald-300 dark:border-emerald-700 shadow-2xs' : ''}`}>
+                  <td className={`py-3 px-4 ${mcSimA && mcSimB && mcSimC && (mcSimC.successRate >= mcSimA.successRate) && (mcSimC.successRate >= mcSimB.successRate) ? 'bg-primary-100/90 dark:bg-primary-950/80 text-primary-900 dark:text-primary-200 font-black border border-primary-300 dark:border-primary-700 shadow-2xs' : ''}`}>
                     <div className="text-sm font-black">{mcSimC ? `${mcSimC.successRate}%` : 'N/A'}</div>
-                    <div className="text-[10px] text-emerald-600 dark:text-emerald-400">Median Pot: {formatCurrency(mcSimC?.medianEndPot || 0)}</div>
+                    <div className="text-[10px] text-primary-600 dark:text-primary-400">Median Pot: {formatCurrency(mcSimC?.medianEndPot || 0)}</div>
                   </td>
                 )}
-                <td className="py-3 px-4 font-bold text-emerald-700 dark:text-emerald-300 text-xs">
+                <td className="py-3 px-4 font-bold text-primary-700 dark:text-primary-300 text-xs">
                   Winner: {longevityWinnerName} ({Math.max(mcSimA?.successRate || 0, mcSimB?.successRate || 0, mcSimC?.successRate || 0)}% Success)
                 </td>
               </tr>
@@ -2938,8 +2938,8 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
                 </td>
                 {showScenarioC && (
                   <td className="py-3 px-4">
-                    <div className="font-extrabold text-sm text-emerald-950 dark:text-emerald-100">{historicC ? `${historicC.successRate}%` : 'N/A'} Success</div>
-                    <div className="text-[10px] text-emerald-600 dark:text-emerald-400">Worst Start Year: {historicC?.worstStartYear?.startYear ?? 'N/A'}</div>
+                    <div className="font-extrabold text-sm text-primary-950 dark:text-primary-100">{historicC ? `${historicC.successRate}%` : 'N/A'} Success</div>
+                    <div className="text-[10px] text-primary-600 dark:text-primary-400">Worst Start Year: {historicC?.worstStartYear?.startYear ?? 'N/A'}</div>
                   </td>
                 )}
                 <td className="py-3 px-4 font-medium text-slate-500 dark:text-slate-400">
@@ -2968,7 +2968,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
                 </td>
                 {showScenarioC && (
                   <td className="py-3 px-4">
-                    <div className="font-bold text-xs text-emerald-700 dark:text-emerald-300">
+                    <div className="font-bold text-xs text-primary-700 dark:text-primary-300">
                       {historicC?.worstStartYear?.depletedAtAge ? `Depletes at Age ${historicC.worstStartYear.depletedAtAge}` : `Final: ${formatCurrency(historicC?.worstStartYear?.finalRealBalance || 0)}`}
                     </div>
                   </td>
@@ -2993,11 +2993,11 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
             <span className="text-xs font-extrabold text-slate-900 dark:text-slate-100">A: £{(taxA?.totalPensionTaxRelief || (0) || 0).toLocaleString()}</span>
             <span className="text-xs font-extrabold text-indigo-600 dark:text-indigo-400">B: £{(taxB?.totalPensionTaxRelief || (0) || 0).toLocaleString()}</span>
             {showScenarioC && taxC && (
-              <span className="text-xs font-extrabold text-emerald-600 dark:text-emerald-400">C: £{(taxC.totalPensionTaxRelief || (0) || 0).toLocaleString()}</span>
+              <span className="text-xs font-extrabold text-primary-600 dark:text-primary-400">C: £{(taxC.totalPensionTaxRelief || (0) || 0).toLocaleString()}</span>
             )}
           </div>
           {!showScenarioC && taxA && taxB && (
-            <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 block">
+            <span className="text-[10px] font-bold text-primary-600 dark:text-primary-400 block">
               Delta: +£{((taxB.totalPensionTaxRelief || 0) - (taxA.totalPensionTaxRelief || (0)) || 0).toLocaleString()}/yr
             </span>
           )}
@@ -3010,7 +3010,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
             <span className="text-xs font-extrabold text-slate-900 dark:text-slate-100">A: {formatCurrency(retA?.totalPot)}</span>
             <span className="text-xs font-extrabold text-indigo-600 dark:text-indigo-400">B: {formatCurrency(retB?.totalPot)}</span>
             {showScenarioC && (
-              <span className="text-xs font-extrabold text-emerald-600 dark:text-emerald-400">C: {formatCurrency(retC?.totalPot)}</span>
+              <span className="text-xs font-extrabold text-primary-600 dark:text-primary-400">C: {formatCurrency(retC?.totalPot)}</span>
             )}
           </div>
         </div>
@@ -3022,7 +3022,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
             <div className="text-slate-900 dark:text-slate-100">{scenarioA.name}: {depA ? `Depletes at Age ${depA.age}` : 'Sustained 100+'}</div>
             <div className="text-indigo-600 dark:text-indigo-400">{scenarioB.name}: {depB ? `Depletes at Age ${depB.age}` : 'Sustained 100+'}</div>
             {showScenarioC && (
-              <div className="text-emerald-600 dark:text-emerald-400">{scenarioC.name}: {depC ? `Depletes at Age ${depC.age}` : 'Sustained 100+'}</div>
+              <div className="text-primary-600 dark:text-primary-400">{scenarioC.name}: {depC ? `Depletes at Age ${depC.age}` : 'Sustained 100+'}</div>
             )}
           </div>
         </div>
@@ -3067,17 +3067,17 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
                       <td className="py-2 px-3">{formatCurrency(pA.totalPot)}</td>
                       <td className="py-2 px-3 font-bold text-indigo-700 dark:text-indigo-300">{formatCurrency(pB.totalPot)}</td>
                       {showScenarioC && pC && (
-                        <td className="py-2 px-3 font-bold text-emerald-700 dark:text-emerald-300">{formatCurrency(pC.totalPot)}</td>
+                        <td className="py-2 px-3 font-bold text-primary-700 dark:text-primary-300">{formatCurrency(pC.totalPot)}</td>
                       )}
                       {!showScenarioC && (
-                        <td className={`py-2 px-3 text-right font-bold ${delta > 0 ? 'text-emerald-600 dark:text-emerald-400' : delta < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-400'}`}>
+                        <td className={`py-2 px-3 text-right font-bold ${delta > 0 ? 'text-primary-600 dark:text-primary-400' : delta < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-400'}`}>
                           {delta > 0 ? '+' : ''}{formatCurrency(delta)}
                         </td>
                       )}
                       <td className="py-2 px-3">{formatCurrency(pA.netRetirementIncome)}</td>
                       <td className="py-2 px-3 font-bold text-indigo-700 dark:text-indigo-300">{formatCurrency(pB.netRetirementIncome)}</td>
                       {showScenarioC && pC && (
-                        <td className="py-2 px-3 font-bold text-emerald-700 dark:text-emerald-300">{formatCurrency(pC.netRetirementIncome)}</td>
+                        <td className="py-2 px-3 font-bold text-primary-700 dark:text-primary-300">{formatCurrency(pC.netRetirementIncome)}</td>
                       )}
                     </tr>
                   );

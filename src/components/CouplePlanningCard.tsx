@@ -124,26 +124,26 @@ export const CouplePlanningCard: React.FC<CouplePlanningCardProps> = ({ profile,
       {!isCouple ? (
         <div className="space-y-4 animate-fade-in">
           {/* Single Tax & Allowance Summary Badge */}
-          <div className="bg-gradient-to-r from-emerald-50 via-slate-50 to-emerald-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 text-slate-900 dark:text-white rounded-2xl p-4 shadow-sm border border-emerald-200 dark:border-slate-700/50 space-y-3 transition-colors">
+          <div className="bg-gradient-to-r from-primary-50 via-slate-50 to-primary-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 text-slate-900 dark:text-white rounded-2xl p-4 shadow-sm border border-primary-200 dark:border-slate-700/50 space-y-3 transition-colors">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-emerald-900 dark:text-slate-300 font-bold text-xs">
-                <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <div className="flex items-center gap-2 text-primary-900 dark:text-slate-300 font-bold text-xs">
+                <Sparkles className="w-4 h-4 text-primary-600 dark:text-primary-400" />
                 <span>UK Individual Tax & Retirement Allowances</span>
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
-              <div className="bg-white/80 dark:bg-white/10 rounded-xl p-3 border border-emerald-100 dark:border-white/10">
-                <p className="text-[10px] text-emerald-900 dark:text-slate-300 font-medium">Single Personal Allowance</p>
+              <div className="bg-white/80 dark:bg-white/10 rounded-xl p-3 border border-primary-100 dark:border-white/10">
+                <p className="text-[10px] text-primary-900 dark:text-slate-300 font-medium">Single Personal Allowance</p>
                 <p className="text-base font-extrabold text-amber-600 dark:text-amber-300 mt-0.5">£12,570 <span className="text-xs font-normal text-slate-600 dark:text-white/80">/ yr</span></p>
                 <p className="text-[10px] text-slate-600 dark:text-slate-300/80 mt-1">Standard tax-free personal income allowance in drawdown.</p>
               </div>
-              <div className="bg-white/80 dark:bg-white/10 rounded-xl p-3 border border-emerald-100 dark:border-white/10">
-                <p className="text-[10px] text-emerald-900 dark:text-slate-300 font-medium">Single State Pension</p>
-                <p className="text-base font-extrabold text-emerald-600 dark:text-emerald-300 mt-0.5">£11,541.40 <span className="text-xs font-normal text-slate-600 dark:text-white/80">/ yr</span></p>
+              <div className="bg-white/80 dark:bg-white/10 rounded-xl p-3 border border-primary-100 dark:border-white/10">
+                <p className="text-[10px] text-primary-900 dark:text-slate-300 font-medium">Single State Pension</p>
+                <p className="text-base font-extrabold text-primary-600 dark:text-primary-300 mt-0.5">£11,541.40 <span className="text-xs font-normal text-slate-600 dark:text-white/80">/ yr</span></p>
                 <p className="text-[10px] text-slate-600 dark:text-slate-300/80 mt-1">Full guaranteed inflation-protected State Pension at SP age.</p>
               </div>
-              <div className="bg-white/80 dark:bg-white/10 rounded-xl p-3 border border-emerald-100 dark:border-white/10">
-                <p className="text-[10px] text-emerald-900 dark:text-slate-300 font-medium">Single ISA Allowance</p>
+              <div className="bg-white/80 dark:bg-white/10 rounded-xl p-3 border border-primary-100 dark:border-white/10">
+                <p className="text-[10px] text-primary-900 dark:text-slate-300 font-medium">Single ISA Allowance</p>
                 <p className="text-base font-extrabold text-sky-600 dark:text-sky-300 mt-0.5">£20,000 <span className="text-xs font-normal text-slate-600 dark:text-white/80">ISA / yr</span></p>
                 <p className="text-[10px] text-slate-600 dark:text-slate-300/80 mt-1">Annual tax-free growth and withdrawal ISA contribution limit.</p>
               </div>
@@ -168,7 +168,7 @@ export const CouplePlanningCard: React.FC<CouplePlanningCardProps> = ({ profile,
               </div>
               <div className="bg-white/80 dark:bg-white/10 rounded-xl p-3 border border-indigo-100 dark:border-white/10">
                 <p className="text-[10px] text-indigo-900 dark:text-indigo-200 font-medium">Dual Full State Pension</p>
-                <p className="text-base font-extrabold text-emerald-600 dark:text-emerald-300 mt-0.5">£23,082.80 <span className="text-xs font-normal text-slate-600 dark:text-white/80">/ yr</span></p>
+                <p className="text-base font-extrabold text-primary-600 dark:text-primary-300 mt-0.5">£23,082.80 <span className="text-xs font-normal text-slate-600 dark:text-white/80">/ yr</span></p>
                 <p className="text-[10px] text-slate-600 dark:text-indigo-100/70 mt-1">Combined guaranteed inflation-protected income at SP age.</p>
               </div>
               <div className="bg-white/80 dark:bg-white/10 rounded-xl p-3 border border-indigo-100 dark:border-white/10">

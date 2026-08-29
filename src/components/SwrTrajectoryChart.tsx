@@ -95,7 +95,7 @@ export const SwrTrajectoryChart: React.FC<SwrTrajectoryChartProps> = ({ projecti
                   return (
                     <div className="bg-slate-900 text-white p-3 rounded-2xl shadow-xl text-xs space-y-1.5 border border-slate-700">
                       <p className="font-bold border-b border-slate-700 pb-1">Age {data.age} ({data.year})</p>
-                      <p className="text-emerald-400 font-extrabold">Effective SWR: {data.effectiveSwr}%</p>
+                      <p className="text-primary-400 font-extrabold">Effective SWR: {data.effectiveSwr}%</p>
                       <p className="text-slate-300">Portfolio Capital: £{data.totalPortfolio.toLocaleString()}</p>
                       <p className="text-slate-300">Annual Drawdown: £{data.totalDrawdown.toLocaleString()}</p>
                     </div>
@@ -134,7 +134,7 @@ export const SwrTrajectoryChart: React.FC<SwrTrajectoryChartProps> = ({ projecti
           <Info className="w-4 h-4 text-indigo-500 shrink-0" />
           <span>Peak Effective Withdrawal Rate:</span>
         </div>
-        <span className={`font-black px-3 py-1 rounded-lg ${peakSwrItem.effectiveSwr > 6 ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300' : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'}`}>
+        <span className={`font-black px-3 py-1 rounded-lg ${peakSwrItem.effectiveSwr > 6 ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300' : 'bg-primary-100 text-primary-800 dark:bg-primary-950 dark:text-primary-300'}`}>
           {peakSwrItem.effectiveSwr}% at Age {peakSwrItem.age}
         </span>
       </div>

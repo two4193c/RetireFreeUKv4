@@ -47,7 +47,7 @@ export const FloorGuideCard: React.FC = () => {
         </div>
 
         <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700/80 space-y-2">
-          <div className="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 font-black flex items-center justify-center text-xs">
+          <div className="w-8 h-8 rounded-xl bg-primary-100 dark:bg-primary-950 text-primary-600 dark:text-primary-400 font-black flex items-center justify-center text-xs">
             3
           </div>
           <h3 className="font-bold text-slate-900 dark:text-white text-sm">Phased Annuity Tranches</h3>

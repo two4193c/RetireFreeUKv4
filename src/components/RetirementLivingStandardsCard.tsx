@@ -75,7 +75,7 @@ export const RetirementLivingStandardsCard: React.FC<RetirementLivingStandardsCa
 
   // Helper to determine active tier
   const getAchievedTier = (income: number) => {
-    if (income >= currentBench.comfortable) return { label: 'Comfortable', color: 'emerald', bg: 'bg-emerald-500', text: 'text-emerald-600 dark:text-emerald-400' };
+    if (income >= currentBench.comfortable) return { label: 'Comfortable', color: 'emerald', bg: 'bg-primary-500', text: 'text-primary-600 dark:text-primary-400' };
     if (income >= currentBench.moderate) return { label: 'Moderate', color: 'indigo', bg: 'bg-indigo-500', text: 'text-indigo-600 dark:text-indigo-400' };
     if (income >= currentBench.minimum) return { label: 'Minimum', color: 'amber', bg: 'bg-amber-500', text: 'text-amber-600 dark:text-amber-400' };
     return { label: 'Below Minimum', color: 'rose', bg: 'bg-rose-500', text: 'text-rose-600 dark:text-rose-400' };
@@ -147,7 +147,7 @@ export const RetirementLivingStandardsCard: React.FC<RetirementLivingStandardsCa
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              <MapPin className="w-3.5 h-3.5 text-emerald-500" />
+              <MapPin className="w-3.5 h-3.5 text-primary-500" />
               <span>Rest of UK</span>
             </button>
             <button
@@ -167,7 +167,7 @@ export const RetirementLivingStandardsCard: React.FC<RetirementLivingStandardsCa
 
       {/* ACTIVE PLAN MATCH HIGHLIGHT BANNER */}
       {profile && (
-        <div className="p-4 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-emerald-500/10 dark:from-indigo-950/40 dark:via-purple-950/40 dark:to-emerald-950/40 rounded-2xl border border-indigo-200 dark:border-indigo-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-2xs">
+        <div className="p-4 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-primary-500/10 dark:from-indigo-950/40 dark:via-purple-950/40 dark:to-primary-950/40 rounded-2xl border border-indigo-200 dark:border-indigo-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-2xs">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-indigo-600 text-white rounded-xl shadow-md shrink-0">
               <Sparkles className="w-5 h-5" />
@@ -313,13 +313,13 @@ export const RetirementLivingStandardsCard: React.FC<RetirementLivingStandardsCa
         </div>
 
         {/* TIER 3: COMFORTABLE */}
-        <div className="bg-slate-50/70 dark:bg-slate-800/40 rounded-3xl p-6 border-2 border-emerald-300 dark:border-emerald-700/80 space-y-5 flex flex-col justify-between relative overflow-hidden shadow-xs hover:border-emerald-500 transition-all">
+        <div className="bg-slate-50/70 dark:bg-slate-800/40 rounded-3xl p-6 border-2 border-primary-300 dark:border-primary-700/80 space-y-5 flex flex-col justify-between relative overflow-hidden shadow-xs hover:border-primary-500 transition-all">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className="px-3 py-1 bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-xs font-black uppercase tracking-wider rounded-full border border-emerald-300 dark:border-emerald-800">
+              <span className="px-3 py-1 bg-primary-100 dark:bg-primary-950 text-primary-800 dark:text-primary-300 text-xs font-black uppercase tracking-wider rounded-full border border-primary-300 dark:border-primary-800">
                 Comfortable Standard
               </span>
-              <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Luxury & Freedom</span>
+              <span className="text-xs font-bold text-primary-600 dark:text-primary-400">Luxury & Freedom</span>
             </div>
 
             <div>
@@ -335,23 +335,23 @@ export const RetirementLivingStandardsCard: React.FC<RetirementLivingStandardsCa
             {/* Category Bullet List */}
             <div className="space-y-2.5 text-xs text-slate-700 dark:text-slate-300 pt-2 border-t border-slate-200/80 dark:border-slate-700/80">
               <div className="flex items-start gap-2">
-                <Coffee className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                <Coffee className="w-4 h-4 text-primary-500 shrink-0 mt-0.5" />
                 <span><strong>Food & Groceries:</strong> £160/wk. Eating out weekly + fine dining.</span>
               </div>
               <div className="flex items-start gap-2">
-                <Plane className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                <Plane className="w-4 h-4 text-primary-500 shrink-0 mt-0.5" />
                 <span><strong>Holidays:</strong> 3 weeks in Europe + multiple UK breaks per year.</span>
               </div>
               <div className="flex items-start gap-2">
-                <Car className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                <Car className="w-4 h-4 text-primary-500 shrink-0 mt-0.5" />
                 <span><strong>Transport:</strong> 2 newer cars (replaced every 3 years).</span>
               </div>
               <div className="flex items-start gap-2">
-                <Home className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                <Home className="w-4 h-4 text-primary-500 shrink-0 mt-0.5" />
                 <span><strong>Home Maintenance:</strong> Regular home decorating, repairs & gardening.</span>
               </div>
               <div className="flex items-start gap-2">
-                <HeartHandshake className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                <HeartHandshake className="w-4 h-4 text-primary-500 shrink-0 mt-0.5" />
                 <span><strong>Gifts & Social:</strong> £100+ per gift, theatre tickets, gym membership.</span>
               </div>
             </div>
@@ -360,7 +360,7 @@ export const RetirementLivingStandardsCard: React.FC<RetirementLivingStandardsCa
           {onApplyTargetIncome && (
             <button
               onClick={() => onApplyTargetIncome(currentBench.comfortable)}
-              className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
+              className="w-full py-2.5 px-4 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
             >
               <span>Set Target to Comfortable ({fmt(currentBench.comfortable)}/yr)</span>
               <ArrowRight className="w-3.5 h-3.5" />

@@ -59,9 +59,9 @@ export const PhasedRetirementGuideCard: React.FC = () => {
             <p className="text-[11px] text-slate-600 dark:text-slate-400">Earning £115,000 results in £15,000 being taxed at an effective 60%, leaving you with just <strong>£6,000 net cash</strong> from that £15k slice!</p>
           </div>
 
-          <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-emerald-200/80 dark:border-emerald-800/80 bg-emerald-50/30 dark:bg-emerald-950/20 space-y-1">
-            <span className="font-bold text-emerald-900 dark:text-emerald-300 flex items-center gap-1">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+          <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-primary-200/80 dark:border-primary-800/80 bg-primary-50/30 dark:bg-primary-950/20 space-y-1">
+            <span className="font-bold text-primary-900 dark:text-primary-300 flex items-center gap-1">
+              <CheckCircle2 className="w-3.5 h-3.5 text-primary-500" />
               With £15,000 Pension Sacrifice
             </span>
             <p className="text-[11px] text-slate-600 dark:text-slate-300">Sacrificing £15,000 into your pension puts the full <strong>£15,000 intact into your SIPP</strong>, restores your Personal Allowance 100%, and costs only £6k net cash!</p>

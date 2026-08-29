@@ -132,28 +132,28 @@ export const SwrUkUsBenchmarkCard: React.FC = () => {
       )}
 
       {selectedRegime === 'global' && (
-        <div className="p-6 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/80 space-y-4 animate-fade-in">
+        <div className="p-6 rounded-2xl bg-primary-50/70 dark:bg-primary-950/30 border border-primary-200/80 dark:border-primary-800/80 space-y-4 animate-fade-in">
           <div className="flex items-center justify-between">
-            <h4 className="font-extrabold text-sm text-emerald-900 dark:text-emerald-300">🌐 Global Diversified Portfolio Benchmark</h4>
-            <span className="text-sm font-black px-3 py-1 bg-emerald-100 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-200 rounded-lg">Recommended SWR: 3.5% – 3.8%</span>
+            <h4 className="font-extrabold text-sm text-primary-900 dark:text-primary-300">🌐 Global Diversified Portfolio Benchmark</h4>
+            <span className="text-sm font-black px-3 py-1 bg-primary-100 dark:bg-primary-900 text-primary-900 dark:text-primary-200 rounded-lg">Recommended SWR: 3.5% – 3.8%</span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-            <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-emerald-200/60 dark:border-emerald-900/60 space-y-1">
+            <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-primary-200/60 dark:border-primary-900/60 space-y-1">
               <h5 className="font-bold text-slate-900 dark:text-white">MSCI World Diversification</h5>
               <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
                 Spreads single-country economic risks across 1,500+ global companies.
               </p>
             </div>
 
-            <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-emerald-200/60 dark:border-emerald-900/60 space-y-1">
+            <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-primary-200/60 dark:border-primary-900/60 space-y-1">
               <h5 className="font-bold text-slate-900 dark:text-white">Currency Hedging Control</h5>
               <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
                 Holding GBP-hedged global bond allocations removes currency risk from baseline income.
               </p>
             </div>
 
-            <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-emerald-200/60 dark:border-emerald-900/60 space-y-1">
+            <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-primary-200/60 dark:border-primary-900/60 space-y-1">
               <h5 className="font-bold text-slate-900 dark:text-white">Optimal Sweet Spot</h5>
               <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
                 Delivers consistent portfolio survival across 30-year retirement windows.

@@ -7297,31 +7297,31 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
 
   if (variant === 'pdf_only') {
     return (
-      <div className="bg-gradient-to-r from-emerald-50 via-slate-50 to-indigo-50 dark:from-emerald-950 dark:via-slate-900 dark:to-indigo-950 text-slate-900 dark:text-white rounded-3xl p-5 sm:p-6 shadow-xl border border-emerald-300 dark:border-emerald-500/50 space-y-4 relative overflow-hidden transition-colors">
-        <div className="absolute -top-12 -right-12 w-48 h-48 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
+      <div className="bg-gradient-to-r from-primary-50 via-slate-50 to-indigo-50 dark:from-primary-950 dark:via-slate-900 dark:to-indigo-950 text-slate-900 dark:text-white rounded-3xl p-5 sm:p-6 shadow-xl border border-primary-300 dark:border-primary-500/50 space-y-4 relative overflow-hidden transition-colors">
+        <div className="absolute -top-12 -right-12 w-48 h-48 bg-primary-500/10 rounded-full blur-2xl pointer-events-none" />
 
         {exportSuccessMsg && (
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="flex items-center gap-2 bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/40 text-xs font-bold px-3.5 py-2 rounded-xl z-10 relative"
+            className="flex items-center gap-2 bg-primary-100 dark:bg-primary-500/20 text-primary-800 dark:text-primary-300 border border-primary-300 dark:border-primary-500/40 text-xs font-bold px-3.5 py-2 rounded-xl z-10 relative"
           >
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <CheckCircle2 className="w-4 h-4 text-primary-600 dark:text-primary-400" />
             <span>{exportSuccessMsg}</span>
           </motion.div>
         )}
 
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 z-10 relative">
           <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/40 flex items-center justify-center shrink-0 shadow-inner">
-              <FileText className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+            <div className="w-12 h-12 rounded-2xl bg-primary-100 dark:bg-primary-500/20 text-primary-700 dark:text-primary-400 border border-primary-200 dark:border-primary-500/40 flex items-center justify-center shrink-0 shadow-inner">
+              <FileText className="w-6 h-6 text-primary-600 dark:text-primary-400" />
             </div>
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <h3 className="font-extrabold text-base text-slate-900 dark:text-white tracking-tight">
                   Full Household PDF Report
                 </h3>
-                <span className="bg-emerald-500 text-slate-950 font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider">
+                <span className="bg-primary-500 text-slate-950 font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider">
                   Full PDF Plan
                 </span>
               </div>
@@ -7335,7 +7335,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
             <button
               onClick={handleExportPdfReport}
               disabled={isExportingPdf}
-              className="w-full md:w-auto flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs px-5 py-3 rounded-xl transition-all shadow-md active:scale-95 cursor-pointer disabled:opacity-50 whitespace-nowrap"
+              className="w-full md:w-auto flex items-center justify-center gap-2 bg-primary-500 hover:bg-primary-400 text-slate-950 font-black text-xs px-5 py-3 rounded-xl transition-all shadow-md active:scale-95 cursor-pointer disabled:opacity-50 whitespace-nowrap"
             >
               <Download className="w-4 h-4" />
               <span>{isExportingPdf ? 'Generating PDF...' : 'Export PDF Report'}</span>
@@ -7368,9 +7368,9 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="flex items-center gap-2 bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/40 text-xs font-bold px-3 py-1.5 rounded-xl"
+              className="flex items-center gap-2 bg-primary-100 dark:bg-primary-500/20 text-primary-800 dark:text-primary-300 border border-primary-300 dark:border-primary-500/40 text-xs font-bold px-3 py-1.5 rounded-xl"
             >
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <CheckCircle2 className="w-4 h-4 text-primary-600 dark:text-primary-400" />
               <span>{exportSuccessMsg}</span>
             </motion.div>
           )}
@@ -7512,8 +7512,8 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
     <div className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white rounded-3xl p-6 shadow-xl border border-slate-200 dark:border-slate-800 space-y-6 transition-colors">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30 flex items-center justify-center shrink-0">
-            <FileText className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+          <div className="w-10 h-10 rounded-2xl bg-primary-100 dark:bg-primary-500/20 text-primary-700 dark:text-primary-400 border border-primary-200 dark:border-primary-500/30 flex items-center justify-center shrink-0">
+            <FileText className="w-5 h-5 text-primary-600 dark:text-primary-400" />
           </div>
           <div>
             <h3 className="font-extrabold text-base text-slate-900 dark:text-white tracking-tight">
@@ -7529,9 +7529,9 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="flex items-center gap-2 bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/40 text-xs font-bold px-3 py-1.5 rounded-xl"
+            className="flex items-center gap-2 bg-primary-100 dark:bg-primary-500/20 text-primary-800 dark:text-primary-300 border border-primary-300 dark:border-primary-500/40 text-xs font-bold px-3 py-1.5 rounded-xl"
           >
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <CheckCircle2 className="w-4 h-4 text-primary-600 dark:text-primary-400" />
             <span>{exportSuccessMsg}</span>
           </motion.div>
         )}
@@ -7540,13 +7540,13 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       {/* Export Options Grid (PDF Report, Formula Excel, CSV Export, JSON Backup & Restore) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Option 1: PDF Report (with Diagram Illustrations & Full Analysis) */}
-        <div className="bg-slate-50 dark:bg-slate-800/90 p-4.5 rounded-2xl border-2 border-emerald-500/60 space-y-3 flex flex-col justify-between shadow-md relative overflow-hidden">
-          <div className="absolute top-2 right-2 bg-emerald-500 text-slate-950 font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider">
+        <div className="bg-slate-50 dark:bg-slate-800/90 p-4.5 rounded-2xl border-2 border-primary-500/60 space-y-3 flex flex-col justify-between shadow-md relative overflow-hidden">
+          <div className="absolute top-2 right-2 bg-primary-500 text-slate-950 font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider">
             Full PDF Plan
           </div>
           <div className="space-y-1.5 pt-1">
             <div className="flex items-center gap-2">
-              <FileText className="w-4.5 h-4.5 text-emerald-600 dark:text-emerald-400" />
+              <FileText className="w-4.5 h-4.5 text-primary-600 dark:text-primary-400" />
               <h4 className="font-extrabold text-sm text-slate-900 dark:text-white">PDF Report</h4>
             </div>
             <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
@@ -7557,7 +7557,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
           <button
             onClick={handleExportPdfReport}
             disabled={isExportingPdf}
-            className="w-full flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs px-4 py-2.5 rounded-xl transition-all shadow-sm active:scale-95 cursor-pointer disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-2 bg-primary-500 hover:bg-primary-400 text-slate-950 font-black text-xs px-4 py-2.5 rounded-xl transition-all shadow-sm active:scale-95 cursor-pointer disabled:opacity-50"
           >
             <Download className="w-4 h-4" />
             <span>{isExportingPdf ? 'Generating PDF...' : 'Export PDF Report'}</span>

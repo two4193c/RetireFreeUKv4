@@ -577,7 +577,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
               🚨 Deficit: -£{Math.round(data.incomeShortfall).toLocaleString()}/yr
             </span>
           ) : (
-            <span className="text-[10px] bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 px-2 py-0.5 rounded-md font-black border border-emerald-300 dark:border-emerald-800">
+            <span className="text-[10px] bg-primary-100 dark:bg-primary-950 text-primary-800 dark:text-primary-200 px-2 py-0.5 rounded-md font-black border border-primary-300 dark:border-primary-800">
               ✅ Target Met
             </span>
           )}
@@ -589,9 +589,9 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
             <span>Target Requirement:</span>
             <span className="font-bold text-slate-900 dark:text-white">£{Math.round(data.targetIncome || 0).toLocaleString()}/yr</span>
           </div>
-          <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400 font-extrabold text-xs">
+          <div className="flex justify-between items-center text-primary-600 dark:text-primary-400 font-extrabold text-xs">
             <span>Total Net Income Achieved:</span>
-            <span className="text-sm font-black text-emerald-700 dark:text-emerald-300">£{Math.round(data.totalIncome || 0).toLocaleString()}/yr</span>
+            <span className="text-sm font-black text-primary-700 dark:text-primary-300">£{Math.round(data.totalIncome || 0).toLocaleString()}/yr</span>
           </div>
           {hasSurplus && (
             <div className="flex justify-between items-center font-bold text-teal-700 dark:text-teal-300 text-[11px] pt-1 border-t border-slate-200 dark:border-slate-700">
@@ -678,8 +678,8 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
           </div>
 
           <div className="flex items-center gap-2 flex-wrap text-xs">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-extrabold border border-emerald-200 dark:border-emerald-800/80">
-              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary-50 dark:bg-primary-950/60 text-primary-700 dark:text-primary-300 font-extrabold border border-primary-200 dark:border-primary-800/80">
+              <span className="w-2 h-2 rounded-full bg-primary-500"></span>
               Retire: Age {primaryRetireAge} {isCouple && `(Partner: ${profile.partnerTargetRetirementAge || 60})`}
             </span>
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 font-extrabold border border-sky-200 dark:border-sky-800/80">
@@ -699,7 +699,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
         {/* Section Title */}
         <div className="flex items-center justify-between pb-3 border-b border-slate-200/80 dark:border-slate-700/60">
           <div className="flex items-center gap-2">
-            <PieChart className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <PieChart className="w-4 h-4 text-primary-600 dark:text-primary-400" />
             <h3 className="font-extrabold text-slate-900 dark:text-white text-sm uppercase tracking-wide">
               Deterministic Overview & Plan Status
             </h3>
@@ -716,7 +716,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
           className={`p-4 rounded-xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${
             hasPlanFailure
               ? 'bg-rose-50/90 dark:bg-rose-950/60 border-rose-300 dark:border-rose-800/80 text-rose-950 dark:text-rose-100'
-              : 'bg-emerald-50/90 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-800/80 text-emerald-950 dark:text-emerald-100'
+              : 'bg-primary-50/90 dark:bg-primary-950/60 border-primary-300 dark:border-primary-800/80 text-primary-950 dark:text-primary-100'
           }`}
         >
           <div className="flex items-center gap-3">
@@ -724,13 +724,13 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
               className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${
                 hasPlanFailure
                   ? 'bg-rose-200 dark:bg-rose-900 text-rose-700 dark:text-rose-200 border-rose-300 dark:border-rose-700'
-                  : 'bg-emerald-200 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-200 border-emerald-300 dark:border-emerald-700'
+                  : 'bg-primary-200 dark:bg-primary-900 text-primary-700 dark:text-primary-200 border-primary-300 dark:border-primary-700'
               }`}
             >
               {hasPlanFailure ? (
                 <AlertTriangle className="w-5 h-5 text-rose-600 dark:text-rose-300 animate-pulse" />
               ) : (
-                <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-300" />
+                <CheckCircle2 className="w-5 h-5 text-primary-600 dark:text-primary-300" />
               )}
             </div>
             <div>
@@ -740,7 +740,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                 </span>
                 <span
                   className={`text-sm font-black ${
-                    hasPlanFailure ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'
+                    hasPlanFailure ? 'text-rose-600 dark:text-rose-400' : 'text-primary-600 dark:text-primary-400'
                   }`}
                 >
                   {hasPlanFailure
@@ -761,7 +761,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
               className={`text-xs font-black px-3 py-1.5 rounded-xl inline-block ${
                 hasPlanFailure
                   ? 'bg-rose-600 text-white'
-                  : 'bg-emerald-600 text-white'
+                  : 'bg-primary-600 text-white'
               }`}
             >
               {hasPlanFailure ? 'Action Required' : '100% Feasible'}
@@ -788,7 +788,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
               <div className="text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider">
                 Target Income Goal
               </div>
-              <div className="text-base font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
+              <div className="text-base font-black text-primary-600 dark:text-primary-400 mt-0.5">
                 £{targetIncomeGoal.toLocaleString()}/yr
               </div>
               <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
@@ -800,7 +800,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
               <div className="text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider">
                 Pension Asset Share
               </div>
-              <div className="text-base font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
+              <div className="text-base font-black text-primary-600 dark:text-primary-400 mt-0.5">
                 {retirementYear?.totalPot
                   ? `${Math.round((retirementYear.pensionPot / retirementYear.totalPot) * 100)}%`
                   : '0%'}
@@ -924,20 +924,20 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
 
               {/* RECOMMENDED DELAY RESOLUTION CALLOUT */}
               {delayedRetirementAnalysis.firstSuccessful ? (
-                <div className="bg-emerald-50 dark:bg-emerald-950/80 border-2 border-emerald-300 dark:border-emerald-700/80 rounded-xl p-3.5 text-emerald-950 dark:text-emerald-100 space-y-3 shadow-xs">
+                <div className="bg-primary-50 dark:bg-primary-950/80 border-2 border-primary-300 dark:border-primary-700/80 rounded-xl p-3.5 text-primary-950 dark:text-primary-100 space-y-3 shadow-xs">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="bg-emerald-600 text-white font-black text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-md">
+                        <span className="bg-primary-600 text-white font-black text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-md">
                           Plan Success Solution Found
                         </span>
-                        <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                        <span className="text-xs font-bold text-primary-800 dark:text-primary-300 flex items-center gap-1">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
                           Delaying to Age {delayedRetirementAnalysis.firstSuccessful.testAge} eliminates 100% of shortfall
                         </span>
                       </div>
-                      <p className="text-xs text-emerald-900 dark:text-emerald-100 leading-relaxed">
-                        Retiring at <strong className="font-bold underline text-emerald-700 dark:text-emerald-300">Age {delayedRetirementAnalysis.firstSuccessful.testAge}</strong> (a delay of <strong>+{delayedRetirementAnalysis.firstSuccessful.delayYears} yr{delayedRetirementAnalysis.firstSuccessful.delayYears > 1 ? 's' : ''}</strong>) increases your projected retirement pot from <strong>£{displayedRetirementPot.toLocaleString()}</strong> to <strong>£{delayedRetirementAnalysis.firstSuccessful.retirementPot.toLocaleString()}</strong>, achieving <strong>100% plan success with £0 lifetime deficit</strong> through Age 100.
+                      <p className="text-xs text-primary-900 dark:text-primary-100 leading-relaxed">
+                        Retiring at <strong className="font-bold underline text-primary-700 dark:text-primary-300">Age {delayedRetirementAnalysis.firstSuccessful.testAge}</strong> (a delay of <strong>+{delayedRetirementAnalysis.firstSuccessful.delayYears} yr{delayedRetirementAnalysis.firstSuccessful.delayYears > 1 ? 's' : ''}</strong>) increases your projected retirement pot from <strong>£{displayedRetirementPot.toLocaleString()}</strong> to <strong>£{delayedRetirementAnalysis.firstSuccessful.retirementPot.toLocaleString()}</strong>, achieving <strong>100% plan success with £0 lifetime deficit</strong> through Age 100.
                         {profile.isCouplePlanning && delayedRetirementAnalysis.firstSuccessful.partnerTestAge && (
                           <span> (Partner retirement age shifts from Age {profile.partnerTargetRetirementAge || 60} to Age {delayedRetirementAnalysis.firstSuccessful.partnerTestAge}).</span>
                         )}
@@ -958,7 +958,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                               : profile.partnerTargetRetirementAge,
                           });
                         }}
-                        className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-extrabold text-xs rounded-xl shadow-xs flex items-center justify-center gap-1.5 shrink-0 transition-all cursor-pointer border border-emerald-500"
+                        className="px-3.5 py-2 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white font-extrabold text-xs rounded-xl shadow-xs flex items-center justify-center gap-1.5 shrink-0 transition-all cursor-pointer border border-primary-500"
                       >
                         <Check className="w-4 h-4" />
                         <span>Apply Age {delayedRetirementAnalysis.firstSuccessful.testAge} Plan</span>
@@ -967,31 +967,31 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                   </div>
 
                   {/* Quick metric breakdown pills */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-emerald-200 dark:border-emerald-800/80 text-[11px]">
-                    <div className="bg-white/80 dark:bg-slate-900/80 p-2 rounded-lg border border-emerald-200 dark:border-emerald-800">
-                      <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase">Original Target</div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-primary-200 dark:border-primary-800/80 text-[11px]">
+                    <div className="bg-white/80 dark:bg-slate-900/80 p-2 rounded-lg border border-primary-200 dark:border-primary-800">
+                      <div className="text-[10px] text-primary-600 dark:text-primary-400 font-bold uppercase">Original Target</div>
                       <div className="font-extrabold text-slate-800 dark:text-slate-100 mt-0.5">
                         Age {profile.targetRetirementAge} (Failed)
                       </div>
                     </div>
 
-                    <div className="bg-white/80 dark:bg-slate-900/80 p-2 rounded-lg border border-emerald-200 dark:border-emerald-800">
-                      <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase">Successful Target</div>
-                      <div className="font-extrabold text-emerald-700 dark:text-emerald-300 mt-0.5">
+                    <div className="bg-white/80 dark:bg-slate-900/80 p-2 rounded-lg border border-primary-200 dark:border-primary-800">
+                      <div className="text-[10px] text-primary-600 dark:text-primary-400 font-bold uppercase">Successful Target</div>
+                      <div className="font-extrabold text-primary-700 dark:text-primary-300 mt-0.5">
                         Age {delayedRetirementAnalysis.firstSuccessful.testAge} (+{delayedRetirementAnalysis.firstSuccessful.delayYears}y)
                       </div>
                     </div>
 
-                    <div className="bg-white/80 dark:bg-slate-900/80 p-2 rounded-lg border border-emerald-200 dark:border-emerald-800">
-                      <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase">Pot at Retirement</div>
-                      <div className="font-extrabold text-emerald-700 dark:text-emerald-300 mt-0.5">
+                    <div className="bg-white/80 dark:bg-slate-900/80 p-2 rounded-lg border border-primary-200 dark:border-primary-800">
+                      <div className="text-[10px] text-primary-600 dark:text-primary-400 font-bold uppercase">Pot at Retirement</div>
+                      <div className="font-extrabold text-primary-700 dark:text-primary-300 mt-0.5">
                         £{delayedRetirementAnalysis.firstSuccessful.retirementPot.toLocaleString()}
                       </div>
                     </div>
 
-                    <div className="bg-white/80 dark:bg-slate-900/80 p-2 rounded-lg border border-emerald-200 dark:border-emerald-800">
-                      <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase">Lifetime Deficit</div>
-                      <div className="font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                    <div className="bg-white/80 dark:bg-slate-900/80 p-2 rounded-lg border border-primary-200 dark:border-primary-800">
+                      <div className="text-[10px] text-primary-600 dark:text-primary-400 font-bold uppercase">Lifetime Deficit</div>
+                      <div className="font-extrabold text-primary-600 dark:text-primary-400 mt-0.5">
                         £0 (100% On Track)
                       </div>
                     </div>
@@ -1060,14 +1060,14 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                         }}
                         className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer relative overflow-hidden ${
                           isRec
-                            ? 'bg-emerald-100/90 dark:bg-emerald-950/90 border-emerald-400 dark:border-emerald-600 ring-2 ring-emerald-500/30'
+                            ? 'bg-primary-100/90 dark:bg-primary-950/90 border-primary-400 dark:border-primary-600 ring-2 ring-primary-500/30'
                             : cand.isSuccessful
-                            ? 'bg-emerald-50/70 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 hover:border-emerald-400'
+                            ? 'bg-primary-50/70 dark:bg-primary-950/40 border-primary-200 dark:border-primary-800 hover:border-primary-400'
                             : 'bg-white dark:bg-slate-900 border-rose-200 dark:border-rose-900/60 hover:border-amber-400'
                         }`}
                       >
                         {isRec && (
-                          <div className="absolute top-0 right-0 bg-emerald-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded-bl-lg uppercase">
+                          <div className="absolute top-0 right-0 bg-primary-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded-bl-lg uppercase">
                             Optimal
                           </div>
                         )}
@@ -1079,7 +1079,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                         </div>
                         <div className="mt-1">
                           {cand.isSuccessful ? (
-                            <span className="inline-flex items-center gap-0.5 text-[9px] font-black text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/60 px-1.5 py-0.5 rounded-md">
+                            <span className="inline-flex items-center gap-0.5 text-[9px] font-black text-primary-700 dark:text-primary-400 bg-primary-100 dark:bg-primary-900/60 px-1.5 py-0.5 rounded-md">
                               <CheckCircle2 className="w-2.5 h-2.5" /> 100% On Track
                             </span>
                           ) : (
@@ -1103,7 +1103,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
         <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-700/60 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-200/80 dark:border-slate-700/60">
             <div className="flex items-center gap-2">
-              <PieChart className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <PieChart className="w-4 h-4 text-primary-600 dark:text-primary-400" />
               <h3 className="font-extrabold text-slate-900 dark:text-white text-sm">
                 Retirement Start Pot Breakdown (Age {profile.targetRetirementAge} / {retirementYear?.year || ''})
               </h3>
@@ -1122,7 +1122,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                 </label>
               )}
               <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
-                Total Capital: <strong className="text-emerald-600 dark:text-emerald-400 font-black text-xs">£{(displayedRetirementPot || 0).toLocaleString()}</strong> ({adjustInflation ? "Real Terms" : "Nominal"})
+                Total Capital: <strong className="text-primary-600 dark:text-primary-400 font-black text-xs">£{(displayedRetirementPot || 0).toLocaleString()}</strong> ({adjustInflation ? "Real Terms" : "Nominal"})
               </span>
             </div>
           </div>
@@ -1133,10 +1133,10 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
               <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Users className="w-4 h-4 text-emerald-500" />
+                    <Users className="w-4 h-4 text-primary-500" />
                     <span className="font-bold text-xs text-slate-800 dark:text-slate-100">Combined Household</span>
                   </div>
-                  <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full">
+                  <span className="text-[10px] font-black uppercase tracking-wider bg-primary-100 dark:bg-primary-950 text-primary-700 dark:text-primary-300 px-2 py-0.5 rounded-full">
                     100% Total
                   </span>
                 </div>
@@ -1146,7 +1146,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                 <div className="space-y-1.5 text-xs pt-2 border-t border-slate-100 dark:border-slate-800">
                   <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
                     <span className="flex items-center gap-1.5 font-medium">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                      <span className="w-2 h-2 rounded-full bg-primary-500" />
                       Pension Pot
                     </span>
                     <span className="font-bold text-slate-900 dark:text-white">£{(combinedPensionPotAtRetirement || 0).toLocaleString()}</span>
@@ -1270,12 +1270,12 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
           ) : (
             /* Single User Breakdown */
             <div className={`grid grid-cols-1 ${showAnnuitiesInPotBreakdown && hasPurchasedAnnuity ? 'sm:grid-cols-4' : 'sm:grid-cols-3'} gap-3.5`}>
-              <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-emerald-200 dark:border-emerald-800/80 space-y-1">
+              <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-primary-200 dark:border-primary-800/80 space-y-1">
                 <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-primary-500" />
                   <span>Workplace & SIPP Pension</span>
                 </div>
-                <div className="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">
+                <div className="text-xl font-extrabold text-primary-600 dark:text-primary-400">
                   £{(combinedPensionPotAtRetirement || 0).toLocaleString()}
                 </div>
                 <div className="text-[11px] text-slate-500 font-medium">
@@ -1353,7 +1353,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
           <div className="space-y-2 bg-slate-50/60 dark:bg-slate-800/40 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1 border-b border-slate-200/60 dark:border-slate-700/60">
               <h4 className="font-extrabold text-xs text-slate-800 dark:text-slate-100 uppercase tracking-wider flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                <span className="w-2.5 h-2.5 rounded-full bg-primary-500"></span>
                 <span>1. Portfolio Trajectory (£)</span>
               </h4>
               <div className="flex gap-2 self-start sm:self-auto">
@@ -1370,7 +1370,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                   onClick={() => setPotChartType('area')}
                   className={`px-2.5 py-0.5 rounded-lg transition-all cursor-pointer ${
                     potChartType === 'area'
-                      ? 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-xs font-black'
+                      ? 'bg-white dark:bg-slate-900 text-primary-600 dark:text-primary-400 shadow-xs font-black'
                       : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
@@ -1381,7 +1381,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                   onClick={() => setPotChartType('line')}
                   className={`px-2.5 py-0.5 rounded-lg transition-all cursor-pointer ${
                     potChartType === 'line'
-                      ? 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-xs font-black'
+                      ? 'bg-white dark:bg-slate-900 text-primary-600 dark:text-primary-400 shadow-xs font-black'
                       : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
@@ -1620,7 +1620,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
           {chartMode === 'pots' && (
             <div className="flex items-center justify-between px-2 pt-1 pb-2 mb-1 border-b border-slate-200/60 dark:border-slate-800/80 shrink-0">
               <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                <span className="w-2.5 h-2.5 rounded-full bg-primary-500"></span>
                 <span className="text-xs font-extrabold text-slate-800 dark:text-slate-100 uppercase tracking-wider">
                   Portfolio Trajectory
                 </span>
@@ -1639,7 +1639,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                   onClick={() => setPotChartType('area')}
                   className={`px-2.5 py-0.5 rounded-md transition-all cursor-pointer ${
                     potChartType === 'area'
-                      ? 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-xs font-black'
+                      ? 'bg-white dark:bg-slate-900 text-primary-600 dark:text-primary-400 shadow-xs font-black'
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
@@ -1650,7 +1650,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                   onClick={() => setPotChartType('line')}
                   className={`px-2.5 py-0.5 rounded-md transition-all cursor-pointer ${
                     potChartType === 'line'
-                      ? 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-xs font-black'
+                      ? 'bg-white dark:bg-slate-900 text-primary-600 dark:text-primary-400 shadow-xs font-black'
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
@@ -1736,7 +1736,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                                       🚨 Plan Failure
                                     </span>
                                   ) : (
-                                    <span className="text-[10px] bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.5 rounded font-black border border-emerald-200 dark:border-emerald-800">
+                                    <span className="text-[10px] bg-primary-100 dark:bg-primary-950 text-primary-700 dark:text-primary-300 px-1.5 py-0.5 rounded font-black border border-primary-200 dark:border-primary-800">
                                       ✅ On Track
                                     </span>
                                   )
@@ -1744,7 +1744,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                               </div>
 
                               <div className="space-y-1">
-                                <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-semibold">
+                                <div className="flex justify-between text-primary-600 dark:text-primary-400 font-semibold">
                                   <span>Pension Pot:</span>
                                   <span className="font-bold">£{(data[potKeys.pension] || 0).toLocaleString()}</span>
                                 </div>
@@ -1804,7 +1804,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                                       <span>Income Target Req:</span>
                                       <span className="font-bold">£{(data.targetIncome || 0).toLocaleString()}/yr</span>
                                     </div>
-                                    <div className="flex justify-between text-emerald-600 dark:text-emerald-500 font-semibold">
+                                    <div className="flex justify-between text-primary-600 dark:text-primary-500 font-semibold">
                                       <span>Net Income Received:</span>
                                       <span className="font-bold">£{(data.totalIncome || 0).toLocaleString()}/yr</span>
                                     </div>
@@ -1941,7 +1941,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                                       🚨 Plan Failure
                                     </span>
                                   ) : (
-                                    <span className="text-[10px] bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.5 rounded font-black border border-emerald-200 dark:border-emerald-800">
+                                    <span className="text-[10px] bg-primary-100 dark:bg-primary-950 text-primary-700 dark:text-primary-300 px-1.5 py-0.5 rounded font-black border border-primary-200 dark:border-primary-800">
                                       ✅ On Track
                                     </span>
                                   )
@@ -1953,7 +1953,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                                   <span>Total Portfolio Balance:</span>
                                   <span>£{(data[potKeys.total] || 0).toLocaleString()}</span>
                                 </div>
-                                <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-semibold pt-1">
+                                <div className="flex justify-between text-primary-600 dark:text-primary-400 font-semibold pt-1">
                                   <span>Pension Pot:</span>
                                   <span className="font-bold">£{(data[potKeys.pension] || 0).toLocaleString()}</span>
                                 </div>
@@ -2009,7 +2009,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                                       <span>Income Target Req:</span>
                                       <span className="font-bold">£{(data.targetIncome || 0).toLocaleString()}/yr</span>
                                     </div>
-                                    <div className="flex justify-between text-emerald-600 dark:text-emerald-500 font-semibold">
+                                    <div className="flex justify-between text-primary-600 dark:text-primary-500 font-semibold">
                                       <span>Net Income Received:</span>
                                       <span className="font-bold">£{(data.totalIncome || 0).toLocaleString()}/yr</span>
                                     </div>
@@ -2187,7 +2187,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                                   🚨 Shortfall: £{(data.incomeShortfall || 0).toLocaleString()}
                                 </span>
                               ) : (
-                                <span className="text-[10px] bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.5 rounded font-black border border-emerald-200 dark:border-emerald-800">
+                                <span className="text-[10px] bg-primary-100 dark:bg-primary-950 text-primary-700 dark:text-primary-300 px-1.5 py-0.5 rounded font-black border border-primary-200 dark:border-primary-800">
                                   ✅ Target Met
                                 </span>
                               )}
@@ -2198,7 +2198,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                                 <span>Target Income Target:</span>
                                 <span>£{(data.targetIncome || 0).toLocaleString()}/yr</span>
                               </div>
-                              <div className="flex justify-between font-bold text-emerald-600 dark:text-emerald-400">
+                              <div className="flex justify-between font-bold text-primary-600 dark:text-primary-400">
                                 <span>Achieved Net Income:</span>
                                 <span>£{(data.totalIncome || 0).toLocaleString()}/yr</span>
                               </div>
@@ -2239,7 +2239,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
               onClick={() => setChartMode('pots')}
               className={`px-3.5 py-1.5 rounded-xl transition-all cursor-pointer ${
                 chartMode === 'pots'
-                  ? 'bg-slate-900 dark:bg-emerald-600 text-white shadow-xs'
+                  ? 'bg-slate-900 dark:bg-primary-600 text-white shadow-xs'
                   : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
@@ -2249,7 +2249,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
               onClick={() => setChartMode('income')}
               className={`px-3.5 py-1.5 rounded-xl transition-all cursor-pointer ${
                 chartMode === 'income'
-                  ? 'bg-slate-900 dark:bg-emerald-600 text-white shadow-xs'
+                  ? 'bg-slate-900 dark:bg-primary-600 text-white shadow-xs'
                   : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
@@ -2277,7 +2277,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
               type="checkbox"
               checked={adjustInflation}
               onChange={(e) => onChange?.({ ...profile, adjustForInflation: e.target.checked })}
-              className="w-4 h-4 text-emerald-600 rounded border-slate-300 dark:border-slate-700 focus:ring-emerald-500 cursor-pointer accent-emerald-600"
+              className="w-4 h-4 text-primary-600 rounded border-slate-300 dark:border-slate-700 focus:ring-primary-500 cursor-pointer accent-primary-600"
             />
             <span>Today's £ (Real Terms)</span>
           </label>
@@ -2289,7 +2289,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
               type="checkbox"
               checked={adjustInflation}
               onChange={(e) => onChange?.({ ...profile, adjustForInflation: e.target.checked })}
-              className="w-4 h-4 text-emerald-600 rounded border-slate-300 dark:border-slate-700 focus:ring-emerald-500 cursor-pointer accent-emerald-600"
+              className="w-4 h-4 text-primary-600 rounded border-slate-300 dark:border-slate-700 focus:ring-primary-500 cursor-pointer accent-primary-600"
             />
             <span>Today's £ (Real Terms)</span>
           </label>

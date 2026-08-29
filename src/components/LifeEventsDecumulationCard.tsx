@@ -266,7 +266,7 @@ export const LifeEventsDecumulationCard: React.FC<LifeEventsDecumulationCardProp
               onClick={() => setActiveOwnerFilter('primary')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
                 activeOwnerFilter === 'primary'
-                  ? 'bg-emerald-600 text-white shadow-xs'
+                  ? 'bg-primary-600 text-white shadow-xs'
                   : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
               }`}
             >
@@ -309,17 +309,17 @@ export const LifeEventsDecumulationCard: React.FC<LifeEventsDecumulationCardProp
         <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-8 gap-2">
           <button
             onClick={() => openAddModal('downsizing')}
-            className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 hover:border-emerald-300 dark:hover:border-emerald-800 transition-all text-left flex flex-col justify-between group cursor-pointer"
+            className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:bg-primary-50 dark:hover:bg-primary-950/30 hover:border-primary-300 dark:hover:border-primary-800 transition-all text-left flex flex-col justify-between group cursor-pointer"
           >
-            <div className="flex items-center justify-between w-full text-emerald-600 dark:text-emerald-400">
+            <div className="flex items-center justify-between w-full text-primary-600 dark:text-primary-400">
               <Home className="w-4 h-4" />
               <TrendingUp className="w-3.5 h-3.5" />
             </div>
             <div className="mt-2">
-              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-emerald-700 dark:group-hover:text-emerald-300 block">
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-primary-700 dark:group-hover:text-primary-300 block">
                 Downsizing
               </span>
-              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">
+              <span className="text-[10px] text-primary-600 dark:text-primary-400 font-semibold">
                 +£100k (Income)
               </span>
             </div>
@@ -327,17 +327,17 @@ export const LifeEventsDecumulationCard: React.FC<LifeEventsDecumulationCardProp
 
           <button
             onClick={() => openAddModal('inheritance')}
-            className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 hover:border-emerald-300 dark:hover:border-emerald-800 transition-all text-left flex flex-col justify-between group cursor-pointer"
+            className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:bg-primary-50 dark:hover:bg-primary-950/30 hover:border-primary-300 dark:hover:border-primary-800 transition-all text-left flex flex-col justify-between group cursor-pointer"
           >
-            <div className="flex items-center justify-between w-full text-emerald-600 dark:text-emerald-400">
+            <div className="flex items-center justify-between w-full text-primary-600 dark:text-primary-400">
               <Gift className="w-4 h-4" />
               <TrendingUp className="w-3.5 h-3.5" />
             </div>
             <div className="mt-2">
-              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-emerald-700 dark:group-hover:text-emerald-300 block">
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-primary-700 dark:group-hover:text-primary-300 block">
                 Inheritance
               </span>
-              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">
+              <span className="text-[10px] text-primary-600 dark:text-primary-400 font-semibold">
                 +£50k (Income)
               </span>
             </div>
@@ -461,10 +461,10 @@ export const LifeEventsDecumulationCard: React.FC<LifeEventsDecumulationCardProp
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200/80 dark:border-slate-800">
           <div className="space-y-1">
             <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1">
-              <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
+              <TrendingUp className="w-3.5 h-3.5 text-primary-500" />
               Total Decumulation Inflows
             </span>
-            <div className="text-base font-extrabold text-emerald-600 dark:text-emerald-400">
+            <div className="text-base font-extrabold text-primary-600 dark:text-primary-400">
               +£{totalInflows.toLocaleString()}
             </div>
           </div>
@@ -485,7 +485,7 @@ export const LifeEventsDecumulationCard: React.FC<LifeEventsDecumulationCardProp
             <div
               className={`text-base font-extrabold ${
                 netImpact >= 0
-                  ? 'text-emerald-600 dark:text-emerald-400'
+                  ? 'text-primary-600 dark:text-primary-400'
                   : 'text-rose-600 dark:text-rose-400'
               }`}
             >
@@ -519,13 +519,13 @@ export const LifeEventsDecumulationCard: React.FC<LifeEventsDecumulationCardProp
                 className={`p-4 rounded-2xl border transition-all flex items-center justify-between gap-4 ${
                   event.enabled
                     ? isIncome
-                      ? 'bg-emerald-50/30 dark:bg-emerald-950/10 border-emerald-200/80 dark:border-emerald-900/60'
+                      ? 'bg-primary-50/30 dark:bg-primary-950/10 border-primary-200/80 dark:border-primary-900/60'
                       : 'bg-slate-50/70 dark:bg-slate-800/40 border-slate-200/80 dark:border-slate-700/80'
                     : 'bg-slate-100/60 dark:bg-slate-900/40 border-slate-200/40 dark:border-slate-800/40 opacity-60'
                 }`}
               >
                 <div className="flex items-center gap-4 flex-1">
-                  <div className={`p-2 rounded-xl flex-shrink-0 ${isIncome ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400' : 'bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400'}`}>
+                  <div className={`p-2 rounded-xl flex-shrink-0 ${isIncome ? 'bg-primary-100 dark:bg-primary-900/40 text-primary-600 dark:text-primary-400' : 'bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400'}`}>
                     {isIncome ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
                   </div>
                   <div className="flex-1">
@@ -612,7 +612,7 @@ export const LifeEventsDecumulationCard: React.FC<LifeEventsDecumulationCardProp
                     onClick={() => setEditItem({ ...editItem, type: 'income' })}
                     className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all border ${
                       editItem.type === 'income'
-                        ? 'bg-emerald-100 border-emerald-300 text-emerald-800 dark:bg-emerald-900/40 dark:border-emerald-700 dark:text-emerald-300'
+                        ? 'bg-primary-100 border-primary-300 text-primary-800 dark:bg-primary-900/40 dark:border-primary-700 dark:text-primary-300'
                         : 'bg-white border-slate-200 text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400'
                     }`}
                   >

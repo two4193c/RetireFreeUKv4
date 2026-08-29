@@ -121,7 +121,7 @@ export const SummaryModal: React.FC<SummaryModalProps> = ({
         {/* Modal Header */}
         <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 px-5 py-3.5 bg-white dark:bg-slate-900/95 border-b border-slate-200 dark:border-slate-800 shrink-0">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 rounded-2xl border border-emerald-100 dark:border-emerald-800/60 shrink-0">
+            <div className="p-2.5 bg-primary-50 dark:bg-primary-950/80 text-primary-600 dark:text-primary-400 rounded-2xl border border-primary-100 dark:border-primary-800/60 shrink-0">
               <LayoutDashboard className="w-5 h-5" />
             </div>
             <div className="min-w-0">
@@ -129,7 +129,7 @@ export const SummaryModal: React.FC<SummaryModalProps> = ({
                 <h2 id="summary-popout-title" className="text-base font-extrabold text-slate-900 dark:text-slate-100 truncate">
                   Executive Summary Dashboard
                 </h2>
-                <span className="hidden sm:inline-block text-[10px] font-bold uppercase tracking-wider bg-emerald-100/70 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 px-2.5 py-0.5 rounded-full border border-emerald-200/50 dark:border-emerald-800/50 shrink-0">
+                <span className="hidden sm:inline-block text-[10px] font-bold uppercase tracking-wider bg-primary-100/70 dark:bg-primary-950 text-primary-700 dark:text-primary-300 px-2.5 py-0.5 rounded-full border border-primary-200/50 dark:border-primary-800/50 shrink-0">
                   Studio Pop-Out
                 </span>
               </div>
@@ -152,7 +152,7 @@ export const SummaryModal: React.FC<SummaryModalProps> = ({
                     onClick={() => setActiveSubTab(tab.id)}
                     className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
                       isActive
-                        ? 'bg-white dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 shadow-sm'
+                        ? 'bg-white dark:bg-slate-700 text-primary-700 dark:text-primary-300 shadow-sm'
                         : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                     }`}
                   >

@@ -496,7 +496,7 @@ export const MortgageDebtCard: React.FC<MortgageDebtCardProps> = ({ profile, onC
                         step={1000}
                         value={mortgage.currentBalance}
                         onChange={(e) => updateMortgage({ currentBalance: Math.max(0, Number(e.target.value)) })}
-                        className="w-full pl-7 p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 font-bold text-slate-900 dark:text-white text-emerald-600 dark:text-emerald-400"
+                        className="w-full pl-7 p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 font-bold text-slate-900 dark:text-white text-primary-600 dark:text-primary-400"
                       />
                     </div>
                   </div>
@@ -533,11 +533,11 @@ export const MortgageDebtCard: React.FC<MortgageDebtCardProps> = ({ profile, onC
                         </div>
                         <div>
                           <div className="text-slate-500 dark:text-slate-400 font-medium">Overpaid Balloon (With Overpay):</div>
-                          <div className="font-black text-emerald-600 dark:text-emerald-400">{formatCurrency(simulationResults.ovBalloonPayment)}</div>
+                          <div className="font-black text-primary-600 dark:text-primary-400">{formatCurrency(simulationResults.ovBalloonPayment)}</div>
                         </div>
                       </div>
                       <p className="text-[11px] opacity-90 leading-relaxed">
-                        Standard payments of <strong>{formatCurrency(calculatedStandardMonthlyPayment)}/mo</strong> pay interest only. Monthly overpayments (<strong>+{formatCurrency(mortgage.regularMonthlyOverpayment || 0)}/mo</strong>) pay down principal directly, reducing your final balloon payment by <strong className="text-emerald-600 dark:text-emerald-400">{formatCurrency(simulationResults.balloonReduction)}</strong>. Overpayments stop at Age {simulationResults.termEndAge} when the balloon payment falls due.
+                        Standard payments of <strong>{formatCurrency(calculatedStandardMonthlyPayment)}/mo</strong> pay interest only. Monthly overpayments (<strong>+{formatCurrency(mortgage.regularMonthlyOverpayment || 0)}/mo</strong>) pay down principal directly, reducing your final balloon payment by <strong className="text-primary-600 dark:text-primary-400">{formatCurrency(simulationResults.balloonReduction)}</strong>. Overpayments stop at Age {simulationResults.termEndAge} when the balloon payment falls due.
                       </p>
                     </div>
                   )}
@@ -650,7 +650,7 @@ export const MortgageDebtCard: React.FC<MortgageDebtCardProps> = ({ profile, onC
               </div>
               <div className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/80 dark:border-slate-800 flex justify-between items-center">
                 <span className="text-slate-500 font-medium">Current Home Equity:</span>
-                <span className="font-extrabold text-emerald-600 dark:text-emerald-400">
+                <span className="font-extrabold text-primary-600 dark:text-primary-400">
                   {formatCurrency(Math.max(0, mortgage.propertyValue - mortgage.currentBalance))}
                 </span>
               </div>
@@ -664,7 +664,7 @@ export const MortgageDebtCard: React.FC<MortgageDebtCardProps> = ({ profile, onC
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 md:p-6 shadow-xs space-y-5">
           <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800">
             <div className="flex items-center gap-3">
-              <div className="p-3 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl">
+              <div className="p-3 bg-primary-500/10 text-primary-600 dark:text-primary-400 rounded-xl">
                 <Zap className="w-6 h-6" />
               </div>
               <div>
@@ -679,7 +679,7 @@ export const MortgageDebtCard: React.FC<MortgageDebtCardProps> = ({ profile, onC
 
             <div className="hidden sm:block text-right">
               <span className="text-xs text-slate-500 font-medium block">Total Interest Saved</span>
-              <span className="text-sm font-black text-emerald-600 dark:text-emerald-400">
+              <span className="text-sm font-black text-primary-600 dark:text-primary-400">
                 {formatCurrency(simulationResults.interestSaved)} ({simulationResults.yearsSaved} yrs saved)
               </span>
             </div>
@@ -712,7 +712,7 @@ export const MortgageDebtCard: React.FC<MortgageDebtCardProps> = ({ profile, onC
               <div className="pt-2 space-y-1.5">
                 <div className="flex justify-between text-[11px] font-semibold text-slate-600 dark:text-slate-400">
                   <span>Quick Slider</span>
-                  <span className="text-emerald-600 dark:text-emerald-400 font-bold">
+                  <span className="text-primary-600 dark:text-primary-400 font-bold">
                     £{mortgage.regularMonthlyOverpayment}/mo
                   </span>
                 </div>
@@ -744,7 +744,7 @@ export const MortgageDebtCard: React.FC<MortgageDebtCardProps> = ({ profile, onC
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="font-bold text-xs text-slate-900 dark:text-white flex items-center gap-2">
-                      <PiggyBank className="w-4 h-4 text-emerald-500" />
+                      <PiggyBank className="w-4 h-4 text-primary-500" />
                       <span>Scheduled Lump Sum Overpayments</span>
                     </h3>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -787,7 +787,7 @@ export const MortgageDebtCard: React.FC<MortgageDebtCardProps> = ({ profile, onC
                         </div>
 
                         <div className="flex items-center gap-4">
-                          <span className="font-black text-emerald-600 dark:text-emerald-400">
+                          <span className="font-black text-primary-600 dark:text-primary-400">
                             {formatCurrency(ls.amount)}
                           </span>
                           <button
@@ -830,13 +830,13 @@ export const MortgageDebtCard: React.FC<MortgageDebtCardProps> = ({ profile, onC
           <div
             className={`p-4 md:p-5 rounded-xl border ${
               simulationResults.clearedBeforeRetirement
-                ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/60 text-emerald-900 dark:text-emerald-200'
+                ? 'bg-primary-50 dark:bg-primary-950/40 border-primary-200 dark:border-primary-800/60 text-primary-900 dark:text-primary-200'
                 : 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800/60 text-rose-900 dark:text-rose-200'
             }`}
           >
             <div className="flex items-start gap-3">
               {simulationResults.clearedBeforeRetirement ? (
-                <ShieldCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                <ShieldCheck className="w-5 h-5 text-primary-600 dark:text-primary-400 shrink-0 mt-0.5" />
               ) : (
                 <AlertTriangle className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
               )}
@@ -866,7 +866,7 @@ export const MortgageDebtCard: React.FC<MortgageDebtCardProps> = ({ profile, onC
                       </div>
                       <div>
                         <div className="text-slate-500 dark:text-slate-400 font-medium">Overpaid Balloon (At Age {simulationResults.termEndAge}):</div>
-                        <div className="text-base font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
+                        <div className="text-base font-black text-primary-600 dark:text-primary-400 mt-0.5">
                           {formatCurrency(simulationResults.ovBalloonPayment)}
                         </div>
                       </div>
@@ -883,7 +883,7 @@ export const MortgageDebtCard: React.FC<MortgageDebtCardProps> = ({ profile, onC
                         <strong>💡 Overpayment Mechanism:</strong> Your overpayments pay down mortgage principal directly, shrinking the final balloon payment from {formatCurrency(simulationResults.stdBalloonPayment)} to <strong>{formatCurrency(simulationResults.ovBalloonPayment)}</strong> at Age {simulationResults.termEndAge} ({simulationResults.termEndYear}). Overpayments stop when the balloon payment falls due at Age {simulationResults.termEndAge}.
                       </div>
                       {simulationResults.termEndAge <= profile.targetRetirementAge ? (
-                        <div className="text-[11px] text-emerald-700 dark:text-emerald-300 font-semibold pt-1 border-t border-amber-500/20">
+                        <div className="text-[11px] text-primary-700 dark:text-primary-300 font-semibold pt-1 border-t border-amber-500/20">
                           ✓ Once the {formatCurrency(simulationResults.ovBalloonPayment)} balloon payment is settled at Age {simulationResults.termEndAge}, your mortgage is fully cleared before retirement at Age {profile.targetRetirementAge}.
                         </div>
                       ) : (
@@ -939,7 +939,7 @@ export const MortgageDebtCard: React.FC<MortgageDebtCardProps> = ({ profile, onC
                 <div className="text-[11px] pt-1 space-y-0.5 border-t border-slate-200/60 dark:border-slate-700/60 mt-1">
                   <div className="flex justify-between items-center text-amber-600 dark:text-amber-400 font-bold">
                     <span>Balloon (With Overpay):</span>
-                    <span className="font-black text-emerald-600 dark:text-emerald-400">{formatCurrency(simulationResults.ovBalloonPayment)}</span>
+                    <span className="font-black text-primary-600 dark:text-primary-400">{formatCurrency(simulationResults.ovBalloonPayment)}</span>
                   </div>
                   <div className="text-[10px] text-slate-500 dark:text-slate-400 flex justify-between">
                     <span>Std: {formatCurrency(simulationResults.stdBalloonPayment)}</span>
@@ -950,7 +950,7 @@ export const MortgageDebtCard: React.FC<MortgageDebtCardProps> = ({ profile, onC
                 <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between pt-1">
                   <span>Standard: {formatCurrency(effectiveMonthlyPayment)}</span>
                   {mortgage.regularMonthlyOverpayment > 0 && (
-                    <span className="text-emerald-600 dark:text-emerald-400 font-bold">
+                    <span className="text-primary-600 dark:text-primary-400 font-bold">
                       +{formatCurrency(mortgage.regularMonthlyOverpayment)} overpay
                     </span>
                   )}
@@ -962,12 +962,12 @@ export const MortgageDebtCard: React.FC<MortgageDebtCardProps> = ({ profile, onC
             <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-800 space-y-1">
               <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-medium">
                 <span>{simulationResults.isInterestOnly ? 'Balloon Due Age' : 'Projected Payoff Age'}</span>
-                <Zap className="w-4 h-4 text-emerald-500" />
+                <Zap className="w-4 h-4 text-primary-500" />
               </div>
               <div className="text-xl font-black text-slate-900 dark:text-white flex items-baseline gap-2">
                 <span>Age {simulationResults.ovPayoffAge}</span>
                 {simulationResults.yearsSaved > 0 && (
-                  <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 rounded-md">
+                  <span className="text-xs font-bold text-primary-600 dark:text-primary-400 bg-primary-100 dark:bg-primary-950 px-2 py-0.5 rounded-md">
                     -{simulationResults.yearsSaved} yrs
                   </span>
                 )}
@@ -983,9 +983,9 @@ export const MortgageDebtCard: React.FC<MortgageDebtCardProps> = ({ profile, onC
             <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-800 space-y-1">
               <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-medium">
                 <span>Interest Saved</span>
-                <PiggyBank className="w-4 h-4 text-emerald-500" />
+                <PiggyBank className="w-4 h-4 text-primary-500" />
               </div>
-              <div className="text-xl font-black text-emerald-600 dark:text-emerald-400">
+              <div className="text-xl font-black text-primary-600 dark:text-primary-400">
                 {formatCurrency(simulationResults.interestSaved)}
               </div>
               <div className="text-[11px] text-slate-500 dark:text-slate-400 pt-1">
@@ -1001,11 +1001,11 @@ export const MortgageDebtCard: React.FC<MortgageDebtCardProps> = ({ profile, onC
               </div>
               <div className="text-xl font-black text-slate-900 dark:text-white">
                 {simulationResults.isInterestOnly ? (
-                  <span className="text-emerald-600 dark:text-emerald-400 font-black">
+                  <span className="text-primary-600 dark:text-primary-400 font-black">
                     {formatCurrency(simulationResults.ovBalloonPayment)}
                   </span>
                 ) : simulationResults.clearedBeforeRetirement ? (
-                  <span className="text-emerald-600 dark:text-emerald-400 font-black">£0 (Cleared)</span>
+                  <span className="text-primary-600 dark:text-primary-400 font-black">£0 (Cleared)</span>
                 ) : (
                   <span className="text-rose-600 dark:text-rose-400 font-black">
                     {formatCurrency(simulationResults.balanceAtRetirement)}
@@ -1065,7 +1065,7 @@ export const MortgageDebtCard: React.FC<MortgageDebtCardProps> = ({ profile, onC
                     <span className="w-3 h-3 rounded-full bg-amber-500 inline-block"></span> Overpaid Balance
                   </span>
                   <span className="flex items-center gap-1.5">
-                    <span className="w-3 h-0.5 bg-emerald-500 border-t border-dashed inline-block"></span> Retire (Age {profile.targetRetirementAge})
+                    <span className="w-3 h-0.5 bg-primary-500 border-t border-dashed inline-block"></span> Retire (Age {profile.targetRetirementAge})
                   </span>
                   <span className="flex items-center gap-1.5">
                     <span className="w-3 h-0.5 bg-purple-500 border-t border-dashed inline-block"></span> Private Pension Access (Age {getPensionAccessAge(profile)})
@@ -1265,7 +1265,7 @@ export const MortgageDebtCard: React.FC<MortgageDebtCardProps> = ({ profile, onC
                   step={5000}
                   value={newLumpSumAmount}
                   onChange={(e) => setNewLumpSumAmount(Number(e.target.value))}
-                  className="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 font-extrabold text-emerald-600 dark:text-emerald-400"
+                  className="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 font-extrabold text-primary-600 dark:text-primary-400"
                 />
               </div>
             </div>

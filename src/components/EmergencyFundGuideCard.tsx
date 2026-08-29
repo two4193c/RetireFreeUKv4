@@ -21,13 +21,13 @@ export const EmergencyFundGuideCard: React.FC = () => {
       {/* Header Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100 dark:border-slate-800">
         <div className="flex items-center gap-3.5">
-          <div className="p-3 bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 rounded-2xl border border-emerald-200/60 dark:border-emerald-800/60">
+          <div className="p-3 bg-primary-50 dark:bg-primary-950 text-primary-600 dark:text-primary-400 rounded-2xl border border-primary-200/60 dark:border-primary-800/60">
             <PiggyBank className="w-6 h-6" />
           </div>
           <div>
             <h2 className="text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
               <span>Emergency Fund & Cash Buffer Strategy Guide</span>
-              <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 px-2.5 py-1 rounded-full border border-emerald-200 dark:border-emerald-800">
+              <span className="text-[10px] font-bold uppercase tracking-wider bg-primary-100 dark:bg-primary-950 text-primary-800 dark:text-primary-300 px-2.5 py-1 rounded-full border border-primary-200 dark:border-primary-800">
                 Liquidity & Risk Management
               </span>
             </h2>
@@ -66,9 +66,9 @@ export const EmergencyFundGuideCard: React.FC = () => {
         </div>
 
         {/* Decumulation Phase */}
-        <div className="p-6 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/80 space-y-4">
-          <div className="flex items-center gap-2.5 text-emerald-900 dark:text-emerald-300 font-bold text-sm">
-            <ShieldCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+        <div className="p-6 rounded-2xl bg-primary-50/60 dark:bg-primary-950/30 border border-primary-200/80 dark:border-primary-800/80 space-y-4">
+          <div className="flex items-center gap-2.5 text-primary-900 dark:text-primary-300 font-bold text-sm">
+            <ShieldCheck className="w-5 h-5 text-primary-600 dark:text-primary-400" />
             <span>2. Decumulation Phase: The Retirement Cash Buffer</span>
           </div>
           <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
@@ -76,15 +76,15 @@ export const EmergencyFundGuideCard: React.FC = () => {
           </p>
           <div className="space-y-2 text-xs">
             <div className="flex items-start gap-2 text-slate-700 dark:text-slate-300">
-              <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+              <CheckCircle2 className="w-4 h-4 text-primary-500 shrink-0 mt-0.5" />
               <span><strong>Target Size:</strong> 1 to 3 years of net portfolio drawdown requirement (after State & DB pensions).</span>
             </div>
             <div className="flex items-start gap-2 text-slate-700 dark:text-slate-300">
-              <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+              <CheckCircle2 className="w-4 h-4 text-primary-500 shrink-0 mt-0.5" />
               <span><strong>Optimal Strategy:</strong> Multi-year cash bucket paired with short-dated UK Gilts or fixed-term deposits.</span>
             </div>
           </div>
-          <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-emerald-200/60 dark:border-emerald-900/60 text-xs font-bold text-emerald-900 dark:text-emerald-300">
+          <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-primary-200/60 dark:border-primary-900/60 text-xs font-bold text-primary-900 dark:text-primary-300">
             Sequence Shield: Gives equity markets 2–3 years to recover before you need to sell any equities for income!
           </div>
         </div>
@@ -122,10 +122,10 @@ export const EmergencyFundGuideCard: React.FC = () => {
           <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60 space-y-2.5">
             <div className="flex items-center justify-between">
               <span className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                <ShieldCheck className="w-4 h-4 text-primary-500" />
                 Tier 2: Short-Term Income Buffer
               </span>
-              <span className="text-[10px] font-bold uppercase bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800">
+              <span className="text-[10px] font-bold uppercase bg-primary-100 dark:bg-primary-950/80 text-primary-800 dark:text-primary-300 px-2 py-0.5 rounded-md border border-primary-200 dark:border-primary-800">
                 1–2 Years
               </span>
             </div>
@@ -214,7 +214,7 @@ export const EmergencyFundGuideCard: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
           
           <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-indigo-200/60 dark:border-indigo-900/60 space-y-2">
-            <div className="font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+            <div className="font-bold text-primary-700 dark:text-primary-400 flex items-center gap-1.5">
               <TrendingUp className="w-4 h-4" />
               <span>In Bull Markets (Equity Portfolios Rising)</span>
             </div>
@@ -237,10 +237,10 @@ export const EmergencyFundGuideCard: React.FC = () => {
       </div>
 
       {/* RetireFree UK Integration Note */}
-      <div className="p-5 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-800/60 flex items-start gap-3">
-        <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+      <div className="p-5 rounded-2xl bg-primary-50/60 dark:bg-primary-950/30 border border-primary-200/60 dark:border-primary-800/60 flex items-start gap-3">
+        <CheckCircle2 className="w-5 h-5 text-primary-600 dark:text-primary-400 shrink-0 mt-0.5" />
         <div className="space-y-1 text-xs">
-          <p className="font-bold text-emerald-900 dark:text-emerald-300">Modelling Emergency Funds & Cash Buffers in RetireFree UK v4</p>
+          <p className="font-bold text-primary-900 dark:text-primary-300">Modelling Emergency Funds & Cash Buffers in RetireFree UK v4</p>
           <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
             Specify your initial cash reserves in the <strong>Cash Savings Balance</strong>, <strong>Cash ISA Balance</strong>, and <strong>GIA Cash Balance</strong> inputs. The decumulation engine automatically draws down liquid cash and ISAs first based on your selected withdrawal sequence, protecting tax wrappers and modeling real cash replenishment.
           </p>

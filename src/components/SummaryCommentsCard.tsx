@@ -101,7 +101,7 @@ export const SummaryCommentsCard: React.FC<SummaryCommentsCardProps> = ({ profil
         {/* Note 3: Income Tax on Inherited Estates (ISAs vs Pensions) */}
         <div className="bg-slate-50 dark:bg-slate-800/50 p-4.5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-2">
           <div className="flex items-center gap-2 text-slate-900 dark:text-slate-100 font-extrabold text-xs">
-            <Landmark className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <Landmark className="w-4 h-4 text-primary-600 dark:text-primary-400 shrink-0" />
             <span>3. Estate Tax Guidance: ISAs vs Pension Inheritance</span>
           </div>
           <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">

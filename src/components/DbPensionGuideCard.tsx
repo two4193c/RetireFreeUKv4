@@ -66,10 +66,10 @@ export const DbPensionGuideCard: React.FC = () => {
       </div>
 
       {/* RetireFree UK Integration */}
-      <div className="p-5 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-800/60 flex items-start gap-3">
-        <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+      <div className="p-5 rounded-2xl bg-primary-50/60 dark:bg-primary-950/30 border border-primary-200/60 dark:border-primary-800/60 flex items-start gap-3">
+        <CheckCircle2 className="w-5 h-5 text-primary-600 dark:text-primary-400 shrink-0 mt-0.5" />
         <div className="space-y-1 text-xs">
-          <p className="font-bold text-emerald-900 dark:text-emerald-300">Modelling DB Pensions in RetireFree UK v4</p>
+          <p className="font-bold text-primary-900 dark:text-primary-300">Modelling DB Pensions in RetireFree UK v4</p>
           <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
             Use the <strong>Defined Benefit Pensions Manager</strong> card (under Baseline Inputs) to enter annual income, start age, escalation rates, and survivor continuation percentages. The engine integrates DB income directly into your guaranteed income floor!
           </p>

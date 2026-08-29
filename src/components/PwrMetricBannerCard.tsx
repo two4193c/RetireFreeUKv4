@@ -96,7 +96,7 @@ export const PwrMetricBannerCard: React.FC<PwrMetricBannerCardProps> = ({ profil
   const pwrPct = totalInvestedAssets > 0 ? (netDrawdownNeeded / totalInvestedAssets) * 100 : 0;
 
   // UK-aligned risk categorization (3.2-3.5% standard, not US 4%)
-  let badgeColor = 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-300';
+  let badgeColor = 'bg-primary-100 text-primary-800 dark:bg-primary-950 dark:text-primary-300 border-primary-300';
   let label = 'Safe (Standard UK SWR)';
   if (pwrPct === 0) {
     badgeColor = 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-300';
@@ -105,7 +105,7 @@ export const PwrMetricBannerCard: React.FC<PwrMetricBannerCardProps> = ({ profil
     badgeColor = 'bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-300 border-teal-300';
     label = 'Ultra Safe (< 2.8% UK FIRE)';
   } else if (pwrPct <= 3.5) {
-    badgeColor = 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-300';
+    badgeColor = 'bg-primary-100 text-primary-800 dark:bg-primary-950 dark:text-primary-300 border-primary-300';
     label = 'Safe (2.8% – 3.5% UK Standard)';
   } else if (pwrPct <= 4.5) {
     badgeColor = 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border-amber-300';
@@ -121,13 +121,13 @@ export const PwrMetricBannerCard: React.FC<PwrMetricBannerCardProps> = ({ profil
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
         <div className="flex items-center gap-3.5">
-          <div className="p-3 bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 rounded-2xl border border-emerald-200/60 dark:border-emerald-800/60">
+          <div className="p-3 bg-primary-50 dark:bg-primary-950 text-primary-600 dark:text-primary-400 rounded-2xl border border-primary-200/60 dark:border-primary-800/60">
             <Percent className="w-6 h-6" />
           </div>
           <div>
             <h3 className="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
               <span>Personalized Withdrawal Rate (PWR) Metric</span>
-              <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 px-2.5 py-1 rounded-full border border-emerald-200 dark:border-emerald-800">
+              <span className="text-[10px] font-bold uppercase tracking-wider bg-primary-100 dark:bg-primary-950 text-primary-800 dark:text-primary-300 px-2.5 py-1 rounded-full border border-primary-200 dark:border-primary-800">
                 Key Performance Indicator
               </span>
             </h3>
@@ -144,7 +144,7 @@ export const PwrMetricBannerCard: React.FC<PwrMetricBannerCardProps> = ({ profil
       {/* Basis Selector */}
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60 text-xs">
         <span className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2 whitespace-nowrap">
-          <Calendar className="w-4 h-4 text-emerald-500" />
+          <Calendar className="w-4 h-4 text-primary-500" />
           <span>Capital Basis:</span>
         </span>
         <div className="flex flex-wrap rounded-xl bg-slate-200 dark:bg-slate-700 p-1 gap-1">
@@ -153,7 +153,7 @@ export const PwrMetricBannerCard: React.FC<PwrMetricBannerCardProps> = ({ profil
             onClick={() => setBasis('retirement_start')}
             className={`px-3 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
               basis === 'retirement_start'
-                ? 'bg-emerald-600 text-white shadow-xs'
+                ? 'bg-primary-600 text-white shadow-xs'
                 : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
@@ -164,7 +164,7 @@ export const PwrMetricBannerCard: React.FC<PwrMetricBannerCardProps> = ({ profil
             onClick={() => setBasis('private_pension_start')}
             className={`px-3 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
               basis === 'private_pension_start'
-                ? 'bg-emerald-600 text-white shadow-xs'
+                ? 'bg-primary-600 text-white shadow-xs'
                 : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
@@ -175,7 +175,7 @@ export const PwrMetricBannerCard: React.FC<PwrMetricBannerCardProps> = ({ profil
             onClick={() => setBasis('state_pension_start')}
             className={`px-3 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
               basis === 'state_pension_start'
-                ? 'bg-emerald-600 text-white shadow-xs'
+                ? 'bg-primary-600 text-white shadow-xs'
                 : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
@@ -186,7 +186,7 @@ export const PwrMetricBannerCard: React.FC<PwrMetricBannerCardProps> = ({ profil
             onClick={() => setBasis('today')}
             className={`px-3 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
               basis === 'today'
-                ? 'bg-emerald-600 text-white shadow-xs'
+                ? 'bg-primary-600 text-white shadow-xs'
                 : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
@@ -206,7 +206,7 @@ export const PwrMetricBannerCard: React.FC<PwrMetricBannerCardProps> = ({ profil
 
         <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60 space-y-1">
           <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Guaranteed Income (SP + DB)</span>
-          <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
+          <div className="text-2xl font-black text-primary-600 dark:text-primary-400">
             £{Math.round(guaranteedIncome).toLocaleString()} <span className="text-xs font-normal text-slate-400">/ yr</span>
           </div>
         </div>
@@ -224,7 +224,7 @@ export const PwrMetricBannerCard: React.FC<PwrMetricBannerCardProps> = ({ profil
       {/* Analytical Guidance */}
       <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60 space-y-2 text-xs">
         <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-white">
-          <ShieldCheck className="w-4 h-4 text-emerald-500" />
+          <ShieldCheck className="w-4 h-4 text-primary-500" />
           <span>PWR Formula & UK Benchmark Context:</span>
         </div>
         <p className="text-slate-600 dark:text-slate-300 leading-relaxed">

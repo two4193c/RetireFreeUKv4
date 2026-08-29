@@ -78,8 +78,8 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
       {/* SECTION HEADER & NMPA BADGES */}
       <div className={`flex flex-col justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800 ${isStudioMode ? "" : "sm:flex-row sm:items-center"}`}>
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-400 flex items-center justify-center border border-emerald-200/50 dark:border-emerald-800/50 shrink-0">
-            <User className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+          <div className="w-8 h-8 rounded-xl bg-primary-100 dark:bg-primary-950/80 text-primary-700 dark:text-primary-400 flex items-center justify-center border border-primary-200/50 dark:border-primary-800/50 shrink-0">
+            <User className="w-4 h-4 text-primary-600 dark:text-primary-400" />
           </div>
           <div>
             <h2 className="font-bold text-slate-800 dark:text-slate-100 text-sm sm:text-base">
@@ -98,12 +98,12 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
         {/* NMPA Access Age Badges */}
         {isStudioMode ? (
           <div className="flex items-center gap-2 self-start sm:self-auto">
-            <div className="flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200/80 dark:border-emerald-800/60 px-2.5 py-1 rounded-xl">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <div className="flex items-center gap-1.5 bg-primary-50 dark:bg-primary-950/60 border border-primary-200/80 dark:border-primary-800/60 px-2.5 py-1 rounded-xl">
+              <ShieldCheck className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400 shrink-0" />
               <span className="text-[11px] text-slate-600 dark:text-slate-300 font-medium">
                 {isCouple ? `${profile.name || 'Primary'}:` : 'NMPA Access:'}
               </span>
-              <span className="text-[11px] font-extrabold text-emerald-700 dark:text-emerald-400">
+              <span className="text-[11px] font-extrabold text-primary-700 dark:text-primary-400">
                 {profile.pensionAccessAge ?? profile.protectedPensionAccessAge ?? primaryAccessAge}
               </span>
             </div>
@@ -122,12 +122,12 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
         ) : (
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 px-3 py-1.5 rounded-2xl">
-              <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <ShieldCheck className="w-4 h-4 text-primary-600 dark:text-primary-400" />
               <div className="text-xs">
                 <span className="text-slate-500 dark:text-slate-400 font-medium">
                   {isCouple ? `${profile.name || 'Primary'}: ` : 'Pension Access Age: '}
                 </span>
-                <span className="font-extrabold text-emerald-700 dark:text-emerald-400">
+                <span className="font-extrabold text-primary-700 dark:text-primary-400">
                   {primaryAccessAge}
                 </span>
                 <span className="text-[10px] text-slate-400 dark:text-slate-500 ml-1">
@@ -163,12 +163,12 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
           <div className="bg-slate-50/70 dark:bg-slate-800/40 rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-700/60 space-y-4">
             <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-slate-700/60">
               <div className="flex items-center gap-2">
-                <User className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <User className="w-4 h-4 text-primary-600 dark:text-primary-400" />
                 <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-sm">
                   Primary Profile & NMPA Timeline
                 </h3>
               </div>
-              <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full">
+              <span className="text-[10px] font-black uppercase tracking-wider bg-primary-100 dark:bg-primary-950 text-primary-700 dark:text-primary-300 px-2 py-0.5 rounded-full">
                 Primary
               </span>
             </div>
@@ -182,7 +182,7 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
                   value={profile.name || ''}
                   onChange={(e) => updateField('name', e.target.value)}
                   placeholder="e.g. Alex"
-                  className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
                 />
               </div>
 
@@ -190,14 +190,14 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
               <div className="space-y-1.5">
                 <label htmlFor="primary-dob" className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
                   <span>Date of Birth</span>
-                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase bg-emerald-50 dark:bg-emerald-950/80 px-1.5 py-0.5 rounded-md border border-emerald-200/60 dark:border-emerald-800/60">Age {profile.currentAge}</span>
+                  <span className="text-[10px] text-primary-600 dark:text-primary-400 font-bold uppercase bg-primary-50 dark:bg-primary-950/80 px-1.5 py-0.5 rounded-md border border-primary-200/60 dark:border-primary-800/60">Age {profile.currentAge}</span>
                 </label>
                 <input
                   id="primary-dob"
                   type="date"
                   value={profile.dateOfBirth || ''}
                   onChange={(e) => handleDobChange(e.target.value)}
-                  className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
                 />
               </div>
 
@@ -216,7 +216,7 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
                     min="0"
                     value={profile.grossAnnualSalary}
                     onChange={(e) => updateField('grossAnnualSalary', Math.max(0, Number(e.target.value)))}
-                    className="w-full pl-7 pr-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                    className="w-full pl-7 pr-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
                   />
                 </div>
               </div>
@@ -225,7 +225,7 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
               <div className="space-y-1.5">
                 <label htmlFor="primary-retire-age" className="text-xs font-bold text-slate-700 dark:text-slate-300 flex justify-between">
                   <span>Target Retire Age</span>
-                  <span className="text-emerald-600 dark:text-emerald-400 font-extrabold text-[10px] bg-emerald-50 dark:bg-emerald-950/80 px-1.5 py-0.5 rounded-md border border-emerald-200/60 dark:border-emerald-800/60">
+                  <span className="text-primary-600 dark:text-primary-400 font-extrabold text-[10px] bg-primary-50 dark:bg-primary-950/80 px-1.5 py-0.5 rounded-md border border-primary-200/60 dark:border-primary-800/60">
                     {profile.targetRetirementAge || ''} yrs ({(profile.targetRetirementAge || 60) - profile.currentAge}y away)
                   </span>
                 </label>
@@ -252,7 +252,7 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
                     val = Math.min(90, val);
                     updateField('targetRetirementAge', val);
                   }}
-                  className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
                 />
               </div>
 
@@ -280,7 +280,7 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
                       updateField('protectedPensionAccessAge', val > 0 ? val : undefined);
                     }}
                     placeholder={`e.g. ${primaryAccessAge}`}
-                    className="w-24 px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-extrabold text-emerald-600 dark:text-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                    className="w-24 px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-extrabold text-primary-600 dark:text-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
                   />
                   <div className="flex items-center gap-1">
                     {[55, 57, 58, 60].map((age) => (
@@ -293,7 +293,7 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
                         }}
                         className={`px-2.5 py-1.5 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
                           (profile.pensionAccessAge ?? profile.protectedPensionAccessAge ?? primaryAccessAge) === age
-                            ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                            ? 'bg-primary-600 text-white border-primary-600 shadow-xs'
                             : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'
                         }`}
                       >
@@ -490,12 +490,12 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
         <div className="bg-slate-50/70 dark:bg-slate-800/40 rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-700/60 space-y-4">
           <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-slate-700/60">
             <div className="flex items-center gap-2">
-              <User className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <User className="w-4 h-4 text-primary-600 dark:text-primary-400" />
               <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-sm">
                 Personal Profile & Demographics
               </h3>
             </div>
-            <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full">
+            <span className="text-[10px] font-black uppercase tracking-wider bg-primary-100 dark:bg-primary-950 text-primary-700 dark:text-primary-300 px-2 py-0.5 rounded-full">
               Single Planner
             </span>
           </div>
@@ -512,7 +512,7 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
                 value={profile.name || ''}
                 onChange={(e) => updateField('name', e.target.value)}
                 placeholder="e.g. Alex"
-                className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
               />
             </div>
 
@@ -520,7 +520,7 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
             <div className="space-y-1.5">
               <label htmlFor="single-dob" className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
                 <span>Date of Birth</span>
-                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase bg-emerald-50 dark:bg-emerald-950/80 px-1.5 py-0.5 rounded-md border border-emerald-200/60 dark:border-emerald-800/60">
+                <span className="text-[10px] text-primary-600 dark:text-primary-400 font-bold uppercase bg-primary-50 dark:bg-primary-950/80 px-1.5 py-0.5 rounded-md border border-primary-200/60 dark:border-primary-800/60">
                   Age {profile.currentAge}
                 </span>
               </label>
@@ -529,7 +529,7 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
                 type="date"
                 value={profile.dateOfBirth || ''}
                 onChange={(e) => handleDobChange(e.target.value)}
-                className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
               />
             </div>
 
@@ -548,7 +548,7 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
                   min="0"
                   value={profile.grossAnnualSalary}
                   onChange={(e) => updateField('grossAnnualSalary', Math.max(0, Number(e.target.value)))}
-                  className="w-full pl-7 pr-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                  className="w-full pl-7 pr-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
                 />
               </div>
             </div>
@@ -557,7 +557,7 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
             <div className="space-y-1.5">
               <label htmlFor="single-retire-age" className="text-xs font-bold text-slate-700 dark:text-slate-300 flex justify-between">
                 <span>Target Retire Age</span>
-                <span className="text-emerald-600 dark:text-emerald-400 font-extrabold text-[10px] bg-emerald-50 dark:bg-emerald-950/80 px-1.5 py-0.5 rounded-md border border-emerald-200/60 dark:border-emerald-800/60">
+                <span className="text-primary-600 dark:text-primary-400 font-extrabold text-[10px] bg-primary-50 dark:bg-primary-950/80 px-1.5 py-0.5 rounded-md border border-primary-200/60 dark:border-primary-800/60">
                   {profile.targetRetirementAge || 60} yrs ({(profile.targetRetirementAge || 60) - profile.currentAge}y away)
                 </span>
               </label>
@@ -584,7 +584,7 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
                   val = Math.min(90, val);
                   updateField('targetRetirementAge', val);
                 }}
-                className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
               />
             </div>
 
@@ -612,7 +612,7 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
                     updateField('protectedPensionAccessAge', val > 0 ? val : undefined);
                   }}
                   placeholder={`e.g. ${primaryAccessAge}`}
-                  className="w-24 px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-extrabold text-emerald-600 dark:text-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                  className="w-24 px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-extrabold text-primary-600 dark:text-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
                 />
                 <div className="flex items-center gap-1">
                   {[55, 57, 58, 60].map((age) => (
@@ -625,7 +625,7 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
                       }}
                       className={`px-2.5 py-1.5 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
                         (profile.pensionAccessAge ?? profile.protectedPensionAccessAge ?? primaryAccessAge) === age
-                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                          ? 'bg-primary-600 text-white border-primary-600 shadow-xs'
                           : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'
                       }`}
                     >
@@ -662,12 +662,12 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
         <div className="space-y-1.5">
           <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
             <span>UK Tax Region</span>
-            <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold uppercase">Rates</span>
+            <span className="text-[10px] text-primary-600 dark:text-primary-400 font-semibold uppercase">Rates</span>
           </label>
           <select
             value={profile.taxRegion}
             onChange={(e) => updateField('taxRegion', e.target.value as any)}
-            className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer"
+            className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 cursor-pointer"
           >
             <option value="england_ni_wales">England, NI & Wales (20/40/45%)</option>
             <option value="scotland">Scotland (19/20/21/42/45/48%)</option>
@@ -690,7 +690,7 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
           <select
             value={profile.pensionContributionMethod}
             onChange={(e) => updateField('pensionContributionMethod', e.target.value as any)}
-            className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer"
+            className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 cursor-pointer"
           >
             <option value="salary_sacrifice">Salary Sacrifice (Tax + NI Saved)</option>
             <option value="relief_at_source">Relief at Source (SIPP / Personal)</option>

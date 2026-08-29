@@ -155,7 +155,7 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
       category: 'pension',
       age: primaryNmpa,
       year: currentYear + (primaryNmpa - currentAge),
-      color: '#10b981', // emerald-500
+      color: '#10b981', // primary-500
       icon: Coins,
       description: `Normal Minimum Pension Age (${primaryNmpa}). 25% Tax-Free Cash (PCLS) & flexible drawdown unlocked.`,
       isEditable: false,
@@ -176,7 +176,7 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
         category: 'pension',
         age: primaryAgeAtPartnerNmpa,
         year: currentYear + (primaryAgeAtPartnerNmpa - currentAge),
-        color: '#34d399', // emerald-400
+        color: '#34d399', // primary-400
         icon: Coins,
         description: `${profile.partnerName || 'Partner'} reaches pension access age (${partnerNmpa}). SIPP/DC pots accessible.`,
         isEditable: false,
@@ -311,7 +311,7 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
         category: 'pension',
         age: gPurchaseAge,
         year: currentYear + (gPurchaseAge - currentAge),
-        color: '#059669', // emerald-600
+        color: '#059669', // primary-600
         icon: Banknote,
         description: `Deploy capital into a ${gDuration}-year UK Gilt Ladder portfolio (£${Math.round(gTarget).toLocaleString()}/yr net income from age ${gPurchaseAge + 1} to ${gPurchaseAge + gDuration}). 0% Capital Gains Tax.`,
         isEditable: true,
@@ -878,12 +878,12 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
             </div>
 
             {/* Phase 2: Go-Go Active */}
-            <div className="p-3 rounded-2xl bg-linear-to-br from-emerald-50 to-teal-50/50 dark:from-emerald-950/40 dark:to-teal-950/20 border border-emerald-200/80 dark:border-emerald-800/50 space-y-1">
+            <div className="p-3 rounded-2xl bg-linear-to-br from-primary-50 to-teal-50/50 dark:from-primary-950/40 dark:to-teal-950/20 border border-primary-200/80 dark:border-primary-800/50 space-y-1">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-primary-700 dark:text-primary-300">
                   Go-Go Active
                 </span>
-                <Sun className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                <Sun className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
               </div>
               <div className="text-xs font-black text-slate-900 dark:text-slate-100">
                 Ages {phase1End} – {phase2End}
@@ -1062,9 +1062,9 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
                   <span className="text-[10px] font-bold uppercase tracking-wider">
                     Net Living Income
                   </span>
-                  <Coins className="w-3.5 h-3.5 text-emerald-500" />
+                  <Coins className="w-3.5 h-3.5 text-primary-500" />
                 </div>
-                <span className="text-base font-black text-emerald-600 dark:text-emerald-400">
+                <span className="text-base font-black text-primary-600 dark:text-primary-400">
                   £{Math.round(milestoneProjection.netRetirementIncome || milestoneProjection.netIncomeReceived || 0).toLocaleString()}/yr
                 </span>
                 <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-0.5">
@@ -1162,7 +1162,7 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
                     Age {m.age}
                   </span>
                   {m.amount && (
-                    <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 block">
+                    <span className="text-[10px] font-bold text-primary-600 dark:text-primary-400 block">
                       £{Math.round(m.amount).toLocaleString()}
                     </span>
                   )}

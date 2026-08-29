@@ -8,13 +8,13 @@ export const CgtHarvestingGuideCard: React.FC = () => {
       {/* Header Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100 dark:border-slate-800">
         <div className="flex items-center gap-3.5">
-          <div className="p-3 bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 rounded-2xl border border-emerald-200/60 dark:border-emerald-800/60">
+          <div className="p-3 bg-primary-50 dark:bg-primary-950 text-primary-600 dark:text-primary-400 rounded-2xl border border-primary-200/60 dark:border-primary-800/60">
             <LineChart className="w-6 h-6" />
           </div>
           <div>
             <h2 className="text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
               <span>Capital Gains Tax (CGT) & GIA Harvesting Guide</span>
-              <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 px-2.5 py-1 rounded-full border border-emerald-200 dark:border-emerald-800">
+              <span className="text-[10px] font-bold uppercase tracking-wider bg-primary-100 dark:bg-primary-950 text-primary-800 dark:text-primary-300 px-2.5 py-1 rounded-full border border-primary-200 dark:border-primary-800">
                 UK Tax Strategy
               </span>
             </h2>
@@ -50,7 +50,7 @@ export const CgtHarvestingGuideCard: React.FC = () => {
         </div>
 
         <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60 space-y-2">
-          <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold">
+          <div className="flex items-center gap-2 text-primary-600 dark:text-primary-400 font-bold">
             <Scale className="w-4 h-4" />
             <span>Bed & Spouse Transfer</span>
           </div>
@@ -71,10 +71,10 @@ export const CgtHarvestingGuideCard: React.FC = () => {
       </div>
 
       {/* RetireFree UK Integration */}
-      <div className="p-5 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-800/60 flex items-start gap-3">
-        <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+      <div className="p-5 rounded-2xl bg-primary-50/60 dark:bg-primary-950/30 border border-primary-200/60 dark:border-primary-800/60 flex items-start gap-3">
+        <CheckCircle2 className="w-5 h-5 text-primary-600 dark:text-primary-400 shrink-0 mt-0.5" />
         <div className="space-y-1 text-xs">
-          <p className="font-bold text-emerald-900 dark:text-emerald-300">Modelling GIA Liquidation in RetireFree UK v4</p>
+          <p className="font-bold text-primary-900 dark:text-primary-300">Modelling GIA Liquidation in RetireFree UK v4</p>
           <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
             Use the <strong>Taxable GIA & Unallocated Pot Manager</strong> (under Baseline Inputs) to model liquidating taxable investment pots during drawdown, calculating exact CGT drag based on your personal income band.
           </p>

@@ -87,7 +87,7 @@ export const ModalShell: React.FC<ModalShellProps> = ({
           <button
             onClick={onSave}
             disabled={saveDisabled}
-            className="flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+            className="flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold text-white bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
           >
             <Save className="w-3.5 h-3.5" />
             {saveLabel}

@@ -103,7 +103,7 @@ export const EssentialFloorSplitCard: React.FC<EssentialFloorSplitCardProps> = (
           <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-teal-200/60 dark:border-teal-900/60 space-y-1 text-xs">
             <div className="flex justify-between font-bold text-slate-900 dark:text-white">
               <span>Guaranteed Income Coverage:</span>
-              <span className={guaranteedCoveragePct >= 100 ? 'text-emerald-600' : 'text-amber-600'}>
+              <span className={guaranteedCoveragePct >= 100 ? 'text-primary-600' : 'text-amber-600'}>
                 {guaranteedCoveragePct}% Covered (£{totalGuaranteedIncome.toLocaleString()}/yr)
               </span>
             </div>
@@ -130,7 +130,7 @@ export const EssentialFloorSplitCard: React.FC<EssentialFloorSplitCardProps> = (
           <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 space-y-1 text-xs">
             <div className="flex justify-between font-bold text-slate-900 dark:text-white">
               <span>Market Crash Buffer:</span>
-              <span className="text-emerald-600 dark:text-emerald-400">100% Flex Protection</span>
+              <span className="text-primary-600 dark:text-primary-400">100% Flex Protection</span>
             </div>
             <p className="text-[11px] text-slate-500 dark:text-slate-400">
               During severe equity bear markets, pausing this £{discretionaryAmount.toLocaleString()}/yr spending eliminates sequence risk!

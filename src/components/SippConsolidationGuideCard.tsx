@@ -8,13 +8,13 @@ export const SippConsolidationGuideCard: React.FC = () => {
       {/* Header Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100 dark:border-slate-800">
         <div className="flex items-center gap-3.5">
-          <div className="p-3 bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 rounded-2xl border border-emerald-200/60 dark:border-emerald-800/60">
+          <div className="p-3 bg-primary-50 dark:bg-primary-950 text-primary-600 dark:text-primary-400 rounded-2xl border border-primary-200/60 dark:border-primary-800/60">
             <Layers className="w-6 h-6" />
           </div>
           <div>
             <h2 className="text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
               <span>SIPP Consolidation & Pension Transfer Guide</span>
-              <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 px-2.5 py-1 rounded-full border border-emerald-200 dark:border-emerald-800">
+              <span className="text-[10px] font-bold uppercase tracking-wider bg-primary-100 dark:bg-primary-950 text-primary-800 dark:text-primary-300 px-2.5 py-1 rounded-full border border-primary-200 dark:border-primary-800">
                 UK Pensions
               </span>
             </h2>
@@ -28,7 +28,7 @@ export const SippConsolidationGuideCard: React.FC = () => {
       {/* Key Benefits Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60 space-y-2.5">
-          <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold text-sm">
+          <div className="flex items-center gap-2 text-primary-600 dark:text-primary-400 font-bold text-sm">
             <DollarSign className="w-4 h-4" />
             <span>Lower Platform Fees</span>
           </div>
@@ -111,7 +111,7 @@ export const SippConsolidationGuideCard: React.FC = () => {
       {/* Transfer Methods comparison */}
       <div className="space-y-4">
         <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-          <ArrowRight className="w-4 h-4 text-emerald-500" />
+          <ArrowRight className="w-4 h-4 text-primary-500" />
           <span>Transfer Execution Methods: In-Specie vs Cash Transfer</span>
         </h3>
 
@@ -133,7 +133,7 @@ export const SippConsolidationGuideCard: React.FC = () => {
           <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60 space-y-3">
             <div className="flex items-center justify-between">
               <h4 className="font-bold text-sm text-slate-900 dark:text-white">In-Specie Transfer</h4>
-              <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">Zero Market Risk</span>
+              <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-primary-100 dark:bg-primary-950 text-primary-800 dark:text-primary-300">Zero Market Risk</span>
             </div>
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
               Existing funds and shares are re-registered directly to your new SIPP without selling assets.
@@ -147,10 +147,10 @@ export const SippConsolidationGuideCard: React.FC = () => {
       </div>
 
       {/* How it relates to RetireFree UK v4 */}
-      <div className="p-5 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-800/60 flex items-start gap-3">
-        <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+      <div className="p-5 rounded-2xl bg-primary-50/60 dark:bg-primary-950/30 border border-primary-200/60 dark:border-primary-800/60 flex items-start gap-3">
+        <CheckCircle2 className="w-5 h-5 text-primary-600 dark:text-primary-400 shrink-0 mt-0.5" />
         <div className="space-y-1 text-xs">
-          <p className="font-bold text-emerald-900 dark:text-emerald-300">Modelling Pension Consolidation in RetireFree UK v4</p>
+          <p className="font-bold text-primary-900 dark:text-primary-300">Modelling Pension Consolidation in RetireFree UK v4</p>
           <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
             In the app, you can use the <strong>Pot Transfer Manager</strong> card (under Baseline Inputs) to model consolidating multiple workplace pension pots into a single SIPP at a specific future age, seeing the exact impact on your projected fee savings and retirement cashflow.
           </p>

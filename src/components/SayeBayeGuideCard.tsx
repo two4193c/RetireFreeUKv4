@@ -57,7 +57,7 @@ export const SayeBayeGuideCard: React.FC = () => {
 
             <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-indigo-200/60 dark:border-indigo-900/60 space-y-1">
               <div className="font-bold text-indigo-900 dark:text-indigo-300 flex items-center gap-1.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                <ShieldCheck className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
                 <span>Zero Downside Risk Guarantee</span>
               </div>
               <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
@@ -129,13 +129,13 @@ export const SayeBayeGuideCard: React.FC = () => {
       </div>
 
       {/* SAYE / SIP to ISA 90-Day Transfer Feature Box */}
-      <div className="p-6 rounded-2xl bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/80 space-y-4">
+      <div className="p-6 rounded-2xl bg-primary-50/80 dark:bg-primary-950/40 border border-primary-200/80 dark:border-primary-800/80 space-y-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5 text-emerald-900 dark:text-emerald-300 font-bold text-base">
-            <Sparkles className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+          <div className="flex items-center gap-2.5 text-primary-900 dark:text-primary-300 font-bold text-base">
+            <Sparkles className="w-5 h-5 text-primary-600 dark:text-primary-400" />
             <span>The Magic Loophole: SAYE / SIP to Stocks & Shares ISA (90-Day Rule)</span>
           </div>
-          <span className="text-[11px] font-extrabold px-3 py-1 rounded-full bg-emerald-600 text-white shadow-sm">
+          <span className="text-[11px] font-extrabold px-3 py-1 rounded-full bg-primary-600 text-white shadow-sm">
             0% Capital Gains Tax Forever
           </span>
         </div>
@@ -145,9 +145,9 @@ export const SayeBayeGuideCard: React.FC = () => {
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
-          <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-emerald-200/60 dark:border-emerald-900/60 space-y-1.5">
-            <div className="flex items-center gap-2 font-bold text-emerald-900 dark:text-emerald-300">
-              <span className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-xs flex items-center justify-center font-black">1</span>
+          <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-primary-200/60 dark:border-primary-900/60 space-y-1.5">
+            <div className="flex items-center gap-2 font-bold text-primary-900 dark:text-primary-300">
+              <span className="w-5 h-5 rounded-full bg-primary-100 dark:bg-primary-950 text-primary-800 dark:text-primary-300 text-xs flex items-center justify-center font-black">1</span>
               <span>Exercise / Maturity</span>
             </div>
             <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
@@ -155,9 +155,9 @@ export const SayeBayeGuideCard: React.FC = () => {
             </p>
           </div>
 
-          <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-emerald-200/60 dark:border-emerald-900/60 space-y-1.5">
-            <div className="flex items-center gap-2 font-bold text-emerald-900 dark:text-emerald-300">
-              <span className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-xs flex items-center justify-center font-black">2</span>
+          <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-primary-200/60 dark:border-primary-900/60 space-y-1.5">
+            <div className="flex items-center gap-2 font-bold text-primary-900 dark:text-primary-300">
+              <span className="w-5 h-5 rounded-full bg-primary-100 dark:bg-primary-950 text-primary-800 dark:text-primary-300 text-xs flex items-center justify-center font-black">2</span>
               <span>Transfer In Specie Within 90 Days</span>
             </div>
             <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
@@ -165,9 +165,9 @@ export const SayeBayeGuideCard: React.FC = () => {
             </p>
           </div>
 
-          <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-emerald-200/60 dark:border-emerald-900/60 space-y-1.5">
-            <div className="flex items-center gap-2 font-bold text-emerald-900 dark:text-emerald-300">
-              <span className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-xs flex items-center justify-center font-black">3</span>
+          <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-primary-200/60 dark:border-primary-900/60 space-y-1.5">
+            <div className="flex items-center gap-2 font-bold text-primary-900 dark:text-primary-300">
+              <span className="w-5 h-5 rounded-full bg-primary-100 dark:bg-primary-950 text-primary-800 dark:text-primary-300 text-xs flex items-center justify-center font-black">3</span>
               <span>Complete CGT Shielding</span>
             </div>
             <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
@@ -175,9 +175,9 @@ export const SayeBayeGuideCard: React.FC = () => {
             </p>
           </div>
 
-          <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-emerald-200/60 dark:border-emerald-900/60 space-y-1.5">
-            <div className="flex items-center gap-2 font-bold text-emerald-900 dark:text-emerald-300">
-              <span className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-xs flex items-center justify-center font-black">4</span>
+          <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-primary-200/60 dark:border-primary-900/60 space-y-1.5">
+            <div className="flex items-center gap-2 font-bold text-primary-900 dark:text-primary-300">
+              <span className="w-5 h-5 rounded-full bg-primary-100 dark:bg-primary-950 text-primary-800 dark:text-primary-300 text-xs flex items-center justify-center font-black">4</span>
               <span>SIPP Tax Relief (Optional)</span>
             </div>
             <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
@@ -227,7 +227,7 @@ export const SayeBayeGuideCard: React.FC = () => {
 
           <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 space-y-2">
             <div className="flex items-center gap-2">
-              <span className="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-black text-xs flex items-center justify-center">4</span>
+              <span className="w-6 h-6 rounded-full bg-primary-100 dark:bg-primary-950 text-primary-800 dark:text-primary-300 font-black text-xs flex items-center justify-center">4</span>
               <h4 className="font-bold text-slate-900 dark:text-white">90-Day ISA Shelter</h4>
             </div>
             <p className="text-slate-600 dark:text-slate-400 leading-relaxed">

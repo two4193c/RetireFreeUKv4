@@ -232,7 +232,7 @@ export const TaxOptimizerCard: React.FC<TaxOptimizerCardProps> = ({
                   onClick={() => onOptimizeTaxTrap(primaryTaxResult.recommendedTaxTrapPensionContribution, 'primary')}
                   className="shrink-0 bg-white text-indigo-600 font-extrabold text-xs px-4 py-2.5 rounded-xl shadow-xs hover:bg-slate-50 transition-all flex items-center gap-2 cursor-pointer active:scale-95"
                 >
-                  <Sparkles className="w-4 h-4 text-emerald-600" />
+                  <Sparkles className="w-4 h-4 text-primary-600" />
                   <span>Apply Primary Strategy (+£{Math.round((primaryTaxResult.recommendedTaxTrapPensionContribution || 0) / 12).toLocaleString()}/mo)</span>
                 </button>
               )}
@@ -269,7 +269,7 @@ export const TaxOptimizerCard: React.FC<TaxOptimizerCardProps> = ({
                   onClick={() => onOptimizeTaxTrap(partnerTaxResult.recommendedTaxTrapPensionContribution, 'partner')}
                   className="shrink-0 bg-white text-rose-600 font-extrabold text-xs px-4 py-2.5 rounded-xl shadow-xs hover:bg-slate-50 transition-all flex items-center gap-2 cursor-pointer active:scale-95"
                 >
-                  <Sparkles className="w-4 h-4 text-emerald-600" />
+                  <Sparkles className="w-4 h-4 text-primary-600" />
                   <span>Apply Partner Strategy (+£{Math.round((partnerTaxResult.recommendedTaxTrapPensionContribution || 0) / 12).toLocaleString()}/mo)</span>
                 </button>
               )}
@@ -403,7 +403,7 @@ export const TaxOptimizerCard: React.FC<TaxOptimizerCardProps> = ({
       {isCouple && (
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-slate-100 dark:bg-slate-900 text-slate-900 dark:text-white p-2.5 sm:p-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
           <div className="flex items-center gap-2.5 pl-2">
-            <Users className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <Users className="w-4 h-4 text-primary-600 dark:text-primary-400 shrink-0" />
             <div>
               <span className="text-xs font-black tracking-tight block">Tax & Allowance Perspective</span>
               <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Switch views to inspect joint household totals or individual partner allowances</span>
@@ -415,7 +415,7 @@ export const TaxOptimizerCard: React.FC<TaxOptimizerCardProps> = ({
               onClick={() => setActiveView('combined')}
               className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                 activeView === 'combined'
-                  ? 'bg-emerald-500 text-slate-950 shadow-sm font-extrabold'
+                  ? 'bg-primary-500 text-slate-950 shadow-sm font-extrabold'
                   : 'text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-300/50 dark:hover:bg-slate-700/50'
               }`}
             >
@@ -458,7 +458,7 @@ export const TaxOptimizerCard: React.FC<TaxOptimizerCardProps> = ({
           <div>
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Tax Relief Gained</span>
-              <span className="bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-400 font-bold text-[10px] px-2 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-500/30">
+              <span className="bg-primary-100 dark:bg-primary-900/50 text-primary-800 dark:text-primary-400 font-bold text-[10px] px-2 py-0.5 rounded-full border border-primary-300 dark:border-primary-500/30">
                 {currentView === 'combined' && partnerTaxResult
                   ? `${primaryTaxResult.marginalTaxRate}% / ${partnerTaxResult.marginalTaxRate}%`
                   : currentView === 'partner' && partnerTaxResult
@@ -502,7 +502,7 @@ export const TaxOptimizerCard: React.FC<TaxOptimizerCardProps> = ({
               <>
                 <div className="flex justify-between text-slate-700 dark:text-slate-300">
                   <span>Basic Relief + NI:</span>
-                  <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                  <span className="font-bold text-primary-600 dark:text-primary-400">
                     £{
                       (((currentView === 'partner' && partnerTaxResult ? partnerTaxResult : primaryTaxResult)?.pensionBasicRateTaxRelief || 0) +
                        ((currentView === 'partner' && partnerTaxResult ? partnerTaxResult : primaryTaxResult)?.salarySacrificeNicSavedEmployee || 0)).toLocaleString()
@@ -581,7 +581,7 @@ export const TaxOptimizerCard: React.FC<TaxOptimizerCardProps> = ({
           <div>
             <div className="flex justify-between items-center text-xs font-bold text-slate-800 dark:text-slate-100">
               <span>Pension Allowance</span>
-              <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950 px-2 py-0.5 rounded-full">
+              <span className="text-[10px] font-bold text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-950 px-2 py-0.5 rounded-full">
                 {currentView === 'combined'
                   ? `Actual Cap £${(( (primaryTaxResult?.actualPensionAllowance || 0) + (partnerTaxResult?.actualPensionAllowance || 0) ) / 1000).toFixed(1).replace('.0', '')}k | Limit £${((combinedPensionAllowanceLimit) / 1000).toFixed(1).replace('.0', '')}k`
                   : `Actual Cap £${(( (currentView === 'partner' ? partnerTaxResult?.actualPensionAllowance : primaryTaxResult?.actualPensionAllowance) || 0 ) / 1000).toFixed(1).replace('.0', '')}k | Limit £${((currentView === 'partner' ? partnerPensionLimit : primaryPensionLimit) / 1000).toFixed(1).replace('.0', '')}k`}
@@ -611,7 +611,7 @@ export const TaxOptimizerCard: React.FC<TaxOptimizerCardProps> = ({
             <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all duration-500 ${
-                  activePensionPct > 90 ? 'bg-amber-500' : 'bg-emerald-600 dark:bg-emerald-500'
+                  activePensionPct > 90 ? 'bg-amber-500' : 'bg-primary-600 dark:bg-primary-500'
                 }`}
                 style={{ width: `${activePensionPct}%` }}
               />
@@ -738,7 +738,7 @@ export const TaxOptimizerCard: React.FC<TaxOptimizerCardProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
           <div>
             <h4 className="font-extrabold text-sm text-slate-900 dark:text-white flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <TrendingUp className="w-4 h-4 text-primary-600 dark:text-primary-400" />
               <span>Year-by-Year Tax Relief & Allowances Breakdown</span>
             </h4>
             <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
@@ -849,7 +849,7 @@ export const TaxOptimizerCard: React.FC<TaxOptimizerCardProps> = ({
                         <span>Age {row.pAgeAtYear}</span>
                       )}
                     </td>
-                    <td className="py-2.5 px-3 font-extrabold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                    <td className="py-2.5 px-3 font-extrabold text-primary-600 dark:text-primary-400 whitespace-nowrap">
                       +£{Math.round(taxRelief).toLocaleString()}
                     </td>
                     <td className="py-2.5 px-3 whitespace-nowrap">
@@ -895,7 +895,7 @@ export const TaxOptimizerCard: React.FC<TaxOptimizerCardProps> = ({
                           60% Tax Trap Active
                         </span>
                       ) : (
-                        <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold text-[10px] px-2 py-0.5 rounded-md">
+                        <span className="bg-primary-500/20 text-primary-300 border border-primary-500/30 font-bold text-[10px] px-2 py-0.5 rounded-md">
                           Tax Efficient
                         </span>
                       )}

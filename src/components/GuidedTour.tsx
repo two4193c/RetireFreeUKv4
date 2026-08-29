@@ -76,14 +76,14 @@ export const GuidedTour: React.FC<GuidedTourProps> = ({ run, onFinish, theme = '
       target: 'card-inputs-profile',
       tab: 'inputs',
       title: 'Step 2: Your Profile',
-      titleColor: 'text-emerald-600 dark:text-emerald-400',
+      titleColor: 'text-primary-600 dark:text-primary-400',
       content: 'Enter your age, salary, and target retirement age. These form the foundation of your projection.',
     },
     {
       target: 'card-inputs-pots',
       tab: 'inputs',
       title: 'Step 3: Investment Pots',
-      titleColor: 'text-emerald-600 dark:text-emerald-400',
+      titleColor: 'text-primary-600 dark:text-primary-400',
       content: 'Add your current ISA, Pension (SIPP/Workplace), and Cash balances here. You can also edit growth rates.',
     },
     {

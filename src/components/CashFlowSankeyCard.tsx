@@ -266,7 +266,7 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
             label: `${primaryName} Employer Match`,
             sublabel: 'Workplace Pension Top-up',
             amount: priEmprPension,
-            color: '#10b981', // emerald-500
+            color: '#10b981', // primary-500
             category: 'source',
             column: 0,
             icon: Sparkles,
@@ -290,7 +290,7 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
             label: `${partnerName} Employer Match`,
             sublabel: 'Workplace Pension Top-up',
             amount: partEmprPension,
-            color: '#34d399', // emerald-400
+            color: '#34d399', // primary-400
             category: 'source',
             column: 0,
             icon: Sparkles,
@@ -632,7 +632,7 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
             label: 'Employer Pension Match',
             sublabel: isCouple ? 'Combined Employer Co-contributions' : 'Direct Employer Co-contribution',
             amount: curEmprPension,
-            color: '#10b981', // emerald-500
+            color: '#10b981', // primary-500
             category: 'source',
             column: 0,
             icon: Sparkles,
@@ -729,7 +729,7 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
           label: activeViewMode === 'combined' && isCouple ? 'Pension Contributions (Both)' : 'Pension Investments',
           sublabel: 'Workplace & SIPP Inflows',
           amount: curPensionContribs,
-          color: '#10b981', // emerald-500
+          color: '#10b981', // primary-500
           category: 'allocation',
           column: 3,
           icon: PiggyBank,
@@ -805,7 +805,7 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
           label: isCouple && activeViewMode !== 'combined' ? 'Essential Living Share' : 'Essential Living Floor',
           sublabel: `Target: ${formatGBP(inflatedEssentialTarget)} (${isFloorMet ? '100% Met' : `${Math.round((remainingLifestyle / Math.max(1, inflatedEssentialTarget)) * 100)}% Met`})`,
           amount: essentialLiving,
-          color: '#059669', // emerald-600
+          color: '#059669', // primary-600
           category: 'allocation',
           column: 3,
           icon: ShieldCheck,
@@ -997,7 +997,7 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
             label: `${primaryName} UK Gilt Income`,
             sublabel: '0% CGT Maturing Gilts & Coupons',
             amount: priGiltIncome,
-            color: '#10b981', // emerald-500
+            color: '#10b981', // primary-500
             category: 'source',
             column: 0,
             icon: ShieldCheck,
@@ -1511,7 +1511,7 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
           label: activeViewMode !== 'combined' ? `${currentPersonName} UK Gilt Income` : 'UK Gilt Ladder Income',
           sublabel: '0% CGT Maturing Gilts & Coupons (TCGA 1992 s.115)',
           amount: giltIncome,
-          color: '#10b981', // emerald-500
+          color: '#10b981', // primary-500
           category: 'source',
           column: 0,
           icon: ShieldCheck,
@@ -1550,7 +1550,7 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
           label: activeViewMode !== 'combined' ? `${currentPersonName} Pension Drawdown` : 'Private Pension / SIPP Drawdown',
           sublabel: `Taxable: ${formatGBP(pensionDrawdownTaxable)} | Tax-Free: ${formatGBP(pensionDrawdownTaxFree)}`,
           amount: pensionDrawdownTotal,
-          color: '#10b981', // emerald-500
+          color: '#10b981', // primary-500
           category: 'source',
           column: 0,
           icon: PiggyBank,
@@ -1658,7 +1658,7 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
         label: activeViewMode === 'combined' ? 'Net Spendable Retirement Cash' : `${currentPersonName} Net Spendable Cash`,
         sublabel: 'Available after all UK tax obligations',
         amount: netRetirementIncome,
-        color: '#10b981', // emerald-500
+        color: '#10b981', // primary-500
         category: 'hub',
         column: 2,
         icon: Wallet,
@@ -1701,7 +1701,7 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
           label: isCouple && activeViewMode !== 'combined' ? 'Essential Living Share' : 'Essential Living Floor',
           sublabel: `Target: ${formatGBP(inflatedEssentialTarget)} (${isFloorMet ? '100% Covered' : `${Math.round((availableForLiving / Math.max(1, inflatedEssentialTarget)) * 100)}% Covered`})`,
           amount: essentialLiving,
-          color: '#059669', // emerald-600
+          color: '#059669', // primary-600
           category: 'allocation',
           column: 3,
           icon: ShieldCheck,
@@ -1937,7 +1937,7 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
               <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${
                 isRetired
                   ? 'bg-purple-100 dark:bg-purple-950/80 text-purple-800 dark:text-purple-300 border-purple-200 dark:border-purple-800'
-                  : 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
+                  : 'bg-primary-100 dark:bg-primary-950/80 text-primary-800 dark:text-primary-300 border-primary-200 dark:border-primary-800'
               }`}>
                 {isRetired ? `Decumulation Phase (Age ${selectedAge})` : `Accumulation Phase (Age ${selectedAge})`}
               </span>
@@ -2046,8 +2046,8 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
             </div>
           </div>
 
-          <div className="p-4 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200/70 dark:border-emerald-800/60 space-y-1">
-            <div className="text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-300 flex items-center gap-1">
+          <div className="p-4 rounded-2xl bg-primary-50/60 dark:bg-primary-950/30 border border-primary-200/70 dark:border-primary-800/60 space-y-1">
+            <div className="text-[10px] font-black uppercase tracking-wider text-primary-700 dark:text-primary-300 flex items-center gap-1">
               <Wallet className="w-3.5 h-3.5" />
               <span>
                 3. {isCouple && (activeViewMode === 'primary' || activeViewMode === 'partner')
@@ -2057,10 +2057,10 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
                   : 'Net Spendable Cash'}
               </span>
             </div>
-            <div className="text-xl sm:text-2xl font-black text-emerald-900 dark:text-emerald-100">
+            <div className="text-xl sm:text-2xl font-black text-primary-900 dark:text-primary-100">
               {formatGBP(flowData.totalNetIncome)}
             </div>
-            <div className="text-[11px] text-emerald-700 dark:text-emerald-300 font-medium truncate">
+            <div className="text-[11px] text-primary-700 dark:text-primary-300 font-medium truncate">
               {flowData.isRetired ? 'Net lifestyle & mortgage cash' : 'Net take-home pay'}
             </div>
           </div>
@@ -2510,7 +2510,7 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
                   </div>
                 ))
               ) : (
-                <div className="p-4 text-center rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 font-bold">
+                <div className="p-4 text-center rounded-xl bg-primary-50 dark:bg-primary-950/40 border border-primary-200 dark:border-primary-800 text-primary-800 dark:text-primary-300 font-bold">
                   🎉 100% Tax-Free Year (Shielded via Personal Allowance & ISA Drawdowns)
                 </div>
               )}
@@ -2521,10 +2521,10 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
           <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/60 space-y-3">
             <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-700">
               <h4 className="font-extrabold text-xs text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                <span className="w-2.5 h-2.5 rounded-full bg-primary-500" />
                 <span>3. Outgoing Allocations</span>
               </h4>
-              <span className="text-xs font-black text-emerald-600 dark:text-emerald-400">
+              <span className="text-xs font-black text-primary-600 dark:text-primary-400">
                 {formatGBP(flowData.nodes.filter((n) => n.column === 3).reduce((sum, n) => sum + n.amount, 0))}
               </span>
             </div>

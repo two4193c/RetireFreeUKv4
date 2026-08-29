@@ -86,9 +86,9 @@ export const DrawdownComparisonMatrix: React.FC<DrawdownComparisonMatrixProps> =
         ? 'Dynamic blending utilizes PCLS cash strategically while pulling pension up to 20% basic band, then drawing tax-free ISAs for excess needs.'
         : 'UFPLS dynamic solver blends 25% tax-free tranches to expand 0% personal allowance to £16,760 and 20% band to £67,026 with zero tax spikes.',
       bestFor: 'Retirees wanting a mathematically proven strategy to pay the absolute lowest lifetime tax and leave maximum terminal wealth.',
-      badgeBg: 'bg-emerald-100 dark:bg-emerald-950/80',
-      badgeText: 'text-emerald-800 dark:text-emerald-300',
-      borderColor: 'border-emerald-300 dark:border-emerald-700/60',
+      badgeBg: 'bg-primary-100 dark:bg-primary-950/80',
+      badgeText: 'text-primary-800 dark:text-primary-300',
+      borderColor: 'border-primary-300 dark:border-primary-700/60',
     },
     {
       id: 'tax_free_bracket',
@@ -101,9 +101,9 @@ export const DrawdownComparisonMatrix: React.FC<DrawdownComparisonMatrixProps> =
         ? 'PCLS Upfront: Draw £12,570 gross pension (100% taxable, 0% tax paid). Surplus income drawn from tax-free ISA.'
         : 'UFPLS Drip-Feed: Draw £16,760 gross pension (£12,570 taxable @ 0% tax + £4,190 tax-free cash) = £16,760 tax-free total!',
       bestFor: 'Absolute tax minimization by guaranteeing zero income tax paid on pension withdrawals.',
-      badgeBg: 'bg-emerald-100 dark:bg-emerald-950/80',
-      badgeText: 'text-emerald-800 dark:text-emerald-300',
-      borderColor: 'border-emerald-300 dark:border-emerald-700/60',
+      badgeBg: 'bg-primary-100 dark:bg-primary-950/80',
+      badgeText: 'text-primary-800 dark:text-primary-300',
+      borderColor: 'border-primary-300 dark:border-primary-700/60',
     },
     {
       id: 'basic_rate_bracket',
@@ -248,7 +248,7 @@ export const DrawdownComparisonMatrix: React.FC<DrawdownComparisonMatrixProps> =
             </span>
             <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-extrabold ${
               takeLumpSumAtStart 
-                ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/40' 
+                ? 'bg-primary-100 dark:bg-primary-500/20 text-primary-800 dark:text-primary-300 border border-primary-300 dark:border-primary-500/40' 
                 : 'bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-500/40'
             }`}>
               {takeLumpSumAtStart 
@@ -332,7 +332,7 @@ export const DrawdownComparisonMatrix: React.FC<DrawdownComparisonMatrixProps> =
                     </div>
                     <div className="bg-slate-50 dark:bg-slate-800/40 p-2 rounded-lg">
                       <div className="text-slate-500 dark:text-slate-400 font-bold">Max Marginal Tax:</div>
-                      <div className="font-extrabold text-emerald-600 dark:text-emerald-400">{strat.maxMarginalTax}</div>
+                      <div className="font-extrabold text-primary-600 dark:text-primary-400">{strat.maxMarginalTax}</div>
                     </div>
                   </div>
 

@@ -67,7 +67,7 @@ export const SavePlanModal: React.FC<SavePlanModalProps> = ({
         {/* Modal Header */}
         <div className="flex items-start justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 rounded-xl shrink-0">
+            <div className="p-3 bg-primary-100 dark:bg-primary-950/80 text-primary-600 dark:text-primary-400 rounded-xl shrink-0">
               <RefreshCw className="w-5 h-5" />
             </div>
             <div>
@@ -94,7 +94,7 @@ export const SavePlanModal: React.FC<SavePlanModalProps> = ({
               value={planName}
               onChange={(e) => setPlanName(e.target.value)}
               placeholder="e.g. My Primary Plan"
-              className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
               required
             />
           </div>
@@ -116,7 +116,7 @@ export const SavePlanModal: React.FC<SavePlanModalProps> = ({
             <label
               className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
                 choice === 'overwrite'
-                  ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20 ring-1 ring-emerald-500'
+                  ? 'border-primary-500 bg-primary-50/50 dark:bg-primary-950/20 ring-1 ring-primary-500'
                   : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50'
               }`}
             >
@@ -126,11 +126,11 @@ export const SavePlanModal: React.FC<SavePlanModalProps> = ({
                 value="overwrite"
                 checked={choice === 'overwrite'}
                 onChange={() => setChoice('overwrite')}
-                className="mt-1 text-emerald-600 focus:ring-emerald-500"
+                className="mt-1 text-primary-600 focus:ring-primary-500"
               />
               <div className="flex-1 space-y-1">
                 <div className="flex items-center gap-2">
-                  <RefreshCw className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <RefreshCw className="w-4 h-4 text-primary-600 dark:text-primary-400 shrink-0" />
                   <span className="text-xs font-bold text-slate-900 dark:text-slate-100">
                     {isExistingNameUsed ? `Overwrite Existing Plan ("${currentMatch?.name}")` : `Save & Update "${planName}"`}
                   </span>
@@ -182,7 +182,7 @@ export const SavePlanModal: React.FC<SavePlanModalProps> = ({
             </button>
             <button
               type="submit"
-              className="px-5 py-2 rounded-xl text-xs font-black text-white bg-emerald-600 hover:bg-emerald-700 transition-all shadow-md shadow-emerald-600/20 cursor-pointer flex items-center gap-2"
+              className="px-5 py-2 rounded-xl text-xs font-black text-white bg-primary-600 hover:bg-primary-700 transition-all shadow-md shadow-primary-600/20 cursor-pointer flex items-center gap-2"
             >
               <Check className="w-4 h-4" />
               <span>{choice === 'overwrite' ? 'Save & Overwrite' : 'Save as New Plan'}</span>

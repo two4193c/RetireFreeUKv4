@@ -83,7 +83,7 @@ export const PensionLifestylingGuideCard: React.FC = () => {
       {/* The 3 Main Types of Lifestyling Strategies */}
       <div className="space-y-4">
         <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-          <Target className="w-4 h-4 text-emerald-500" />
+          <Target className="w-4 h-4 text-primary-500" />
           <span>The 3 Main Types of Lifestyling De-risking Paths</span>
         </h3>
 
@@ -109,20 +109,20 @@ export const PensionLifestylingGuideCard: React.FC = () => {
           </div>
 
           {/* Flexible Drawdown Target */}
-          <div className="p-4 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/80 space-y-2.5">
+          <div className="p-4 rounded-xl bg-primary-50/50 dark:bg-primary-950/30 border border-primary-200/80 dark:border-primary-800/80 space-y-2.5">
             <div className="flex items-center justify-between">
-              <span className="font-bold text-emerald-950 dark:text-emerald-300 flex items-center gap-1.5">
-                <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <span className="font-bold text-primary-950 dark:text-primary-300 flex items-center gap-1.5">
+                <TrendingUp className="w-4 h-4 text-primary-600 dark:text-primary-400" />
                 2. Drawdown Target
               </span>
-              <span className="text-[10px] font-bold uppercase bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800">
+              <span className="text-[10px] font-bold uppercase bg-primary-100 dark:bg-primary-950/80 text-primary-800 dark:text-primary-300 px-2 py-0.5 rounded-md border border-primary-200 dark:border-primary-800">
                 Flexible Drawdown
               </span>
             </div>
             <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
               Retains 40%–60% equity exposure at retirement, shifting the remainder into multi-asset funds, short-dated bonds, and cash.
             </p>
-            <div className="text-[11px] text-slate-600 dark:text-slate-400 pt-2 border-t border-emerald-200/60 dark:border-emerald-800/60">
+            <div className="text-[11px] text-slate-600 dark:text-slate-400 pt-2 border-t border-primary-200/60 dark:border-primary-800/60">
               <strong>Best For:</strong> Individuals keeping their pension invested in drawdown while taking flexible income withdrawals.
             </div>
           </div>
@@ -200,7 +200,7 @@ export const PensionLifestylingGuideCard: React.FC = () => {
       {/* Actionable Action Plan */}
       <div className="p-6 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 space-y-4">
         <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+          <CheckCircle2 className="w-4 h-4 text-primary-500" />
           <span>Action Plan: How to Review Your Workplace Pension</span>
         </h3>
 

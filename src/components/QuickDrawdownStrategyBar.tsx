@@ -56,11 +56,11 @@ export const STRATEGY_DEFINITIONS: StrategyDefinition[] = [
     title: 'Tax Optimizer (Dynamic Solver)',
     shortLabel: 'Tax Optimizer',
     tagline: 'Min Lifetime Tax & Max Wealth',
-    badgeBg: 'bg-emerald-100 dark:bg-emerald-950/80',
-    badgeText: 'text-emerald-800 dark:text-emerald-300',
-    borderColor: 'border-emerald-300 dark:border-emerald-700',
-    activeBorderColor: 'border-emerald-500 dark:border-emerald-400',
-    activeBg: 'bg-emerald-500/10 dark:bg-emerald-950/40',
+    badgeBg: 'bg-primary-100 dark:bg-primary-950/80',
+    badgeText: 'text-primary-800 dark:text-primary-300',
+    borderColor: 'border-primary-300 dark:border-primary-700',
+    activeBorderColor: 'border-primary-500 dark:border-primary-400',
+    activeBg: 'bg-primary-500/10 dark:bg-primary-950/40',
     description: 'Dynamic solver mathematically blends Pension, ISA, and GIA every year to fill 0% PA & 20% bands, avoid 40%/60% tax spikes, and maximize terminal wealth.',
   },
   {
@@ -68,11 +68,11 @@ export const STRATEGY_DEFINITIONS: StrategyDefinition[] = [
     title: 'Tax-Free Allowance Fill',
     shortLabel: '0% Tax-Free Fill',
     tagline: '0% Income Tax Cap',
-    badgeBg: 'bg-emerald-100 dark:bg-emerald-950/80',
-    badgeText: 'text-emerald-800 dark:text-emerald-300',
-    borderColor: 'border-emerald-200 dark:border-emerald-800/60',
-    activeBorderColor: 'border-emerald-500 dark:border-emerald-500',
-    activeBg: 'bg-emerald-500/10 dark:bg-emerald-950/40',
+    badgeBg: 'bg-primary-100 dark:bg-primary-950/80',
+    badgeText: 'text-primary-800 dark:text-primary-300',
+    borderColor: 'border-primary-200 dark:border-primary-800/60',
+    activeBorderColor: 'border-primary-500 dark:border-primary-500',
+    activeBg: 'bg-primary-500/10 dark:bg-primary-950/40',
     description: 'Draw pension up to £12,570 Personal Allowance minus taxable fixed income (0% tax), filling remainder from ISAs.',
   },
   {
@@ -535,7 +535,7 @@ export const QuickDrawdownStrategyBar: React.FC<QuickDrawdownStrategyBarProps> =
                       </span>
                     )}
                     {profile.maximizedSpendConfig.reinvestExcessDrawdown && (
-                      <span className="ml-1 text-emerald-700 dark:text-emerald-300 font-bold">
+                      <span className="ml-1 text-primary-700 dark:text-primary-300 font-bold">
                         (Reinvest surplus over £{(profile.maximizedSpendConfig.actualSpendingTargetAnnual || profile.actualSpendingTargetAnnual || 0).toLocaleString()}/yr into {(profile.maximizedSpendConfig.reinvestDestinationPot || 'isa').toUpperCase()})
                       </span>
                     )}
@@ -563,15 +563,15 @@ export const QuickDrawdownStrategyBar: React.FC<QuickDrawdownStrategyBarProps> =
       </div>
 
       {showCloneSuccess && (
-        <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-200 p-2.5 rounded-xl text-xs flex items-center justify-between gap-2 animate-fade-in">
+        <div className="bg-primary-500/10 border border-primary-500/30 text-primary-800 dark:text-primary-200 p-2.5 rounded-xl text-xs flex items-center justify-between gap-2 animate-fade-in">
           <div className="flex items-center gap-2 font-bold">
-            <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+            <CheckCircle2 className="w-4 h-4 text-primary-500 shrink-0" />
             <span>Strategy variation plans created! You can now switch plans in the top header or view them in the Compare tab.</span>
           </div>
           {onNavigateToCompare && (
             <button
               onClick={onNavigateToCompare}
-              className="px-2.5 py-1 bg-emerald-600 text-white rounded-lg font-black text-[11px] hover:bg-emerald-700 transition-colors shrink-0"
+              className="px-2.5 py-1 bg-primary-600 text-white rounded-lg font-black text-[11px] hover:bg-primary-700 transition-colors shrink-0"
             >
               Go to Compare Tab →
             </button>
@@ -716,7 +716,7 @@ export const QuickDrawdownStrategyBar: React.FC<QuickDrawdownStrategyBarProps> =
                           className={`font-black ${
                             metrics?.hasShortfall
                               ? 'text-rose-600 dark:text-rose-400'
-                              : 'text-emerald-600 dark:text-emerald-400'
+                              : 'text-primary-600 dark:text-primary-400'
                           }`}
                         >
                           {formatShortCurrency(metrics?.finalPot || 0)}
@@ -956,7 +956,7 @@ export const QuickDrawdownStrategyBar: React.FC<QuickDrawdownStrategyBarProps> =
                             className={`font-black ${
                               metrics?.hasShortfall
                                 ? 'text-rose-600 dark:text-rose-400'
-                                : 'text-emerald-600 dark:text-emerald-400'
+                                : 'text-primary-600 dark:text-primary-400'
                             }`}
                           >
                             {formatShortCurrency(metrics?.finalPot || 0)}
@@ -1177,7 +1177,7 @@ export const QuickDrawdownStrategyBar: React.FC<QuickDrawdownStrategyBarProps> =
                             className={`font-black ${
                               metrics?.hasShortfall
                                 ? 'text-rose-600 dark:text-rose-400'
-                                : 'text-emerald-600 dark:text-emerald-400'
+                                : 'text-primary-600 dark:text-primary-400'
                             }`}
                           >
                             {formatShortCurrency(metrics?.finalPot || 0)}
@@ -1338,7 +1338,7 @@ export const QuickDrawdownStrategyBar: React.FC<QuickDrawdownStrategyBarProps> =
                 <ul className="space-y-1.5">
                   {details.keyBenefits.map((benefit, i) => (
                     <li key={i} className="flex items-start gap-2 text-xs text-slate-700 dark:text-slate-300">
-                      <Check className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                      <Check className="w-4 h-4 text-primary-500 shrink-0 mt-0.5" />
                       <span>{benefit}</span>
                     </li>
                   ))}
@@ -1369,7 +1369,7 @@ export const QuickDrawdownStrategyBar: React.FC<QuickDrawdownStrategyBarProps> =
                   <div className="grid grid-cols-2 gap-3 text-xs">
                     <div className="bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800">
                       <span className="block text-[10px] text-slate-500 dark:text-slate-400 font-medium">Projected Pot @ Age 90</span>
-                      <span className={`font-black text-sm ${metrics.hasShortfall ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                      <span className={`font-black text-sm ${metrics.hasShortfall ? 'text-rose-600 dark:text-rose-400' : 'text-primary-600 dark:text-primary-400'}`}>
                         {formatShortCurrency(metrics.finalPot)}
                       </span>
                       {metrics.hasShortfall && (

@@ -131,7 +131,7 @@ export const AnnuityPclsTaxAdviceCard: React.FC<AnnuityPclsTaxAdviceCardProps> =
               <h4 className="font-extrabold text-sm text-white tracking-tight">
                 Annuity & 25% Tax-Free Lump Sum (PCLS) Income Tax Advice
               </h4>
-              <span className="bg-emerald-500/20 text-emerald-300 text-[10px] font-black px-2 py-0.5 rounded-full border border-emerald-500/30 uppercase">
+              <span className="bg-primary-500/20 text-primary-300 text-[10px] font-black px-2 py-0.5 rounded-full border border-primary-500/30 uppercase">
                 Tax Optimization
               </span>
             </div>
@@ -144,7 +144,7 @@ export const AnnuityPclsTaxAdviceCard: React.FC<AnnuityPclsTaxAdviceCardProps> =
         {/* Current Selection Pill */}
         <div className="flex items-center gap-2 bg-indigo-900/60 px-3 py-1.5 rounded-xl border border-indigo-700 text-xs shrink-0 self-start sm:self-center">
           <span className="text-indigo-300 font-semibold">Current Selection:</span>
-          <span className={`font-black ${takeLumpSumAtStart ? 'text-emerald-400' : 'text-amber-400'}`}>
+          <span className={`font-black ${takeLumpSumAtStart ? 'text-primary-400' : 'text-amber-400'}`}>
             {takeLumpSumAtStart ? '25% PCLS Taken Upfront' : '100% Pot to Annuity (No PCLS)'}
           </span>
         </div>
@@ -157,13 +157,13 @@ export const AnnuityPclsTaxAdviceCard: React.FC<AnnuityPclsTaxAdviceCardProps> =
         <div
           className={`p-4 rounded-xl border transition-all space-y-3 ${
             takeLumpSumAtStart
-              ? 'bg-emerald-950/40 border-emerald-500/50 ring-1 ring-emerald-500/30'
+              ? 'bg-primary-950/40 border-primary-500/50 ring-1 ring-primary-500/30'
               : 'bg-slate-800/60 border-slate-700/80 hover:border-slate-600'
           }`}
         >
           <div className="flex items-center justify-between pb-2 border-b border-slate-700/60">
             <div>
-              <span className="text-xs font-black uppercase text-emerald-400 tracking-wider flex items-center gap-1.5">
+              <span className="text-xs font-black uppercase text-primary-400 tracking-wider flex items-center gap-1.5">
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 <span>Option A: Take 25% Tax-Free Cash Upfront</span>
               </span>
@@ -172,7 +172,7 @@ export const AnnuityPclsTaxAdviceCard: React.FC<AnnuityPclsTaxAdviceCardProps> =
             {onToggleTakeLumpSum && !takeLumpSumAtStart && (
               <button
                 onClick={() => onToggleTakeLumpSum(true)}
-                className="text-[10px] font-extrabold bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1 rounded-lg transition-colors"
+                className="text-[10px] font-extrabold bg-primary-600 hover:bg-primary-500 text-white px-2.5 py-1 rounded-lg transition-colors"
               >
                 Select Option A
               </button>
@@ -180,9 +180,9 @@ export const AnnuityPclsTaxAdviceCard: React.FC<AnnuityPclsTaxAdviceCardProps> =
           </div>
 
           <div className="space-y-2 text-xs">
-            <div className="flex justify-between items-center bg-emerald-900/30 p-2 rounded-lg border border-emerald-700/40">
-              <span className="text-emerald-200 font-semibold">100% Tax-Free Lump Sum (PCLS):</span>
-              <span className="font-extrabold text-emerald-300 text-sm">£{pclsAmount.toLocaleString()}</span>
+            <div className="flex justify-between items-center bg-primary-900/30 p-2 rounded-lg border border-primary-700/40">
+              <span className="text-primary-200 font-semibold">100% Tax-Free Lump Sum (PCLS):</span>
+              <span className="font-extrabold text-primary-300 text-sm">£{pclsAmount.toLocaleString()}</span>
             </div>
 
             <div className="flex justify-between text-slate-300">
@@ -210,7 +210,7 @@ export const AnnuityPclsTaxAdviceCard: React.FC<AnnuityPclsTaxAdviceCardProps> =
               <span className="font-bold text-rose-400">£{estTaxWithPcls.toLocaleString()} / yr</span>
             </div>
 
-            <div className="p-2.5 bg-emerald-900/20 rounded-lg text-[11px] text-emerald-200/90 leading-relaxed border border-emerald-800/40">
+            <div className="p-2.5 bg-primary-900/20 rounded-lg text-[11px] text-primary-200/90 leading-relaxed border border-primary-800/40">
               💡 <strong>Tax Benefit:</strong> 100% of the £{pclsAmount.toLocaleString()} lump sum is extracted with 0% Income Tax. You can deposit it into an ISA (£20k/yr) to generate completely tax-free income for life!
             </div>
           </div>
@@ -312,8 +312,8 @@ export const AnnuityPclsTaxAdviceCard: React.FC<AnnuityPclsTaxAdviceCardProps> =
 
             {/* Advice 2 */}
             <div className="p-3 bg-slate-900/80 rounded-lg border border-slate-700 space-y-1">
-              <h5 className="font-extrabold text-emerald-300 flex items-center gap-1.5">
-                <PiggyBank className="w-3.5 h-3.5 text-emerald-400" />
+              <h5 className="font-extrabold text-primary-300 flex items-center gap-1.5">
+                <PiggyBank className="w-3.5 h-3.5 text-primary-400" />
                 <span>2. The ISA Income Tax Shelter</span>
               </h5>
               <p className="text-[11px] text-slate-300">

@@ -522,12 +522,12 @@ export const InvestmentFeesCard: React.FC<InvestmentFeesCardProps> = ({ profile,
                             <div className="p-3 bg-slate-900 text-white rounded-xl shadow-xl border border-slate-800 text-xs space-y-1.5">
                               <div className="flex items-center justify-between gap-4 font-bold border-b border-slate-800 pb-1">
                                 <span>Age {data.age} ({data.year})</span>
-                                <span className={data.isRetired ? 'text-indigo-400' : 'text-emerald-400'}>
+                                <span className={data.isRetired ? 'text-indigo-400' : 'text-primary-400'}>
                                   {data.isRetired ? 'Retirement Phase' : 'Accumulation Phase'}
                                 </span>
                               </div>
                               <div className="flex items-center justify-between gap-4">
-                                <span className="text-emerald-400 font-medium">Gross Pot (0% Baseline):</span>
+                                <span className="text-primary-400 font-medium">Gross Pot (0% Baseline):</span>
                                 <span className="font-bold">£{data.grossPot.toLocaleString()}</span>
                               </div>
                               <div className="flex items-center justify-between gap-4">
@@ -551,7 +551,7 @@ export const InvestmentFeesCard: React.FC<InvestmentFeesCardProps> = ({ profile,
                     <Legend
                       wrapperStyle={{ fontSize: '11px', paddingTop: '4px' }}
                       formatter={(val) => {
-                        if (val === 'grossPot') return <span className="text-emerald-700 dark:text-emerald-400 font-bold">Gross Pot (0% Baseline)</span>;
+                        if (val === 'grossPot') return <span className="text-primary-700 dark:text-primary-400 font-bold">Gross Pot (0% Baseline)</span>;
                         if (val === 'netPot') return <span className="text-indigo-700 dark:text-indigo-400 font-bold">Net Pot (With Fees)</span>;
                         return val;
                       }}
@@ -863,7 +863,7 @@ export const InvestmentFeesCard: React.FC<InvestmentFeesCardProps> = ({ profile,
                                 {pot.label}
                               </h4>
                               {pot.balance > 0 ? (
-                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-primary-100 dark:bg-primary-950/80 text-primary-800 dark:text-primary-300 border border-primary-200 dark:border-primary-800">
                                   £{pot.balance.toLocaleString()}
                                 </span>
                               ) : (

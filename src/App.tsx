@@ -88,6 +88,7 @@ import { CashFlowSankeyCard } from './components/CashFlowSankeyCard';
 import { PlanManagementCard } from './components/PlanManagementCard';
 import { Sparkles, ArrowUpRight, RotateCcw, Pencil, X, Check, LayoutDashboard, Wallet, Percent, LineChart, Shield, Landmark, Download, ArrowRightLeft, TrendingUp, Home, Trash2, AlertTriangle, BookOpen, Award, Scale, Heart, Users, Briefcase, Flame, ShieldAlert, Smile } from 'lucide-react';
 import { SidebarNav } from './components/SidebarNav';
+import { AppearanceModal, ColorTheme, UiScale } from './components/AppearanceModal';
 import { PlanErrorBoundary } from './components/PlanErrorBoundary';
 import { DynamicOptimiserCard } from './components/DynamicOptimiserCard';
 import { DocumentationModal, DocSubTabType } from './components/DocumentationModal';
@@ -147,7 +148,7 @@ class AppErrorBoundary extends Component<AppErrorBoundaryProps, AppErrorBoundary
             <div className="flex gap-3 justify-center pt-2">
               <button
                 onClick={this.handleReset}
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer"
+                className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer"
               >
                 Reset Scenarios & Reload
               </button>
@@ -187,19 +188,35 @@ function App() {
     return 'dark';
   });
 
-  // Apply dark class to <html> element
+
+  const [isAppearanceModalOpen, setIsAppearanceModalOpen] = useState(false);
+  const [colorTheme, setColorTheme] = useState<ColorTheme>(() => {
+    return (localStorage.getItem('retireready_colorTheme') as ColorTheme) || 'emerald';
+  });
+  const [uiScale, setUiScale] = useState<UiScale>(() => {
+    return (localStorage.getItem('retireready_uiScale') as UiScale) || 'normal';
+  });
+
+  // Apply theme, color, and scale
   useEffect(() => {
-    try {
-      localStorage.setItem(THEME_STORAGE_KEY, theme);
-    } catch (e) {
-      console.warn('Failed to save theme to localStorage:', e);
-    }
+    const root = document.documentElement;
+    
+    // Dark mode
     if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
+      root.classList.add('dark');
     } else {
-      document.documentElement.classList.remove('dark');
+      root.classList.remove('dark');
     }
-  }, [theme]);
+    
+    // Color theme
+    root.setAttribute('data-theme', colorTheme);
+    localStorage.setItem('retireready_colorTheme', colorTheme);
+    
+    // UI Scale
+    root.setAttribute('data-ui-scale', uiScale);
+    localStorage.setItem('retireready_uiScale', uiScale);
+  }, [theme, colorTheme, uiScale]);
+
 
   const handleToggleTheme = () => {
     setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
@@ -747,7 +764,7 @@ function App() {
   }, [profile, pots]);
 
   return (
-    <div className="min-h-screen bg-slate-100/70 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans flex flex-col lg:flex-row antialiased selection:bg-emerald-500 selection:text-white transition-colors duration-200">
+    <div className="min-h-screen bg-slate-100/70 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans flex flex-col lg:flex-row antialiased selection:bg-primary-500 selection:text-white transition-colors duration-200">
       
       {/* Left Collapsible Navigation Sidebar (Flush against left edge) */}
       <SidebarNav
@@ -912,7 +929,7 @@ function App() {
         appMode={appMode}
         onSetAppMode={setAppMode}
         theme={theme}
-        onToggleTheme={handleToggleTheme}
+        onToggleTheme={() => setIsAppearanceModalOpen(true)}
         onStartTour={() => setRunTour(true)}
         scenarios={scenarios}
         activeScenarioId={activeScenarioId}
@@ -944,7 +961,7 @@ function App() {
         onOpenAiAdvisor={() => setShowAiModal(true)}
         onOpenMaximizedSpendModal={() => setIsMaximizedSpendModalOpen(true)}
         theme={theme}
-        onToggleTheme={handleToggleTheme}
+        onToggleTheme={() => setIsAppearanceModalOpen(true)}
       />
 
       {/* Main Container */}
@@ -1828,6 +1845,17 @@ function App() {
         </div>
       </footer>
 
+      
+      <AppearanceModal 
+        isOpen={isAppearanceModalOpen}
+        onClose={() => setIsAppearanceModalOpen(false)}
+        colorTheme={colorTheme}
+        onColorThemeChange={setColorTheme}
+        uiScale={uiScale}
+        onUiScaleChange={setUiScale}
+        theme={theme}
+        onThemeChange={handleToggleTheme}
+      />
       {/* Modals */}
       <GuidedTour run={runTour} onFinish={() => setRunTour(false)} theme={theme} onSetTab={setActiveTab} />
 
@@ -1847,7 +1875,7 @@ function App() {
           <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-2xl max-w-md w-full space-y-5 transition-colors">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 flex items-center justify-center">
+                <div className="w-9 h-9 rounded-xl bg-primary-100 dark:bg-primary-950 text-primary-700 dark:text-primary-400 flex items-center justify-center">
                   <Pencil className="w-5 h-5" />
                 </div>
                 <div>
@@ -1875,7 +1903,7 @@ function App() {
                 }}
                 autoFocus
                 placeholder="e.g. Early FIRE at 55"
-                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
               />
 
               <div className="space-y-1.5 pt-1">
@@ -1886,7 +1914,7 @@ function App() {
                       key={suggestion}
                       type="button"
                       onClick={() => setRenameTarget({ ...renameTarget, name: suggestion })}
-                      className="text-[11px] font-semibold px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/80 hover:text-emerald-700 dark:hover:text-emerald-300 rounded-lg transition-colors border border-slate-200/60 dark:border-slate-700/60 cursor-pointer"
+                      className="text-[11px] font-semibold px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-primary-50 dark:hover:bg-primary-950/80 hover:text-primary-700 dark:hover:text-primary-300 rounded-lg transition-colors border border-slate-200/60 dark:border-slate-700/60 cursor-pointer"
                     >
                       {suggestion}
                     </button>
@@ -1907,7 +1935,7 @@ function App() {
                 type="button"
                 onClick={() => handleRenameScenario(renameTarget.id, renameTarget.name)}
                 disabled={!renameTarget.name.trim()}
-                className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
+                className="px-5 py-2 rounded-xl bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
               >
                 Save Plan Name
               </button>

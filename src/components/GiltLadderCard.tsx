@@ -163,7 +163,7 @@ export const GiltLadderCard: React.FC<GiltLadderCardProps> = ({
       id="gilt_ladder_strategy_card"
       className={`rounded-2xl border transition-all duration-200 overflow-hidden ${
         isEnabled
-          ? 'bg-white dark:bg-slate-900 border-emerald-300 dark:border-emerald-700 shadow-md shadow-emerald-500/5'
+          ? 'bg-white dark:bg-slate-900 border-primary-300 dark:border-primary-700 shadow-md shadow-primary-500/5'
           : 'bg-slate-50/70 dark:bg-slate-900/40 border-slate-200 dark:border-slate-800'
       }`}
     >
@@ -173,7 +173,7 @@ export const GiltLadderCard: React.FC<GiltLadderCardProps> = ({
           <div
             className={`p-2.5 rounded-xl flex items-center justify-center shrink-0 ${
               isEnabled
-                ? 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300'
+                ? 'bg-primary-100 dark:bg-primary-950/80 text-primary-700 dark:text-primary-300'
                 : 'bg-slate-200/80 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
             }`}
           >
@@ -186,7 +186,7 @@ export const GiltLadderCard: React.FC<GiltLadderCardProps> = ({
               </h3>
               {!isStudioMode && (
                 <>
-                  <span className="bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-800">
+                  <span className="bg-primary-100 dark:bg-primary-950/80 text-primary-800 dark:text-primary-300 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-primary-300 dark:border-primary-800">
                     0% CGT Arbitrage
                   </span>
                   <span className="bg-blue-100 dark:bg-blue-950/80 text-blue-800 dark:text-blue-300 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-blue-300 dark:border-blue-800">
@@ -218,7 +218,7 @@ export const GiltLadderCard: React.FC<GiltLadderCardProps> = ({
               onChange={(e) => updateCurrentConfig({ enabled: e.target.checked })}
               className="sr-only peer"
             />
-            <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-emerald-600"></div>
+            <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-primary-600"></div>
           </label>
           <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
             {isEnabled ? `${personName} Active` : `${personName} Off`}
@@ -243,7 +243,7 @@ export const GiltLadderCard: React.FC<GiltLadderCardProps> = ({
               <span>{profile.name || 'Primary'}</span>
               <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
                 primaryConfig.enabled
-                  ? (activePerson === 'primary' ? 'bg-indigo-700 text-white' : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300')
+                  ? (activePerson === 'primary' ? 'bg-indigo-700 text-white' : 'bg-primary-100 text-primary-800 dark:bg-primary-950 dark:text-primary-300')
                   : (activePerson === 'primary' ? 'bg-indigo-800 text-indigo-200' : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-400')
               }`}>
                 {primaryConfig.enabled ? `${formatGBP(primaryConfig.targetAnnualIncome)}/yr` : 'Off'}
@@ -263,7 +263,7 @@ export const GiltLadderCard: React.FC<GiltLadderCardProps> = ({
               <span>{profile.partnerName || 'Partner'}</span>
               <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
                 partnerConfig.enabled
-                  ? (activePerson === 'partner' ? 'bg-rose-700 text-white' : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300')
+                  ? (activePerson === 'partner' ? 'bg-rose-700 text-white' : 'bg-primary-100 text-primary-800 dark:bg-primary-950 dark:text-primary-300')
                   : (activePerson === 'partner' ? 'bg-rose-800 text-rose-200' : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-400')
               }`}>
                 {partnerConfig.enabled ? `${formatGBP(partnerConfig.targetAnnualIncome)}/yr` : 'Off'}
@@ -288,18 +288,18 @@ export const GiltLadderCard: React.FC<GiltLadderCardProps> = ({
 
       {/* Copy Notification */}
       {copiedNotification && (
-        <div className="mx-4 sm:mx-5 mt-3 p-2.5 bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-300 dark:border-emerald-800 rounded-xl flex items-center gap-2 text-xs font-bold text-emerald-800 dark:text-emerald-200">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+        <div className="mx-4 sm:mx-5 mt-3 p-2.5 bg-primary-50 dark:bg-primary-950/80 border border-primary-300 dark:border-primary-800 rounded-xl flex items-center gap-2 text-xs font-bold text-primary-800 dark:text-primary-200">
+          <CheckCircle2 className="w-4 h-4 text-primary-600 shrink-0" />
           <span>{copiedNotification}</span>
         </div>
       )}
 
       {/* Combined Couple Overview Banner */}
       {isCouple && anyEnabled && (
-        <div className="mx-4 sm:mx-5 mt-3 p-3.5 bg-gradient-to-r from-indigo-50/80 via-emerald-50/80 to-teal-50/80 dark:from-indigo-950/40 dark:via-emerald-950/40 dark:to-teal-950/40 border border-emerald-200 dark:border-emerald-800/60 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
+        <div className="mx-4 sm:mx-5 mt-3 p-3.5 bg-gradient-to-r from-indigo-50/80 via-primary-50/80 to-teal-50/80 dark:from-indigo-950/40 dark:via-primary-950/40 dark:to-teal-950/40 border border-primary-200 dark:border-primary-800/60 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
           <div className="space-y-0.5">
             <span className="font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
-              <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <ShieldCheck className="w-4 h-4 text-primary-600 dark:text-primary-400" />
               <span>Couple Gilt Portfolio Totals</span>
             </span>
             <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
@@ -313,7 +313,7 @@ export const GiltLadderCard: React.FC<GiltLadderCardProps> = ({
             </div>
             <div>
               <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Combined Cashflow</span>
-              <span className="font-black text-emerald-600 dark:text-emerald-400">{formatGBP(combinedPayout)}</span>
+              <span className="font-black text-primary-600 dark:text-primary-400">{formatGBP(combinedPayout)}</span>
             </div>
             <div>
               <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Total 0% CGT Gain</span>
@@ -332,7 +332,7 @@ export const GiltLadderCard: React.FC<GiltLadderCardProps> = ({
                 {activePerson === 'partner' ? <Heart className="w-3.5 h-3.5 text-rose-500" /> : <User className="w-3.5 h-3.5 text-indigo-500" />}
                 <span>Configuring {personName}'s Gilt Ladder (Current Age: {personCurrentAge})</span>
               </span>
-              <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+              <span className="text-[11px] font-semibold text-primary-600 dark:text-primary-400">
                 Tax-Exempt Sovereign Bonds
               </span>
             </div>
@@ -344,7 +344,7 @@ export const GiltLadderCard: React.FC<GiltLadderCardProps> = ({
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
                 <span>Purchase Age</span>
-                <span className="text-emerald-600 dark:text-emerald-400 font-extrabold">
+                <span className="text-primary-600 dark:text-primary-400 font-extrabold">
                   Age {currentPurchaseAge}
                 </span>
               </label>
@@ -355,7 +355,7 @@ export const GiltLadderCard: React.FC<GiltLadderCardProps> = ({
                 max={80}
                 value={currentPurchaseAge}
                 onChange={(e) => updateCurrentConfig({ purchaseAge: Number(e.target.value), startAge: Number(e.target.value) })}
-                className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-600"
+                className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary-600"
               />
               <span className="text-[10px] text-slate-400 dark:text-slate-500 block">
                 Bonds bought at Age {currentPurchaseAge}; 1st maturity at Age {currentPurchaseAge + 1}
@@ -366,7 +366,7 @@ export const GiltLadderCard: React.FC<GiltLadderCardProps> = ({
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
                 <span>Duration</span>
-                <span className="text-emerald-600 dark:text-emerald-400 font-extrabold">
+                <span className="text-primary-600 dark:text-primary-400 font-extrabold">
                   {currentConfig.durationYears} Years
                 </span>
               </label>
@@ -374,7 +374,7 @@ export const GiltLadderCard: React.FC<GiltLadderCardProps> = ({
                 id={`gilt_ladder_duration_years_${activePerson}`}
                 value={currentConfig.durationYears}
                 onChange={(e) => updateCurrentConfig({ durationYears: Number(e.target.value) })}
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-emerald-500"
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary-500"
               >
                 <option value={3}>3 Years (Short Bridge)</option>
                 <option value={5}>5 Years (Standard Bridge)</option>
@@ -392,7 +392,7 @@ export const GiltLadderCard: React.FC<GiltLadderCardProps> = ({
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
                 <span>Annual Cashflow Target</span>
-                <span className="text-emerald-600 dark:text-emerald-400 font-extrabold">
+                <span className="text-primary-600 dark:text-primary-400 font-extrabold">
                   {formatGBP(currentConfig.targetAnnualIncome)}
                 </span>
               </label>
@@ -404,7 +404,7 @@ export const GiltLadderCard: React.FC<GiltLadderCardProps> = ({
                 max={250000}
                 value={currentConfig.targetAnnualIncome}
                 onChange={(e) => updateCurrentConfig({ targetAnnualIncome: Math.max(1000, Number(e.target.value)) })}
-                className="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-emerald-500"
+                className="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary-500"
               />
               <span className="text-[10px] text-slate-400 dark:text-slate-500 block">
                 Guaranteed cash delivered each year to {personName}
@@ -415,7 +415,7 @@ export const GiltLadderCard: React.FC<GiltLadderCardProps> = ({
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
                 <span>Funding Source</span>
-                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                <span className="text-[10px] text-primary-600 dark:text-primary-400 font-semibold">
                   {currentConfig.fundingSource === 'gia' ? '✨ Max Tax Gain' : ''}
                 </span>
               </label>
@@ -423,7 +423,7 @@ export const GiltLadderCard: React.FC<GiltLadderCardProps> = ({
                 id={`gilt_ladder_funding_source_${activePerson}`}
                 value={currentConfig.fundingSource || 'gia'}
                 onChange={(e) => updateCurrentConfig({ fundingSource: e.target.value as GiltLadderFundingSource })}
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-emerald-500"
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary-500"
               >
                 <option value="gia">{personName}'s General Investment Account (GIA)</option>
                 <option value="isa">{personName}'s Stocks & Shares / Cash ISA</option>
@@ -451,7 +451,7 @@ export const GiltLadderCard: React.FC<GiltLadderCardProps> = ({
                 id={`gilt_ladder_strategy_mode_${activePerson}`}
                 value={currentConfig.strategyMode || 'low_coupon_cgt'}
                 onChange={(e) => updateCurrentConfig({ strategyMode: e.target.value as any })}
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-emerald-500"
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary-500"
               >
                 <option value="low_coupon_cgt">Low-Coupon Focus (0.125% - 1.250% - Maximum 0% CGT Gain)</option>
                 <option value="benchmark_yield">Benchmark Market Yield (Higher Annual Income Coupons)</option>
@@ -464,7 +464,7 @@ export const GiltLadderCard: React.FC<GiltLadderCardProps> = ({
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
                   <span>Custom Yield-to-Maturity (%)</span>
-                  <span className="text-emerald-600 dark:text-emerald-400 font-extrabold">
+                  <span className="text-primary-600 dark:text-primary-400 font-extrabold">
                     {(currentConfig.customYieldPercent ?? 4.2).toFixed(2)}%
                   </span>
                 </label>
@@ -476,7 +476,7 @@ export const GiltLadderCard: React.FC<GiltLadderCardProps> = ({
                   max={10}
                   value={currentConfig.customYieldPercent ?? 4.2}
                   onChange={(e) => updateCurrentConfig({ customYieldPercent: Number(e.target.value) })}
-                  className="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary-500"
                 />
               </div>
             ) : (
@@ -491,7 +491,7 @@ export const GiltLadderCard: React.FC<GiltLadderCardProps> = ({
                   id={`gilt_ladder_tax_bracket_${activePerson}`}
                   value={currentConfig.taxBracketOverride || 'auto'}
                   onChange={(e) => updateCurrentConfig({ taxBracketOverride: e.target.value as any })}
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary-500"
                 >
                   <option value="auto">Auto Detect from {personName}'s Gross Salary</option>
                   <option value="basic">Basic Rate (20% Coupon Tax)</option>
@@ -504,14 +504,14 @@ export const GiltLadderCard: React.FC<GiltLadderCardProps> = ({
 
           {/* Key Metric Highlights for this Person */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="p-3.5 bg-emerald-50/70 dark:bg-emerald-950/30 rounded-xl border border-emerald-200 dark:border-emerald-800/60">
-              <span className="text-[11px] font-semibold text-emerald-900 dark:text-emerald-300 block">
+            <div className="p-3.5 bg-primary-50/70 dark:bg-primary-950/30 rounded-xl border border-primary-200 dark:border-primary-800/60">
+              <span className="text-[11px] font-semibold text-primary-900 dark:text-primary-300 block">
                 {personName}'s Upfront Cost
               </span>
-              <span className="text-lg font-black text-emerald-950 dark:text-emerald-100 block mt-0.5">
+              <span className="text-lg font-black text-primary-950 dark:text-primary-100 block mt-0.5">
                 {formatGBP(currentSummary.totalUpfrontCost)}
               </span>
-              <span className="text-[10px] text-emerald-700 dark:text-emerald-400 mt-0.5 block">
+              <span className="text-[10px] text-primary-700 dark:text-primary-400 mt-0.5 block">
                 Discount to face value
               </span>
             </div>
@@ -554,9 +554,9 @@ export const GiltLadderCard: React.FC<GiltLadderCardProps> = ({
           </div>
 
           {/* Tax Arbitrage Callout */}
-          <div className="p-3.5 bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-indigo-500/10 dark:from-emerald-950/40 dark:via-teal-950/40 dark:to-indigo-950/40 rounded-xl border border-emerald-200 dark:border-emerald-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="p-3.5 bg-gradient-to-r from-primary-500/10 via-teal-500/10 to-indigo-500/10 dark:from-primary-950/40 dark:via-teal-950/40 dark:to-indigo-950/40 rounded-xl border border-primary-200 dark:border-primary-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-start gap-2.5">
-              <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+              <Sparkles className="w-4 h-4 text-primary-600 dark:text-primary-400 shrink-0 mt-0.5" />
               <div className="text-xs text-slate-700 dark:text-slate-300">
                 <strong>Why Gilts beat Cash & GIA Equities:</strong> Under Section 115 of the Taxation of Chargeable Gains Act 1992, UK Gilts are exempt from Capital Gains Tax. Buying low-coupon gilts below par (e.g. at £90) yields a completely tax-free redemption at £100 par, preserving your £3,000 CGT allowance and avoiding higher-rate tax spikes for {personName}.
               </div>
@@ -571,7 +571,7 @@ export const GiltLadderCard: React.FC<GiltLadderCardProps> = ({
               className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-between transition-colors text-xs font-bold text-slate-800 dark:text-slate-200 cursor-pointer"
             >
               <span className="flex items-center gap-2">
-                <Layers className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <Layers className="w-4 h-4 text-primary-600 dark:text-primary-400" />
                 <span>View {currentSummary.rungs.length} Individual Gilt Rungs for {personName}</span>
               </span>
               <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400 font-semibold">
@@ -592,7 +592,7 @@ export const GiltLadderCard: React.FC<GiltLadderCardProps> = ({
                       <th className="py-2 px-2.5">Upfront Cost</th>
                       <th className="py-2 px-2.5">Principal Paid</th>
                       <th className="py-2 px-2.5">Coupons</th>
-                      <th className="py-2 px-2.5 text-right font-extrabold text-emerald-700 dark:text-emerald-300">
+                      <th className="py-2 px-2.5 text-right font-extrabold text-primary-700 dark:text-primary-300">
                         Net Payout
                       </th>
                     </tr>
@@ -622,7 +622,7 @@ export const GiltLadderCard: React.FC<GiltLadderCardProps> = ({
                         <td className="py-2.5 px-2.5 text-slate-500 dark:text-slate-400">
                           {formatGBP(rung.annualCouponCashflow)}
                         </td>
-                        <td className="py-2.5 px-2.5 text-right font-black text-emerald-600 dark:text-emerald-400">
+                        <td className="py-2.5 px-2.5 text-right font-black text-primary-600 dark:text-primary-400">
                           {formatGBP(rung.totalNetPayout)}
                         </td>
                       </tr>

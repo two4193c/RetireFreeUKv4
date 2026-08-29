@@ -36,7 +36,7 @@ export const StudioModeGuideCard: React.FC<StudioModeGuideCardProps> = ({
     >
       {/* Header */}
       <div className="flex flex-col gap-2 border-b border-slate-200 dark:border-slate-700/80 pb-6">
-        <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-black tracking-wide text-xs uppercase mb-1">
+        <div className="flex items-center gap-2 text-primary-600 dark:text-primary-400 font-black tracking-wide text-xs uppercase mb-1">
           <Columns className="w-4 h-4" />
           <span>Workspace Architecture &amp; Dual-Pane Workflow</span>
         </div>
@@ -53,7 +53,7 @@ export const StudioModeGuideCard: React.FC<StudioModeGuideCardProps> = ({
             <button
               type="button"
               onClick={() => onToggleAppMode('studio')}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center gap-2 shrink-0 cursor-pointer"
+              className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center gap-2 shrink-0 cursor-pointer"
             >
               <Sparkles className="w-4 h-4" />
               <span>Switch to Studio Mode ⚡</span>
@@ -63,9 +63,9 @@ export const StudioModeGuideCard: React.FC<StudioModeGuideCardProps> = ({
       </div>
 
       {/* Hero Dual-Pane Overview Card */}
-      <div className="p-5 rounded-2xl bg-gradient-to-r from-emerald-50 via-teal-50 to-blue-50 dark:from-emerald-950/40 dark:via-teal-950/40 dark:to-blue-950/40 border border-emerald-200 dark:border-emerald-800/80 space-y-4">
-        <div className="flex items-center gap-2.5 font-extrabold text-emerald-900 dark:text-emerald-200 text-sm sm:text-base">
-          <Columns className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+      <div className="p-5 rounded-2xl bg-gradient-to-r from-primary-50 via-teal-50 to-blue-50 dark:from-primary-950/40 dark:via-teal-950/40 dark:to-blue-950/40 border border-primary-200 dark:border-primary-800/80 space-y-4">
+        <div className="flex items-center gap-2.5 font-extrabold text-primary-900 dark:text-primary-200 text-sm sm:text-base">
+          <Columns className="w-5 h-5 text-primary-600 dark:text-primary-400 shrink-0" />
           <span>The Dual-Pane Power Workflow</span>
         </div>
         <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
@@ -73,8 +73,8 @@ export const StudioModeGuideCard: React.FC<StudioModeGuideCardProps> = ({
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
-          <div className="p-3.5 bg-white/90 dark:bg-slate-900/90 rounded-xl border border-emerald-200/80 dark:border-emerald-800/50 space-y-1.5">
-            <span className="text-xs font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-wider block">
+          <div className="p-3.5 bg-white/90 dark:bg-slate-900/90 rounded-xl border border-primary-200/80 dark:border-primary-800/50 space-y-1.5">
+            <span className="text-xs font-black text-primary-700 dark:text-primary-400 uppercase tracking-wider block">
               Left Pane &bull; Parameters &amp; Assumptions
             </span>
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
@@ -82,7 +82,7 @@ export const StudioModeGuideCard: React.FC<StudioModeGuideCardProps> = ({
             </p>
           </div>
 
-          <div className="p-3.5 bg-white/90 dark:bg-slate-900/90 rounded-xl border border-emerald-200/80 dark:border-emerald-800/50 space-y-1.5">
+          <div className="p-3.5 bg-white/90 dark:bg-slate-900/90 rounded-xl border border-primary-200/80 dark:border-primary-800/50 space-y-1.5">
             <span className="text-xs font-black text-blue-700 dark:text-blue-400 uppercase tracking-wider block">
               Right Pane &bull; Live Strategy &amp; Analysis
             </span>
@@ -107,12 +107,12 @@ export const StudioModeGuideCard: React.FC<StudioModeGuideCardProps> = ({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
           {/* 1. Executive Summary */}
-          <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-2 hover:border-emerald-400 dark:hover:border-emerald-600 transition-colors">
+          <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-2 hover:border-primary-400 dark:hover:border-primary-600 transition-colors">
             <div className="flex items-center justify-between">
-              <div className="p-2 bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 rounded-xl">
+              <div className="p-2 bg-primary-100 dark:bg-primary-950 text-primary-600 dark:text-primary-400 rounded-xl">
                 <LayoutDashboard className="w-4 h-4" />
               </div>
-              <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
+              <span className="text-[10px] font-bold uppercase tracking-wider bg-primary-50 dark:bg-primary-950 text-primary-700 dark:text-primary-300 px-2 py-0.5 rounded-full border border-primary-200 dark:border-primary-800">
                 Pop-Out
               </span>
             </div>
@@ -219,7 +219,7 @@ export const StudioModeGuideCard: React.FC<StudioModeGuideCardProps> = ({
       {/* Navigation & Productivity Tips */}
       <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-4">
         <h4 className="font-bold text-slate-900 dark:text-white text-sm flex items-center gap-2">
-          <Keyboard className="w-4 h-4 text-emerald-600" />
+          <Keyboard className="w-4 h-4 text-primary-600" />
           Productivity Shortcuts &amp; Navigation Tips
         </h4>
 
@@ -238,7 +238,7 @@ export const StudioModeGuideCard: React.FC<StudioModeGuideCardProps> = ({
               2. Pop-Out External Link Icons
             </span>
             <p className="text-slate-500 dark:text-slate-400 leading-relaxed">
-              Sidebar items marked with <ExternalLink className="w-3 h-3 inline text-emerald-500" /> open instantly as focused pop-out overlays, keeping your main dual-pane workspace intact.
+              Sidebar items marked with <ExternalLink className="w-3 h-3 inline text-primary-500" /> open instantly as focused pop-out overlays, keeping your main dual-pane workspace intact.
             </p>
           </div>
 

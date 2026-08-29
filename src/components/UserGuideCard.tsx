@@ -112,7 +112,7 @@ export const UserGuideCard: React.FC<UserGuideCardProps> = ({
               <button
                 type="button"
                 onClick={() => handleModeToggle('studio')}
-                className="px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
+                className="px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1 bg-primary-600 hover:bg-primary-700 text-white shadow-xs"
               >
                 <Columns className="w-3.5 h-3.5" />
                 <span>Studio 🚀</span>
@@ -133,7 +133,7 @@ export const UserGuideCard: React.FC<UserGuideCardProps> = ({
             </div>
 
             <div className="p-3.5 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
-              <div className="w-7 h-7 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 font-extrabold flex items-center justify-center text-xs">
+              <div className="w-7 h-7 rounded-xl bg-primary-100 dark:bg-primary-950 text-primary-600 dark:text-primary-400 font-extrabold flex items-center justify-center text-xs">
                 2
               </div>
               <h4 className="font-bold text-slate-900 dark:text-white">Set Target Income</h4>
@@ -201,7 +201,7 @@ export const UserGuideCard: React.FC<UserGuideCardProps> = ({
           <div className="space-y-3">
             <div className="p-3.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
               <h4 className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm flex items-center gap-2">
-                <DollarSign className="w-4 h-4 text-emerald-600" />
+                <DollarSign className="w-4 h-4 text-primary-600" />
                 Defined Contribution (DC) Pensions & SIPPs
               </h4>
               <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
@@ -257,8 +257,8 @@ export const UserGuideCard: React.FC<UserGuideCardProps> = ({
           <h4 className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm">Available Drawdown Strategies:</h4>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            <div className="p-3 bg-emerald-50/70 dark:bg-emerald-950/40 rounded-xl border border-emerald-200 dark:border-emerald-800 space-y-1">
-              <span className="font-extrabold text-emerald-900 dark:text-emerald-200 text-xs">Tax-Free Personal Allowance First (£12,570)</span>
+            <div className="p-3 bg-primary-50/70 dark:bg-primary-950/40 rounded-xl border border-primary-200 dark:border-primary-800 space-y-1">
+              <span className="font-extrabold text-primary-900 dark:text-primary-200 text-xs">Tax-Free Personal Allowance First (£12,570)</span>
               <p className="text-xs text-slate-600 dark:text-slate-400">
                 Limits taxable pension withdrawals to the £12,570 Personal Allowance each year, topping up remaining required spending tax-free from ISAs or tax-free cash (PCLS).
               </p>
@@ -348,7 +348,7 @@ export const UserGuideCard: React.FC<UserGuideCardProps> = ({
 
             <div className="p-3.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2">
               <h4 className="font-bold text-slate-900 dark:text-white flex items-center gap-2 text-xs sm:text-sm">
-                <Download className="w-4 h-4 text-emerald-600" />
+                <Download className="w-4 h-4 text-primary-600" />
                 Exporting Multi-Page PDF Reports
               </h4>
               <p className="text-xs text-slate-600 dark:text-slate-400">
@@ -606,7 +606,7 @@ export const UserGuideCard: React.FC<UserGuideCardProps> = ({
               <button
                 type="button"
                 onClick={() => handleModeToggle('studio')}
-                className="px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
+                className="px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1 bg-primary-600 hover:bg-primary-700 text-white shadow-xs"
               >
                 <Columns className="w-3.5 h-3.5" />
                 <span>Studio 🚀</span>
@@ -627,7 +627,7 @@ export const UserGuideCard: React.FC<UserGuideCardProps> = ({
             </div>
 
             <div className="p-3.5 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
-              <div className="w-7 h-7 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 font-extrabold flex items-center justify-center text-xs">
+              <div className="w-7 h-7 rounded-xl bg-primary-100 dark:bg-primary-950 text-primary-600 dark:text-primary-400 font-extrabold flex items-center justify-center text-xs">
                 2
               </div>
               <h4 className="font-bold text-slate-900 dark:text-white">Strategy & Rules</h4>
@@ -695,7 +695,7 @@ export const UserGuideCard: React.FC<UserGuideCardProps> = ({
           <div className="space-y-3">
             <div className="p-3.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
               <h4 className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm flex items-center gap-2">
-                <DollarSign className="w-4 h-4 text-emerald-600" />
+                <DollarSign className="w-4 h-4 text-primary-600" />
                 Defined Contribution (DC) Pensions & SIPPs
               </h4>
               <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
@@ -764,8 +764,8 @@ export const UserGuideCard: React.FC<UserGuideCardProps> = ({
           <h4 className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm">Available Drawdown Strategies:</h4>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            <div className="p-3 bg-emerald-50/70 dark:bg-emerald-950/40 rounded-xl border border-emerald-200 dark:border-emerald-800 space-y-1">
-              <span className="font-extrabold text-emerald-900 dark:text-emerald-200 text-xs">Tax-Free Personal Allowance First (£12,570)</span>
+            <div className="p-3 bg-primary-50/70 dark:bg-primary-950/40 rounded-xl border border-primary-200 dark:border-primary-800 space-y-1">
+              <span className="font-extrabold text-primary-900 dark:text-primary-200 text-xs">Tax-Free Personal Allowance First (£12,570)</span>
               <p className="text-xs text-slate-600 dark:text-slate-400">
                 Limits taxable pension withdrawals to the £12,570 Personal Allowance each year, topping up remaining required spending tax-free from ISAs or tax-free cash (PCLS).
               </p>
@@ -915,21 +915,21 @@ export const UserGuideCard: React.FC<UserGuideCardProps> = ({
 
           <div className="space-y-2">
             <div className="flex items-start gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+              <CheckCircle2 className="w-4 h-4 text-primary-600 dark:text-primary-400 shrink-0 mt-0.5" />
               <div>
                 <strong>Creating Scenarios:</strong> Click the <strong>Plans / Scenarios</strong> dropdown in the top header or go to <strong>Plan Management</strong> tab to add a new scenario or duplicate your current active scenario.
               </div>
             </div>
 
             <div className="flex items-start gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+              <CheckCircle2 className="w-4 h-4 text-primary-600 dark:text-primary-400 shrink-0 mt-0.5" />
               <div>
                 <strong>Side-by-Side Comparison:</strong> Open the <strong>Compare</strong> tab in the main header (or select <strong>Plan Comparison</strong> in the sidebar) to compare two scenario variants using 4D radar chart overlays and net tax deltas.
               </div>
             </div>
 
             <div className="flex items-start gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+              <CheckCircle2 className="w-4 h-4 text-primary-600 dark:text-primary-400 shrink-0 mt-0.5" />
               <div>
                 <strong>Export & Import:</strong> Use the <strong>Plan Management</strong> card to download your entire profile as a JSON backup file or CSV report.
               </div>
@@ -1174,9 +1174,9 @@ export const UserGuideCard: React.FC<UserGuideCardProps> = ({
           </p>
 
           {/* Current Mode Indicator Banner */}
-          <div className="p-3.5 rounded-2xl border flex flex-col sm:flex-row items-center justify-between gap-3 text-xs bg-emerald-50/90 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800">
+          <div className="p-3.5 rounded-2xl border flex flex-col sm:flex-row items-center justify-between gap-3 text-xs bg-primary-50/90 dark:bg-primary-950/40 border-primary-200 dark:border-primary-800">
             <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-xl text-white bg-emerald-600">
+              <div className="p-2 rounded-xl text-white bg-primary-600">
                 <Columns className="w-4 h-4" />
               </div>
               <div>
@@ -1212,7 +1212,7 @@ export const UserGuideCard: React.FC<UserGuideCardProps> = ({
           {/* Studio Mode 4 Key Pillars */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 my-4">
             <div className="p-3.5 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
-              <div className="w-7 h-7 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 font-extrabold flex items-center justify-center text-xs">
+              <div className="w-7 h-7 rounded-xl bg-primary-100 dark:bg-primary-950 text-primary-600 dark:text-primary-400 font-extrabold flex items-center justify-center text-xs">
                 1
               </div>
               <h4 className="font-bold text-slate-900 dark:text-white">Left Parameters Pane</h4>
@@ -1270,10 +1270,10 @@ export const UserGuideCard: React.FC<UserGuideCardProps> = ({
             <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                  <LayoutDashboard className="w-4 h-4 text-emerald-600" />
+                  <LayoutDashboard className="w-4 h-4 text-primary-600" />
                   Executive Summary Pop-Out
                 </span>
-                <span className="text-[10px] uppercase font-extrabold bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-md">
+                <span className="text-[10px] uppercase font-extrabold bg-primary-100 dark:bg-primary-950 text-primary-700 dark:text-primary-300 px-2 py-0.5 rounded-md">
                   Tabbed Views
                 </span>
               </div>

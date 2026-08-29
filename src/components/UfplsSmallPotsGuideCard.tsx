@@ -213,9 +213,9 @@ export const UfplsSmallPotsGuideCard: React.FC = () => {
               <p className="text-[11px] text-slate-500 dark:text-slate-400">Occupational / workplace pension pots under £10,000 can be encashed with <strong>no limit on the number of pots</strong>, provided employer approval is met.</p>
             </div>
 
-            <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-emerald-200/80 dark:border-emerald-800/80 bg-emerald-50/40 dark:bg-emerald-950/20 space-y-1">
-              <span className="font-bold text-emerald-900 dark:text-emerald-300 flex items-center gap-1">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+            <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-primary-200/80 dark:border-primary-800/80 bg-primary-50/40 dark:bg-primary-950/20 space-y-1">
+              <span className="font-bold text-primary-900 dark:text-primary-300 flex items-center gap-1">
+                <CheckCircle2 className="w-3.5 h-3.5 text-primary-500" />
                 MPAA Protection Shield
               </span>
               <p className="text-[11px] text-slate-600 dark:text-slate-300">Crucially, Small Pots encashments do <strong>NOT trigger the £10,000 MPAA</strong>, allowing ongoing £60k annual employer contributions!</p>

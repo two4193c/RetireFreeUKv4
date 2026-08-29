@@ -75,11 +75,11 @@ export const IhtGuideCard: React.FC = () => {
         </h4>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-600 dark:text-slate-400">
           <div className="flex items-start gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+            <CheckCircle2 className="w-4 h-4 text-primary-600 dark:text-primary-400 shrink-0 mt-0.5" />
             <span><strong>£3,000 Annual Exemption:</strong> Gift up to £3,000 per tax year tax-free without 7-year rules.</span>
           </div>
           <div className="flex items-start gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+            <CheckCircle2 className="w-4 h-4 text-primary-600 dark:text-primary-400 shrink-0 mt-0.5" />
             <span><strong>7-Year PET Rule:</strong> Outright gifts become 100% exempt from IHT if you survive 7 full years.</span>
           </div>
         </div>

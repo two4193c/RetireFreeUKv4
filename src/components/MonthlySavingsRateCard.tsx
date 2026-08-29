@@ -452,7 +452,7 @@ export const MonthlySavingsRateCard: React.FC<MonthlySavingsRateCardProps> = ({ 
     if (rate >= recommendedBenchmark) {
       return {
         label: 'Excellent Rate',
-        bg: 'bg-emerald-100 text-emerald-800 border-emerald-300',
+        bg: 'bg-primary-100 text-primary-800 border-primary-300',
         icon: CheckCircle2,
         desc: `Exceeds the ${recommendedBenchmark}% benchmark (${halfYourAgeTarget}% half-your-age rule)!`,
       };
@@ -486,13 +486,13 @@ export const MonthlySavingsRateCard: React.FC<MonthlySavingsRateCardProps> = ({ 
       {/* Card Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center justify-center shrink-0">
-            <PiggyBank className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+          <div className="w-10 h-10 rounded-2xl bg-primary-500/20 text-primary-600 dark:text-primary-400 border border-primary-500/30 flex items-center justify-center shrink-0">
+            <PiggyBank className="w-5 h-5 text-primary-600 dark:text-primary-400" />
           </div>
           <div>
             <div className="flex items-center gap-2">
               <h3 className="font-extrabold text-base text-slate-900 dark:text-white tracking-tight">Savings Rate</h3>
-              <span className="bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+              <span className="bg-primary-100 dark:bg-primary-500/20 text-primary-800 dark:text-primary-300 border border-primary-300 dark:border-primary-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
                 Accumulation Phase
               </span>
             </div>
@@ -523,13 +523,13 @@ export const MonthlySavingsRateCard: React.FC<MonthlySavingsRateCardProps> = ({ 
             onClick={() => setActiveView('combined')}
             className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
               activeView === 'combined'
-                ? 'bg-emerald-500 text-slate-950 shadow-md font-extrabold'
+                ? 'bg-primary-500 text-slate-950 shadow-md font-extrabold'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             <Users className="w-3.5 h-3.5" />
             <span>Combined Household</span>
-            <span className="bg-slate-200 dark:bg-slate-950/40 text-emerald-900 dark:text-emerald-100 text-[10px] px-1.5 py-0.5 rounded-md font-bold">
+            <span className="bg-slate-200 dark:bg-slate-950/40 text-primary-900 dark:text-primary-100 text-[10px] px-1.5 py-0.5 rounded-md font-bold">
               £{Math.round(combinedMonthlySavings || 0).toLocaleString()}/mo ({(combinedSalary > 0 ? (combinedMonthlySavings / (combinedSalary / 12)) * 100 : 0).toFixed(1)}%)
             </span>
           </button>
@@ -580,9 +580,9 @@ export const MonthlySavingsRateCard: React.FC<MonthlySavingsRateCardProps> = ({ 
             <span>
               {currentViewKey === 'combined' ? 'Combined Monthly Inputs' : 'Total Monthly Savings'}
             </span>
-            <Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            <Sparkles className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
           </span>
-          <div className="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">
+          <div className="text-xl font-extrabold text-primary-600 dark:text-primary-400">
             £{Math.round(activeDisplay.totalMonthlySavings || 0).toLocaleString()}
             <span className="text-xs text-slate-500 dark:text-slate-400 font-normal"> /mo</span>
           </div>
@@ -601,13 +601,13 @@ export const MonthlySavingsRateCard: React.FC<MonthlySavingsRateCardProps> = ({ 
         >
           <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 flex items-center justify-between">
             <span>Overall Savings Rate</span>
-            <Percent className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            <Percent className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
           </span>
           <div className="text-xl font-extrabold text-slate-900 dark:text-white">
             {(activeDisplay.savingsRate || 0).toFixed(1)}%
             <span className="text-xs text-slate-500 dark:text-slate-400 font-normal"> of gross income</span>
           </div>
-          <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
+          <div className="text-[10px] text-primary-600 dark:text-primary-400 font-medium">
             Personal {(activeDisplay.savingsRate - activeDisplay.employerPensionPct || 0).toFixed(1)}% + Employer {(activeDisplay.employerPensionPct || 0).toFixed(1)}%
           </div>
         </motion.div>
@@ -663,8 +663,8 @@ export const MonthlySavingsRateCard: React.FC<MonthlySavingsRateCardProps> = ({ 
             <span className="text-slate-500 dark:text-slate-400 font-medium">({(activeDisplay.savingsRate || 0).toFixed(1)}% total saved)</span>
           </div>
           <div className="flex items-center gap-1.5 text-[11px] text-slate-600 dark:text-slate-300">
-            <Target className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-            <span>Target Benchmark: <strong className="text-emerald-600 dark:text-emerald-400 font-bold">{recommendedBenchmark}%</strong> (Half-Age Rule)</span>
+            <Target className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
+            <span>Target Benchmark: <strong className="text-primary-600 dark:text-primary-400 font-bold">{recommendedBenchmark}%</strong> (Half-Age Rule)</span>
           </div>
         </div>
 
@@ -676,7 +676,7 @@ export const MonthlySavingsRateCard: React.FC<MonthlySavingsRateCardProps> = ({ 
               initial={{ width: 0 }}
               animate={{ width: `${Math.min(100, activeDisplay.employeePensionPct)}%` }}
               transition={{ duration: 0.5, ease: 'easeOut' }}
-              className="bg-emerald-500 h-full relative group cursor-pointer shrink-0"
+              className="bg-primary-500 h-full relative group cursor-pointer shrink-0"
               title={`Workplace Pension (Employee): ${(activeDisplay.employeePensionPct || 0).toFixed(1)}%`}
             />
           )}
@@ -729,7 +729,7 @@ export const MonthlySavingsRateCard: React.FC<MonthlySavingsRateCardProps> = ({ 
         {/* Legend Pills */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 pt-1 text-[11px]">
           <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
+            <span className="w-2.5 h-2.5 rounded-full bg-primary-500 shrink-0" />
             <span className="text-slate-700 dark:text-slate-300 font-medium">Workplace Employee</span>
           </div>
 
@@ -757,7 +757,7 @@ export const MonthlySavingsRateCard: React.FC<MonthlySavingsRateCardProps> = ({ 
 
       {/* Guideline / Advice Banner */}
       <div className="bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700/80 flex items-start gap-2.5 text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
-        <Info className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+        <Info className="w-4 h-4 text-primary-600 dark:text-primary-400 shrink-0 mt-0.5" />
         <div>
           <span className="font-bold text-slate-900 dark:text-white">UK Retirement Savings Rule of Thumb: </span>
           <span>
@@ -772,7 +772,7 @@ export const MonthlySavingsRateCard: React.FC<MonthlySavingsRateCardProps> = ({ 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-200 dark:border-slate-700/60">
           <div>
             <h4 className="font-extrabold text-sm text-slate-900 dark:text-white flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <TrendingUp className="w-4 h-4 text-primary-600 dark:text-primary-400" />
               <span>Year-by-Year Savings Rate Breakdown (Until Retirement)</span>
             </h4>
             <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
@@ -784,7 +784,7 @@ export const MonthlySavingsRateCard: React.FC<MonthlySavingsRateCardProps> = ({ 
           {accumulationBreakdown.length > 7 && (
             <button
               onClick={() => setShowAllYears(!showAllYears)}
-              className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 px-3 py-1.5 rounded-xl transition-all cursor-pointer self-start sm:self-auto"
+              className="text-xs font-bold text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 bg-primary-50 dark:bg-primary-950/60 border border-primary-200 dark:border-primary-800 px-3 py-1.5 rounded-xl transition-all cursor-pointer self-start sm:self-auto"
             >
               {showAllYears ? 'Show First 7 Years' : `Show All ${accumulationBreakdown.length} Accumulation Years`}
             </button>
@@ -857,7 +857,7 @@ export const MonthlySavingsRateCard: React.FC<MonthlySavingsRateCardProps> = ({ 
                     <td className="py-2.5 px-3 text-slate-700 dark:text-slate-300 whitespace-nowrap">
                       {salary > 0 ? `£${Math.round(salary).toLocaleString()}` : <span className="text-slate-400 dark:text-slate-500">Retired</span>}
                     </td>
-                    <td className="py-2.5 px-3 font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                    <td className="py-2.5 px-3 font-bold text-primary-600 dark:text-primary-400 whitespace-nowrap">
                       £{Math.round(annualSaved).toLocaleString()}
                     </td>
                     <td className="py-2.5 px-3 text-slate-700 dark:text-slate-300 whitespace-nowrap">
@@ -868,12 +868,12 @@ export const MonthlySavingsRateCard: React.FC<MonthlySavingsRateCardProps> = ({ 
                         <span className="text-slate-400 dark:text-slate-500 font-semibold">Retired</span>
                       ) : (
                         <div className="inline-flex items-center gap-2">
-                          <span className={`font-bold ${rate >= recommendedBenchmark ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-300'}`}>
+                          <span className={`font-bold ${rate >= recommendedBenchmark ? 'text-primary-600 dark:text-primary-400' : 'text-amber-600 dark:text-amber-300'}`}>
                             {rate.toFixed(1)}%
                           </span>
                           <div className="w-12 h-1.5 bg-slate-200 dark:bg-slate-950 rounded-full overflow-hidden hidden sm:block">
                             <div
-                              className={`h-full rounded-full ${rate >= recommendedBenchmark ? 'bg-emerald-500' : 'bg-amber-400'}`}
+                              className={`h-full rounded-full ${rate >= recommendedBenchmark ? 'bg-primary-500' : 'bg-amber-400'}`}
                               style={{ width: `${Math.min(100, (rate / 30) * 100)}%` }}
                             />
                           </div>

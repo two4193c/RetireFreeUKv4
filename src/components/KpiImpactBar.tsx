@@ -59,14 +59,14 @@ export const KpiImpactBar: React.FC<KpiImpactBarProps> = ({
           
           {/* Pot at Retirement */}
           <div className="flex items-center gap-2 shrink-0">
-            <div className="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
+            <div className="w-7 h-7 rounded-lg bg-primary-500/20 text-primary-400 flex items-center justify-center font-bold">
               <TrendingUp className="w-4 h-4" />
             </div>
             <div>
               <div className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">
                 Pot at Age {targetRetirementAge}
               </div>
-              <div className="font-extrabold text-sm text-emerald-400">
+              <div className="font-extrabold text-sm text-primary-400">
                 £{Math.round((projectedPotAtRetirement) || 0).toLocaleString()}
               </div>
             </div>
@@ -112,7 +112,7 @@ export const KpiImpactBar: React.FC<KpiImpactBarProps> = ({
               </button>
             </div>
           ) : (
-            <div className="hidden sm:flex items-center gap-1.5 text-[11px] font-semibold text-emerald-400 bg-emerald-950/60 border border-emerald-800/60 px-3 py-1 rounded-xl">
+            <div className="hidden sm:flex items-center gap-1.5 text-[11px] font-semibold text-primary-400 bg-primary-950/60 border border-primary-800/60 px-3 py-1 rounded-xl">
               <Sparkles className="w-3.5 h-3.5" />
               <span>Tax Model 2024/25 Active</span>
             </div>

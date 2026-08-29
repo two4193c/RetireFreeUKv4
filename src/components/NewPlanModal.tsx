@@ -45,7 +45,7 @@ export const NewPlanModal: React.FC<NewPlanModalProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 rounded-xl">
+            <div className="p-2.5 bg-primary-100 dark:bg-primary-950/60 text-primary-600 dark:text-primary-400 rounded-xl">
               <FilePlus className="w-5 h-5" />
             </div>
             <div>
@@ -72,7 +72,7 @@ export const NewPlanModal: React.FC<NewPlanModalProps> = ({
               value={planName}
               onChange={(e) => setPlanName(e.target.value)}
               placeholder="e.g. Fire at 55, Aggressive ISA, etc."
-              className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
               required
             />
           </div>
@@ -88,7 +88,7 @@ export const NewPlanModal: React.FC<NewPlanModalProps> = ({
               <label
                 className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
                   creationMode === 'clone'
-                    ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20 ring-1 ring-emerald-500'
+                    ? 'border-primary-500 bg-primary-50/50 dark:bg-primary-950/20 ring-1 ring-primary-500'
                     : 'border-slate-200 dark:border-slate-700/80 hover:bg-slate-50 dark:hover:bg-slate-800/50'
                 }`}
               >
@@ -98,11 +98,11 @@ export const NewPlanModal: React.FC<NewPlanModalProps> = ({
                   value="clone"
                   checked={creationMode === 'clone'}
                   onChange={() => setCreationMode('clone')}
-                  className="mt-1 text-emerald-600 focus:ring-emerald-500"
+                  className="mt-1 text-primary-600 focus:ring-primary-500"
                 />
                 <div className="flex-1 space-y-1">
                   <div className="flex items-center gap-2">
-                    <Copy className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    <Copy className="w-4 h-4 text-primary-600 dark:text-primary-400 shrink-0" />
                     <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
                       Clone Single Plan
                     </span>
@@ -117,7 +117,7 @@ export const NewPlanModal: React.FC<NewPlanModalProps> = ({
               <label
                 className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
                   creationMode === 'variants'
-                    ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20 ring-1 ring-emerald-500'
+                    ? 'border-primary-500 bg-primary-50/50 dark:bg-primary-950/20 ring-1 ring-primary-500'
                     : 'border-slate-200 dark:border-slate-700/80 hover:bg-slate-50 dark:hover:bg-slate-800/50'
                 }`}
               >
@@ -127,7 +127,7 @@ export const NewPlanModal: React.FC<NewPlanModalProps> = ({
                   value="variants"
                   checked={creationMode === 'variants'}
                   onChange={() => setCreationMode('variants')}
-                  className="mt-1 text-emerald-600 focus:ring-emerald-500"
+                  className="mt-1 text-primary-600 focus:ring-primary-500"
                 />
                 <div className="flex-1 space-y-1">
                   <div className="flex items-center gap-2">
@@ -149,7 +149,7 @@ export const NewPlanModal: React.FC<NewPlanModalProps> = ({
               <label
                 className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
                   creationMode === 'max_spender'
-                    ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20 ring-1 ring-emerald-500'
+                    ? 'border-primary-500 bg-primary-50/50 dark:bg-primary-950/20 ring-1 ring-primary-500'
                     : 'border-slate-200 dark:border-slate-700/80 hover:bg-slate-50 dark:hover:bg-slate-800/50'
                 }`}
               >
@@ -159,7 +159,7 @@ export const NewPlanModal: React.FC<NewPlanModalProps> = ({
                   value="max_spender"
                   checked={creationMode === 'max_spender'}
                   onChange={() => setCreationMode('max_spender')}
-                  className="mt-1 text-emerald-600 focus:ring-emerald-500"
+                  className="mt-1 text-primary-600 focus:ring-primary-500"
                 />
                 <div className="flex-1 space-y-1">
                   <div className="flex items-center gap-2">
@@ -178,7 +178,7 @@ export const NewPlanModal: React.FC<NewPlanModalProps> = ({
               <label
                 className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
                   creationMode === 'blank'
-                    ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20 ring-1 ring-emerald-500'
+                    ? 'border-primary-500 bg-primary-50/50 dark:bg-primary-950/20 ring-1 ring-primary-500'
                     : 'border-slate-200 dark:border-slate-700/80 hover:bg-slate-50 dark:hover:bg-slate-800/50'
                 }`}
               >
@@ -188,11 +188,11 @@ export const NewPlanModal: React.FC<NewPlanModalProps> = ({
                   value="blank"
                   checked={creationMode === 'blank'}
                   onChange={() => setCreationMode('blank')}
-                  className="mt-1 text-emerald-600 focus:ring-emerald-500"
+                  className="mt-1 text-primary-600 focus:ring-primary-500"
                 />
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    <Sparkles className="w-4 h-4 text-primary-600 dark:text-primary-400 shrink-0" />
                     <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
                       Blank Plan (Zeroed Balances)
                     </span>
@@ -213,7 +213,7 @@ export const NewPlanModal: React.FC<NewPlanModalProps> = ({
                 <select
                   value={cloneSourceId}
                   onChange={(e) => setCloneSourceId(e.target.value)}
-                  className="w-full px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-medium text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                  className="w-full px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-medium text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary-500 focus:outline-none"
                 >
                   {scenarios.map((s) => (
                     <option key={s.id} value={s.id}>
@@ -236,7 +236,7 @@ export const NewPlanModal: React.FC<NewPlanModalProps> = ({
             </button>
             <button
               type="submit"
-              className="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 active:scale-95 rounded-xl transition-all shadow-md shadow-emerald-600/20"
+              className="px-5 py-2 text-xs font-bold text-white bg-primary-600 hover:bg-primary-500 active:scale-95 rounded-xl transition-all shadow-md shadow-primary-600/20"
             >
               Create Plan
             </button>

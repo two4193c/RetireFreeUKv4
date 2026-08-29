@@ -27,7 +27,7 @@ export const MortgageGuideCard: React.FC = () => {
       {/* Overview Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700/80 space-y-2">
-          <div className="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 font-black flex items-center justify-center text-xs">
+          <div className="w-8 h-8 rounded-xl bg-primary-100 dark:bg-primary-950 text-primary-600 dark:text-primary-400 font-black flex items-center justify-center text-xs">
             1
           </div>
           <h3 className="font-bold text-slate-900 dark:text-white text-sm">Overpayment vs Investing</h3>
@@ -79,9 +79,9 @@ export const MortgageGuideCard: React.FC = () => {
       </div>
 
       {/* Strategy Section 2: PCLS Lump Sum Payoff */}
-      <div className="p-5 bg-emerald-50/50 dark:bg-emerald-950/30 rounded-2xl border border-emerald-200/60 dark:border-emerald-800/60 space-y-3">
-        <h3 className="font-bold text-emerald-950 dark:text-emerald-200 text-sm flex items-center gap-2">
-          <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+      <div className="p-5 bg-primary-50/50 dark:bg-primary-950/30 rounded-2xl border border-primary-200/60 dark:border-primary-800/60 space-y-3">
+        <h3 className="font-bold text-primary-950 dark:text-primary-200 text-sm flex items-center gap-2">
+          <ShieldCheck className="w-4 h-4 text-primary-600 dark:text-primary-400" />
           <span>Clearing Mortgage Debt at Retirement with PCLS Tax-Free Cash</span>
         </h3>
         <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
@@ -112,11 +112,11 @@ export const MortgageGuideCard: React.FC = () => {
         </h4>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-600 dark:text-slate-400">
           <div className="flex items-start gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+            <CheckCircle2 className="w-4 h-4 text-primary-600 dark:text-primary-400 shrink-0 mt-0.5" />
             <span>Target debt-free status by or before your primary target retirement age.</span>
           </div>
           <div className="flex items-start gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+            <CheckCircle2 className="w-4 h-4 text-primary-600 dark:text-primary-400 shrink-0 mt-0.5" />
             <span>Use the Mortgage Debt tab to model regular monthly overpayments vs lump sums.</span>
           </div>
         </div>

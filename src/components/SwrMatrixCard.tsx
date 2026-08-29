@@ -76,8 +76,8 @@ export const SwrMatrixCard: React.FC<SwrMatrixCardProps> = ({
   };
 
   const getCellColor = (rate: number) => {
-    if (rate >= 95) return 'bg-emerald-500 text-white font-bold';
-    if (rate >= 90) return 'bg-emerald-100 text-emerald-900 font-bold dark:bg-emerald-950 dark:text-emerald-300';
+    if (rate >= 95) return 'bg-primary-500 text-white font-bold';
+    if (rate >= 90) return 'bg-primary-100 text-primary-900 font-bold dark:bg-primary-950 dark:text-primary-300';
     if (rate >= 80) return 'bg-amber-100 text-amber-900 font-bold dark:bg-amber-950 dark:text-amber-300';
     if (rate >= 65) return 'bg-orange-100 text-orange-900 font-bold dark:bg-orange-950 dark:text-orange-300';
     return 'bg-rose-500 text-white font-bold';
@@ -179,7 +179,7 @@ export const SwrMatrixCard: React.FC<SwrMatrixCardProps> = ({
               const label = getSwrLabel(rate);
               const labelColor =
                 label === 'UK FIRE' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300' :
-                label === 'UK Standard' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' :
+                label === 'UK Standard' ? 'bg-primary-100 text-primary-700 dark:bg-primary-950 dark:text-primary-300' :
                 label === 'Dynamic/Guardrail' ? 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300' :
                 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300';
               return (
@@ -209,10 +209,10 @@ export const SwrMatrixCard: React.FC<SwrMatrixCardProps> = ({
       <div className="flex flex-wrap items-center justify-between gap-3 text-[11px] text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-100 dark:border-slate-800">
         <div className="flex items-center gap-4">
           <span className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-md bg-emerald-500 inline-block" /> 95%+ High Safety
+            <span className="w-3 h-3 rounded-md bg-primary-500 inline-block" /> 95%+ High Safety
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-md bg-emerald-100 border border-emerald-300 inline-block" /> 90-94% Safe
+            <span className="w-3 h-3 rounded-md bg-primary-100 border border-primary-300 inline-block" /> 90-94% Safe
           </span>
           <span className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded-md bg-amber-100 border border-amber-300 inline-block" /> 80-89% Moderate

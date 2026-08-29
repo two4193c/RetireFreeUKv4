@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { DashboardTab, PlannerScenario, AppMode } from '../types';
-import {
+import { Palette,
   Wallet,
   TrendingUp,
   Percent,
@@ -470,14 +470,14 @@ export function SidebarNav({
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           className="flex items-center gap-2 px-3 py-2 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-xl font-bold text-xs hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
         >
-          {isMobileMenuOpen ? <X className="w-4 h-4 text-rose-500" /> : <Menu className="w-4 h-4 text-emerald-500" />}
+          {isMobileMenuOpen ? <X className="w-4 h-4 text-rose-500" /> : <Menu className="w-4 h-4 text-primary-500" />}
           <span>RetireFree UK</span>
         </button>
         <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1.5 truncate max-w-[180px]">
           {(() => {
             const activeGroup = filteredNavStructure.find((t) => t.id === activeTab);
             const IconComp = activeGroup?.icon || Layers;
-            return <IconComp className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />;
+            return <IconComp className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400 shrink-0" />;
           })()}
           <span className="truncate">{filteredNavStructure.find((t) => t.id === activeTab)?.label}</span>
         </span>
@@ -506,7 +506,7 @@ export function SidebarNav({
           {!isCollapsed ? (
             <div className="flex items-center justify-between w-full min-w-0 gap-1.5">
               <div className="flex items-center gap-2 overflow-hidden shrink-0">
-                <div className="w-7 h-7 rounded-xl bg-emerald-600/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                <div className="w-7 h-7 rounded-xl bg-primary-600/10 dark:bg-primary-500/20 text-primary-600 dark:text-primary-400 flex items-center justify-center shrink-0">
                   <Layers className="w-4 h-4" />
                 </div>
                 <span className="text-xs font-extrabold text-slate-900 dark:text-white block uppercase tracking-wider truncate">
@@ -519,7 +519,7 @@ export function SidebarNav({
                 <button
                   type="button"
                   onClick={handleExpandAll}
-                  className="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/80 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors cursor-pointer"
+                  className="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/80 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors cursor-pointer"
                   title="Expand all menu groups"
                   aria-label="Expand all menu groups"
                 >
@@ -528,7 +528,7 @@ export function SidebarNav({
                 <button
                   type="button"
                   onClick={handleCollapseAll}
-                  className="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/80 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors cursor-pointer"
+                  className="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/80 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors cursor-pointer"
                   title="Collapse all menu groups"
                   aria-label="Collapse all menu groups"
                 >
@@ -538,7 +538,7 @@ export function SidebarNav({
                 {/* Desktop Collapse Toggle Button */}
                 <button
                   onClick={onToggleCollapse}
-                  className="hidden lg:flex items-center justify-center p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-slate-800 border border-slate-200/60 dark:border-slate-700/60 transition-colors cursor-pointer shrink-0"
+                  className="hidden lg:flex items-center justify-center p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-slate-800 border border-slate-200/60 dark:border-slate-700/60 transition-colors cursor-pointer shrink-0"
                   title="Collapse Sidebar Menu"
                   aria-label="Collapse Sidebar Menu"
                 >
@@ -550,7 +550,7 @@ export function SidebarNav({
             /* Desktop Expand Toggle Button when collapsed */
             <button
               onClick={onToggleCollapse}
-              className="hidden lg:flex items-center justify-center w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-slate-800 border border-slate-200/60 dark:border-slate-700/60 transition-colors cursor-pointer shrink-0 mx-auto"
+              className="hidden lg:flex items-center justify-center w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-slate-800 border border-slate-200/60 dark:border-slate-700/60 transition-colors cursor-pointer shrink-0 mx-auto"
               title="Expand Sidebar Menu"
               aria-label="Expand Sidebar Menu"
             >
@@ -583,7 +583,7 @@ export function SidebarNav({
                 <div
                   className={`group relative flex items-center justify-between w-full p-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     isTabActive
-                      ? 'bg-emerald-600 text-white shadow-xs'
+                      ? 'bg-primary-600 text-white shadow-xs'
                       : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/70 hover:text-slate-900 dark:hover:text-white'
                   }`}
                   onClick={() => handleTabClick(group.id)}
@@ -598,7 +598,7 @@ export function SidebarNav({
                         </span>
                         {(group.id === 'documentation' || group.id === 'overview' || group.id === 'compare' || group.id === 'plan_management') && appMode === 'studio' && (
                           <span title="Opens as Pop-Out Window in Studio Mode">
-                            <ExternalLink className="w-3 h-3 text-emerald-400 dark:text-emerald-400 shrink-0 opacity-80" />
+                            <ExternalLink className="w-3 h-3 text-primary-400 dark:text-primary-400 shrink-0 opacity-80" />
                           </span>
                         )}
                       </div>
@@ -609,7 +609,7 @@ export function SidebarNav({
                     <div className="flex items-center gap-1.5 shrink-0 ml-1">
                       <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold transition-colors ${
                         isTabActive
-                          ? 'bg-emerald-700/60 text-emerald-100'
+                          ? 'bg-primary-700/60 text-primary-100'
                           : 'bg-slate-200/70 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
                       }`}>
                         {group.cards.length}
@@ -618,7 +618,7 @@ export function SidebarNav({
                         type="button"
                         onClick={(e) => toggleGroup(group.id, e)}
                         className={`p-1 rounded-lg transition-transform ${
-                          isTabActive ? 'hover:bg-emerald-700/70 text-white' : 'hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400'
+                          isTabActive ? 'hover:bg-primary-700/70 text-white' : 'hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400'
                         }`}
                       >
                         {isGroupOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
@@ -644,7 +644,7 @@ export function SidebarNav({
                       return (
                         <React.Fragment key={card.id}>
                           {showCategoryHeader && (
-                            <div className="pt-2.5 pb-1 px-1 text-[9px] font-extrabold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-1 border-b border-slate-100 dark:border-slate-800/60 mb-1">
+                            <div className="pt-2.5 pb-1 px-1 text-[9px] font-extrabold text-primary-600 dark:text-primary-400 uppercase tracking-wider flex items-center gap-1 border-b border-slate-100 dark:border-slate-800/60 mb-1">
                               <span>{card.category}</span>
                             </div>
                           )}
@@ -652,19 +652,19 @@ export function SidebarNav({
                             onClick={() => handleSubCardClick(group.id, card.id)}
                             className={`flex items-center gap-2 w-full text-left px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all cursor-pointer group ${
                               isCardActive && isTabActive
-                                ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-200 dark:border-emerald-800'
+                                ? 'bg-primary-50 dark:bg-primary-950/60 text-primary-700 dark:text-primary-300 font-bold border border-primary-200 dark:border-primary-800'
                                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50'
                             }`}
                           >
                             <Target className={`w-3 h-3 shrink-0 transition-colors ${
                               isCardActive && isTabActive
-                                ? 'text-emerald-600 dark:text-emerald-400'
-                                : 'text-slate-400 dark:text-slate-500 group-hover:text-emerald-500'
+                                ? 'text-primary-600 dark:text-primary-400'
+                                : 'text-slate-400 dark:text-slate-500 group-hover:text-primary-500'
                             }`} />
                             <span className="truncate">{card.label}</span>
                             {(group.id === 'overview' || group.id === 'compare' || group.id === 'plan_management' || card.id === 'card-mortgage-debt' || card.id === 'card-plan-mgmt-overview' || card.id === 'card-plan-mgmt-json') && appMode === 'studio' && (
                               <span title="Opens as Pop-Out Window in Studio Mode" className="ml-auto shrink-0">
-                                <ExternalLink className="w-3 h-3 text-emerald-500 dark:text-emerald-400 opacity-80" />
+                                <ExternalLink className="w-3 h-3 text-primary-500 dark:text-primary-400 opacity-80" />
                               </span>
                             )}
                           </button>
@@ -687,7 +687,7 @@ export function SidebarNav({
                 onClick={() => handleModeChange('basic')}
                 className={`flex-1 flex items-center justify-center gap-1 py-1 px-2 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
                   appMode === 'basic'
-                    ? 'bg-emerald-600 text-white shadow-2xs'
+                    ? 'bg-primary-600 text-white shadow-2xs'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
@@ -733,28 +733,20 @@ export function SidebarNav({
               </button>
             )}
             
-            {/* Theme Toggle - Icon Only */}
+            {/* Appearance Settings Button */}
             <button
               onClick={onToggleTheme}
-              className={`p-2.5 rounded-xl border transition-all cursor-pointer shrink-0 shadow-2xs ${
-                theme === 'dark'
-                  ? 'bg-slate-800 text-amber-300 border-slate-700 hover:bg-slate-700/80'
-                  : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
-              }`}
-              title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-              aria-label="Toggle dark mode"
+              className="p-2.5 rounded-xl border transition-all cursor-pointer shrink-0 shadow-2xs bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700/80"
+              title="Appearance & Styling Options"
+              aria-label="Appearance Options"
             >
-              {theme === 'dark' ? (
-                <Sun className="w-4 h-4 text-amber-400 shrink-0" />
-              ) : (
-                <Moon className="w-4 h-4 text-slate-600 shrink-0" />
-              )}
+              <Palette className="w-4 h-4 shrink-0" />
             </button>
 
             {/* Save Option Button */}
             <button
               onClick={onSaveScenario}
-              className={`flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all cursor-pointer shadow-2xs ${isCollapsed ? 'w-full' : 'flex-1'}`}
+              className={`flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold transition-all cursor-pointer shadow-2xs ${isCollapsed ? 'w-full' : 'flex-1'}`}
               title="Save active plan"
               aria-label="Save active plan"
             >

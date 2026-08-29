@@ -52,9 +52,9 @@ export const StatePensionNiGuideCard: React.FC = () => {
           <p className="text-[11px] text-slate-600 dark:text-slate-400">Need at least <strong>10 years</strong> to receive any State Pension. Each year adds ~£328.64/yr income for life.</p>
         </div>
 
-        <div className="p-4 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/80 space-y-1.5">
-          <span className="text-emerald-900 dark:text-emerald-300 font-medium">State Pension Deferral Rate</span>
-          <div className="text-xl font-black text-emerald-950 dark:text-emerald-200">+5.8% <span className="text-xs font-normal text-slate-500">per year</span></div>
+        <div className="p-4 rounded-xl bg-primary-50/60 dark:bg-primary-950/30 border border-primary-200/80 dark:border-primary-800/80 space-y-1.5">
+          <span className="text-primary-900 dark:text-primary-300 font-medium">State Pension Deferral Rate</span>
+          <div className="text-xl font-black text-primary-950 dark:text-primary-200">+5.8% <span className="text-xs font-normal text-slate-500">per year</span></div>
           <p className="text-[11px] text-slate-600 dark:text-slate-400">Increases by 1% for every 9 weeks deferred. Deferring 1 year boosts annual payout by ~<strong>£667/year for life</strong>.</p>
         </div>
       </div>
@@ -73,15 +73,15 @@ export const StatePensionNiGuideCard: React.FC = () => {
             </p>
             <ul className="space-y-2 text-slate-700 dark:text-slate-300">
               <li className="flex items-start gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-4 h-4 text-primary-500 shrink-0 mt-0.5" />
                 <span><strong>Cost per gap year:</strong> ~£907.40 (Class 3 voluntary rate).</span>
               </li>
               <li className="flex items-start gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-4 h-4 text-primary-500 shrink-0 mt-0.5" />
                 <span><strong>Income added:</strong> 1/35th of full pension = <strong>+£328.64 per year</strong>.</span>
               </li>
               <li className="flex items-start gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-4 h-4 text-primary-500 shrink-0 mt-0.5" />
                 <span><strong>Triple Lock Inflation Protection:</strong> Rises annually by CPI, wage growth, or 2.5%.</span>
               </li>
             </ul>
@@ -97,7 +97,7 @@ export const StatePensionNiGuideCard: React.FC = () => {
             <p className="text-slate-600 dark:text-slate-300 text-[11px] leading-relaxed">
               Paying £907 upfront yields £328.64 every single year in retirement. In under 3 years of receiving State Pension, you have fully recovered your initial outlay. Living 20 years past State Pension age yields over <strong>£6,500+ in inflation-indexed income</strong> for an initial £907 outlay.
             </p>
-            <div className="p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-[11px] text-emerald-900 dark:text-emerald-300 font-medium">
+            <div className="p-2.5 rounded-lg bg-primary-50 dark:bg-primary-950/50 border border-primary-200 dark:border-primary-800 text-[11px] text-primary-900 dark:text-primary-300 font-medium">
               Class 2 Note: Eligible self-employed individuals with gaps can pay Class 2 voluntary rates at just <strong>~£179.40 per year</strong> — achieving break-even in under 6 months!
             </div>
           </div>
@@ -114,7 +114,7 @@ export const StatePensionNiGuideCard: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
           <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60 space-y-2">
             <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+              <CheckCircle2 className="w-4 h-4 text-primary-500" />
               <span>When Deferral is Highly Beneficial</span>
             </div>
             <ul className="space-y-1.5 text-slate-600 dark:text-slate-400 text-[11px]">

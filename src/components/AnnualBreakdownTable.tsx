@@ -198,15 +198,15 @@ export const AnnualBreakdownTable: React.FC<AnnualBreakdownTableProps> = ({
       {/* Header Section */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 flex items-center justify-center shrink-0 border border-emerald-200 dark:border-emerald-800/60">
-            <Table className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+          <div className="w-10 h-10 rounded-2xl bg-primary-100 dark:bg-primary-950/80 text-primary-700 dark:text-primary-300 flex items-center justify-center shrink-0 border border-primary-200 dark:border-primary-800/60">
+            <Table className="w-5 h-5 text-primary-600 dark:text-primary-400" />
           </div>
           <div>
             <div className="flex items-center gap-2">
               <h2 className="font-bold text-slate-800 dark:text-slate-100 text-base">
                 Annual Breakdown Table
               </h2>
-              <span className="text-[10px] font-extrabold text-emerald-800 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800/80">
+              <span className="text-[10px] font-extrabold text-primary-800 dark:text-primary-300 bg-primary-100 dark:bg-primary-950 px-2 py-0.5 rounded-full border border-primary-200 dark:border-primary-800/80">
                 Age {profile.currentAge} → 100
               </span>
             </div>
@@ -223,14 +223,14 @@ export const AnnualBreakdownTable: React.FC<AnnualBreakdownTableProps> = ({
               type="checkbox"
               checked={adjustInflation}
               onChange={(e) => onChange?.({ ...profile, adjustForInflation: e.target.checked })}
-              className="w-4 h-4 text-emerald-600 rounded border-slate-300 dark:border-slate-700 focus:ring-emerald-500 cursor-pointer accent-emerald-600"
+              className="w-4 h-4 text-primary-600 rounded border-slate-300 dark:border-slate-700 focus:ring-primary-500 cursor-pointer accent-primary-600"
             />
             <span>Today's £ (Real Terms)</span>
           </label>
 
           <button
             onClick={handleExportCSV}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition-colors cursor-pointer shadow-xs"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-primary-50 dark:bg-primary-950/60 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-800/60 hover:bg-primary-100 dark:hover:bg-primary-900/60 transition-colors cursor-pointer shadow-xs"
           >
             <Download className="w-3.5 h-3.5" />
             <span>Export CSV</span>
@@ -244,18 +244,18 @@ export const AnnualBreakdownTable: React.FC<AnnualBreakdownTableProps> = ({
         <div className={`p-3.5 rounded-2xl border ${
           shortfallYearsCount > 0
             ? 'bg-rose-50 dark:bg-rose-950/50 border-rose-200 dark:border-rose-800'
-            : 'bg-emerald-50 dark:bg-emerald-950/50 border-emerald-200 dark:border-emerald-800'
+            : 'bg-primary-50 dark:bg-primary-950/50 border-primary-200 dark:border-primary-800'
         }`}>
           <div className="text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 text-slate-500 dark:text-slate-400">
             {shortfallYearsCount > 0 ? (
               <AlertTriangle className="w-3 h-3 text-rose-500" />
             ) : (
-              <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+              <CheckCircle2 className="w-3 h-3 text-primary-500" />
             )}
             <span>Plan Feasibility</span>
           </div>
           <div className={`text-base font-black mt-0.5 ${
-            shortfallYearsCount > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'
+            shortfallYearsCount > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-primary-600 dark:text-primary-400'
           }`}>
             {shortfallYearsCount > 0 ? 'Plan Failure' : 'Plan Success'}
           </div>
@@ -268,10 +268,10 @@ export const AnnualBreakdownTable: React.FC<AnnualBreakdownTableProps> = ({
 
         <div className="bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-700/60">
           <div className="text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1">
-            <TrendingUp className="w-3 h-3 text-emerald-500" />
+            <TrendingUp className="w-3 h-3 text-primary-500" />
             <span>Total Lifetime Growth</span>
           </div>
-          <div className="text-base font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
+          <div className="text-base font-black text-primary-600 dark:text-primary-400 mt-0.5">
             +£{(kpiSummary.totalGrowth || 0).toLocaleString()}
           </div>
           <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
@@ -330,7 +330,7 @@ export const AnnualBreakdownTable: React.FC<AnnualBreakdownTableProps> = ({
             }}
             className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
               phaseFilter === 'all'
-                ? 'bg-slate-900 dark:bg-emerald-600 text-white shadow-xs'
+                ? 'bg-slate-900 dark:bg-primary-600 text-white shadow-xs'
                 : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
@@ -343,7 +343,7 @@ export const AnnualBreakdownTable: React.FC<AnnualBreakdownTableProps> = ({
             }}
             className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
               phaseFilter === 'accumulation'
-                ? 'bg-slate-900 dark:bg-emerald-600 text-white shadow-xs'
+                ? 'bg-slate-900 dark:bg-primary-600 text-white shadow-xs'
                 : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
@@ -356,7 +356,7 @@ export const AnnualBreakdownTable: React.FC<AnnualBreakdownTableProps> = ({
             }}
             className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
               phaseFilter === 'retirement'
-                ? 'bg-slate-900 dark:bg-emerald-600 text-white shadow-xs'
+                ? 'bg-slate-900 dark:bg-primary-600 text-white shadow-xs'
                 : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
@@ -393,7 +393,7 @@ export const AnnualBreakdownTable: React.FC<AnnualBreakdownTableProps> = ({
                 setSearchTerm(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full pl-8 pr-3 py-1.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 rounded-xl text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+              className="w-full pl-8 pr-3 py-1.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 rounded-xl text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
             />
           </div>
 
@@ -420,7 +420,7 @@ export const AnnualBreakdownTable: React.FC<AnnualBreakdownTableProps> = ({
               <th scope="col" className="py-3 px-3.5 sticky left-0 z-10 bg-slate-100 dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700">Age & Year</th>
               <th scope="col" className="py-3 px-3.5">Phase / Status</th>
               <th scope="col" className="py-3 px-3.5 text-right">Ending Pot Balance</th>
-              <th scope="col" className="py-3 px-3.5 text-right text-emerald-600 dark:text-emerald-400">
+              <th scope="col" className="py-3 px-3.5 text-right text-primary-600 dark:text-primary-400">
                 Est. Pot Growth
               </th>
               <th scope="col" className="py-3 px-3.5 text-right text-indigo-600 dark:text-indigo-400">
@@ -461,7 +461,7 @@ export const AnnualBreakdownTable: React.FC<AnnualBreakdownTableProps> = ({
                       hasShortfall
                         ? 'bg-rose-50/70 dark:bg-rose-950/40 border-l-4 border-l-rose-500 font-bold'
                         : isRetireYear
-                        ? 'bg-emerald-50/50 dark:bg-emerald-950/30'
+                        ? 'bg-primary-50/50 dark:bg-primary-950/30'
                         : p.potDepleted
                         ? 'bg-rose-50/30 dark:bg-rose-950/20'
                         : ''
@@ -516,7 +516,7 @@ export const AnnualBreakdownTable: React.FC<AnnualBreakdownTableProps> = ({
                         </div>
                       ) : (
                         <div className="flex flex-col gap-1">
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/80 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800/60">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-primary-700 dark:text-primary-300 bg-primary-50 dark:bg-primary-950/80 px-2 py-0.5 rounded-md border border-primary-200 dark:border-primary-800/60">
                             <span>Accumulation</span>
                           </span>
                           {p.giltLadderPurchasedThisYear && (
@@ -534,7 +534,7 @@ export const AnnualBreakdownTable: React.FC<AnnualBreakdownTableProps> = ({
                     </td>
 
                     {/* Estimated Pot Growth */}
-                    <td className="py-3 px-3.5 text-right font-extrabold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                    <td className="py-3 px-3.5 text-right font-extrabold text-primary-600 dark:text-primary-400 whitespace-nowrap">
                       +{(p.estimatedPotGrowth || 0) > 0 ? formatCurrency(p.estimatedPotGrowth, adjustInflation, yearOffset) : '£0'}
                     </td>
 
@@ -574,7 +574,7 @@ export const AnnualBreakdownTable: React.FC<AnnualBreakdownTableProps> = ({
                             {formatCurrency(p.taxOnWithdrawal, adjustInflation, yearOffset)}
                           </span>
                         ) : (
-                          <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
+                          <span className="text-primary-600 dark:text-primary-400 font-semibold">
                             £0 (Tax-Free)
                           </span>
                         )
@@ -597,7 +597,7 @@ export const AnnualBreakdownTable: React.FC<AnnualBreakdownTableProps> = ({
                           </span>
                         </div>
                       ) : (
-                        <span className="text-emerald-600 dark:text-emerald-400 font-bold">
+                        <span className="text-primary-600 dark:text-primary-400 font-bold">
                           +{formatCurrency(p.annualContributionTotal, adjustInflation, yearOffset)} /yr
                         </span>
                       )}
@@ -713,7 +713,7 @@ export const AnnualBreakdownTable: React.FC<AnnualBreakdownTableProps> = ({
                 <div className="bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 space-y-2">
                   <div className="font-bold text-slate-800 dark:text-slate-200 text-xs flex justify-between">
                     <span>Portfolio Pots Breakdown</span>
-                    <span className="text-emerald-600 dark:text-emerald-400 font-extrabold">
+                    <span className="text-primary-600 dark:text-primary-400 font-extrabold">
                       Total £{(showTaxBreakdownModal.totalPot || 0).toLocaleString()}
                     </span>
                   </div>
@@ -727,7 +727,7 @@ export const AnnualBreakdownTable: React.FC<AnnualBreakdownTableProps> = ({
                         <div className="text-[9px] text-slate-500 dark:text-slate-400 mt-1 pt-1 border-t border-slate-100 dark:border-slate-800 space-y-0.5">
                           <div className="flex justify-between">
                             <span>Uncryst:</span>
-                            <span className="font-semibold text-emerald-600 dark:text-emerald-400">£{(showTaxBreakdownModal.uncrystallisedPot || 0).toLocaleString()}</span>
+                            <span className="font-semibold text-primary-600 dark:text-primary-400">£{(showTaxBreakdownModal.uncrystallisedPot || 0).toLocaleString()}</span>
                           </div>
                           <div className="flex justify-between">
                             <span>Cryst:</span>
@@ -800,8 +800,8 @@ export const AnnualBreakdownTable: React.FC<AnnualBreakdownTableProps> = ({
                         </div>
                       </div>
                       <div className="bg-white/80 dark:bg-slate-900/80 p-2 rounded-xl border border-amber-200/60 dark:border-amber-800/40">
-                        <div className="text-emerald-700 dark:text-emerald-400 font-semibold">25% PCLS Tax-Free:</div>
-                        <div className="font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                        <div className="text-primary-700 dark:text-primary-400 font-semibold">25% PCLS Tax-Free:</div>
+                        <div className="font-extrabold text-primary-600 dark:text-primary-400 mt-0.5">
                           +£{(showTaxBreakdownModal.pclsTaxFreeDrawnThisYear || 0).toLocaleString()}
                         </div>
                       </div>
@@ -816,7 +816,7 @@ export const AnnualBreakdownTable: React.FC<AnnualBreakdownTableProps> = ({
                 <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
                   <div className="py-2 flex justify-between items-center">
                     <span className="text-slate-500 dark:text-slate-400 font-medium">Estimated Pot Growth (1yr):</span>
-                    <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                    <span className="font-bold text-primary-600 dark:text-primary-400">
                       +£{(showTaxBreakdownModal.estimatedPotGrowth || 0).toLocaleString()}
                     </span>
                   </div>
@@ -882,7 +882,7 @@ export const AnnualBreakdownTable: React.FC<AnnualBreakdownTableProps> = ({
 
                       <div className="py-2 flex justify-between items-center">
                         <span className="text-slate-500 dark:text-slate-400 font-medium">Pension Drawdown (Taxable):</span>
-                        <span className="font-bold text-emerald-700 dark:text-emerald-300">
+                        <span className="font-bold text-primary-700 dark:text-primary-300">
                           £{(showTaxBreakdownModal.pensionDrawdownTaxable || 0).toLocaleString()}
                         </span>
                       </div>
@@ -912,7 +912,7 @@ export const AnnualBreakdownTable: React.FC<AnnualBreakdownTableProps> = ({
 
                       <div className="py-2 flex justify-between items-center pt-3 border-t border-slate-200 dark:border-slate-700 font-extrabold text-sm">
                         <span className="text-slate-900 dark:text-white">Net Retirement Income:</span>
-                        <span className="text-emerald-600 dark:text-emerald-400">
+                        <span className="text-primary-600 dark:text-primary-400">
                           £{(showTaxBreakdownModal.netRetirementIncome || 0).toLocaleString()} /yr
                         </span>
                       </div>
@@ -938,14 +938,14 @@ export const AnnualBreakdownTable: React.FC<AnnualBreakdownTableProps> = ({
                     <>
                       <div className="py-2 flex justify-between items-center">
                         <span className="text-slate-500 dark:text-slate-400 font-medium">Annual Pot Contributions:</span>
-                        <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                        <span className="font-bold text-primary-600 dark:text-primary-400">
                           +£{(showTaxBreakdownModal.annualContributionTotal || 0).toLocaleString()}
                         </span>
                       </div>
 
                       <div className="py-2 flex justify-between items-center">
                         <span className="text-slate-500 dark:text-slate-400 font-medium">Pension Tax Relief Gained:</span>
-                        <span className="font-bold text-emerald-700 dark:text-emerald-300">
+                        <span className="font-bold text-primary-700 dark:text-primary-300">
                           +£{(showTaxBreakdownModal.annualTaxReliefTotal || (0) || 0).toLocaleString()}
                         </span>
                       </div>

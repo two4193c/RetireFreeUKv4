@@ -128,7 +128,7 @@ export const WithdrawalGuardrailGaugeCard: React.FC<WithdrawalGuardrailGaugeCard
           </div>
 
           {status === 'safe' && (
-            <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-xs font-extrabold border border-emerald-200 dark:border-emerald-800">
+            <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-primary-100 dark:bg-primary-950 text-primary-800 dark:text-primary-300 text-xs font-extrabold border border-primary-200 dark:border-primary-800">
               <CheckCircle2 className="w-4 h-4" />
               <span>Within Safe Guardrail Corridor</span>
             </div>
@@ -157,7 +157,7 @@ export const WithdrawalGuardrailGaugeCard: React.FC<WithdrawalGuardrailGaugeCard
 
           <div className="relative h-5 rounded-full overflow-hidden flex shadow-inner">
             <div className="w-[25%] bg-indigo-300/70 dark:bg-indigo-900/60" />
-            <div className="w-[50%] bg-emerald-500/80" />
+            <div className="w-[50%] bg-primary-500/80" />
             <div className="w-[25%] bg-rose-400/80 dark:bg-rose-900/60" />
             {/* Pointer */}
             <div
@@ -168,7 +168,7 @@ export const WithdrawalGuardrailGaugeCard: React.FC<WithdrawalGuardrailGaugeCard
 
           <div className="flex justify-between text-[11px] text-slate-500 dark:text-slate-400 font-semibold">
             <span>Prosperity (↑ +10% spend)</span>
-            <span className="text-emerald-600 dark:text-emerald-400 font-bold">Safe Corridor</span>
+            <span className="text-primary-600 dark:text-primary-400 font-bold">Safe Corridor</span>
             <span>Capital Preservation (↓ −10% spend)</span>
           </div>
         </div>

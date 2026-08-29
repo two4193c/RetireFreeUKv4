@@ -70,7 +70,7 @@ export const CareCostsGuideCard: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60 space-y-2.5">
           <div className="flex items-center gap-2 text-slate-900 dark:text-white font-bold text-sm">
-            <Home className="w-4 h-4 text-emerald-500" />
+            <Home className="w-4 h-4 text-primary-500" />
             <span>Downsizing to Release Equity</span>
           </div>
           <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
@@ -90,10 +90,10 @@ export const CareCostsGuideCard: React.FC = () => {
       </div>
 
       {/* RetireFree UK Integration */}
-      <div className="p-5 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-800/60 flex items-start gap-3">
-        <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+      <div className="p-5 rounded-2xl bg-primary-50/60 dark:bg-primary-950/30 border border-primary-200/60 dark:border-primary-800/60 flex items-start gap-3">
+        <CheckCircle2 className="w-5 h-5 text-primary-600 dark:text-primary-400 shrink-0 mt-0.5" />
         <div className="space-y-1 text-xs">
-          <p className="font-bold text-emerald-900 dark:text-emerald-300">Modelling Life Events in RetireFree UK v4</p>
+          <p className="font-bold text-primary-900 dark:text-primary-300">Modelling Life Events in RetireFree UK v4</p>
           <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
             Navigate to the <strong>Life Events & Care Costs</strong> card (under Baseline Inputs) to model explicit care cost spikes, property downsizing events, or capital injections at specified milestone ages.
           </p>

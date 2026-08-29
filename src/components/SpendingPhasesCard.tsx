@@ -29,13 +29,13 @@ interface SpendingPhasesCardProps {
 // Color palettes for up to 6 custom ranges
 const RANGE_COLORS = [
   {
-    badgeBg: 'bg-emerald-100 dark:bg-emerald-950',
-    badgeText: 'text-emerald-900 dark:text-emerald-200',
-    border: 'border-emerald-200 dark:border-emerald-800/80',
-    barBg: 'bg-emerald-500',
-    accentText: 'text-emerald-600 dark:text-emerald-400',
-    focusRing: 'focus:ring-emerald-500/20 focus:border-emerald-500',
-    lightBg: 'bg-emerald-50/50 dark:bg-emerald-950/20',
+    badgeBg: 'bg-primary-100 dark:bg-primary-950',
+    badgeText: 'text-primary-900 dark:text-primary-200',
+    border: 'border-primary-200 dark:border-primary-800/80',
+    barBg: 'bg-primary-500',
+    accentText: 'text-primary-600 dark:text-primary-400',
+    focusRing: 'focus:ring-primary-500/20 focus:border-primary-500',
+    lightBg: 'bg-primary-50/50 dark:bg-primary-950/20',
   },
   {
     badgeBg: 'bg-amber-100 dark:bg-amber-950',
@@ -607,8 +607,8 @@ export const SpendingPhasesCard: React.FC<SpendingPhasesCardProps> = ({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-slate-800">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 flex items-center justify-center shrink-0 border border-emerald-200/60 dark:border-emerald-800/60">
-            <Landmark className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+          <div className="w-10 h-10 rounded-2xl bg-primary-100 dark:bg-primary-950 text-primary-800 dark:text-primary-300 flex items-center justify-center shrink-0 border border-primary-200/60 dark:border-primary-800/60">
+            <Landmark className="w-5 h-5 text-primary-600 dark:text-primary-400" />
           </div>
           <div>
             <div className="flex items-center gap-2">
@@ -616,7 +616,7 @@ export const SpendingPhasesCard: React.FC<SpendingPhasesCardProps> = ({
                 Retirement Income Requirement
               </h3>
               {!isStudio && (
-                <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-900 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/50">
+                <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-primary-100 dark:bg-primary-950 text-primary-900 dark:text-primary-300 border border-primary-200/50 dark:border-primary-800/50">
                   Income Strategy
                 </span>
               )}
@@ -639,11 +639,11 @@ export const SpendingPhasesCard: React.FC<SpendingPhasesCardProps> = ({
             onClick={() => handleToggleEnabled(false)}
             className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex items-start gap-3 relative ${
               !phasesConfig.enabled
-                ? 'bg-white dark:bg-slate-800 border-emerald-500 ring-2 ring-emerald-500/20 shadow-xs'
+                ? 'bg-white dark:bg-slate-800 border-primary-500 ring-2 ring-primary-500/20 shadow-xs'
                 : 'bg-white/60 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700/80 hover:bg-white dark:hover:bg-slate-800'
             }`}
           >
-            <div className={`p-2 rounded-xl shrink-0 ${!phasesConfig.enabled ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400'}`}>
+            <div className={`p-2 rounded-xl shrink-0 ${!phasesConfig.enabled ? 'bg-primary-100 text-primary-700 dark:bg-primary-950 dark:text-primary-300' : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400'}`}>
               <Coins className="w-4 h-4" />
             </div>
             <div className="space-y-0.5 flex-1 pr-4">
@@ -652,7 +652,7 @@ export const SpendingPhasesCard: React.FC<SpendingPhasesCardProps> = ({
                   Flat Annual Spending
                 </span>
                 {!phasesConfig.enabled && (
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <CheckCircle2 className="w-4 h-4 text-primary-600 dark:text-primary-400 shrink-0" />
                 )}
               </div>
               {!isStudio && (
@@ -669,11 +669,11 @@ export const SpendingPhasesCard: React.FC<SpendingPhasesCardProps> = ({
             onClick={() => handleToggleEnabled(true)}
             className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex items-start gap-3 relative ${
               phasesConfig.enabled
-                ? 'bg-white dark:bg-slate-800 border-emerald-500 ring-2 ring-emerald-500/20 shadow-xs'
+                ? 'bg-white dark:bg-slate-800 border-primary-500 ring-2 ring-primary-500/20 shadow-xs'
                 : 'bg-white/60 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700/80 hover:bg-white dark:hover:bg-slate-800'
             }`}
           >
-            <div className={`p-2 rounded-xl shrink-0 ${phasesConfig.enabled ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400'}`}>
+            <div className={`p-2 rounded-xl shrink-0 ${phasesConfig.enabled ? 'bg-primary-100 text-primary-700 dark:bg-primary-950 dark:text-primary-300' : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400'}`}>
               <Sliders className="w-4 h-4" />
             </div>
             <div className="space-y-0.5 flex-1 pr-4">
@@ -682,7 +682,7 @@ export const SpendingPhasesCard: React.FC<SpendingPhasesCardProps> = ({
                   Flexible Age-Based Spending
                 </span>
                 {phasesConfig.enabled && (
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <CheckCircle2 className="w-4 h-4 text-primary-600 dark:text-primary-400 shrink-0" />
                 )}
               </div>
               {!isStudio && (
@@ -699,12 +699,12 @@ export const SpendingPhasesCard: React.FC<SpendingPhasesCardProps> = ({
       <div className="bg-white dark:bg-slate-800/80 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-700/80 space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <label className="text-xs font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
-            <Landmark className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            <Landmark className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
             <span>Target Annual Household Income</span>
             {!isStudio && <span className="text-[10px] text-slate-400 font-normal">(In today's £)</span>}
           </label>
           <div className="flex items-center gap-2">
-            <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-1 rounded-xl border border-emerald-200/60 dark:border-emerald-800/60">
+            <span className="text-[11px] font-semibold text-primary-700 dark:text-primary-400 bg-primary-50 dark:bg-primary-950/60 px-2.5 py-1 rounded-xl border border-primary-200/60 dark:border-primary-800/60">
               £{monthlyIncome.toLocaleString()}/month
             </span>
             <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700/60 px-2.5 py-1 rounded-xl">
@@ -724,13 +724,13 @@ export const SpendingPhasesCard: React.FC<SpendingPhasesCardProps> = ({
             value={profile.targetRetirementIncomeAnnual}
             onChange={(e) => handleTargetIncomeChange(Number(e.target.value))}
             placeholder="e.g. 35000"
-            className="w-full pl-8 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-base font-extrabold text-slate-900 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+            className="w-full pl-8 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-base font-extrabold text-slate-900 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
           />
         </div>
 
         {!isStudio && (
           <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-            <Info className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+            <Info className="w-3.5 h-3.5 text-primary-500 shrink-0" />
             <span>
               {phasesConfig.enabled
                 ? 'This baseline income target serves as the default benchmark when configuring flexible age ranges.'
@@ -742,14 +742,14 @@ export const SpendingPhasesCard: React.FC<SpendingPhasesCardProps> = ({
         {true && (
           <div className="pt-3 mt-3 border-t border-slate-200 dark:border-slate-700/80 space-y-2">
             <label className="text-xs font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
-              <TrendingUp className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              <TrendingUp className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
               <span>Annual Increase</span>
             </label>
             <div className="flex flex-col sm:flex-row gap-2">
               <select
                 value={profile.incomeIncreaseMode || 'inflation'}
                 onChange={(e) => onChange({ ...profile, incomeIncreaseMode: e.target.value as 'inflation' | 'custom' })}
-                className="w-full sm:w-1/2 px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer"
+                className="w-full sm:w-1/2 px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 cursor-pointer"
               >
                 <option value="inflation">Inline with Inflation</option>
                 <option value="custom">Custom Fixed %</option>
@@ -763,13 +763,13 @@ export const SpendingPhasesCard: React.FC<SpendingPhasesCardProps> = ({
                       step="0.1"
                       value={profile.customIncomeIncreasePercent ?? 0}
                       onChange={(e) => onChange({ ...profile, customIncomeIncreasePercent: Number(e.target.value) })}
-                      className="w-full pl-3 pr-6 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                      className="w-full pl-3 pr-6 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
                     />
                     <span className="absolute right-3 top-2 text-xs font-bold text-slate-400">%</span>
                   </div>
                   <div className="flex gap-1 shrink-0">
-                    <button type="button" onClick={() => onChange({ ...profile, customIncomeIncreasePercent: 0 })} className="px-2 py-1 text-[10px] font-bold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/50 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors cursor-pointer">0%</button>
-                    <button type="button" onClick={() => onChange({ ...profile, customIncomeIncreasePercent: 1 })} className="px-2 py-1 text-[10px] font-bold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/50 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors cursor-pointer">1%</button>
+                    <button type="button" onClick={() => onChange({ ...profile, customIncomeIncreasePercent: 0 })} className="px-2 py-1 text-[10px] font-bold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-900/50 hover:text-primary-700 dark:hover:text-primary-300 transition-colors cursor-pointer">0%</button>
+                    <button type="button" onClick={() => onChange({ ...profile, customIncomeIncreasePercent: 1 })} className="px-2 py-1 text-[10px] font-bold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-900/50 hover:text-primary-700 dark:hover:text-primary-300 transition-colors cursor-pointer">1%</button>
                   </div>
                 </div>
               )}
@@ -786,21 +786,21 @@ export const SpendingPhasesCard: React.FC<SpendingPhasesCardProps> = ({
           {!isStudio && (
             <div className="flex flex-wrap items-center justify-between gap-2 bg-white dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-200/70 dark:border-slate-700/70">
               <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
+                <Sparkles className="w-3.5 h-3.5 text-primary-500" />
                 <span>Quick Presets:</span>
               </span>
               <div className="flex flex-wrap items-center gap-1.5">
                 <button
                   type="button"
                   onClick={() => handleApplyPreset('early55')}
-                  className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-200 dark:hover:bg-emerald-900 transition-all cursor-pointer border border-emerald-300 dark:border-emerald-800"
+                  className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-primary-100 dark:bg-primary-950 text-primary-800 dark:text-primary-300 hover:bg-primary-200 dark:hover:bg-primary-900 transition-all cursor-pointer border border-primary-300 dark:border-primary-800"
                 >
                   ★ Start to Age 55
                 </button>
                 <button
                   type="button"
                   onClick={() => handleApplyPreset('gogo')}
-                  className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-emerald-100 dark:hover:bg-emerald-950 hover:text-emerald-800 dark:hover:text-emerald-300 transition-all cursor-pointer"
+                  className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-primary-100 dark:hover:bg-primary-950 hover:text-primary-800 dark:hover:text-primary-300 transition-all cursor-pointer"
                 >
                   Go / Slow / No-Go (74 / 84 / 85+)
                 </button>
@@ -821,7 +821,7 @@ export const SpendingPhasesCard: React.FC<SpendingPhasesCardProps> = ({
                 <button
                   type="button"
                   onClick={handleAutoAlign}
-                  className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900 transition-all cursor-pointer flex items-center gap-1 ml-auto sm:ml-0"
+                  className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-primary-50 dark:bg-primary-950/60 border border-primary-200 dark:border-primary-800 text-primary-700 dark:text-primary-300 hover:bg-primary-100 dark:hover:bg-primary-900 transition-all cursor-pointer flex items-center gap-1 ml-auto sm:ml-0"
                 >
                   <RotateCcw className="w-3 h-3" />
                   <span>Auto-Align Ages</span>
@@ -835,7 +835,7 @@ export const SpendingPhasesCard: React.FC<SpendingPhasesCardProps> = ({
             <div className="bg-white dark:bg-slate-800/80 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-2">
               <div className="flex items-center justify-between text-[11px] font-bold text-slate-600 dark:text-slate-300">
                 <span className="flex items-center gap-1">
-                  <Calendar className="w-3.5 h-3.5 text-emerald-500" />
+                  <Calendar className="w-3.5 h-3.5 text-primary-500" />
                   <span>Age Spending Timeline</span>
                 </span>
                 <span className="text-slate-400 text-[10px]">Today's £ values</span>
@@ -887,7 +887,7 @@ export const SpendingPhasesCard: React.FC<SpendingPhasesCardProps> = ({
                         value={range.name}
                         onChange={(e) => handleUpdateRange(range.id, { name: e.target.value })}
                         placeholder="Phase Name (e.g. Start to 55)"
-                        className="font-extrabold text-xs text-slate-800 dark:text-slate-100 bg-transparent border-b border-dashed border-slate-300 dark:border-slate-600 focus:border-emerald-500 focus:outline-none px-1 py-0.5 w-full max-w-xs"
+                        className="font-extrabold text-xs text-slate-800 dark:text-slate-100 bg-transparent border-b border-dashed border-slate-300 dark:border-slate-600 focus:border-primary-500 focus:outline-none px-1 py-0.5 w-full max-w-xs"
                       />
                     </div>
 
@@ -951,7 +951,7 @@ export const SpendingPhasesCard: React.FC<SpendingPhasesCardProps> = ({
                                 handleUpdateRange(range.id, { endAge: range.startAge + 5 });
                               }
                             }}
-                            className="w-3.5 h-3.5 text-emerald-600 rounded border-slate-300 dark:border-slate-700 focus:ring-emerald-500 cursor-pointer"
+                            className="w-3.5 h-3.5 text-primary-600 rounded border-slate-300 dark:border-slate-700 focus:ring-primary-500 cursor-pointer"
                           />
                           <span>Ongoing</span>
                         </label>
@@ -1042,7 +1042,7 @@ export const SpendingPhasesCard: React.FC<SpendingPhasesCardProps> = ({
             <button
               type="button"
               onClick={handleAddRange}
-              className="w-full sm:w-auto px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              className="w-full sm:w-auto px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span>Add Custom Spending Age Range</span>

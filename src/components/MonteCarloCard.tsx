@@ -273,7 +273,7 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
 
   const successColor =
     mcResult.successRateAge85 >= 85
-      ? 'text-emerald-600 bg-emerald-50 border-emerald-200'
+      ? 'text-primary-600 bg-primary-50 border-primary-200'
       : mcResult.successRateAge85 >= 70
       ? 'text-amber-600 bg-amber-50 border-amber-200'
       : 'text-rose-600 bg-rose-50 border-rose-200';
@@ -386,7 +386,7 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-bold uppercase tracking-wider">Pot Success Rate (Age 85)</span>
                 {mcResult.successRateAge85 >= 80 ? (
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <CheckCircle2 className="w-4 h-4 text-primary-600" />
                 ) : (
                   <AlertTriangle className="w-4 h-4 text-amber-600" />
                 )}
@@ -433,7 +433,7 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
               <div className="text-xs font-bold text-slate-800 dark:text-slate-200 space-y-1 mt-1">
                 <div className="flex justify-between">
                   <span>Age 80:</span>
-                  <span className="text-emerald-700 dark:text-emerald-400 font-extrabold">{mcResult.successRateAge80}%</span>
+                  <span className="text-primary-700 dark:text-primary-400 font-extrabold">{mcResult.successRateAge80}%</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Age 85:</span>
@@ -457,14 +457,14 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/80 dark:border-slate-700/80 pb-3">
               <div>
                 <h4 className="font-extrabold text-sm text-slate-900 dark:text-white flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  <TrendingUp className="w-4 h-4 text-primary-600 dark:text-primary-400" />
                   <span>1. Standard Volatility Model</span>
                 </h4>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
                   Compounding returns fluctuate around baseline expected annual growth ({profile.expectedInvestmentReturn || 6}% accum / {profile.postRetirementReturn || 4.5}% decum).
                 </p>
               </div>
-              <div className="flex items-center gap-2 bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 px-3 py-1.5 rounded-xl border border-emerald-200 dark:border-emerald-800 text-xs font-bold shrink-0">
+              <div className="flex items-center gap-2 bg-primary-100 dark:bg-primary-950/80 text-primary-800 dark:text-primary-300 px-3 py-1.5 rounded-xl border border-primary-200 dark:border-primary-800 text-xs font-bold shrink-0">
                 <span>Success Rate (Age 85):</span>
                 <span className="font-black text-sm">{baseResult.successRateAge85}%</span>
               </div>
@@ -1281,7 +1281,7 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
                           <th className="py-2 px-2 text-right">Target Net Income</th>
                           <th className="py-2 px-2 text-right">Guaranteed Income</th>
                           <th className="py-2 px-2 text-right text-rose-700 dark:text-rose-400">Net Cash Buffer Required</th>
-                          <th className="py-2 px-2 text-right text-emerald-700 dark:text-emerald-400">Gross Pension Draw Avoided</th>
+                          <th className="py-2 px-2 text-right text-primary-700 dark:text-primary-400">Gross Pension Draw Avoided</th>
                           <th className="py-2 px-2 text-center">Coverage</th>
                         </tr>
                       </thead>
@@ -1297,12 +1297,12 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
                             <td className="py-2 px-2 text-right font-extrabold text-rose-700 dark:text-rose-400 bg-rose-50/60 dark:bg-rose-950/50">
                               £{detail.netCashBufferRequired.toLocaleString()}
                             </td>
-                            <td className="py-2 px-2 text-right font-bold text-emerald-700 dark:text-emerald-400">
+                            <td className="py-2 px-2 text-right font-bold text-primary-700 dark:text-primary-400">
                               ~£{detail.grossPensionAvoided.toLocaleString()}
                             </td>
                             <td className="py-2 px-2 text-center">
                               {detail.isCoveredByExistingCash ? (
-                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-800">
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-primary-700 dark:text-primary-300 bg-primary-100 dark:bg-primary-950 px-2 py-0.5 rounded-full border border-primary-300 dark:border-primary-800">
                                   <CheckCircle2 className="w-3 h-3" /> Covered
                                 </span>
                               ) : (
@@ -1328,7 +1328,7 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
                     <div className="flex items-center gap-2">
                       <span>Cash Buffer Readiness:</span>
                       {cashBufferSummary.isFullyCovered ? (
-                        <span className="text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950 px-2.5 py-1 rounded-lg border border-emerald-300 dark:border-emerald-800 font-extrabold flex items-center gap-1">
+                        <span className="text-primary-700 dark:text-primary-300 bg-primary-100 dark:bg-primary-950 px-2.5 py-1 rounded-lg border border-primary-300 dark:border-primary-800 font-extrabold flex items-center gap-1">
                           <CheckCircle2 className="w-3.5 h-3.5" /> Fully Funded (+£{cashBufferSummary.shortfallOrSurplus.toLocaleString()} Surplus)
                         </span>
                       ) : (

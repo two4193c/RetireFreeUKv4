@@ -136,7 +136,7 @@ export const DuplicateVariantConflictModal: React.FC<DuplicateVariantConflictMod
             <label
               className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
                 choice === 'new_name'
-                  ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20 ring-1 ring-emerald-500'
+                  ? 'border-primary-500 bg-primary-50/50 dark:bg-primary-950/20 ring-1 ring-primary-500'
                   : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50'
               }`}
             >
@@ -146,11 +146,11 @@ export const DuplicateVariantConflictModal: React.FC<DuplicateVariantConflictMod
                 value="new_name"
                 checked={choice === 'new_name'}
                 onChange={() => setChoice('new_name')}
-                className="mt-1 text-emerald-600 focus:ring-emerald-500"
+                className="mt-1 text-primary-600 focus:ring-primary-500"
               />
               <div className="flex-1 space-y-2">
                 <div className="flex items-center gap-2">
-                  <Edit3 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <Edit3 className="w-4 h-4 text-primary-600 dark:text-primary-400 shrink-0" />
                   <span className="text-xs font-bold text-slate-900 dark:text-slate-100">
                     Create New Suite with Custom Base Name
                   </span>
@@ -169,7 +169,7 @@ export const DuplicateVariantConflictModal: React.FC<DuplicateVariantConflictMod
                       value={newBaseName}
                       onChange={(e) => setNewBaseName(e.target.value)}
                       placeholder="e.g. Plan 1 (V2)"
-                      className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
                       required={choice === 'new_name'}
                     />
                   </div>

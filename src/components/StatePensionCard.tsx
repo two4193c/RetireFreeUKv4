@@ -63,7 +63,7 @@ export const StatePensionCard: React.FC<StatePensionCardProps> = ({ profile, onC
                 type="checkbox"
                 checked={profile.includeStatePension ?? true}
                 onChange={(e) => updateField('includeStatePension', e.target.checked)}
-                className="w-4 h-4 text-emerald-600 rounded border-slate-300 dark:border-slate-700 focus:ring-emerald-500 cursor-pointer"
+                className="w-4 h-4 text-primary-600 rounded border-slate-300 dark:border-slate-700 focus:ring-primary-500 cursor-pointer"
               />
               <span>{profile.name || 'Primary'} State Pension</span>
             </label>
@@ -77,7 +77,7 @@ export const StatePensionCard: React.FC<StatePensionCardProps> = ({ profile, onC
                   statePensionAmountAnnual: primaryFull,
                 });
               }}
-              className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 hover:text-emerald-800 bg-emerald-100/80 dark:bg-emerald-950/80 px-2.5 py-1 rounded-lg transition-all cursor-pointer border border-emerald-200/60 dark:border-emerald-800/60"
+              className="text-[10px] font-bold text-primary-700 dark:text-primary-300 hover:text-primary-800 bg-primary-100/80 dark:bg-primary-950/80 px-2.5 py-1 rounded-lg transition-all cursor-pointer border border-primary-200/60 dark:border-primary-800/60"
             >
               Max 35 Yrs (Full)
             </button>
@@ -86,7 +86,7 @@ export const StatePensionCard: React.FC<StatePensionCardProps> = ({ profile, onC
           {(profile.includeStatePension ?? true) && (
             <div className="space-y-3">
               {/* Triple Lock Inflation Indexing Toggle */}
-              <div className="flex items-center justify-between p-2.5 bg-emerald-50/60 dark:bg-emerald-950/40 rounded-xl border border-emerald-200/60 dark:border-emerald-800/50">
+              <div className="flex items-center justify-between p-2.5 bg-primary-50/60 dark:bg-primary-950/40 rounded-xl border border-primary-200/60 dark:border-primary-800/50">
                 <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
@@ -98,11 +98,11 @@ export const StatePensionCard: React.FC<StatePensionCardProps> = ({ profile, onC
                         enableTripleLock: val,
                       });
                     }}
-                    className="w-4 h-4 text-emerald-600 rounded border-slate-300 dark:border-slate-700 focus:ring-emerald-500 cursor-pointer"
+                    className="w-4 h-4 text-primary-600 rounded border-slate-300 dark:border-slate-700 focus:ring-primary-500 cursor-pointer"
                   />
                   <span>Triple Lock Indexing</span>
                 </label>
-                <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-300">
+                <span className="text-[10px] font-semibold text-primary-700 dark:text-primary-300">
                   {(profile.enableTripleLock ?? true) ? 'CPI Inflation Linked' : 'Fixed Nominal £'}
                 </span>
               </div>
@@ -111,7 +111,7 @@ export const StatePensionCard: React.FC<StatePensionCardProps> = ({ profile, onC
               <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 space-y-1">
                 <div className="flex items-center justify-between text-[11px] font-bold text-slate-700 dark:text-slate-300">
                   <span>Full State Pension Benchmark</span>
-                  <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">At 35 Yrs</span>
+                  <span className="text-[10px] font-semibold text-primary-600 dark:text-primary-400">At 35 Yrs</span>
                 </div>
                 <div className="relative">
                   <span className="absolute left-3 top-2 text-xs font-extrabold text-slate-400">£</span>
@@ -129,7 +129,7 @@ export const StatePensionCard: React.FC<StatePensionCardProps> = ({ profile, onC
                         statePensionAmountAnnual: annual,
                       });
                     }}
-                    className="w-full pl-7 pr-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-extrabold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    className="w-full pl-7 pr-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-extrabold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-primary-500 focus:outline-none"
                   />
                 </div>
               </div>
@@ -157,7 +157,7 @@ export const StatePensionCard: React.FC<StatePensionCardProps> = ({ profile, onC
                         statePensionAmountAnnual: annual,
                       });
                     }}
-                    className="w-full px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    className="w-full px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-primary-500 focus:outline-none"
                   />
                 </div>
 
@@ -172,7 +172,7 @@ export const StatePensionCard: React.FC<StatePensionCardProps> = ({ profile, onC
                     max="75"
                     value={profile.statePensionAge ?? 67}
                     onChange={(e) => updateField('statePensionAge', Number(e.target.value))}
-                    className="w-full px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    className="w-full px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-primary-500 focus:outline-none"
                   />
                 </div>
               </div>
@@ -194,7 +194,7 @@ export const StatePensionCard: React.FC<StatePensionCardProps> = ({ profile, onC
                       statePensionAmountAnnual: annual,
                     });
                   }}
-                  className="w-full accent-emerald-600 cursor-pointer"
+                  className="w-full accent-primary-600 cursor-pointer"
                 />
               </div>
 
@@ -213,12 +213,12 @@ export const StatePensionCard: React.FC<StatePensionCardProps> = ({ profile, onC
               <div className={`p-3 rounded-xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1 text-xs ${
                 primaryYears > 0 && primaryYears < 10
                   ? 'bg-amber-50/80 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800'
-                  : 'bg-emerald-100/70 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-800'
+                  : 'bg-primary-100/70 dark:bg-primary-950/60 border-primary-200 dark:border-primary-800'
               }`}>
                 <span className={`font-bold ${
                   primaryYears > 0 && primaryYears < 10
                     ? 'text-amber-900 dark:text-amber-200'
-                    : 'text-emerald-900 dark:text-emerald-200'
+                    : 'text-primary-900 dark:text-primary-200'
                 }`}>
                   Calculated Entitlement ({primaryYears}/35 Yrs):
                 </span>
@@ -226,7 +226,7 @@ export const StatePensionCard: React.FC<StatePensionCardProps> = ({ profile, onC
                   <span className={`font-extrabold text-sm ${
                     primaryYears > 0 && primaryYears < 10
                       ? 'text-amber-700 dark:text-amber-400'
-                      : 'text-emerald-800 dark:text-emerald-300'
+                      : 'text-primary-800 dark:text-primary-300'
                   }`}>
                     £{primaryAnnual.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/yr
                   </span>

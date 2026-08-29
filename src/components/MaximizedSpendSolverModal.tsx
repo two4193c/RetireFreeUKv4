@@ -321,7 +321,7 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 overflow-y-auto">
       <div className="relative w-full max-w-4xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden my-auto max-h-[92vh] flex flex-col">
         {/* MODAL HEADER */}
-        <div className="p-5 sm:p-6 bg-gradient-to-r from-amber-500/10 via-indigo-500/10 to-emerald-500/10 dark:from-amber-950/40 dark:via-indigo-950/40 dark:to-emerald-950/40 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0">
+        <div className="p-5 sm:p-6 bg-gradient-to-r from-amber-500/10 via-indigo-500/10 to-primary-500/10 dark:from-amber-950/40 dark:via-indigo-950/40 dark:to-primary-950/40 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 text-white flex items-center justify-center shadow-lg shadow-amber-500/20 shrink-0">
               <Zap className="w-5.5 h-5.5" />
@@ -377,7 +377,7 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
               </div>
               {annuityFloorDetails ? (
                 <div className="text-[11px] font-bold text-amber-800 dark:text-amber-200 flex items-center gap-1 flex-wrap">
-                  <span className="text-emerald-700 dark:text-emerald-300">🛡️ {fmt(annuityFloorDetails.guaranteedAnnualIncome)}/yr Floor</span>
+                  <span className="text-primary-700 dark:text-primary-300">🛡️ {fmt(annuityFloorDetails.guaranteedAnnualIncome)}/yr Floor</span>
                   <span>+</span>
                   <span>{fmt(annuityFloorDetails.flexiDrawdownAnnualIncome)}/yr Flexi</span>
                 </div>
@@ -391,16 +391,16 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
             </div>
 
             {/* KPI 2: ANNUAL BOOST */}
-            <div className="p-4 bg-emerald-50 dark:bg-emerald-950/30 rounded-2xl border border-emerald-200 dark:border-emerald-800/80 space-y-1 shadow-xs">
-              <div className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 flex items-center justify-between">
+            <div className="p-4 bg-primary-50 dark:bg-primary-950/30 rounded-2xl border border-primary-200 dark:border-primary-800/80 space-y-1 shadow-xs">
+              <div className="text-[10px] font-extrabold uppercase tracking-wider text-primary-800 dark:text-primary-300 flex items-center justify-between">
                 <span>Annual Income Boost</span>
-                <TrendingUp className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                <TrendingUp className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
               </div>
-              <div className="text-2xl font-black text-emerald-700 dark:text-emerald-300">
+              <div className="text-2xl font-black text-primary-700 dark:text-primary-300">
                 {extraAnnualSpend >= 0 ? `+${fmt(extraAnnualSpend)}` : fmt(extraAnnualSpend)}
-                <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">/yr</span>
+                <span className="text-xs font-semibold text-primary-600 dark:text-primary-400">/yr</span>
               </div>
-              <div className="text-[11px] font-bold text-emerald-800 dark:text-emerald-300">
+              <div className="text-[11px] font-bold text-primary-800 dark:text-primary-300">
                 {boostPercentage >= 0 ? `+${boostPercentage}%` : `${boostPercentage}%`} vs Current ({fmt(originalAnnualIncome)}/yr)
               </div>
             </div>
@@ -658,7 +658,7 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
                   </div>
                 </div>
                 {annuityFloorDetails && (
-                  <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+                  <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-primary-100 text-primary-800 dark:bg-primary-950 dark:text-primary-300 border border-primary-300 dark:border-primary-800">
                     Floor: {fmt(annuityFloorDetails.guaranteedAnnualIncome)}/yr Guaranteed
                   </span>
                 )}
@@ -908,10 +908,10 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
               )}
 
               {annuityFloorDetails && (
-                <div className="p-3 bg-emerald-500/10 dark:bg-emerald-950/40 rounded-xl border border-emerald-300 dark:border-emerald-800 flex items-start gap-2.5 text-xs text-emerald-900 dark:text-emerald-200">
-                  <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                <div className="p-3 bg-primary-500/10 dark:bg-primary-950/40 rounded-xl border border-primary-300 dark:border-primary-800 flex items-start gap-2.5 text-xs text-primary-900 dark:text-primary-200">
+                  <ShieldCheck className="w-4 h-4 text-primary-600 dark:text-primary-400 shrink-0 mt-0.5" />
                   <div className="space-y-0.5">
-                    <div className="font-extrabold text-[11px] uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
+                    <div className="font-extrabold text-[11px] uppercase tracking-wider text-primary-800 dark:text-primary-300">
                       Annuity Safety Floor Active
                     </div>
                     <p className="text-[11px] leading-relaxed">
@@ -926,13 +926,13 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
             <div className="pt-3 border-t border-slate-200 dark:border-slate-700/80 space-y-4">
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                  <div className="w-7 h-7 rounded-lg bg-primary-50 dark:bg-primary-950/60 text-primary-600 dark:text-primary-400 flex items-center justify-center">
                     <RefreshCw className="w-4 h-4" />
                   </div>
                   <div>
                     <h5 className="font-extrabold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
                       <span>Max Drawdown & Reinvest Surplus</span>
-                      <span className="text-[9px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-800">
+                      <span className="text-[9px] font-black uppercase tracking-wider bg-primary-100 dark:bg-primary-950 text-primary-800 dark:text-primary-300 px-2 py-0.5 rounded-full border border-primary-300 dark:border-primary-800">
                         Tax & Pot Optimizer
                       </span>
                     </h5>
@@ -946,7 +946,7 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
                   onClick={() => setReinvestExcessDrawdown(!reinvestExcessDrawdown)}
                   className={`px-3 py-1.5 rounded-xl text-xs font-black cursor-pointer transition-all border flex items-center gap-1.5 ${
                     reinvestExcessDrawdown
-                      ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                      ? 'bg-primary-600 text-white border-primary-600 shadow-xs'
                       : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100'
                   }`}
                 >
@@ -960,7 +960,7 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
                     <div className="space-y-1.5">
                       <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
                         <span>Actual Annual Spending Target</span>
-                        <span className="font-black text-emerald-600 dark:text-emerald-400">{fmt(actualSpendingTargetAnnual)}/yr</span>
+                        <span className="font-black text-primary-600 dark:text-primary-400">{fmt(actualSpendingTargetAnnual)}/yr</span>
                       </label>
                       <input
                         type="number"
@@ -972,10 +972,10 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
                           setActualSpendingTargetAnnual(Math.max(0, parseInt(e.target.value) || 0));
                           setCustomAdjustedTargetIncome(Math.max(0, parseInt(e.target.value) || 0));
                         }}
-                        className="w-full bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs font-bold p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-emerald-500"
+                        className="w-full bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs font-bold p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500"
                       />
                       <p className="text-[10px] text-slate-500 dark:text-slate-400">
-                        Amount needed for lifestyle expenses. Surplus drawdown of <strong className="text-emerald-600 dark:text-emerald-400">{fmt(Math.max(0, maxAnnualIncome - effectiveSpendingTarget))}/yr</strong> will be reinvested.
+                        Amount needed for lifestyle expenses. Surplus drawdown of <strong className="text-primary-600 dark:text-primary-400">{fmt(Math.max(0, maxAnnualIncome - effectiveSpendingTarget))}/yr</strong> will be reinvested.
                       </p>
                     </div>
 
@@ -986,7 +986,7 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
                       <select
                         value={reinvestDestinationPot}
                         onChange={(e) => setReinvestDestinationPot(e.target.value as 'isa' | 'gia' | 'cash')}
-                        className="w-full bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs font-bold p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-emerald-500"
+                        className="w-full bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs font-bold p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500"
                       >
                         <option value="isa">ISA / Stocks & Shares ISA (Tax-Free Growth)</option>
                         <option value="cash">Cash Savings Pot (Liquid Reserve)</option>
@@ -999,13 +999,13 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
                   </div>
 
                   {reinvestExcessDetails && (
-                    <div className="p-3 bg-emerald-500/10 dark:bg-emerald-950/40 rounded-xl border border-emerald-300 dark:border-emerald-800 flex items-start gap-2.5 text-xs text-emerald-900 dark:text-emerald-200">
-                      <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                    <div className="p-3 bg-primary-500/10 dark:bg-primary-950/40 rounded-xl border border-primary-300 dark:border-primary-800 flex items-start gap-2.5 text-xs text-primary-900 dark:text-primary-200">
+                      <Check className="w-4 h-4 text-primary-600 dark:text-primary-400 shrink-0 mt-0.5" />
                       <div className="space-y-0.5">
-                        <div className="font-extrabold text-[11px] uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
+                        <div className="font-extrabold text-[11px] uppercase tracking-wider text-primary-800 dark:text-primary-300">
                           Reinvestment Strategy Active
                         </div>
-                        <p className="text-xs text-emerald-900 dark:text-emerald-200 leading-relaxed max-w-2xl">
+                        <p className="text-xs text-primary-900 dark:text-primary-200 leading-relaxed max-w-2xl">
                           Drawing down maximum <strong>{fmt(maxAnnualIncome)}/yr</strong> from pensions & pots. Spending <strong>{fmt(effectiveSpendingTarget)}/yr</strong> on lifestyle requirements. Reinvesting <strong>{fmt(Math.max(0, maxAnnualIncome - effectiveSpendingTarget))}/yr</strong> surplus into your <strong>{reinvestDestinationPot.toUpperCase()} pot</strong>.
                         </p>
                       </div>
@@ -1020,7 +1020,7 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <h4 className="font-extrabold text-xs uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                <Layers className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <Layers className="w-4 h-4 text-primary-600 dark:text-primary-400" />
                 <span>Maximized Portfolio Trajectory (Retirement Age {currentRetirementAge} to {maxPlottedAge})</span>
               </h4>
               <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">
@@ -1060,7 +1060,7 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
                 <div className="w-full flex-1 space-y-1">
                   <div className="flex justify-between items-center text-xs font-bold">
                     <span className="text-slate-600 dark:text-slate-400">Adjusted Spending Target:</span>
-                    <span className="text-emerald-600 dark:text-emerald-400 font-extrabold text-sm">{fmt(reinvestExcessDrawdown ? effectiveSpendingTarget : effectiveDrawdownTarget)}/yr</span>
+                    <span className="text-primary-600 dark:text-primary-400 font-extrabold text-sm">{fmt(reinvestExcessDrawdown ? effectiveSpendingTarget : effectiveDrawdownTarget)}/yr</span>
                   </div>
                   <input
                     type="range"
@@ -1073,7 +1073,7 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
                       setCustomAdjustedTargetIncome(val);
                       if (reinvestExcessDrawdown) setActualSpendingTargetAnnual(val);
                     }}
-                    className="w-full accent-emerald-600 cursor-pointer"
+                    className="w-full accent-primary-600 cursor-pointer"
                   />
                 </div>
 
@@ -1085,7 +1085,7 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
                       step={500}
                       value={reinvestExcessDrawdown ? effectiveSpendingTarget : effectiveDrawdownTarget}
                       onChange={(e) => setCustomAdjustedTargetIncome(Math.max(0, parseInt(e.target.value) || 0))}
-                      className="w-full pl-7 pr-3 py-1.5 text-xs font-bold bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500"
+                      className="w-full pl-7 pr-3 py-1.5 text-xs font-bold bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500"
                     />
                   </div>
                 </div>
@@ -1127,12 +1127,12 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
                           </div>
 
                           <div className="space-y-0.5 pt-0.5">
-                            <div className="text-[10px] font-black uppercase text-emerald-400">
+                            <div className="text-[10px] font-black uppercase text-primary-400">
                               {isAdjustedDifferent ? `Adjusted Target Spend (${fmt(reinvestExcessDrawdown ? effectiveSpendingTarget : effectiveDrawdownTarget)}/yr)` : 'Applied Target Income'}
                             </div>
                             <div className="flex items-center justify-between gap-4">
                               <span className="text-slate-400">Wealth Pot:</span>
-                              <span className="font-bold text-emerald-300">£{Math.round(data.adjustedPot || 0).toLocaleString()}</span>
+                              <span className="font-bold text-primary-300">£{Math.round(data.adjustedPot || 0).toLocaleString()}</span>
                             </div>
                             <div className="flex items-center justify-between gap-4">
                               <span className="text-slate-400">Target Income Req:</span>
@@ -1174,7 +1174,7 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
         {/* MODAL FOOTER */}
         <div className="p-5 bg-slate-50 dark:bg-slate-900/90 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
           <div className="text-xs text-slate-600 dark:text-slate-400 font-medium">
-            Applying this solver will set your plan target annual retirement spend to <strong className="font-bold text-emerald-600 dark:text-emerald-400">{fmt(reinvestExcessDrawdown ? effectiveSpendingTarget : effectiveDrawdownTarget)}/yr</strong>.
+            Applying this solver will set your plan target annual retirement spend to <strong className="font-bold text-primary-600 dark:text-primary-400">{fmt(reinvestExcessDrawdown ? effectiveSpendingTarget : effectiveDrawdownTarget)}/yr</strong>.
           </div>
 
           <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -1188,7 +1188,7 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
             <button
               type="button"
               onClick={handleApply}
-              className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs font-black text-white bg-gradient-to-r from-emerald-600 via-teal-600 to-amber-600 hover:from-emerald-700 hover:to-amber-700 transition-all shadow-lg shadow-emerald-500/20 cursor-pointer flex items-center justify-center gap-2"
+              className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs font-black text-white bg-gradient-to-r from-primary-600 via-teal-600 to-amber-600 hover:from-primary-700 hover:to-amber-700 transition-all shadow-lg shadow-primary-500/20 cursor-pointer flex items-center justify-center gap-2"
             >
               <Check className="w-4 h-4" />
               <span>Apply Maximized Spend ({fmt(reinvestExcessDrawdown ? effectiveSpendingTarget : effectiveDrawdownTarget)}/yr)</span>

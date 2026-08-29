@@ -305,14 +305,14 @@ export const IhtEstatePlanningCard: React.FC<IhtEstatePlanningCardProps> = ({
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <label className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                    <Building2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    <Building2 className="w-4 h-4 text-primary-600 dark:text-primary-400" />
                     <span>Primary Residence Value</span>
                   </label>
                   {profile.mortgage?.propertyValue ? (
                     <button
                       type="button"
                       onClick={() => handleUpdateIht('primaryResidenceValue', profile.mortgage?.propertyValue || 0)}
-                      className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer flex items-center gap-0.5"
+                      className="text-[10px] font-bold text-primary-600 dark:text-primary-400 hover:underline cursor-pointer flex items-center gap-0.5"
                       title="Sync value from Mortgage & Debt Manager"
                     >
                       <RefreshCw className="w-2.5 h-2.5" />
@@ -329,7 +329,7 @@ export const IhtEstatePlanningCard: React.FC<IhtEstatePlanningCardProps> = ({
                     value={iht.primaryResidenceValue ?? (profile.mortgage?.propertyValue || 0)}
                     onChange={(e) => handleUpdateIht('primaryResidenceValue', Math.max(0, Number(e.target.value)))}
                     placeholder="e.g. 500000"
-                    className="w-full pl-7 pr-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                    className="w-full pl-7 pr-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500/20"
                   />
                 </div>
                 <p className="text-[10px] text-slate-400">Current market valuation of your main residence.</p>
@@ -398,7 +398,7 @@ export const IhtEstatePlanningCard: React.FC<IhtEstatePlanningCardProps> = ({
                     <Heart className="w-4 h-4 text-rose-500" />
                     <span>Charitable Bequest (% Net Estate)</span>
                   </span>
-                  <span className={`font-extrabold ${ (iht.charityGiftingPercent || 0) >= 10 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-700 dark:text-slate-300' }`}>
+                  <span className={`font-extrabold ${ (iht.charityGiftingPercent || 0) >= 10 ? 'text-primary-600 dark:text-primary-400' : 'text-slate-700 dark:text-slate-300' }`}>
                     {iht.charityGiftingPercent || 0}%
                   </span>
                 </label>
@@ -414,7 +414,7 @@ export const IhtEstatePlanningCard: React.FC<IhtEstatePlanningCardProps> = ({
                 <div className="flex items-center justify-between text-[10px]">
                   <span className="text-slate-400">0% = Standard 40% Rate</span>
                   {(iht.charityGiftingPercent || 0) >= 10 ? (
-                    <span className="font-extrabold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                    <span className="font-extrabold text-primary-600 dark:text-primary-400 flex items-center gap-1">
                       <CheckCircle2 className="w-3 h-3" />
                       36% Reduced IHT Rate Unlocked!
                     </span>
@@ -490,11 +490,11 @@ export const IhtEstatePlanningCard: React.FC<IhtEstatePlanningCardProps> = ({
                     <td className="py-3 px-4 text-rose-600 dark:text-rose-400">£{milestone90.netIhtLiability.toLocaleString()} ({milestone90.effectiveIhtRate}%)</td>
                     <td className="py-3 px-4 text-rose-600 dark:text-rose-400">£{milestone100.netIhtLiability.toLocaleString()} ({milestone100.effectiveIhtRate}%)</td>
                   </tr>
-                  <tr className="font-extrabold bg-emerald-500/10 text-emerald-800 dark:text-emerald-300">
+                  <tr className="font-extrabold bg-primary-500/10 text-primary-800 dark:text-primary-300">
                     <td className="py-3 px-4">Net Wealth Inherited by Beneficiaries</td>
-                    <td className="py-3 px-4 text-emerald-700 dark:text-emerald-300">£{milestone80.netPassedToHeirs.toLocaleString()}</td>
-                    <td className="py-3 px-4 text-emerald-700 dark:text-emerald-300">£{milestone90.netPassedToHeirs.toLocaleString()}</td>
-                    <td className="py-3 px-4 text-emerald-700 dark:text-emerald-300">£{milestone100.netPassedToHeirs.toLocaleString()}</td>
+                    <td className="py-3 px-4 text-primary-700 dark:text-primary-300">£{milestone80.netPassedToHeirs.toLocaleString()}</td>
+                    <td className="py-3 px-4 text-primary-700 dark:text-primary-300">£{milestone90.netPassedToHeirs.toLocaleString()}</td>
+                    <td className="py-3 px-4 text-primary-700 dark:text-primary-300">£{milestone100.netPassedToHeirs.toLocaleString()}</td>
                   </tr>
                 </tbody>
               </table>
@@ -505,13 +505,13 @@ export const IhtEstatePlanningCard: React.FC<IhtEstatePlanningCardProps> = ({
         {/* Non-Pension Assets Section */}
         <div className="space-y-6 pt-6 border-t border-slate-200/80 dark:border-slate-800">
           {!isStudioMode && (
-            <div className="bg-emerald-50/60 dark:bg-emerald-950/30 p-4 rounded-2xl border border-emerald-200/80 dark:border-emerald-900/60 flex items-start gap-3 text-xs">
-              <Coins className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+            <div className="bg-primary-50/60 dark:bg-primary-950/30 p-4 rounded-2xl border border-primary-200/80 dark:border-primary-900/60 flex items-start gap-3 text-xs">
+              <Coins className="w-5 h-5 text-primary-600 dark:text-primary-400 shrink-0 mt-0.5" />
               <div className="space-y-1">
-                <h4 className="font-bold text-emerald-900 dark:text-emerald-200">
+                <h4 className="font-bold text-primary-900 dark:text-primary-200">
                   Non-Pension Asset Estate & Death Benefits Strategy
                 </h4>
-                <p className="text-emerald-800/90 dark:text-emerald-300/90 leading-relaxed">
+                <p className="text-primary-800/90 dark:text-primary-300/90 leading-relaxed">
                   Non-pension assets (ISAs, GIAs, and Cash) behave differently from pensions upon death. While ISAs benefit from Spousal Additional Permitted Subscriptions (APS), GIAs receive a valuable <strong>Death-Bed Capital Gains Tax (CGT) Uplift</strong>, wiping out unrealized gains. Business Property Relief (BPR) can also shelter qualifying AIM ISAs from 40% IHT.
                 </p>
               </div>
@@ -604,7 +604,7 @@ export const IhtEstatePlanningCard: React.FC<IhtEstatePlanningCardProps> = ({
                   </div>
                   <div className="flex justify-between text-slate-600 dark:text-slate-400">
                     <span>Spousal Transfer (APS):</span>
-                    <span className="font-bold text-emerald-600 dark:text-emerald-400">100% Tax-Free</span>
+                    <span className="font-bold text-primary-600 dark:text-primary-400">100% Tax-Free</span>
                   </div>
                   <div className="flex justify-between text-slate-600 dark:text-slate-400">
                     <span>Non-Spouse Heirs IHT:</span>
@@ -620,10 +620,10 @@ export const IhtEstatePlanningCard: React.FC<IhtEstatePlanningCardProps> = ({
               <div className="bg-white dark:bg-slate-900 p-4.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-3">
                 <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
                   <div className="flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4 text-emerald-500" />
+                    <TrendingUp className="w-4 h-4 text-primary-500" />
                     <h5 className="font-extrabold text-slate-900 dark:text-white text-xs">GIAs & Taxable Accounts</h5>
                   </div>
-                  <span className="text-[10px] font-black uppercase bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full">
+                  <span className="text-[10px] font-black uppercase bg-primary-100 dark:bg-primary-950 text-primary-700 dark:text-primary-300 px-2 py-0.5 rounded-full">
                     CGT Death Uplift
                   </span>
                 </div>
@@ -634,7 +634,7 @@ export const IhtEstatePlanningCard: React.FC<IhtEstatePlanningCardProps> = ({
                   </div>
                   <div className="flex justify-between text-slate-600 dark:text-slate-400">
                     <span>CGT Wiped On Death:</span>
-                    <span className="font-bold text-emerald-600 dark:text-emerald-400">100% Wiped (Death Uplift)</span>
+                    <span className="font-bold text-primary-600 dark:text-primary-400">100% Wiped (Death Uplift)</span>
                   </div>
                   <div className="flex justify-between text-slate-600 dark:text-slate-400">
                     <span>Estate IHT Status:</span>
@@ -660,7 +660,7 @@ export const IhtEstatePlanningCard: React.FC<IhtEstatePlanningCardProps> = ({
                 <div className="space-y-2 text-xs">
                   <div className="flex justify-between text-slate-600 dark:text-slate-400">
                     <span>Spousal Transfer:</span>
-                    <span className="font-bold text-emerald-600 dark:text-emerald-400">100% Tax-Free</span>
+                    <span className="font-bold text-primary-600 dark:text-primary-400">100% Tax-Free</span>
                   </div>
                   <div className="flex justify-between text-slate-600 dark:text-slate-400">
                     <span>Non-Spouse Heirs IHT:</span>
@@ -748,7 +748,7 @@ export const IhtEstatePlanningCard: React.FC<IhtEstatePlanningCardProps> = ({
 
                       if (g.yearsAgo >= 7) {
                         taperPct = '100% Relief (100% Tax-Free)';
-                        badgeColor = 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300';
+                        badgeColor = 'bg-primary-100 text-primary-700 dark:bg-primary-950 dark:text-primary-300';
                       } else if (g.yearsAgo >= 6) {
                         taperPct = '80% Taper Relief (8% Effective Tax)';
                         badgeColor = 'bg-teal-100 text-teal-700 dark:bg-teal-950 dark:text-teal-300';
@@ -936,7 +936,7 @@ export const IhtEstatePlanningCard: React.FC<IhtEstatePlanningCardProps> = ({
 
                   if (giftForm.yearsAgo >= 7) {
                     reliefText = '100% Taper Relief (100% Tax-Free)';
-                    reliefClass = 'text-emerald-600 dark:text-emerald-400';
+                    reliefClass = 'text-primary-600 dark:text-primary-400';
                     desc = 'This gift has survived the full 7-year HMRC rule and is completely outside your taxable estate.';
                   } else if (giftForm.yearsAgo === 6) {
                     reliefText = '80% Taper Relief (8% Effective IHT Tax)';
@@ -1007,20 +1007,20 @@ export const IhtEstatePlanningCard: React.FC<IhtEstatePlanningCardProps> = ({
                 {/* Pensions Column */}
                 <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <span className="font-extrabold text-emerald-600 dark:text-emerald-400 text-sm flex items-center gap-1.5">
+                    <span className="font-extrabold text-primary-600 dark:text-primary-400 text-sm flex items-center gap-1.5">
                       <Coins className="w-4 h-4" />
                       <span>Pensions (SIPP & DC)</span>
                     </span>
-                    <span className="text-[10px] font-black uppercase bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full">
+                    <span className="text-[10px] font-black uppercase bg-primary-100 dark:bg-primary-950 text-primary-700 dark:text-primary-300 px-2 py-0.5 rounded-full">
                       Age 75 Rule
                     </span>
                   </div>
                   
                   <ul className="space-y-2 text-slate-600 dark:text-slate-300 font-medium">
                     <li className="flex items-start gap-2">
-                      <span className="text-emerald-500 font-bold">•</span>
+                      <span className="text-primary-500 font-bold">•</span>
                       <span>
-                        <strong className="text-slate-900 dark:text-white">Death Before Age 75:</strong> Beneficiaries can withdraw inherited pension funds <strong className="text-emerald-600 dark:text-emerald-400">100% Tax-Free</strong> for Income Tax (up to £1,073,100 LSDBA limit).
+                        <strong className="text-slate-900 dark:text-white">Death Before Age 75:</strong> Beneficiaries can withdraw inherited pension funds <strong className="text-primary-600 dark:text-primary-400">100% Tax-Free</strong> for Income Tax (up to £1,073,100 LSDBA limit).
                       </span>
                     </li>
                     <li className="flex items-start gap-2">
@@ -1059,7 +1059,7 @@ export const IhtEstatePlanningCard: React.FC<IhtEstatePlanningCardProps> = ({
                     <li className="flex items-start gap-2">
                       <span className="text-slate-500 font-bold">•</span>
                       <span>
-                        <strong className="text-slate-900 dark:text-white">Non-Spouse Heirs:</strong> <strong className="text-emerald-600 dark:text-emerald-400">No Income Tax</strong> is charged on the inherited capital lump sum upon death, but ISA tax wrapper status ends.
+                        <strong className="text-slate-900 dark:text-white">Non-Spouse Heirs:</strong> <strong className="text-primary-600 dark:text-primary-400">No Income Tax</strong> is charged on the inherited capital lump sum upon death, but ISA tax wrapper status ends.
                       </span>
                     </li>
                     <li className="flex items-start gap-2 text-[11px] text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800">

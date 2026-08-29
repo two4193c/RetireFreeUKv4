@@ -101,7 +101,7 @@ export const PotManager: React.FC<PotManagerProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
         <div>
           <h2 className="font-bold text-slate-800 dark:text-slate-100 text-base flex items-center gap-2">
-            <Coins className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <Coins className="w-5 h-5 text-primary-600 dark:text-primary-400 shrink-0" />
             <span>Investment Pots Balance</span>
           </h2>
           {!isStudioMode && (
@@ -149,13 +149,13 @@ export const PotManager: React.FC<PotManagerProps> = ({
       {isCouple ? (
         <div className={`grid grid-cols-1 gap-3 sm:gap-4 ${isStudioMode ? "" : "md:grid-cols-3"}`}>
           {/* Card 1: Combined Household Portfolio */}
-          <div className="p-3.5 sm:p-4 rounded-2xl bg-emerald-50/80 dark:bg-slate-950 text-slate-900 dark:text-white border border-emerald-200 dark:border-slate-800 shadow-md space-y-2 relative overflow-hidden transition-colors">
+          <div className="p-3.5 sm:p-4 rounded-2xl bg-primary-50/80 dark:bg-slate-950 text-slate-900 dark:text-white border border-primary-200 dark:border-slate-800 shadow-md space-y-2 relative overflow-hidden transition-colors">
             <div className="flex items-center justify-between gap-2 text-xs">
               <span className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 uppercase tracking-wider text-[10px] min-w-0">
-                <Users className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <Users className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400 shrink-0" />
                 <span className="truncate">Combined Household Starting Balance</span>
               </span>
-              <span className="bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0">
+              <span className="bg-primary-100 dark:bg-primary-500/20 text-primary-800 dark:text-primary-300 border border-primary-300 dark:border-primary-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0">
                 Joint Total
               </span>
             </div>
@@ -164,7 +164,7 @@ export const PotManager: React.FC<PotManagerProps> = ({
                 £{(combinedTotalBal || 0).toLocaleString()}
               </div>
             </div>
-            <div className="pt-2 border-t border-emerald-200/60 dark:border-slate-800 grid grid-cols-3 gap-1 text-[10px] sm:text-xs text-slate-600 dark:text-slate-400 font-medium">
+            <div className="pt-2 border-t border-primary-200/60 dark:border-slate-800 grid grid-cols-3 gap-1 text-[10px] sm:text-xs text-slate-600 dark:text-slate-400 font-medium">
               <div className="truncate">Pensions: <span className="font-bold text-slate-800 dark:text-slate-200">£{(primaryPensionBal + partnerPensionBal || 0).toLocaleString()}</span></div>
               <div className="truncate text-center">ISAs: <span className="font-bold text-slate-800 dark:text-slate-200">£{(primaryIsaBal + partnerIsaBal || 0).toLocaleString()}</span></div>
               <div className="truncate text-right">Cash/GIA: <span className="font-bold text-slate-800 dark:text-slate-200">£{(primaryCashGiaBal + partnerCashGiaBal || 0).toLocaleString()}</span></div>
@@ -277,13 +277,13 @@ export const PotManager: React.FC<PotManagerProps> = ({
             onClick={() => setActiveTab('pension')}
             className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 font-bold text-xs rounded-xl transition-all cursor-pointer shrink-0 ${
               activeTab === 'pension'
-                ? 'bg-slate-900 dark:bg-emerald-600 text-white shadow-xs'
+                ? 'bg-slate-900 dark:bg-primary-600 text-white shadow-xs'
                 : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             <Landmark className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
             <span>Workplace & SIPP Balances</span>
-            <span className={`font-bold text-[10px] px-2 py-0.5 rounded-md shrink-0 ${activeTab === 'pension' ? 'bg-emerald-500 dark:bg-emerald-950 text-slate-950 dark:text-emerald-200' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'}`}>
+            <span className={`font-bold text-[10px] px-2 py-0.5 rounded-md shrink-0 ${activeTab === 'pension' ? 'bg-primary-500 dark:bg-primary-950 text-slate-950 dark:text-primary-200' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'}`}>
               £{(totalPensionBalance || 0).toLocaleString()}
             </span>
           </button>

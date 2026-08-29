@@ -168,7 +168,7 @@ export const FixedIncomeManager: React.FC<FixedIncomeManagerProps> = ({ profile,
         <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={() => openAddModal('pip')}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 hover:bg-primary-700 dark:bg-primary-600 dark:hover:bg-primary-500 text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer"
             title="Add PIP (Personal Independence Payment - 100% Tax-Free)"
           >
             <HeartHandshake className="w-3.5 h-3.5" />
@@ -239,15 +239,15 @@ export const FixedIncomeManager: React.FC<FixedIncomeManagerProps> = ({ profile,
             <ShieldCheck className="w-6 h-6 text-indigo-600 dark:text-indigo-400 opacity-80" />
           </div>
 
-          <div className="bg-emerald-50/80 dark:bg-emerald-950/40 p-4 rounded-2xl border border-emerald-200 dark:border-emerald-800/60 flex items-center justify-between">
+          <div className="bg-primary-50/80 dark:bg-primary-950/40 p-4 rounded-2xl border border-primary-200 dark:border-primary-800/60 flex items-center justify-between">
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 flex items-center gap-1">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-primary-800 dark:text-primary-300 flex items-center gap-1">
                 <span>Tax-Free Income (e.g. PIP)</span>
-                <span className="text-[9px] bg-emerald-200 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-200 px-1.5 py-0.2 rounded font-black">0% Tax</span>
+                <span className="text-[9px] bg-primary-200 dark:bg-primary-900 text-primary-900 dark:text-primary-200 px-1.5 py-0.2 rounded font-black">0% Tax</span>
               </div>
-              <div className="text-xl font-black text-emerald-950 dark:text-emerald-200 mt-0.5">£{(totalTaxFreeIncome || 0).toLocaleString()}/yr</div>
+              <div className="text-xl font-black text-primary-950 dark:text-primary-200 mt-0.5">£{(totalTaxFreeIncome || 0).toLocaleString()}/yr</div>
             </div>
-            <HeartHandshake className="w-6 h-6 text-emerald-600 dark:text-emerald-400 opacity-80" />
+            <HeartHandshake className="w-6 h-6 text-primary-600 dark:text-primary-400 opacity-80" />
           </div>
 
           <div className="bg-blue-50/80 dark:bg-blue-950/40 p-4 rounded-2xl border border-blue-200 dark:border-blue-800/60 flex items-center justify-between">
@@ -279,7 +279,7 @@ export const FixedIncomeManager: React.FC<FixedIncomeManagerProps> = ({ profile,
             <div className="flex justify-center gap-3 flex-wrap">
               <button
                 onClick={() => openAddModal('pip')}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer"
               >
                 <HeartHandshake className="w-4 h-4" />
                 <span>Add Tax-Free PIP Payment</span>
@@ -309,7 +309,7 @@ export const FixedIncomeManager: React.FC<FixedIncomeManagerProps> = ({ profile,
                       <span className="font-bold text-sm text-slate-800 dark:text-slate-100">
                         {stream.name || 'Fixed Income'}
                       </span>
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${isTaxFree ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300' : 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300'}`}>
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${isTaxFree ? 'bg-primary-100 text-primary-800 dark:bg-primary-900/50 dark:text-primary-300' : 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300'}`}>
                         {isTaxFree ? 'Tax-Free' : 'Taxable'}
                       </span>
                       {!stream.enabled && (
@@ -328,7 +328,7 @@ export const FixedIncomeManager: React.FC<FixedIncomeManagerProps> = ({ profile,
                       {isCouple && <span className="opacity-40">•</span>}
                       <span>Ages {stream.startAge} - {stream.endAge || 'Life'}</span>
                       <span className="opacity-40">•</span>
-                      <span className={`${isTaxFree ? 'text-emerald-700 dark:text-emerald-400' : 'text-blue-700 dark:text-blue-400'} font-bold`}>
+                      <span className={`${isTaxFree ? 'text-primary-700 dark:text-primary-400' : 'text-blue-700 dark:text-blue-400'} font-bold`}>
                         £{stream.annualAmount?.toLocaleString()}/yr
                       </span>
                     </div>

@@ -68,11 +68,11 @@ export const CrystallisationTrancheManager: React.FC<CrystallisationTrancheManag
   const isRose = accentColor === 'rose';
   const borderActive = isRose
     ? 'border-rose-500 bg-rose-50/50 dark:bg-rose-950/30'
-    : 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/30';
-  const textAccent = isRose ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400';
+    : 'border-primary-500 bg-primary-50/50 dark:bg-primary-950/30';
+  const textAccent = isRose ? 'text-rose-600 dark:text-rose-400' : 'text-primary-600 dark:text-primary-400';
   const bgBadge = isRose
     ? 'bg-rose-100 dark:bg-rose-900/60 text-rose-800 dark:text-rose-200'
-    : 'bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200';
+    : 'bg-primary-100 dark:bg-primary-900/60 text-primary-800 dark:text-primary-200';
 
   const handleAddTranche = () => {
     const nextAge = tranches.length > 0
@@ -146,7 +146,7 @@ export const CrystallisationTrancheManager: React.FC<CrystallisationTrancheManag
             onClick={() => onModeChange('ufpls')}
             className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
               mode === 'ufpls'
-                ? `${borderActive} ring-2 ring-emerald-500/20`
+                ? `${borderActive} ring-2 ring-primary-500/20`
                 : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:bg-slate-50 dark:hover:bg-slate-800/40'
             }`}
           >
@@ -164,7 +164,7 @@ export const CrystallisationTrancheManager: React.FC<CrystallisationTrancheManag
             onClick={() => onModeChange('phased_tranches')}
             className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
               mode === 'phased_tranches'
-                ? `${borderActive} ring-2 ring-emerald-500/20`
+                ? `${borderActive} ring-2 ring-primary-500/20`
                 : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:bg-slate-50 dark:hover:bg-slate-800/40'
             }`}
           >
@@ -185,7 +185,7 @@ export const CrystallisationTrancheManager: React.FC<CrystallisationTrancheManag
             onClick={() => onModeChange('upfront')}
             className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
               mode === 'upfront'
-                ? `${borderActive} ring-2 ring-emerald-500/20`
+                ? `${borderActive} ring-2 ring-primary-500/20`
                 : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:bg-slate-50 dark:hover:bg-slate-800/40'
             }`}
           >
@@ -289,7 +289,7 @@ export const CrystallisationTrancheManager: React.FC<CrystallisationTrancheManag
                             type="checkbox"
                             checked={tranche.enabled}
                             onChange={(e) => handleUpdateTranche(tranche.id, { enabled: e.target.checked })}
-                            className="w-4 h-4 text-emerald-600 rounded border-slate-300 dark:border-slate-700 focus:ring-emerald-500 cursor-pointer"
+                            className="w-4 h-4 text-primary-600 rounded border-slate-300 dark:border-slate-700 focus:ring-primary-500 cursor-pointer"
                           />
                           <div>
                             <div className="flex items-center gap-2">
@@ -375,7 +375,7 @@ export const CrystallisationTrancheManager: React.FC<CrystallisationTrancheManag
                                 <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300">
                                   Gross Amount (£)
                                 </label>
-                                <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400">
+                                <span className="text-[10px] font-bold text-primary-700 dark:text-primary-400">
                                   Max LSA: £{maxGrossForLsa.toLocaleString()}
                                 </span>
                               </div>
@@ -408,7 +408,7 @@ export const CrystallisationTrancheManager: React.FC<CrystallisationTrancheManag
                                     onClick={() => handleUpdateTranche(tranche.id, { amount: Math.min(amt, maxGrossForLsa) })}
                                     className={`px-2 py-0.5 rounded-md border font-semibold cursor-pointer ${
                                       tranche.amount === amt
-                                        ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/60 font-bold text-emerald-900 dark:text-emerald-200'
+                                        ? 'border-primary-500 bg-primary-50 dark:bg-primary-950/60 font-bold text-primary-900 dark:text-primary-200'
                                         : isOver
                                         ? 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 text-slate-400 dark:text-slate-600 hover:bg-slate-100'
                                         : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
@@ -423,7 +423,7 @@ export const CrystallisationTrancheManager: React.FC<CrystallisationTrancheManag
                             <button
                               type="button"
                               onClick={() => handleUpdateTranche(tranche.id, { amount: maxGrossForLsa })}
-                              className="px-2 py-0.5 rounded-md border border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 font-bold cursor-pointer hover:bg-emerald-100 dark:hover:bg-emerald-900 transition-colors"
+                              className="px-2 py-0.5 rounded-md border border-primary-300 dark:border-primary-700 bg-primary-50 dark:bg-primary-950/60 text-primary-800 dark:text-primary-300 font-bold cursor-pointer hover:bg-primary-100 dark:hover:bg-primary-900 transition-colors"
                             >
                               Max LSA (£{Math.round(maxGrossForLsa / 1000)}k)
                             </button>
@@ -448,8 +448,8 @@ export const CrystallisationTrancheManager: React.FC<CrystallisationTrancheManag
                               </select>
                             </div>
 
-                            <div className="bg-emerald-50 dark:bg-emerald-950/30 p-2.5 rounded-xl border border-emerald-200/60 dark:border-emerald-800/40 text-[11px] flex flex-col justify-center">
-                              <div className="text-emerald-900 dark:text-emerald-200 font-bold flex justify-between">
+                            <div className="bg-primary-50 dark:bg-primary-950/30 p-2.5 rounded-xl border border-primary-200/60 dark:border-primary-800/40 text-[11px] flex flex-col justify-center">
+                              <div className="text-primary-900 dark:text-primary-200 font-bold flex justify-between">
                                 <span>Tax-Free Lump Sum (25%):</span>
                                 <span>£{pclsAmount.toLocaleString()}</span>
                               </div>
@@ -475,7 +475,7 @@ export const CrystallisationTrancheManager: React.FC<CrystallisationTrancheManag
                                 <span>Total Crystallised Drawdown:</span>
                                 <span className="font-bold block text-xs">£{Math.round(cumulativeCrystallisedUpToThis - cumulativePclsUpToThis).toLocaleString()}</span>
                               </div>
-                              <div className="p-1.5 bg-emerald-50 dark:bg-emerald-950/50 rounded-lg text-emerald-900 dark:text-emerald-200">
+                              <div className="p-1.5 bg-primary-50 dark:bg-primary-950/50 rounded-lg text-primary-900 dark:text-primary-200">
                                 <span>LSA Limit Remaining:</span>
                                 <span className="font-bold block text-xs">£{Math.round(remainingLsaAfterThis).toLocaleString()}</span>
                               </div>

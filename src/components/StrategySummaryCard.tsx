@@ -90,13 +90,13 @@ export const StrategySummaryCard: React.FC<StrategySummaryCardProps> = ({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-indigo-200 dark:border-indigo-800/50">
         <div className="flex items-center gap-2.5">
-          <div className="p-2 bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 rounded-xl border border-emerald-200 dark:border-emerald-500/30">
+          <div className="p-2 bg-primary-100 dark:bg-primary-500/20 text-primary-700 dark:text-primary-400 rounded-xl border border-primary-200 dark:border-primary-500/30">
             <TrendingUp className="w-5 h-5" />
           </div>
           <div>
             <h3 className="font-extrabold text-slate-900 dark:text-white text-sm tracking-tight flex items-center gap-2">
               <span>Retirement Drawdown Strategy &amp; State Pension Summary</span>
-              <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/30 px-2 py-0.5 rounded-full">
+              <span className="text-[10px] font-bold uppercase tracking-wider bg-primary-100 dark:bg-primary-500/20 text-primary-800 dark:text-primary-300 border border-primary-300 dark:border-primary-500/30 px-2 py-0.5 rounded-full">
                 Decumulation Overview
               </span>
             </h3>
@@ -108,7 +108,7 @@ export const StrategySummaryCard: React.FC<StrategySummaryCardProps> = ({
         <div className="flex items-center gap-3">
           <div className="text-right">
             <span className="text-[10px] font-bold text-indigo-700 dark:text-indigo-300 block uppercase tracking-wider">Target Household Income</span>
-            <span className="text-sm font-black text-emerald-600 dark:text-emerald-400">
+            <span className="text-sm font-black text-primary-600 dark:text-primary-400">
               £{(profile.targetRetirementIncomeAnnual || 0).toLocaleString()}/yr
             </span>
           </div>
@@ -120,25 +120,25 @@ export const StrategySummaryCard: React.FC<StrategySummaryCardProps> = ({
         <div className="bg-white dark:bg-slate-800/80 p-4 rounded-xl border border-slate-200 dark:border-slate-700/80 space-y-2.5 shadow-sm">
           <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-2">
             <span className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5 text-xs">
-              <User className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <User className="w-4 h-4 text-primary-600 dark:text-primary-400" />
               {profile.name || 'Primary'} Drawdown Strategy
             </span>
-            <span className="text-[10px] font-extrabold text-emerald-800 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/80 px-2 py-0.5 rounded-md">
+            <span className="text-[10px] font-extrabold text-primary-800 dark:text-primary-400 bg-primary-100 dark:bg-primary-950/80 px-2 py-0.5 rounded-md">
               Retire @ Age {profile.targetRetirementAge}
             </span>
           </div>
           <div className="space-y-1.5 text-[11px] text-slate-700 dark:text-slate-300">
             {/* Active Strategy Detail Box */}
-            <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/60 rounded-lg border border-emerald-200 dark:border-emerald-800/60 space-y-1 my-1">
+            <div className="p-2.5 bg-primary-50 dark:bg-primary-950/60 rounded-lg border border-primary-200 dark:border-primary-800/60 space-y-1 my-1">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-extrabold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider">
+                <span className="text-[10px] font-extrabold text-primary-800 dark:text-primary-300 uppercase tracking-wider">
                   Active Strategy: {primaryStratDef.title}
                 </span>
-                <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-emerald-200 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-100">
+                <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-primary-200 dark:bg-primary-900 text-primary-900 dark:text-primary-100">
                   Active
                 </span>
               </div>
-              <p className="text-[10px] text-emerald-800/90 dark:text-emerald-300/80 leading-snug">
+              <p className="text-[10px] text-primary-800/90 dark:text-primary-300/80 leading-snug">
                 {primaryStratDef.description}
               </p>
             </div>
@@ -153,7 +153,7 @@ export const StrategySummaryCard: React.FC<StrategySummaryCardProps> = ({
             </div>
             <div className="flex justify-between">
               <span className="text-slate-500 dark:text-slate-400">Drawdown Ordering:</span>
-              <span className="font-bold text-emerald-700 dark:text-emerald-300 capitalize">
+              <span className="font-bold text-primary-700 dark:text-primary-300 capitalize">
                 {profile.drawdownStrategy === 'tax_optimizer' ? 'Tax Optimizer (Dynamic Solver)'
                   : profile.drawdownStrategy === 'isa_first' ? 'ISA First'
                   : profile.drawdownStrategy === 'pension_first' ? 'Pension First'
@@ -178,7 +178,7 @@ export const StrategySummaryCard: React.FC<StrategySummaryCardProps> = ({
             )}
             <div className="flex justify-between">
               <span className="text-slate-500 dark:text-slate-400">PCLS Tax-Free Cash Taken:</span>
-              <span className="font-bold text-emerald-700 dark:text-emerald-400">
+              <span className="font-bold text-primary-700 dark:text-primary-400">
                 £{primaryPclsInfo.taxFreeCashTaken.toLocaleString()} ({primaryPclsInfo.pclsPercent}% at age {primaryPclsInfo.takeAge})
               </span>
             </div>
@@ -296,7 +296,7 @@ export const StrategySummaryCard: React.FC<StrategySummaryCardProps> = ({
             </div>
             <div className="flex justify-between">
               <span className="text-slate-500 dark:text-slate-400">{profile.name || 'Primary'} Entitlement:</span>
-              <span className="font-bold text-emerald-600 dark:text-emerald-400">
+              <span className="font-bold text-primary-600 dark:text-primary-400">
                 {profile.includeStatePension
                   ? (profile.qualifyingYears ?? 35) < 10
                     ? `£0/yr (${profile.qualifyingYears ?? 0}/35 Yrs - Min 10 Yrs Required)`
@@ -334,21 +334,21 @@ export const StrategySummaryCard: React.FC<StrategySummaryCardProps> = ({
 
       {/* Gilt Ladder Strategy Callout (if active) */}
       {profile.giltLadderConfig?.enabled && (
-        <div className="bg-emerald-50 dark:bg-emerald-950/40 p-3.5 rounded-xl border border-emerald-300 dark:border-emerald-700/60 flex items-center justify-between gap-3 text-xs">
+        <div className="bg-primary-50 dark:bg-primary-950/40 p-3.5 rounded-xl border border-primary-300 dark:border-primary-700/60 flex items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2.5">
-            <div className="p-1.5 bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 rounded-lg">
+            <div className="p-1.5 bg-primary-100 dark:bg-primary-900/60 text-primary-700 dark:text-primary-300 rounded-lg">
               <Banknote className="w-4 h-4" />
             </div>
             <div>
-              <span className="font-extrabold text-emerald-950 dark:text-emerald-100 block">
+              <span className="font-extrabold text-primary-950 dark:text-primary-100 block">
                 Active UK Gilt Ladder ({profile.giltLadderConfig.durationYears} Years from Age {profile.giltLadderConfig.startAge})
               </span>
-              <span className="text-[11px] text-emerald-800/80 dark:text-emerald-300/80">
+              <span className="text-[11px] text-primary-800/80 dark:text-primary-300/80">
                 Delivers £{(profile.giltLadderConfig.targetAnnualIncome || 0).toLocaleString()}/yr guaranteed cashflow via 0% CGT arbitrage ({profile.giltLadderConfig.fundingSource?.toUpperCase()} pot).
               </span>
             </div>
           </div>
-          <span className="bg-emerald-200 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-100 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0">
+          <span className="bg-primary-200 dark:bg-primary-900 text-primary-900 dark:text-primary-100 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0">
             Locked
           </span>
         </div>

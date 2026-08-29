@@ -315,7 +315,7 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
                 </span>
               )}
               {!mcRunning && mcSuccessRate !== undefined && (
-                <span className="flex items-center gap-1 text-[9px] text-emerald-600 dark:text-emerald-400">
+                <span className="flex items-center gap-1 text-[9px] text-primary-600 dark:text-primary-400">
                   <CheckCircle2 className="w-3 h-3" /> MC: {mcSuccessRate}% success
                 </span>
               )}
@@ -350,7 +350,7 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
               />
               <KpiPill
                 icon={<Target className="w-4 h-4" />}
-                accent="bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400"
+                accent="bg-primary-100 dark:bg-primary-950/60 text-primary-600 dark:text-primary-400"
                 label="PA Capture Rate"
                 value={pct(kpis.paRate)}
                 sub="Personal Allowance utilised"
@@ -471,7 +471,7 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
                 {[
                   { label: 'State Pension', fn: (r: any) => (r.primaryStatePensionReceived || 0) + (r.partnerStatePensionReceived || 0) > 0, baseColor: 'bg-purple-500' },
                   { label: 'Tax-Free (ISA/Cash)', fn: (r: any) => (r.isaPot || 0) > 100, baseColor: 'bg-amber-500' },
-                  { label: 'Pension', fn: (r: any) => (r.pensionPot || 0) > 100, baseColor: 'bg-emerald-500' },
+                  { label: 'Pension', fn: (r: any) => (r.pensionPot || 0) > 100, baseColor: 'bg-primary-500' },
                   { label: 'GIA', fn: (r: any) => (r.cashGiaPot || 0) > 100, baseColor: 'bg-rose-500' },
                 ].map((pot) => (
                   <div key={pot.label} className="flex items-center gap-2 text-[10px]">
@@ -505,7 +505,7 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
                   { label: '60% Trap / Addt.', key: 'Higher Rate', limit: 50000, color: '225, 29, 72' }, // rose-600
                   { label: 'Higher (40%)', key: 'Higher Rate', limit: 50000, color: '239, 68, 68' }, // red-500
                   { label: 'Basic (20%)', key: 'Basic Rate (20%)', limit: 37700, color: '14, 165, 233' }, // sky-500
-                  { label: 'PA (0%)', key: 'Personal Allowance (0%)', limit: 12570, color: '16, 185, 129' }, // emerald-500
+                  { label: 'PA (0%)', key: 'Personal Allowance (0%)', limit: 12570, color: '16, 185, 129' }, // primary-500
                 ].map((band) => (
                   <div key={band.label} className="flex items-center gap-2 text-[10px]">
                     <div className="w-24 text-slate-600 dark:text-slate-400 font-semibold">{band.label}</div>
@@ -553,7 +553,7 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
                     <tr className="bg-slate-50 dark:bg-slate-800/60">
                       <th className="px-2 py-2 text-left font-bold text-slate-500 dark:text-slate-400 sticky left-0 bg-slate-50 dark:bg-slate-800/60">Age</th>
                       <th className="px-2 py-2 text-right font-bold text-slate-500 dark:text-slate-400">Gross (P)</th>
-                      <th className="px-2 py-2 text-right font-bold text-emerald-600 dark:text-emerald-400">PA 0%</th>
+                      <th className="px-2 py-2 text-right font-bold text-primary-600 dark:text-primary-400">PA 0%</th>
                       <th className="px-2 py-2 text-right font-bold text-sky-600 dark:text-sky-400">Basic 20%</th>
                       <th className="px-2 py-2 text-right font-bold text-rose-500 dark:text-rose-400">Higher 40%</th>
                       <th className="px-2 py-2 text-right font-bold text-orange-600">60% Trap</th>
@@ -561,7 +561,7 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
                       {isCouple && (
                         <>
                           <th className="px-2 py-2 text-right font-bold text-slate-500 dark:text-slate-400 border-l border-slate-200 dark:border-slate-700">Gross (Q)</th>
-                          <th className="px-2 py-2 text-right font-bold text-emerald-600 dark:text-emerald-400">PA 0%</th>
+                          <th className="px-2 py-2 text-right font-bold text-primary-600 dark:text-primary-400">PA 0%</th>
                           <th className="px-2 py-2 text-right font-bold text-sky-600 dark:text-sky-400">Basic 20%</th>
                           <th className="px-2 py-2 text-right font-bold text-rose-500 dark:text-rose-400">Higher 40%</th>
                           <th className="px-2 py-2 text-right font-bold text-orange-600">60% Trap</th>
@@ -576,7 +576,7 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
                       <tr key={r.age} className={i % 2 === 0 ? 'bg-white dark:bg-slate-900' : 'bg-slate-50/60 dark:bg-slate-800/30'}>
                         <td className="px-2 py-1.5 font-semibold text-slate-600 dark:text-slate-300 sticky left-0 bg-inherit">{r.age}</td>
                         <td className="px-2 py-1.5 text-right text-slate-500">{fmt(r.pGross)}</td>
-                        <td className="px-2 py-1.5 text-right text-emerald-600 dark:text-emerald-400">{fmt(r.pPA)}</td>
+                        <td className="px-2 py-1.5 text-right text-primary-600 dark:text-primary-400">{fmt(r.pPA)}</td>
                         <td className={"px-2 py-1.5 text-right " + bandCell(r.pBasic, BASIC_CEIL - PA)}>{r.pBasic > 0 ? fmt(r.pBasic) : '—'}</td>
                         <td className={"px-2 py-1.5 text-right " + (r.pHigher > 0 ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-slate-300 dark:text-slate-700')}>{r.pHigher > 0 ? fmt(r.pHigher) : '—'}</td>
                         <td className={"px-2 py-1.5 text-right " + (r.p60Trap > 0 ? 'text-orange-600 dark:text-orange-400 font-extrabold animate-pulse' : 'text-slate-300 dark:text-slate-700')}>{r.p60Trap > 0 ? fmt(r.p60Trap) : '—'}</td>
@@ -584,7 +584,7 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
                         {isCouple && (
                           <>
                             <td className="px-2 py-1.5 text-right text-slate-500 border-l border-slate-100 dark:border-slate-800">{fmt(r.qGross ?? 0)}</td>
-                            <td className="px-2 py-1.5 text-right text-emerald-600 dark:text-emerald-400">{fmt(r.qPA ?? 0)}</td>
+                            <td className="px-2 py-1.5 text-right text-primary-600 dark:text-primary-400">{fmt(r.qPA ?? 0)}</td>
                             <td className={"px-2 py-1.5 text-right " + bandCell(r.qBasic ?? 0, BASIC_CEIL - PA)}>{(r.qBasic ?? 0) > 0 ? fmt(r.qBasic ?? 0) : '—'}</td>
                             <td className={"px-2 py-1.5 text-right " + ((r.qHigher ?? 0) > 0 ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-slate-300 dark:text-slate-700')}>{(r.qHigher ?? 0) > 0 ? fmt(r.qHigher ?? 0) : '—'}</td>
                             <td className={"px-2 py-1.5 text-right " + ((r.q60Trap ?? 0) > 0 ? 'text-orange-600 dark:text-orange-400 font-extrabold animate-pulse' : 'text-slate-300 dark:text-slate-700')}>{(r.q60Trap ?? 0) > 0 ? fmt(r.q60Trap ?? 0) : '—'}</td>

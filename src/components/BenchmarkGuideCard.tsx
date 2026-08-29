@@ -94,21 +94,21 @@ export const BenchmarkGuideCard: React.FC = () => {
           </div>
 
           {/* Location 3: Strategy Planner Shortcut */}
-          <div className="p-4 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/80 space-y-2.5">
+          <div className="p-4 rounded-2xl bg-primary-50/70 dark:bg-primary-950/40 border border-primary-200/80 dark:border-primary-800/80 space-y-2.5">
             <div className="flex items-center justify-between">
-              <span className="font-extrabold text-emerald-950 dark:text-emerald-200 flex items-center gap-2 text-xs sm:text-sm">
-                <Zap className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <span className="font-extrabold text-primary-950 dark:text-primary-200 flex items-center gap-2 text-xs sm:text-sm">
+                <Zap className="w-4 h-4 text-primary-600 dark:text-primary-400 shrink-0" />
                 3. Strategy Tab: Drawdown Planner
               </span>
-              <span className="text-[10px] font-bold uppercase bg-emerald-100 dark:bg-emerald-900/80 text-emerald-800 dark:text-emerald-200 px-2 py-0.5 rounded-md">
+              <span className="text-[10px] font-bold uppercase bg-primary-100 dark:bg-primary-900/80 text-primary-800 dark:text-primary-200 px-2 py-0.5 rounded-md">
                 1-Click Generator
               </span>
             </div>
             <p className="text-slate-600 dark:text-slate-300 text-[11px] leading-relaxed">
               On the <strong>Strategy</strong> tab inside the <strong>Drawdown Planner</strong> card, click the green <strong>"Compare Plans / Create Strategy Variants"</strong> button. This auto-generates 3 strategy variations (e.g. Baseline vs Conservative vs Early Retirement) and launches the benchmark view.
             </p>
-            <div className="pt-1 text-[11px] font-semibold text-emerald-900 dark:text-emerald-300 flex items-center gap-1.5">
-              <Compass className="w-3.5 h-3.5 text-emerald-500" />
+            <div className="pt-1 text-[11px] font-semibold text-primary-900 dark:text-primary-300 flex items-center gap-1.5">
+              <Compass className="w-3.5 h-3.5 text-primary-500" />
               <span>Route: Strategy Tab ➔ Drawdown Planner ➔ "Compare Plans" Button</span>
             </div>
           </div>
@@ -147,8 +147,8 @@ export const BenchmarkGuideCard: React.FC = () => {
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-          <div className="p-3.5 bg-emerald-50/80 dark:bg-emerald-950/40 rounded-2xl border border-emerald-200 dark:border-emerald-800 space-y-1.5">
-            <span className="font-extrabold text-emerald-900 dark:text-emerald-200 block">1. Capital Longevity (0–100)</span>
+          <div className="p-3.5 bg-primary-50/80 dark:bg-primary-950/40 rounded-2xl border border-primary-200 dark:border-primary-800 space-y-1.5">
+            <span className="font-extrabold text-primary-900 dark:text-primary-200 block">1. Capital Longevity (0–100)</span>
             <p className="text-slate-600 dark:text-slate-400 text-[11px] leading-relaxed">
               Measures portfolio survival probability through Age 95, Monte Carlo success rate, and ending liquid wealth buffer.
             </p>
@@ -180,7 +180,7 @@ export const BenchmarkGuideCard: React.FC = () => {
       {/* SECTION 3: Step-by-Step Scenario Benchmarking Workflow */}
       <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-slate-800">
         <div className="flex items-center gap-2 text-sm font-extrabold text-slate-900 dark:text-white">
-          <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+          <CheckCircle2 className="w-4 h-4 text-primary-500 shrink-0" />
           <span>Step-by-Step Benchmarking Workflow</span>
         </div>
 

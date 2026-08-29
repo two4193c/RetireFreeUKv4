@@ -113,15 +113,15 @@ export const HealthyLifeExpectancyCard: React.FC<HealthyLifeExpectancyCardProps>
       {/* KPI HIGHLIGHT CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* KPI 1: Healthy Life Expectancy */}
-        <div className="p-4 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/30 rounded-2xl border border-emerald-200 dark:border-emerald-800/80 space-y-1">
-          <div className="flex items-center justify-between text-xs font-bold text-emerald-800 dark:text-emerald-300">
+        <div className="p-4 bg-gradient-to-br from-primary-50 to-teal-50 dark:from-primary-950/40 dark:to-teal-950/30 rounded-2xl border border-primary-200 dark:border-primary-800/80 space-y-1">
+          <div className="flex items-center justify-between text-xs font-bold text-primary-800 dark:text-primary-300">
             <span>Healthy Life Expectancy (HLE)</span>
-            <Activity className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <Activity className="w-4 h-4 text-primary-600 dark:text-primary-400" />
           </div>
           <div className="text-2xl font-black text-slate-900 dark:text-white">
             Age {currentStat.hle}
           </div>
-          <p className="text-[11px] text-emerald-700 dark:text-emerald-300 font-semibold">
+          <p className="text-[11px] text-primary-700 dark:text-primary-300 font-semibold">
             Average age good health lasts free of disability
           </p>
         </div>
@@ -185,7 +185,7 @@ export const HealthyLifeExpectancyCard: React.FC<HealthyLifeExpectancyCardProps>
         <div className="bg-slate-100 dark:bg-slate-800/60 p-5 rounded-3xl border border-slate-200 dark:border-slate-700 space-y-4">
           <div className="space-y-1.5">
             <div className="flex justify-between text-xs font-extrabold">
-              <span className="text-emerald-700 dark:text-emerald-300">Phase 1: Go-Go Active Years (Age {activeRetireAge} to {currentStat.hle})</span>
+              <span className="text-primary-700 dark:text-primary-300">Phase 1: Go-Go Active Years (Age {activeRetireAge} to {currentStat.hle})</span>
               <span className="text-amber-700 dark:text-amber-300">Phase 2: Slow-Go & Care Years (Age {currentStat.hle} to {currentStat.tle})</span>
             </div>
 
@@ -193,7 +193,7 @@ export const HealthyLifeExpectancyCard: React.FC<HealthyLifeExpectancyCardProps>
             <div className="h-6 w-full rounded-2xl overflow-hidden flex shadow-inner border border-slate-300 dark:border-slate-600">
               <div
                 style={{ width: `${(healthyRetirementYears / totalRetirementYears) * 100}%` }}
-                className="bg-gradient-to-r from-emerald-500 to-teal-500 flex items-center justify-center text-[10px] font-black text-white uppercase tracking-wider"
+                className="bg-gradient-to-r from-primary-500 to-teal-500 flex items-center justify-center text-[10px] font-black text-white uppercase tracking-wider"
               >
                 {healthyRetirementYears} Yrs Healthy Active
               </div>
@@ -207,9 +207,9 @@ export const HealthyLifeExpectancyCard: React.FC<HealthyLifeExpectancyCardProps>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs pt-2">
-            <div className="p-3 bg-white dark:bg-slate-900 rounded-2xl border border-emerald-200 dark:border-emerald-800/80 space-y-1">
-              <div className="font-extrabold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
-                <Sun className="w-4 h-4 text-emerald-500" />
+            <div className="p-3 bg-white dark:bg-slate-900 rounded-2xl border border-primary-200 dark:border-primary-800/80 space-y-1">
+              <div className="font-extrabold text-primary-700 dark:text-primary-400 flex items-center gap-1.5">
+                <Sun className="w-4 h-4 text-primary-500" />
                 <span>Phase 1: Go-Go Phase (Age {activeRetireAge}–75)</span>
               </div>
               <p className="text-slate-600 dark:text-slate-400 text-[11px] leading-relaxed">
@@ -253,8 +253,8 @@ export const HealthyLifeExpectancyCard: React.FC<HealthyLifeExpectancyCardProps>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
           <div className="space-y-2 p-4 bg-white/80 dark:bg-slate-900/80 rounded-2xl border border-slate-200 dark:border-slate-800">
-            <h4 className="font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5 text-xs uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-              <Sparkles className="w-4 h-4 text-emerald-500" />
+            <h4 className="font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5 text-xs uppercase tracking-wider text-primary-600 dark:text-primary-400">
+              <Sparkles className="w-4 h-4 text-primary-500" />
               <span>1. Front-Loading Drawdown ("Max Spender")</span>
             </h4>
             <p className="text-xs text-slate-600 dark:text-slate-400">

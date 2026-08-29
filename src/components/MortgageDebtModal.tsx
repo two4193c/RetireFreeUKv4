@@ -62,7 +62,7 @@ export const MortgageDebtModal: React.FC<MortgageDebtModalProps> = ({
         {/* Modal Top Header Bar */}
         <div className="flex items-center justify-between gap-3 px-5 py-4 bg-white dark:bg-slate-900/95 border-b border-slate-200 dark:border-slate-800 shrink-0">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 rounded-2xl border border-emerald-100 dark:border-emerald-800/60 shrink-0">
+            <div className="p-2.5 bg-primary-50 dark:bg-primary-950/80 text-primary-600 dark:text-primary-400 rounded-2xl border border-primary-100 dark:border-primary-800/60 shrink-0">
               <Home className="w-5 h-5" />
             </div>
             <div className="min-w-0">
@@ -70,7 +70,7 @@ export const MortgageDebtModal: React.FC<MortgageDebtModalProps> = ({
                 <h2 id="mortgage-popout-title" className="text-base font-extrabold text-slate-900 dark:text-slate-100 truncate">
                   Mortgage &amp; Debt Repayment Strategy
                 </h2>
-                <span className="hidden sm:inline-block text-[10px] font-bold uppercase tracking-wider bg-emerald-100/70 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 px-2.5 py-0.5 rounded-full border border-emerald-200/50 dark:border-emerald-800/50 shrink-0">
+                <span className="hidden sm:inline-block text-[10px] font-bold uppercase tracking-wider bg-primary-100/70 dark:bg-primary-950 text-primary-700 dark:text-primary-300 px-2.5 py-0.5 rounded-full border border-primary-200/50 dark:border-primary-800/50 shrink-0">
                   Studio Pop-Out
                 </span>
               </div>

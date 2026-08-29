@@ -171,7 +171,7 @@ export const RightSizingCard: React.FC<RightSizingCardProps> = ({ profile, onCha
             {/* Downsize Plan Details */}
             <div className="p-5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 space-y-5 shadow-sm">
               <div className="flex items-center gap-2 pb-3 border-b border-slate-100 dark:border-slate-700">
-                <MapPin className="w-5 h-5 text-emerald-500" />
+                <MapPin className="w-5 h-5 text-primary-500" />
                 <h3 className="font-bold text-slate-900 dark:text-white">The Move</h3>
               </div>
 
@@ -238,49 +238,49 @@ export const RightSizingCard: React.FC<RightSizingCardProps> = ({ profile, onCha
           </div>
 
           {/* Live Estimate Panel */}
-          <div className="p-6 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/40 border border-emerald-200 dark:border-emerald-800 shadow-sm relative overflow-hidden">
+          <div className="p-6 rounded-2xl bg-gradient-to-br from-primary-50 to-teal-50 dark:from-primary-950/40 dark:to-teal-950/40 border border-primary-200 dark:border-primary-800 shadow-sm relative overflow-hidden">
             <div className="absolute top-0 right-0 p-4 opacity-10">
-              <Sparkles className="w-24 h-24 text-emerald-600 dark:text-emerald-400" />
+              <Sparkles className="w-24 h-24 text-primary-600 dark:text-primary-400" />
             </div>
             
             <div className="relative z-10 space-y-4">
-              <div className="flex items-center gap-2 text-emerald-900 dark:text-emerald-400 font-black text-lg">
-                <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-500" />
+              <div className="flex items-center gap-2 text-primary-900 dark:text-primary-400 font-black text-lg">
+                <CheckCircle2 className="w-5 h-5 text-primary-600 dark:text-primary-500" />
                 Live Projection at Age {plan.downsizeAge} ({yearsToDownsize} years from now)
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-white/60 dark:bg-slate-900/50 p-3 rounded-xl border border-emerald-100 dark:border-emerald-900/50">
+                <div className="bg-white/60 dark:bg-slate-900/50 p-3 rounded-xl border border-primary-100 dark:border-primary-900/50">
                   <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Old Home Value</div>
                   <div className="font-black text-slate-900 dark:text-white">{formatCurrency(estimatedFutureValue)}</div>
                 </div>
-                <div className="bg-white/60 dark:bg-slate-900/50 p-3 rounded-xl border border-emerald-100 dark:border-emerald-900/50">
+                <div className="bg-white/60 dark:bg-slate-900/50 p-3 rounded-xl border border-primary-100 dark:border-primary-900/50">
                   <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">New Home Cost</div>
                   <div className="font-black text-slate-900 dark:text-white">{formatCurrency(estimatedNewPropertyCost)}</div>
                 </div>
-                <div className="bg-white/60 dark:bg-slate-900/50 p-3 rounded-xl border border-emerald-100 dark:border-emerald-900/50">
+                <div className="bg-white/60 dark:bg-slate-900/50 p-3 rounded-xl border border-primary-100 dark:border-primary-900/50">
                   <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Stamp Duty (SDLT)</div>
                   <div className="font-black text-red-600 dark:text-red-400">{formatCurrency(estimatedSdlt)}</div>
                 </div>
-                <div className="bg-white/60 dark:bg-slate-900/50 p-3 rounded-xl border border-emerald-100 dark:border-emerald-900/50">
+                <div className="bg-white/60 dark:bg-slate-900/50 p-3 rounded-xl border border-primary-100 dark:border-primary-900/50">
                   <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Selling Fees</div>
                   <div className="font-black text-red-600 dark:text-red-400">{formatCurrency(estimatedSellingFees)}</div>
                 </div>
               </div>
 
-              <div className="bg-emerald-600 dark:bg-emerald-500 text-white p-4 rounded-xl shadow-md flex items-center justify-between">
+              <div className="bg-primary-600 dark:bg-primary-500 text-white p-4 rounded-xl shadow-md flex items-center justify-between">
                 <div>
-                  <div className="text-xs font-bold text-emerald-100 uppercase tracking-wider mb-0.5">Net Equity Released</div>
+                  <div className="text-xs font-bold text-primary-100 uppercase tracking-wider mb-0.5">Net Equity Released</div>
                   <div className="text-2xl font-black">{formatCurrency(estimatedNetEquity)}</div>
                 </div>
-                <ArrowRight className="w-6 h-6 text-emerald-200" />
+                <ArrowRight className="w-6 h-6 text-primary-200" />
                 <div className="text-right">
-                  <div className="text-xs font-bold text-emerald-100 uppercase tracking-wider mb-0.5">Injected Into</div>
+                  <div className="text-xs font-bold text-primary-100 uppercase tracking-wider mb-0.5">Injected Into</div>
                   <div className="text-lg font-black">{plan.destinationPot.toUpperCase()}</div>
                 </div>
               </div>
               
-              <p className="text-xs text-emerald-800 dark:text-emerald-300 font-medium">
+              <p className="text-xs text-primary-800 dark:text-primary-300 font-medium">
                 Note: Primary Residence Relief (PRR) ensures this equity is released 100% free of Capital Gains Tax.
               </p>
             </div>

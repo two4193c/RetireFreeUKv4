@@ -97,7 +97,7 @@ const LumpSumSplitEditor: React.FC<LumpSumSplitEditorProps> = ({
     <div className="space-y-3 bg-slate-50 dark:bg-slate-900/60 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800">
       <div className="flex items-center justify-between">
         <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-          <Split className={`w-3.5 h-3.5 ${isEmerald ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`} />
+          <Split className={`w-3.5 h-3.5 ${isEmerald ? 'text-primary-600 dark:text-primary-400' : 'text-rose-600 dark:text-rose-400'}`} />
           Multi-Pot Allocation Distribution
         </span>
         <button
@@ -105,7 +105,7 @@ const LumpSumSplitEditor: React.FC<LumpSumSplitEditorProps> = ({
           onClick={handleAddSplit}
           className={`text-[11px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 transition-all text-white ${
             isEmerald
-              ? 'bg-emerald-600 hover:bg-emerald-700'
+              ? 'bg-primary-600 hover:bg-primary-700'
               : 'bg-rose-600 hover:bg-rose-700'
           }`}
         >
@@ -521,7 +521,7 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <h3 className="text-xs font-extrabold text-slate-800 dark:text-slate-200 uppercase tracking-wider flex items-center gap-2">
-              <PiggyBank className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <PiggyBank className="w-4 h-4 text-primary-600 dark:text-primary-400" />
               <span>1. Retirement Income Product Configuration</span>
             </h3>
 
@@ -573,22 +573,22 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
             </div>
 
             {/* Starting Annual Income Metric Card */}
-            <div className="bg-emerald-500/10 dark:bg-emerald-950/40 border border-emerald-500/30 p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="bg-primary-500/10 dark:bg-primary-950/40 border border-primary-500/30 p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <span className="text-[11px] font-black uppercase tracking-wider text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
-                  <DollarSign className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <span className="text-[11px] font-black uppercase tracking-wider text-primary-800 dark:text-primary-300 flex items-center gap-1.5">
+                  <DollarSign className="w-4 h-4 text-primary-600 dark:text-primary-400" />
                   <span>Starting Annual Annuity Income ({activeIncomePerson === 'partner' ? (profile.partnerName || 'Partner') : (profile.name || 'Primary')})</span>
                 </span>
-                <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-0.5">
+                <p className="text-xs text-primary-700 dark:text-primary-400 mt-0.5">
                   From <strong>£{Math.round((startingAnnuityCapital) || 0).toLocaleString()}</strong> projected pension capital at Purchase Age {activePurchaseAge} ({singleAlloc}% of pension pot)
                 </p>
               </div>
 
               <div className="text-right shrink-0">
-                <span className="text-2xl font-black text-emerald-700 dark:text-emerald-300 block">
-                  £{Math.round((startingAnnualIncome) || 0).toLocaleString()} <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">/ yr</span>
+                <span className="text-2xl font-black text-primary-700 dark:text-primary-300 block">
+                  £{Math.round((startingAnnualIncome) || 0).toLocaleString()} <span className="text-xs font-bold text-primary-600 dark:text-primary-400">/ yr</span>
                 </span>
-                <span className="text-xs font-extrabold text-emerald-600 dark:text-emerald-400">
+                <span className="text-xs font-extrabold text-primary-600 dark:text-primary-400">
                   £{Math.round((startingMonthlyIncome) || 0).toLocaleString()} / month
                 </span>
               </div>
@@ -796,7 +796,7 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
                               <div className="text-[11px] text-purple-900 dark:text-purple-300 mt-1 font-semibold flex flex-wrap items-center gap-x-2 gap-y-0.5">
                                 <span>Available Pension at Age {t.purchaseAge}: <strong>£{Math.round((projectedPotAtTrancheAge) || 0).toLocaleString()}</strong></span>
                                 <span>•</span>
-                                <span className="text-emerald-700 dark:text-emerald-400 font-bold">
+                                <span className="text-primary-700 dark:text-primary-400 font-bold">
                                   Est. Payout: £{Math.round((annualIncomeGenerated) || 0).toLocaleString()}/yr (£{Math.round((monthlyIncomeGenerated) || 0).toLocaleString()}/mo)
                                 </span>
                               </div>
@@ -996,31 +996,31 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
           {(!isCouple || activeLumpSumPerson === 'primary') && (
             <div className="space-y-3">
               {/* Max Tax-Free Lump Sum Badge & Cash Summary */}
-              <div className="bg-emerald-50/80 dark:bg-emerald-950/40 p-3.5 sm:p-4 rounded-2xl border border-emerald-200/80 dark:border-emerald-800/60 space-y-2">
+              <div className="bg-primary-50/80 dark:bg-primary-950/40 p-3.5 sm:p-4 rounded-2xl border border-primary-200/80 dark:border-primary-800/60 space-y-2">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
-                    <span className="font-black text-xs text-emerald-950 dark:text-emerald-200 block uppercase tracking-wider">
+                    <span className="font-black text-xs text-primary-950 dark:text-primary-200 block uppercase tracking-wider">
                       {profile.name || 'Primary'} Max Tax-Free Lump Sum (PCLS)
                     </span>
-                    <span className="text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold leading-tight block">
+                    <span className="text-[11px] text-primary-700 dark:text-primary-400 font-semibold leading-tight block">
                       At Access Age {primaryLumpSumTakeAge}: Projected Pension Pot £{Math.round(primaryProjectedPot || 0).toLocaleString()}
                     </span>
                   </div>
                   <div className="text-left sm:text-right">
-                    <span className="text-lg sm:text-xl font-black text-emerald-700 dark:text-emerald-300 block">
+                    <span className="text-lg sm:text-xl font-black text-primary-700 dark:text-primary-300 block">
                       £{Math.round(primaryActualLumpSum || 0).toLocaleString()}
                     </span>
-                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold">
+                    <span className="text-[10px] text-primary-600 dark:text-primary-400 font-extrabold">
                       {primaryPclsPct}% of Projected Pension Pot
                     </span>
                   </div>
                 </div>
 
-                <div className="pt-2 border-t border-emerald-200/60 dark:border-emerald-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px] text-emerald-800 dark:text-emerald-300 font-medium">
+                <div className="pt-2 border-t border-primary-200/60 dark:border-primary-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px] text-primary-800 dark:text-primary-300 font-medium">
                   <span>Based on Current Pension Pot Today (£{(primaryCurrentPot || 0).toLocaleString()}): <strong>£{Math.round(primaryCurrentActualLumpSum || 0).toLocaleString()}</strong></span>
-                  <span className="text-[10px] font-extrabold bg-emerald-200/70 dark:bg-emerald-900 px-2 py-0.5 rounded-md self-start sm:self-auto">LSA Limit: £{(primaryLsaLimit || 0).toLocaleString()}</span>
+                  <span className="text-[10px] font-extrabold bg-primary-200/70 dark:bg-primary-900 px-2 py-0.5 rounded-md self-start sm:self-auto">LSA Limit: £{(primaryLsaLimit || 0).toLocaleString()}</span>
                 </div>
-                <p className="text-[10px] text-emerald-700/80 dark:text-emerald-400/80 italic">
+                <p className="text-[10px] text-primary-700/80 dark:text-primary-400/80 italic">
                   *Calculated strictly on Pension Pot value (Workplace Pension + SIPP) — excludes ISAs, LISA, GIA & Cash Savings.
                 </p>
               </div>
@@ -1030,7 +1030,7 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex justify-between">
                     <span>Lump Sum Allowance Protection</span>
-                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">2024/25 Preset</span>
+                    <span className="text-[10px] text-primary-600 dark:text-primary-400 font-semibold">2024/25 Preset</span>
                   </label>
                   <select
                     value={profile.lsaProtectionType || 'standard'}
@@ -1049,7 +1049,7 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
                         customLsaAllowance: cap,
                       });
                     }}
-                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
                   >
                     <option value="standard">Standard Limit (£268,275 LSA)</option>
                     <option value="fixed_2014">Fixed Protection 2014 (£375,000 LSA)</option>
@@ -1063,7 +1063,7 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex justify-between">
                     <span>LSA Allowance Cap (£)</span>
-                    <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold">Amendable</span>
+                    <span className="text-[10px] text-primary-700 dark:text-primary-400 font-bold">Amendable</span>
                   </label>
                   <div className="relative">
                     <span className="absolute left-3 top-2 text-slate-400 dark:text-slate-500 font-bold text-xs">£</span>
@@ -1081,7 +1081,7 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
                           lsaProtectionType: 'custom',
                         });
                       }}
-                      className="w-full pl-7 pr-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                      className="w-full pl-7 pr-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
                     />
                   </div>
                 </div>
@@ -1122,7 +1122,7 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
               )}
 
               {(profile.crystallisationMode === 'upfront' || (!profile.crystallisationMode && profile.takeLumpSumAtStart)) && (
-                <div className="space-y-3 pl-6 pt-1 border-l-2 border-emerald-500/30 ml-1">
+                <div className="space-y-3 pl-6 pt-1 border-l-2 border-primary-500/30 ml-1">
                   {/* Timing selector & Destination Pot for tax-free lump sum */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="space-y-1">
@@ -1132,7 +1132,7 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
                       <select
                         value={profile.lumpSumTiming || 'access_age'}
                         onChange={(e) => updateField('lumpSumTiming', e.target.value as any)}
-                        className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer"
+                        className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 cursor-pointer"
                       >
                         <option value="access_age">
                           When Private Pension is Accessed (Age {primaryPensionAccessAge})
@@ -1149,7 +1149,7 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
                       <select
                         value={profile.lumpSumTargetPot || 'stocks_and_shares_isa'}
                         onChange={(e) => updateField('lumpSumTargetPot', e.target.value as any)}
-                        className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer"
+                        className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 cursor-pointer"
                       >
                         <option value="stocks_and_shares_isa">Stocks &amp; Shares ISA (Tax-Free Shelter)</option>
                         <option value="cash_isa">Cash ISA (Tax-Free Shelter)</option>
@@ -1171,7 +1171,7 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
                           max={80}
                           value={profile.lumpSumCustomAge || primaryPensionAccessAge}
                           onChange={(e) => updateField('lumpSumCustomAge', Math.max(primaryPensionAccessAge, Number(e.target.value)))}
-                          className="w-full px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                          className="w-full px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
                         />
                       </div>
                     )}

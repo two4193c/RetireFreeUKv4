@@ -8,12 +8,12 @@ export const TaxGuideCard: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-6">
         <div className="flex items-start gap-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 shadow-xs border border-emerald-200 dark:border-emerald-800">
+          <div className="w-12 h-12 rounded-2xl bg-primary-100 dark:bg-primary-950/80 text-primary-600 dark:text-primary-400 flex items-center justify-center shrink-0 shadow-xs border border-primary-200 dark:border-primary-800">
             <BookOpen className="w-6 h-6" />
           </div>
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-primary-100 dark:bg-primary-950/80 text-primary-800 dark:text-primary-300 border border-primary-200 dark:border-primary-800">
                 Official Reference Guide
               </span>
               <span className="text-xs text-slate-400 dark:text-slate-500 font-semibold">• 2024/25 & 2025/26</span>
@@ -33,10 +33,10 @@ export const TaxGuideCard: React.FC = () => {
         <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200/80 dark:border-slate-700/70 space-y-1">
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-semibold">
             <span>Personal Allowance</span>
-            <Coins className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <Coins className="w-4 h-4 text-primary-600 dark:text-primary-400" />
           </div>
           <div className="text-xl font-black text-slate-900 dark:text-white">£12,570</div>
-          <div className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold">0% Income Tax Rate</div>
+          <div className="text-[11px] text-primary-600 dark:text-primary-400 font-bold">0% Income Tax Rate</div>
         </div>
 
         <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200/80 dark:border-slate-700/70 space-y-1">
@@ -94,7 +94,7 @@ export const TaxGuideCard: React.FC = () => {
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <h3 className="font-extrabold text-slate-900 dark:text-white text-base flex items-center gap-2">
-            <Scale className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            <Scale className="w-5 h-5 text-primary-600 dark:text-primary-400" />
             <span>UK Income Tax Bands (England, Wales & NI)</span>
           </h3>
           <span className="text-xs text-slate-500 dark:text-slate-400">Frozen through 2027/28</span>
@@ -114,7 +114,7 @@ export const TaxGuideCard: React.FC = () => {
               <tr className="bg-white dark:bg-slate-900">
                 <td className="p-3 font-extrabold text-slate-900 dark:text-white">Personal Allowance</td>
                 <td className="p-3">£0 – £12,570</td>
-                <td className="p-3 font-bold text-emerald-600 dark:text-emerald-400">0%</td>
+                <td className="p-3 font-bold text-primary-600 dark:text-primary-400">0%</td>
                 <td className="p-3 text-slate-500 dark:text-slate-400">Tax-free income threshold</td>
               </tr>
               <tr className="bg-slate-50/50 dark:bg-slate-800/30">
@@ -184,9 +184,9 @@ export const TaxGuideCard: React.FC = () => {
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="p-4 bg-emerald-50/60 dark:bg-emerald-950/30 rounded-2xl border border-emerald-200/80 dark:border-emerald-800/60 space-y-2 text-xs">
-            <div className="flex items-center gap-2 font-extrabold text-emerald-900 dark:text-emerald-300 text-sm">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+          <div className="p-4 bg-primary-50/60 dark:bg-primary-950/30 rounded-2xl border border-primary-200/80 dark:border-primary-800/60 space-y-2 text-xs">
+            <div className="flex items-center gap-2 font-extrabold text-primary-900 dark:text-primary-300 text-sm">
+              <CheckCircle2 className="w-4 h-4 text-primary-600 dark:text-primary-400 shrink-0" />
               <span>1. Salary Sacrifice (Salary Exchange)</span>
             </div>
             <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
@@ -240,23 +240,23 @@ export const TaxGuideCard: React.FC = () => {
               </tr>
               <tr className="bg-slate-50/50 dark:bg-slate-800/30">
                 <td className="p-3 font-extrabold text-slate-900 dark:text-white">Upfront Relief</td>
-                <td className="p-3 font-bold text-emerald-600 dark:text-emerald-400">20% to 60% Income Tax + NI relief</td>
+                <td className="p-3 font-bold text-primary-600 dark:text-primary-400">20% to 60% Income Tax + NI relief</td>
                 <td className="p-3 text-slate-500 dark:text-slate-400">Post-tax income (25% bonus on LISA up to £1k/yr)</td>
               </tr>
               <tr className="bg-white dark:bg-slate-900">
                 <td className="p-3 font-extrabold text-slate-900 dark:text-white">Growth & Income</td>
-                <td className="p-3 font-bold text-emerald-600 dark:text-emerald-400">Tax-free growth & dividends</td>
-                <td className="p-3 font-bold text-emerald-600 dark:text-emerald-400">Tax-free growth & dividends</td>
+                <td className="p-3 font-bold text-primary-600 dark:text-primary-400">Tax-free growth & dividends</td>
+                <td className="p-3 font-bold text-primary-600 dark:text-primary-400">Tax-free growth & dividends</td>
               </tr>
               <tr className="bg-slate-50/50 dark:bg-slate-800/30">
                 <td className="p-3 font-extrabold text-slate-900 dark:text-white">Access Age</td>
                 <td className="p-3 text-amber-700 dark:text-amber-300 font-bold">Age 55 (rising to 57 in April 2028)</td>
-                <td className="p-3 font-bold text-emerald-600 dark:text-emerald-400">Anytime (LISA penalty-free at age 60)</td>
+                <td className="p-3 font-bold text-primary-600 dark:text-primary-400">Anytime (LISA penalty-free at age 60)</td>
               </tr>
               <tr className="bg-white dark:bg-slate-900">
                 <td className="p-3 font-extrabold text-slate-900 dark:text-white">Withdrawal Tax</td>
                 <td className="p-3">25% Tax-Free lump sum; 75% taxed as income</td>
-                <td className="p-3 font-bold text-emerald-600 dark:text-emerald-400">100% Tax-Free withdrawals</td>
+                <td className="p-3 font-bold text-primary-600 dark:text-primary-400">100% Tax-Free withdrawals</td>
               </tr>
               <tr className="bg-slate-50/50 dark:bg-slate-800/30">
                 <td className="p-3 font-extrabold text-slate-900 dark:text-white">Inheritance Tax (IHT)</td>
@@ -272,10 +272,10 @@ export const TaxGuideCard: React.FC = () => {
       <div className="p-5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700/80 space-y-4 text-xs text-slate-700 dark:text-slate-300">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <h3 className="font-extrabold text-slate-900 dark:text-white text-sm flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <Calendar className="w-4 h-4 text-primary-600 dark:text-primary-400" />
             <span>Post-LTA Regime: Allowances, Lump Sums & MPAA</span>
           </h3>
-          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary-100 dark:bg-primary-950 text-primary-800 dark:text-primary-300">
             Abolition of LTA (April 2024+)
           </span>
         </div>
@@ -284,7 +284,7 @@ export const TaxGuideCard: React.FC = () => {
           <div className="p-3.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 space-y-1.5">
             <h4 className="font-bold text-slate-900 dark:text-white text-xs flex items-center justify-between">
               <span>Lump Sum Allowance (LSA)</span>
-              <span className="text-emerald-600 dark:text-emerald-400">£268,275</span>
+              <span className="text-primary-600 dark:text-primary-400">£268,275</span>
             </h4>
             <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
               Caps total tax-free cash (PCLS + tax-free element of UFPLS) taken during your lifetime across all pension schemes.
@@ -387,7 +387,7 @@ export const TaxGuideCard: React.FC = () => {
             <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
               <tr className="bg-white dark:bg-slate-900">
                 <td className="p-3 font-extrabold text-slate-900 dark:text-white">Basic Rate (20%)</td>
-                <td className="p-3 font-bold text-emerald-600 dark:text-emerald-400">£1,000</td>
+                <td className="p-3 font-bold text-primary-600 dark:text-primary-400">£1,000</td>
                 <td className="p-3">Savings interest (bank, building society, NS&I)</td>
                 <td className="p-3 text-slate-500 dark:text-slate-400">First £1,000 of interest earned tax-free</td>
               </tr>
@@ -426,7 +426,7 @@ export const TaxGuideCard: React.FC = () => {
           <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
             <div className="flex items-center justify-between font-bold text-slate-900 dark:text-white">
               <span>Capital Gains Tax (CGT)</span>
-              <span className="text-emerald-600 dark:text-emerald-400">£3,000 Annual Exemption</span>
+              <span className="text-primary-600 dark:text-primary-400">£3,000 Annual Exemption</span>
             </div>
             <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
               Gains on taxable investments (GIAs, second homes, crypto) above £3,000/yr are taxed at:

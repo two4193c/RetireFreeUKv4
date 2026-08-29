@@ -89,7 +89,7 @@ function getPotBadgeColor(pot?: string): string {
     return 'bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200/60 dark:border-purple-800/40';
   }
   if (pot === 'stocks_and_shares_isa' || pot === 'cash_isa' || pot === 'lisa') {
-    return 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200/60 dark:border-emerald-800/40';
+    return 'bg-primary-50 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300 border-primary-200/60 dark:border-primary-800/40';
   }
   return 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200/60 dark:border-blue-800/40';
 }
@@ -790,7 +790,7 @@ export const AccumulationLedgerCard: React.FC<AccumulationLedgerCardProps> = ({
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
         <div className="space-y-1">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-emerald-500/10 rounded-xl text-emerald-600 dark:text-emerald-400">
+            <div className="p-2 bg-primary-500/10 rounded-xl text-primary-600 dark:text-primary-400">
               <TrendingUp className="w-5 h-5" />
             </div>
             <h2 className="text-lg font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
@@ -867,15 +867,15 @@ export const AccumulationLedgerCard: React.FC<AccumulationLedgerCardProps> = ({
 
       {/* KPI Overview Bar */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="bg-emerald-50/50 dark:bg-emerald-950/20 p-3.5 rounded-xl border border-emerald-100 dark:border-emerald-900/30">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+        <div className="bg-primary-50/50 dark:bg-primary-950/20 p-3.5 rounded-xl border border-primary-100 dark:border-primary-900/30">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-primary-700 dark:text-primary-400">
             Total Monthly Rate
           </div>
-          <div className="text-lg font-black text-emerald-950 dark:text-emerald-100 mt-0.5">
+          <div className="text-lg font-black text-primary-950 dark:text-primary-100 mt-0.5">
             £{Math.round(stats.activeMonthlyTotal).toLocaleString()}
-            <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">/mo</span>
+            <span className="text-xs font-medium text-primary-600 dark:text-primary-400">/mo</span>
           </div>
-          <div className="text-[10px] text-emerald-600/80 dark:text-emerald-400/70 mt-0.5">
+          <div className="text-[10px] text-primary-600/80 dark:text-primary-400/70 mt-0.5">
             £{Math.round(stats.activeMonthlyTotal * 12).toLocaleString()}/yr regular
           </div>
         </div>
@@ -987,7 +987,7 @@ export const AccumulationLedgerCard: React.FC<AccumulationLedgerCardProps> = ({
                     : `Remaining Actual: £${Math.round(primaryTaxResult.actualPensionAllowanceRemaining).toLocaleString()}`}
                 </span>
                 {primaryTaxResult.pensionBasicRateTaxRelief > 0 && (
-                  <span className="text-emerald-600 dark:text-emerald-400 font-bold">
+                  <span className="text-primary-600 dark:text-primary-400 font-bold">
                     Basic Tax Relief: +£{Math.round(primaryTaxResult.pensionBasicRateTaxRelief).toLocaleString()}/yr
                   </span>
                 )}
@@ -1076,7 +1076,7 @@ export const AccumulationLedgerCard: React.FC<AccumulationLedgerCardProps> = ({
                     : `Remaining Actual: £${Math.round(partnerTaxResult.actualPensionAllowanceRemaining).toLocaleString()}`}
                 </span>
                 {partnerTaxResult.pensionBasicRateTaxRelief > 0 && (
-                  <span className="text-emerald-600 dark:text-emerald-400 font-bold">
+                  <span className="text-primary-600 dark:text-primary-400 font-bold">
                     Basic Tax Relief: +£{Math.round(partnerTaxResult.pensionBasicRateTaxRelief).toLocaleString()}/yr
                   </span>
                 )}
@@ -1166,7 +1166,7 @@ export const AccumulationLedgerCard: React.FC<AccumulationLedgerCardProps> = ({
                 onClick={() => setOwnerFilter('primary')}
                 className={`px-2.5 py-1 font-bold rounded-lg transition-all cursor-pointer text-center truncate ${
                   ownerFilter === 'primary'
-                    ? 'bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-sm'
+                    ? 'bg-white dark:bg-slate-900 text-primary-700 dark:text-primary-400 shadow-sm'
                     : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
                 }`}
               >
@@ -1193,7 +1193,7 @@ export const AccumulationLedgerCard: React.FC<AccumulationLedgerCardProps> = ({
               placeholder="Search ledger..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-8 pr-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+              className="w-full pl-8 pr-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
             />
           </div>
         </div>
@@ -1250,7 +1250,7 @@ export const AccumulationLedgerCard: React.FC<AccumulationLedgerCardProps> = ({
                             className={`inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold ${
                               item.owner === 'partner'
                                 ? 'bg-indigo-100/70 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300'
-                                : 'bg-emerald-100/70 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300'
+                                : 'bg-primary-100/70 dark:bg-primary-950/60 text-primary-700 dark:text-primary-300'
                             }`}
                           >
                             <User className="w-2.5 h-2.5 shrink-0" />
@@ -1275,7 +1275,7 @@ export const AccumulationLedgerCard: React.FC<AccumulationLedgerCardProps> = ({
                             One-off Lump Sum
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold bg-emerald-100/70 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/40">
+                          <span className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold bg-primary-100/70 dark:bg-primary-950/60 text-primary-700 dark:text-primary-300 border border-primary-200/50 dark:border-primary-800/40">
                             <TrendingUp className="w-2.5 h-2.5 shrink-0" />
                             Monthly Savings
                           </span>
@@ -1311,8 +1311,8 @@ export const AccumulationLedgerCard: React.FC<AccumulationLedgerCardProps> = ({
                         <div className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 pt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1">
                           {item.description && <span className="leading-tight">{item.description}</span>}
                           {item.taxReliefEstimate && item.taxReliefEstimate > 0 && (
-                            <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold">
-                              <Sparkles className="w-3 h-3 text-emerald-500 shrink-0" />
+                            <span className="inline-flex items-center gap-1 text-primary-600 dark:text-primary-400 font-bold">
+                              <Sparkles className="w-3 h-3 text-primary-500 shrink-0" />
                               +£{Math.round(item.taxReliefEstimate).toLocaleString()}{expandMode === 'monthly' ? '/mo' : '/yr'} Govt Tax Relief
                             </span>
                           )}
@@ -1362,7 +1362,7 @@ export const AccumulationLedgerCard: React.FC<AccumulationLedgerCardProps> = ({
                         onClick={() => handleToggleItem(item)}
                         className={`p-2 rounded-xl border transition-all cursor-pointer ${
                           item.enabled
-                            ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 text-emerald-600 hover:bg-emerald-100'
+                            ? 'bg-primary-50 dark:bg-primary-950/40 border-primary-200 text-primary-600 hover:bg-primary-100'
                             : 'bg-slate-100 dark:bg-slate-800 border-slate-200 text-slate-400 hover:bg-slate-200'
                         }`}
                         title={item.enabled ? 'Click to disable' : 'Click to enable'}
@@ -1370,7 +1370,7 @@ export const AccumulationLedgerCard: React.FC<AccumulationLedgerCardProps> = ({
                         {item.enabled ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
                       </button>
                     ) : (
-                      <div className="p-2 text-emerald-500 opacity-60" title="Core plan baseline contribution">
+                      <div className="p-2 text-primary-500 opacity-60" title="Core plan baseline contribution">
                         <CheckCircle2 className="w-4 h-4" />
                       </div>
                     )}
@@ -1414,7 +1414,7 @@ export const AccumulationLedgerCard: React.FC<AccumulationLedgerCardProps> = ({
       {/* Footer Info */}
       <div className="bg-slate-50 dark:bg-slate-800/40 p-3.5 rounded-xl border border-slate-200/50 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
         <div className="flex items-center gap-2">
-          <Info className="w-4 h-4 text-emerald-600 shrink-0" />
+          <Info className="w-4 h-4 text-primary-600 shrink-0" />
           <span>
             Events are automatically processed in chronological order during retirement projection calculations.
           </span>

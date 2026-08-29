@@ -99,7 +99,7 @@ export const TaperedAllowanceGuideCard: React.FC = () => {
               <tr>
                 <td className="py-2.5 px-3 font-semibold text-slate-900 dark:text-white">Up to £260,000</td>
                 <td className="py-2.5 px-3">£0</td>
-                <td className="py-2.5 px-3 font-bold text-emerald-600 dark:text-emerald-400">£60,000 (Full)</td>
+                <td className="py-2.5 px-3 font-bold text-primary-600 dark:text-primary-400">£60,000 (Full)</td>
               </tr>
               <tr>
                 <td className="py-2.5 px-3 font-semibold text-slate-900 dark:text-white">£280,000</td>

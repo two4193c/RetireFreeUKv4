@@ -85,7 +85,7 @@ export const ExpatQropsGuideCard: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 space-y-2">
-            <div className="font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+            <div className="font-bold text-primary-700 dark:text-primary-400 flex items-center gap-1.5">
               <CheckCircle2 className="w-4 h-4" />
               <span>Potential Advantages of QROPS</span>
             </div>

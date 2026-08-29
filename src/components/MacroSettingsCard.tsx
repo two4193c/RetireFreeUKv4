@@ -106,7 +106,7 @@ export const MacroSettingsCard: React.FC<MacroSettingsCardProps> = ({ profile, p
 
         {/* Real Growth Summary Indicator Badges */}
         <div className="flex flex-wrap items-center gap-2">
-          <div className="px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 rounded-2xl text-xs font-bold text-emerald-700 dark:text-emerald-300">
+          <div className="px-3 py-1.5 bg-primary-50 dark:bg-primary-950/60 border border-primary-200 dark:border-primary-800 rounded-2xl text-xs font-bold text-primary-700 dark:text-primary-300">
             Real Pre-Retire: <span className="font-extrabold">{Number(realPreReturn) >= 0 ? `+${realPreReturn}%` : `${realPreReturn}%`}</span> p.a.
           </div>
           <div className="px-3 py-1.5 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 rounded-2xl text-xs font-bold text-indigo-700 dark:text-indigo-300">
@@ -139,7 +139,7 @@ export const MacroSettingsCard: React.FC<MacroSettingsCardProps> = ({ profile, p
             <button
               type="button"
               onClick={() => applyPreset(8.0, 5.5, 2.0)}
-              className="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900 transition-colors border border-emerald-200 dark:border-emerald-800 cursor-pointer"
+              className="px-3 py-1.5 rounded-xl text-xs font-bold bg-primary-50 dark:bg-primary-950 text-primary-700 dark:text-primary-300 hover:bg-primary-100 dark:hover:bg-primary-900 transition-colors border border-primary-200 dark:border-primary-800 cursor-pointer"
             >
               🚀 Growth / Optimistic (8.0% Pre / 5.5% Post / 2.0% Inf)
             </button>
@@ -161,10 +161,10 @@ export const MacroSettingsCard: React.FC<MacroSettingsCardProps> = ({ profile, p
         <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-2.5">
           <div className="flex items-center justify-between">
             <label htmlFor="macro-pre-return" className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 cursor-pointer">
-              <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <TrendingUp className="w-4 h-4 text-primary-600 dark:text-primary-400" />
               <span>Pre-Retirement Return</span>
             </label>
-            <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100/80 dark:bg-emerald-950/80 px-2 py-0.5 rounded-md">
+            <span className="text-[11px] font-bold text-primary-700 dark:text-primary-300 bg-primary-100/80 dark:bg-primary-950/80 px-2 py-0.5 rounded-md">
               Real: {realPreReturn}%
             </span>
           </div>
@@ -184,7 +184,7 @@ export const MacroSettingsCard: React.FC<MacroSettingsCardProps> = ({ profile, p
                 val = Math.max(-5, Math.min(25, val));
                 updateField('expectedInvestmentReturn', val);
               }}
-              className="w-full h-11 pl-3.5 pr-14 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-extrabold text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:outline-none transition-all shadow-xs"
+              className="w-full h-11 pl-3.5 pr-14 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-extrabold text-slate-900 dark:text-white focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 focus:outline-none transition-all shadow-xs"
             />
             <span className="absolute right-3.5 text-xs font-bold text-slate-400 dark:text-slate-500 pointer-events-none select-none">
               % p.a.
@@ -200,7 +200,7 @@ export const MacroSettingsCard: React.FC<MacroSettingsCardProps> = ({ profile, p
                 step="0.1"
                 value={preReturn}
                 onChange={(e) => updateField('expectedInvestmentReturn', Number(e.target.value))}
-                className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-600"
+                className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary-600"
               />
               <div className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
                 Compound annual growth rate during working accumulation years.
@@ -318,16 +318,16 @@ export const MacroSettingsCard: React.FC<MacroSettingsCardProps> = ({ profile, p
       <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-4">
         
         {/* Toggle Header */}
-        <div className={`flex flex-col justify-between gap-3 bg-emerald-50/70 dark:bg-emerald-950/40 p-4 rounded-2xl border border-emerald-200/60 dark:border-emerald-800/60 ${isStudioMode ? "" : "sm:flex-row sm:items-center"}`}>
+        <div className={`flex flex-col justify-between gap-3 bg-primary-50/70 dark:bg-primary-950/40 p-4 rounded-2xl border border-primary-200/60 dark:border-primary-800/60 ${isStudioMode ? "" : "sm:flex-row sm:items-center"}`}>
           <div className="flex items-center gap-3">
-            <PieChart className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <PieChart className="w-5 h-5 text-primary-600 dark:text-primary-400 shrink-0" />
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-extrabold text-slate-900 dark:text-white text-xs sm:text-sm">
                   Asset Allocation Split (Accumulation vs Decumulation)
                 </h3>
                 {!isStudioMode && (
-                  <span className="bg-emerald-200 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-200 text-[10px] font-black px-2 py-0.5 rounded-md uppercase">
+                  <span className="bg-primary-200 dark:bg-primary-900 text-primary-900 dark:text-primary-200 text-[10px] font-black px-2 py-0.5 rounded-md uppercase">
                     Multi-Asset Portfolio
                   </span>
                 )}
@@ -347,7 +347,7 @@ export const MacroSettingsCard: React.FC<MacroSettingsCardProps> = ({ profile, p
               onChange={(e) => updateAaSplit({ ...aaSplit, enabled: e.target.checked })}
               className="sr-only peer"
             />
-            <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:after:border-slate-600 peer-checked:bg-emerald-600"></div>
+            <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:after:border-slate-600 peer-checked:bg-primary-600"></div>
           </label>
         </div>
 
@@ -364,21 +364,21 @@ export const MacroSettingsCard: React.FC<MacroSettingsCardProps> = ({ profile, p
                 <button
                   type="button"
                   onClick={() => applyAaPreset(85, 10, 5, 30, 50, 20)}
-                  className="px-2.5 py-1 rounded-lg text-xs font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 hover:border-emerald-300 transition-colors cursor-pointer"
+                  className="px-2.5 py-1 rounded-lg text-xs font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-primary-50 dark:hover:bg-primary-950/50 hover:border-primary-300 transition-colors cursor-pointer"
                 >
                   🚀 Aggressive Accumulation (85/10/5) → Capital Preservation (30/50/20)
                 </button>
                 <button
                   type="button"
                   onClick={() => applyAaPreset(70, 20, 10, 40, 45, 15)}
-                  className="px-2.5 py-1 rounded-lg text-xs font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 hover:border-emerald-300 transition-colors cursor-pointer"
+                  className="px-2.5 py-1 rounded-lg text-xs font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-primary-50 dark:hover:bg-primary-950/50 hover:border-primary-300 transition-colors cursor-pointer"
                 >
                   ⚖️ Balanced Growth (70/20/10) → Income Drawdown (40/45/15)
                 </button>
                 <button
                   type="button"
                   onClick={() => applyAaPreset(100, 0, 0, 60, 30, 10)}
-                  className="px-2.5 py-1 rounded-lg text-xs font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 hover:border-emerald-300 transition-colors cursor-pointer"
+                  className="px-2.5 py-1 rounded-lg text-xs font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-primary-50 dark:hover:bg-primary-950/50 hover:border-primary-300 transition-colors cursor-pointer"
                 >
                   ⚡ 100% Equity → Classic 60/40 Portfolio (60/30/10)
                 </button>
@@ -389,22 +389,22 @@ export const MacroSettingsCard: React.FC<MacroSettingsCardProps> = ({ profile, p
             <div className={`grid grid-cols-1 gap-4 ${isStudioMode ? "" : "md:grid-cols-2"}`}>
               
               {/* CARD A: ACCUMULATION PHASE (PRE-RETIREMENT) */}
-              <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-emerald-200 dark:border-emerald-900/50 space-y-3 shadow-xs">
+              <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-primary-200 dark:border-primary-900/50 space-y-3 shadow-xs">
                 <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
                   <div className="flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    <TrendingUp className="w-4 h-4 text-primary-600 dark:text-primary-400" />
                     <span className="font-extrabold text-xs text-slate-900 dark:text-white uppercase tracking-wider">
                       Accumulation Phase
                     </span>
                   </div>
-                  <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950 px-2 py-0.5 rounded-md">
+                  <span className="text-xs font-black text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-950 px-2 py-0.5 rounded-md">
                     +{calculateWeightedAssetReturn(aaSplit.accumulation, aaSplit.assetClassReturns)}% p.a.
                   </span>
                 </div>
 
                 {/* Stacked Visual Bar */}
                 <div className="w-full h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden flex">
-                  <div style={{ width: `${aaSplit.accumulation.equity}%` }} className="bg-emerald-500 h-full transition-all" title={`Equities ${aaSplit.accumulation.equity}%`} />
+                  <div style={{ width: `${aaSplit.accumulation.equity}%` }} className="bg-primary-500 h-full transition-all" title={`Equities ${aaSplit.accumulation.equity}%`} />
                   <div style={{ width: `${aaSplit.accumulation.bond}%` }} className="bg-indigo-500 h-full transition-all" title={`Bonds ${aaSplit.accumulation.bond}%`} />
                   <div style={{ width: `${aaSplit.accumulation.cash}%` }} className="bg-amber-400 h-full transition-all" title={`Cash ${aaSplit.accumulation.cash}%`} />
                 </div>
@@ -414,7 +414,7 @@ export const MacroSettingsCard: React.FC<MacroSettingsCardProps> = ({ profile, p
                   {/* Equity slider */}
                   <div className="space-y-1">
                     <div className="flex justify-between text-xs font-bold">
-                      <span className="text-emerald-600 dark:text-emerald-400">Equities:</span>
+                      <span className="text-primary-600 dark:text-primary-400">Equities:</span>
                       <span className="text-slate-900 dark:text-white">{aaSplit.accumulation.equity}%</span>
                     </div>
                     <input
@@ -430,7 +430,7 @@ export const MacroSettingsCard: React.FC<MacroSettingsCardProps> = ({ profile, p
                           accumulation: { equity: eq, bond: bd, cash: cs },
                         });
                       }}
-                      className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+                      className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary-500"
                     />
                   </div>
 
@@ -498,7 +498,7 @@ export const MacroSettingsCard: React.FC<MacroSettingsCardProps> = ({ profile, p
 
                 {/* Stacked Visual Bar */}
                 <div className="w-full h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden flex">
-                  <div style={{ width: `${aaSplit.decumulation.equity}%` }} className="bg-emerald-500 h-full transition-all" title={`Equities ${aaSplit.decumulation.equity}%`} />
+                  <div style={{ width: `${aaSplit.decumulation.equity}%` }} className="bg-primary-500 h-full transition-all" title={`Equities ${aaSplit.decumulation.equity}%`} />
                   <div style={{ width: `${aaSplit.decumulation.bond}%` }} className="bg-indigo-500 h-full transition-all" title={`Bonds ${aaSplit.decumulation.bond}%`} />
                   <div style={{ width: `${aaSplit.decumulation.cash}%` }} className="bg-amber-400 h-full transition-all" title={`Cash ${aaSplit.decumulation.cash}%`} />
                 </div>
@@ -508,7 +508,7 @@ export const MacroSettingsCard: React.FC<MacroSettingsCardProps> = ({ profile, p
                   {/* Equity slider */}
                   <div className="space-y-1">
                     <div className="flex justify-between text-xs font-bold">
-                      <span className="text-emerald-600 dark:text-emerald-400">Equities:</span>
+                      <span className="text-primary-600 dark:text-primary-400">Equities:</span>
                       <span className="text-slate-900 dark:text-white">{aaSplit.decumulation.equity}%</span>
                     </div>
                     <input
@@ -524,7 +524,7 @@ export const MacroSettingsCard: React.FC<MacroSettingsCardProps> = ({ profile, p
                           decumulation: { equity: eq, bond: bd, cash: cs },
                         });
                       }}
-                      className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+                      className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary-500"
                     />
                   </div>
 
@@ -750,7 +750,7 @@ export const MacroSettingsCard: React.FC<MacroSettingsCardProps> = ({ profile, p
                             {pot.label}
                           </span>
                           <div className="flex items-center gap-2 text-[11px] font-bold">
-                            <span className="text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950 px-2 py-0.5 rounded-md">
+                            <span className="text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-950 px-2 py-0.5 rounded-md">
                               Pre: +{accumReturn}% p.a.
                             </span>
                             <span className="text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950 px-2 py-0.5 rounded-md">
@@ -764,10 +764,10 @@ export const MacroSettingsCard: React.FC<MacroSettingsCardProps> = ({ profile, p
                           <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/80 dark:border-slate-800 space-y-2">
                             <div className="flex items-center justify-between text-[11px] font-extrabold text-slate-700 dark:text-slate-300">
                               <span>Pre-Retirement (Accumulation)</span>
-                              <span className="text-emerald-600 dark:text-emerald-400">{accum.equity}% Eq / {accum.bond}% Bd / {accum.cash}% Cs</span>
+                              <span className="text-primary-600 dark:text-primary-400">{accum.equity}% Eq / {accum.bond}% Bd / {accum.cash}% Cs</span>
                             </div>
                             <div className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden flex">
-                              <div style={{ width: `${accum.equity}%` }} className="bg-emerald-500 h-full" />
+                              <div style={{ width: `${accum.equity}%` }} className="bg-primary-500 h-full" />
                               <div style={{ width: `${accum.bond}%` }} className="bg-indigo-500 h-full" />
                               <div style={{ width: `${accum.cash}%` }} className="bg-amber-400 h-full" />
                             </div>
@@ -784,7 +784,7 @@ export const MacroSettingsCard: React.FC<MacroSettingsCardProps> = ({ profile, p
                                     const cs = rem - bd;
                                     updatePotPhase('accumulation', { equity: eq, bond: bd, cash: cs });
                                   }}
-                                  className="w-28 h-1 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+                                  className="w-28 h-1 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary-500"
                                 />
                               </div>
                               <div className="flex items-center justify-between text-[10px] font-bold text-slate-600 dark:text-slate-400">
@@ -812,7 +812,7 @@ export const MacroSettingsCard: React.FC<MacroSettingsCardProps> = ({ profile, p
                               <span className="text-indigo-600 dark:text-indigo-400">{decum.equity}% Eq / {decum.bond}% Bd / {decum.cash}% Cs</span>
                             </div>
                             <div className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden flex">
-                              <div style={{ width: `${decum.equity}%` }} className="bg-emerald-500 h-full" />
+                              <div style={{ width: `${decum.equity}%` }} className="bg-primary-500 h-full" />
                               <div style={{ width: `${decum.bond}%` }} className="bg-indigo-500 h-full" />
                               <div style={{ width: `${decum.cash}%` }} className="bg-amber-400 h-full" />
                             </div>
@@ -829,7 +829,7 @@ export const MacroSettingsCard: React.FC<MacroSettingsCardProps> = ({ profile, p
                                     const cs = rem - bd;
                                     updatePotPhase('decumulation', { equity: eq, bond: bd, cash: cs });
                                   }}
-                                  className="w-28 h-1 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+                                  className="w-28 h-1 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary-500"
                                 />
                               </div>
                               <div className="flex items-center justify-between text-[10px] font-bold text-slate-600 dark:text-slate-400">

@@ -269,7 +269,7 @@ export const ManagePlansModal: React.FC<ManagePlansModalProps> = ({
         {/* Modal Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4 gap-4 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 rounded-2xl shrink-0">
+            <div className="p-2.5 bg-primary-100 dark:bg-primary-950/60 text-primary-600 dark:text-primary-400 rounded-2xl shrink-0">
               <FolderKanban className="w-5 h-5" />
             </div>
             <div>
@@ -277,7 +277,7 @@ export const ManagePlansModal: React.FC<ManagePlansModalProps> = ({
                 <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white tracking-tight">
                   Plan Management &amp; JSON Backup
                 </h2>
-                <span className="text-[10px] uppercase font-extrabold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                <span className="text-[10px] uppercase font-extrabold px-2 py-0.5 rounded-full bg-primary-50 dark:bg-primary-950 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-800">
                   Pop-Out Window
                 </span>
               </div>
@@ -338,7 +338,7 @@ export const ManagePlansModal: React.FC<ManagePlansModalProps> = ({
                   placeholder="Search plans by name, salary, age..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-8 pr-3 py-1.5 text-xs font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                  className="w-full pl-8 pr-3 py-1.5 text-xs font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500/30"
                 />
               </div>
 
@@ -347,14 +347,14 @@ export const ManagePlansModal: React.FC<ManagePlansModalProps> = ({
                   htmlFor="plan-sort-select-modal"
                   className="text-xs font-semibold text-slate-600 dark:text-slate-400 flex items-center gap-1 shrink-0"
                 >
-                  <ArrowUpDown className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                  <ArrowUpDown className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
                   <span>Sort:</span>
                 </label>
                 <select
                   id="plan-sort-select-modal"
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as PlanSortOption)}
-                  className="px-2.5 py-1 text-xs font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 cursor-pointer shadow-2xs"
+                  className="px-2.5 py-1 text-xs font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-500/30 cursor-pointer shadow-2xs"
                 >
                   <option value="updated_desc">Last Updated (Newest)</option>
                   <option value="updated_asc">Last Updated (Oldest)</option>
@@ -368,7 +368,7 @@ export const ManagePlansModal: React.FC<ManagePlansModalProps> = ({
                     onClose();
                     onNewScenario();
                   }}
-                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs shrink-0"
+                  className="px-3 py-1.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs shrink-0"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>New Plan</span>
@@ -399,7 +399,7 @@ export const ManagePlansModal: React.FC<ManagePlansModalProps> = ({
                       key={s.id}
                       className={`p-3.5 sm:p-4 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
                         isActive
-                          ? 'border-emerald-500/80 bg-emerald-50/40 dark:bg-emerald-950/20 shadow-xs'
+                          ? 'border-primary-500/80 bg-primary-50/40 dark:bg-primary-950/20 shadow-xs'
                           : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:bg-slate-100/60 dark:hover:bg-slate-800/70'
                       }`}
                     >
@@ -416,11 +416,11 @@ export const ManagePlansModal: React.FC<ManagePlansModalProps> = ({
                                 if (e.key === 'Escape') setEditingId(null);
                               }}
                               autoFocus
-                              className="px-3 py-1 text-xs sm:text-sm font-bold bg-white dark:bg-slate-900 border border-emerald-500 rounded-xl text-slate-900 dark:text-white focus:outline-none flex-1 max-w-sm"
+                              className="px-3 py-1 text-xs sm:text-sm font-bold bg-white dark:bg-slate-900 border border-primary-500 rounded-xl text-slate-900 dark:text-white focus:outline-none flex-1 max-w-sm"
                             />
                             <button
                               onClick={() => handleSaveRename(s.id)}
-                              className="p-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-colors cursor-pointer"
+                              className="p-1.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl transition-colors cursor-pointer"
                               title="Save name"
                             >
                               <Check className="w-3.5 h-3.5" />
@@ -440,7 +440,7 @@ export const ManagePlansModal: React.FC<ManagePlansModalProps> = ({
                                 {s.name}
                               </h3>
                               {isActive && (
-                                <span className="px-2 py-0.5 bg-emerald-600 text-white text-[10px] font-extrabold uppercase tracking-wider rounded-md flex items-center gap-1">
+                                <span className="px-2 py-0.5 bg-primary-600 text-white text-[10px] font-extrabold uppercase tracking-wider rounded-md flex items-center gap-1">
                                   <Check className="w-3 h-3" />
                                   Active Plan
                                 </span>
@@ -463,7 +463,7 @@ export const ManagePlansModal: React.FC<ManagePlansModalProps> = ({
                                 <>
                                   <span>•</span>
                                   <span className="inline-flex items-center gap-1 text-slate-400 dark:text-slate-500">
-                                    <Calendar className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                                    <Calendar className="w-3 h-3 text-primary-600 dark:text-primary-400" />
                                     {updatedDateStr}
                                   </span>
                                 </>
@@ -481,13 +481,13 @@ export const ManagePlansModal: React.FC<ManagePlansModalProps> = ({
                               onSelectScenario(s.id);
                               onClose();
                             }}
-                            className="px-3 py-1.5 bg-slate-200 dark:bg-slate-800 hover:bg-emerald-600 hover:text-white dark:hover:bg-emerald-600 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+                            className="px-3 py-1.5 bg-slate-200 dark:bg-slate-800 hover:bg-primary-600 hover:text-white dark:hover:bg-primary-600 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
                           >
                             <span>Switch to Plan</span>
                             <ArrowRight className="w-3.5 h-3.5" />
                           </button>
                         ) : (
-                          <span className="px-2.5 py-1 bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-[11px] font-bold rounded-xl flex items-center gap-1">
+                          <span className="px-2.5 py-1 bg-primary-100 dark:bg-primary-950 text-primary-800 dark:text-primary-300 text-[11px] font-bold rounded-xl flex items-center gap-1">
                             <Check className="w-3 h-3" />
                             <span>Loaded</span>
                           </span>
@@ -496,7 +496,7 @@ export const ManagePlansModal: React.FC<ManagePlansModalProps> = ({
                         {onDuplicateScenario && (
                           <button
                             onClick={() => onDuplicateScenario(s.id)}
-                            className="p-1.5 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-xl transition-colors cursor-pointer"
+                            className="p-1.5 text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-950/40 rounded-xl transition-colors cursor-pointer"
                             title={`Duplicate plan "${s.name}"`}
                           >
                             <Copy className="w-3.5 h-3.5" />
@@ -536,12 +536,12 @@ export const ManagePlansModal: React.FC<ManagePlansModalProps> = ({
               <div
                 className={`p-3.5 rounded-2xl text-xs font-bold flex items-center gap-2 border ${
                   importStatusMsg.type === 'success'
-                    ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200'
+                    ? 'bg-primary-50 dark:bg-primary-950/60 border-primary-300 dark:border-primary-800 text-primary-800 dark:text-primary-200'
                     : 'bg-rose-50 dark:bg-rose-950/60 border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300'
                 }`}
               >
                 {importStatusMsg.type === 'success' ? (
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <CheckCircle2 className="w-4 h-4 text-primary-600 dark:text-primary-400 shrink-0" />
                 ) : (
                   <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
                 )}
@@ -572,7 +572,7 @@ export const ManagePlansModal: React.FC<ManagePlansModalProps> = ({
                     </div>
                     <div className="flex justify-between">
                       <span className="font-semibold">Format:</span>
-                      <span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold">Standard v2 JSON</span>
+                      <span className="font-mono text-primary-600 dark:text-primary-400 font-bold">Standard v2 JSON</span>
                     </div>
                   </div>
 
@@ -590,7 +590,7 @@ export const ManagePlansModal: React.FC<ManagePlansModalProps> = ({
               <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-700/60 space-y-4 flex flex-col justify-between">
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-slate-900 dark:text-white font-extrabold text-sm">
-                    <div className="p-1.5 bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 rounded-lg">
+                    <div className="p-1.5 bg-primary-100 dark:bg-primary-950 text-primary-600 dark:text-primary-400 rounded-lg">
                       <Upload className="w-4 h-4" />
                     </div>
                     <span>Import JSON Backup</span>
@@ -608,11 +608,11 @@ export const ManagePlansModal: React.FC<ManagePlansModalProps> = ({
                     onClick={() => fileInputRef.current?.click()}
                     className={`p-4 rounded-xl border-2 border-dashed text-center cursor-pointer transition-all ${
                       isDragOver
-                        ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/30'
-                        : 'border-slate-300 dark:border-slate-700 hover:border-emerald-400 dark:hover:border-emerald-600 bg-white dark:bg-slate-900'
+                        ? 'border-primary-500 bg-primary-50/50 dark:bg-primary-950/30'
+                        : 'border-slate-300 dark:border-slate-700 hover:border-primary-400 dark:hover:border-primary-600 bg-white dark:bg-slate-900'
                     }`}
                   >
-                    <Upload className="w-6 h-6 text-emerald-600 dark:text-emerald-400 mx-auto mb-1.5" />
+                    <Upload className="w-6 h-6 text-primary-600 dark:text-primary-400 mx-auto mb-1.5" />
                     <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
                       Drag &amp; Drop JSON file here
                     </p>

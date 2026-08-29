@@ -36,16 +36,16 @@ export const FeaturesGuideCard: React.FC = () => {
       </div>
 
       {/* Security & Data Privacy Banner */}
-      <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 dark:from-emerald-950/40 dark:via-teal-950/40 dark:to-emerald-950/40 border border-emerald-200 dark:border-emerald-800/80 space-y-3">
-        <div className="flex items-center gap-2 font-extrabold text-emerald-900 dark:text-emerald-200 text-sm">
-          <Lock className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+      <div className="p-4 rounded-2xl bg-gradient-to-r from-primary-50 via-teal-50 to-primary-50 dark:from-primary-950/40 dark:via-teal-950/40 dark:to-primary-950/40 border border-primary-200 dark:border-primary-800/80 space-y-3">
+        <div className="flex items-center gap-2 font-extrabold text-primary-900 dark:text-primary-200 text-sm">
+          <Lock className="w-5 h-5 text-primary-600 dark:text-primary-400 shrink-0" />
           <span>100% Local, Private & Secure</span>
         </div>
         <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
           <strong>Your financial data never leaves your device.</strong> RetireFree UK is a fully local application. We do not use remote databases, cloud servers, or tracking cookies to store your inputs. All calculations happen securely and instantly directly within your own browser.
         </p>
-        <div className="flex items-center gap-2 pt-2 border-t border-emerald-200/50 dark:border-emerald-800/50">
-          <Download className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+        <div className="flex items-center gap-2 pt-2 border-t border-primary-200/50 dark:border-primary-800/50">
+          <Download className="w-4 h-4 text-primary-600 dark:text-primary-400 shrink-0" />
           <p className="text-xs text-slate-700 dark:text-slate-300">
             <strong>Cross-Device Portability:</strong> Use the secure JSON Export/Import feature (found in the settings menu) to save your plan to a local file. This allows you to safely transfer your data between your phone, tablet, and desktop without ever relying on the cloud.
           </p>
@@ -70,85 +70,85 @@ export const FeaturesGuideCard: React.FC = () => {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
               <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
                 <td className="px-4 py-3 font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0"/> Studio Mode Dual-Pane
+                  <CheckCircle2 className="w-4 h-4 text-primary-500 shrink-0"/> Studio Mode Dual-Pane
                 </td>
                 <td className="px-4 py-3 leading-relaxed">Adviser-grade side-by-side workspace: continuous parameter inputs on the left and live real-time decumulation charts on the right with instant recalculation.</td>
               </tr>
               <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
                 <td className="px-4 py-3 font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0"/> Studio Pop-Out Windows
+                  <CheckCircle2 className="w-4 h-4 text-primary-500 shrink-0"/> Studio Pop-Out Windows
                 </td>
                 <td className="px-4 py-3 leading-relaxed">Dedicated focused modal pop-outs for Executive Summary (tabbed sub-views), Scenario &amp; Variant Comparison, 25+ Guides, Mortgage Schedules, and AI Advisors.</td>
               </tr>
               <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
                 <td className="px-4 py-3 font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0"/> UK Income Tax Modelling
+                  <CheckCircle2 className="w-4 h-4 text-primary-500 shrink-0"/> UK Income Tax Modelling
                 </td>
                 <td className="px-4 py-3 leading-relaxed">Fully models PAYE income tax bands, Personal Allowance tapering, Dividend Tax, Capital Gains Tax, and PCLS/UFPLS tax-free pension rules.</td>
               </tr>
               <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
                 <td className="px-4 py-3 font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0"/> National Insurance
+                  <CheckCircle2 className="w-4 h-4 text-primary-500 shrink-0"/> National Insurance
                 </td>
                 <td className="px-4 py-3 leading-relaxed">Accurately calculates Class 1 (employee), Class 2, and Class 4 (self-employed) National Insurance contributions.</td>
               </tr>
               <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
                 <td className="px-4 py-3 font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0"/> ISA & SIPP Wrappers
+                  <CheckCircle2 className="w-4 h-4 text-primary-500 shrink-0"/> ISA & SIPP Wrappers
                 </td>
                 <td className="px-4 py-3 leading-relaxed">Models all primary UK tax wrappers, including Stocks & Shares ISAs, Cash ISAs, LISAs, GIAs, and SIPPs (with proper tax relief logic).</td>
               </tr>
               <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
                 <td className="px-4 py-3 font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0"/> DB & State Pensions
+                  <CheckCircle2 className="w-4 h-4 text-primary-500 shrink-0"/> DB & State Pensions
                 </td>
                 <td className="px-4 py-3 leading-relaxed">Supports multiple Defined Benefit pensions with spousal continuation rules, plus advanced State Pension modelling including NI qualifying years and the Triple Lock.</td>
               </tr>
               <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
                 <td className="px-4 py-3 font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0"/> Couple / Dual Planning
+                  <CheckCircle2 className="w-4 h-4 text-primary-500 shrink-0"/> Couple / Dual Planning
                 </td>
                 <td className="px-4 py-3 leading-relaxed">Full split-view modelling showing each partner's individual tax, income, and allocation streams simultaneously for joint household planning.</td>
               </tr>
               <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
                 <td className="px-4 py-3 font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0"/> Monte Carlo & SORR
+                  <CheckCircle2 className="w-4 h-4 text-primary-500 shrink-0"/> Monte Carlo & SORR
                 </td>
                 <td className="px-4 py-3 leading-relaxed">Runs 1,000 stochastic simulations to map outcome probability cones (P10/P50/P90), plus deterministic stress-testing against historic market crashes (Sequence of Returns Risk).</td>
               </tr>
               <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
                 <td className="px-4 py-3 font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0"/> Spending Phases
+                  <CheckCircle2 className="w-4 h-4 text-primary-500 shrink-0"/> Spending Phases
                 </td>
                 <td className="px-4 py-3 leading-relaxed">Models variable spending over time, including the empirical "retirement spending smile" (Go-Go, Slow-Go, No-Go phases) and custom manual phases.</td>
               </tr>
               <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
                 <td className="px-4 py-3 font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0"/> IHT & Estate Planning
+                  <CheckCircle2 className="w-4 h-4 text-primary-500 shrink-0"/> IHT & Estate Planning
                 </td>
                 <td className="px-4 py-3 leading-relaxed">Complete Inheritance Tax modelling including the Nil Rate Band, Residence Nil Rate Band, taper relief, and the April 2027 rules bringing pensions into the taxable estate.</td>
               </tr>
               <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
                 <td className="px-4 py-3 font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0"/> Annuity Comparison
+                  <CheckCircle2 className="w-4 h-4 text-primary-500 shrink-0"/> Annuity Comparison
                 </td>
                 <td className="px-4 py-3 leading-relaxed">Built-in annuity engine to compare flexible drawdown strategies against purchasing a guaranteed income floor.</td>
               </tr>
               <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
                 <td className="px-4 py-3 font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0"/> UK Gilt Ladder Strategy
+                  <CheckCircle2 className="w-4 h-4 text-primary-500 shrink-0"/> UK Gilt Ladder Strategy
                 </td>
                 <td className="px-4 py-3 leading-relaxed">Construct tailored, default-free UK Government bond ladders (using Debt Management Office gilts) with 0% Capital Gains Tax arbitrage under TCGA 1992 s.115 to eliminate Sequence of Returns Risk for your initial retirement bridge.</td>
               </tr>
               <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
                 <td className="px-4 py-3 font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0"/> SAYE / Share Schemes
+                  <CheckCircle2 className="w-4 h-4 text-primary-500 shrink-0"/> SAYE / Share Schemes
                 </td>
                 <td className="px-4 py-3 leading-relaxed">Dedicated UK Save As You Earn and Share Incentive Plan modelling, including the 90-day ISA transfer tax loophole.</td>
               </tr>
               <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
                 <td className="px-4 py-3 font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0"/> Dynamic Guardrails
+                  <CheckCircle2 className="w-4 h-4 text-primary-500 shrink-0"/> Dynamic Guardrails
                 </td>
                 <td className="px-4 py-3 leading-relaxed">Calculates Safe Withdrawal Rates (SWR) dynamically based on current market conditions and dynamically adjusts for inflation.</td>
               </tr>
@@ -168,11 +168,11 @@ export const FeaturesGuideCard: React.FC = () => {
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="p-4 bg-emerald-50 dark:bg-emerald-900/10 rounded-2xl border border-emerald-200 dark:border-emerald-800/30 space-y-2">
-            <h4 className="font-bold text-emerald-900 dark:text-emerald-100 flex items-center gap-2">
-              <Columns className="w-4 h-4 text-emerald-600" /> Studio Mode &amp; Pop-Out Windows
+          <div className="p-4 bg-primary-50 dark:bg-primary-900/10 rounded-2xl border border-primary-200 dark:border-primary-800/30 space-y-2">
+            <h4 className="font-bold text-primary-900 dark:text-primary-100 flex items-center gap-2">
+              <Columns className="w-4 h-4 text-primary-600" /> Studio Mode &amp; Pop-Out Windows
             </h4>
-            <p className="text-xs text-emerald-800/80 dark:text-emerald-200/80 leading-relaxed">
+            <p className="text-xs text-primary-800/80 dark:text-primary-200/80 leading-relaxed">
               Continuous dual-pane financial workbench pairing all 18 parameter modules side-by-side with live visual projections, plus modal pop-out windows for Executive Summaries and Scenario Comparisons.
             </p>
           </div>

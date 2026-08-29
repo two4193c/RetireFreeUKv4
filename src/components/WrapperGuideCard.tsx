@@ -40,10 +40,10 @@ export const WrapperGuideCard: React.FC = () => {
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-600 dark:text-slate-300">
             <tr className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
               <td className="p-3.5 font-bold text-slate-900 dark:text-white">Upfront Tax Relief</td>
-              <td className="p-3.5 text-emerald-600 dark:text-emerald-400 font-bold">20%–45% + NI Savings (Salary Sac)</td>
-              <td className="p-3.5 text-emerald-600 dark:text-emerald-400 font-bold">20%–45% (Basic via provider, HRT via tax return)</td>
+              <td className="p-3.5 text-primary-600 dark:text-primary-400 font-bold">20%–45% + NI Savings (Salary Sac)</td>
+              <td className="p-3.5 text-primary-600 dark:text-primary-400 font-bold">20%–45% (Basic via provider, HRT via tax return)</td>
               <td className="p-3.5 text-slate-400">None (After-tax funds)</td>
-              <td className="p-3.5 text-emerald-600 dark:text-emerald-400 font-bold">25% Govt Bonus (Up to £1,000/yr)</td>
+              <td className="p-3.5 text-primary-600 dark:text-primary-400 font-bold">25% Govt Bonus (Up to £1,000/yr)</td>
             </tr>
             <tr className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
               <td className="p-3.5 font-bold text-slate-900 dark:text-white">Employer Matching</td>
@@ -63,15 +63,15 @@ export const WrapperGuideCard: React.FC = () => {
               <td className="p-3.5 font-bold text-slate-900 dark:text-white">Access Age</td>
               <td className="p-3.5">Age 57 (NMPA from 2028)</td>
               <td className="p-3.5">Age 57 (NMPA from 2028)</td>
-              <td className="p-3.5 font-bold text-emerald-600 dark:text-emerald-400">Anytime (No age restriction)</td>
+              <td className="p-3.5 font-bold text-primary-600 dark:text-primary-400">Anytime (No age restriction)</td>
               <td className="p-3.5">Age 60 (Or 25% penalty before 60)</td>
             </tr>
             <tr className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
               <td className="p-3.5 font-bold text-slate-900 dark:text-white">Withdrawal Tax</td>
               <td className="p-3.5">25% Tax-Free (PCLS), 75% Taxable Income</td>
               <td className="p-3.5">25% Tax-Free (PCLS), 75% Taxable Income</td>
-              <td className="p-3.5 font-bold text-emerald-600 dark:text-emerald-400">100% Tax-Free</td>
-              <td className="p-3.5 font-bold text-emerald-600 dark:text-emerald-400">100% Tax-Free after age 60</td>
+              <td className="p-3.5 font-bold text-primary-600 dark:text-primary-400">100% Tax-Free</td>
+              <td className="p-3.5 font-bold text-primary-600 dark:text-primary-400">100% Tax-Free after age 60</td>
             </tr>
             <tr className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
               <td className="p-3.5 font-bold text-slate-900 dark:text-white">Same-Year Flexibility</td>
@@ -87,14 +87,14 @@ export const WrapperGuideCard: React.FC = () => {
       {/* Optimal Contribution Waterfall */}
       <div className="space-y-4">
         <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-          <TrendingUp className="w-4 h-4 text-emerald-500" />
+          <TrendingUp className="w-4 h-4 text-primary-500" />
           <span>The Optimal Contribution Hierarchy (Savings Waterfall)</span>
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60 space-y-2">
             <div className="flex items-center gap-2">
-              <span className="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-black text-xs flex items-center justify-center">1</span>
+              <span className="w-6 h-6 rounded-full bg-primary-100 dark:bg-primary-950 text-primary-800 dark:text-primary-300 font-black text-xs flex items-center justify-center">1</span>
               <h4 className="font-bold text-xs text-slate-900 dark:text-white">Max Employer Match</h4>
             </div>
             <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
@@ -180,9 +180,9 @@ export const WrapperGuideCard: React.FC = () => {
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
             {/* Green: When to use */}
-            <div className="p-4 rounded-xl bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/80 space-y-2">
-              <div className="flex items-center gap-2 font-bold text-emerald-900 dark:text-emerald-300">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <div className="p-4 rounded-xl bg-primary-50/80 dark:bg-primary-950/40 border border-primary-200/80 dark:border-primary-800/80 space-y-2">
+              <div className="flex items-center gap-2 font-bold text-primary-900 dark:text-primary-300">
+                <CheckCircle2 className="w-4 h-4 text-primary-600 dark:text-primary-400 shrink-0" />
                 <span>🟢 Optimal Use Cases (Use LISA)</span>
               </div>
               <ul className="space-y-1.5 text-slate-600 dark:text-slate-300 list-disc pl-4">
@@ -277,14 +277,14 @@ export const WrapperGuideCard: React.FC = () => {
           <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-teal-200/60 dark:border-teal-900/60 space-y-2.5">
             <div className="flex items-center justify-between">
               <h4 className="font-bold text-teal-900 dark:text-teal-300 text-sm">Junior ISA (JISA)</h4>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">Separate £9,000 Allowance</span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-primary-100 dark:bg-primary-950 text-primary-800 dark:text-primary-300">Separate £9,000 Allowance</span>
             </div>
             <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
               A tax-free long-term savings and investment vehicle for UK children under 18, available as either <strong>Cash JISA</strong> or <strong>Stocks & Shares JISA</strong>.
             </p>
             <div className="space-y-1.5 pt-1 border-t border-teal-100 dark:border-teal-900/40">
               <div className="flex items-start gap-1.5 text-slate-700 dark:text-slate-300">
-                <span className="font-bold text-emerald-600 dark:text-emerald-400">• Allowance:</span> <strong>£9,000 per child per tax year</strong>. This is <em>completely separate</em> from parents' £20k ISA limit.
+                <span className="font-bold text-primary-600 dark:text-primary-400">• Allowance:</span> <strong>£9,000 per child per tax year</strong>. This is <em>completely separate</em> from parents' £20k ISA limit.
               </div>
               <div className="flex items-start gap-1.5 text-slate-700 dark:text-slate-300">
                 <span className="font-bold text-teal-600 dark:text-teal-400">• Access & Ownership:</span> Locked until the child turns <strong>18</strong>, when it automatically converts into an adult ISA under their sole ownership.
@@ -375,10 +375,10 @@ export const WrapperGuideCard: React.FC = () => {
       </div>
 
       {/* RetireFree UK Integration */}
-      <div className="p-5 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-800/60 flex items-start gap-3">
-        <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+      <div className="p-5 rounded-2xl bg-primary-50/60 dark:bg-primary-950/30 border border-primary-200/60 dark:border-primary-800/60 flex items-start gap-3">
+        <CheckCircle2 className="w-5 h-5 text-primary-600 dark:text-primary-400 shrink-0 mt-0.5" />
         <div className="space-y-1 text-xs">
-          <p className="font-bold text-emerald-900 dark:text-emerald-300">Modelling Wrapper Efficiency in RetireFree UK v4</p>
+          <p className="font-bold text-primary-900 dark:text-primary-300">Modelling Wrapper Efficiency in RetireFree UK v4</p>
           <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
             Navigate to the <strong>ISA vs Pension Efficiency</strong> card (under Baseline Inputs) or the <strong>Drawdown Strategy Planner</strong> (under Strategy) to see how different drawdown sequences (ISA First vs Pension First) impact your lifetime tax drag and net wealth.
           </p>

@@ -47,7 +47,7 @@ export const RiskGuideCard: React.FC = () => {
         </div>
 
         <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700/80 space-y-2">
-          <div className="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 font-black flex items-center justify-center text-xs">
+          <div className="w-8 h-8 rounded-xl bg-primary-100 dark:bg-primary-950 text-primary-600 dark:text-primary-400 font-black flex items-center justify-center text-xs">
             3
           </div>
           <h3 className="font-bold text-slate-900 dark:text-white text-sm">75-Year Historic Backtest</h3>
@@ -83,8 +83,8 @@ export const RiskGuideCard: React.FC = () => {
             <span className="font-bold text-teal-900 dark:text-teal-200">50th Percentile (Median)</span>
             <p className="text-slate-600 dark:text-slate-400 mt-1">Represents the expected middle outcome across all randomized return series.</p>
           </div>
-          <div className="p-3 bg-emerald-100/60 dark:bg-emerald-950/50 rounded-xl border border-emerald-200 dark:border-emerald-800">
-            <span className="font-bold text-emerald-900 dark:text-emerald-200">90th Percentile (Growth)</span>
+          <div className="p-3 bg-primary-100/60 dark:bg-primary-950/50 rounded-xl border border-primary-200 dark:border-primary-800">
+            <span className="font-bold text-primary-900 dark:text-primary-200">90th Percentile (Growth)</span>
             <p className="text-slate-600 dark:text-slate-400 mt-1">Represents favorable bull market conditions (the top 10% of outcomes).</p>
           </div>
         </div>

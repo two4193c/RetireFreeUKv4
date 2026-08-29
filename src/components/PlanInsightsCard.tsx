@@ -73,7 +73,7 @@ export const PlanInsightsCard: React.FC<PlanInsightsCardProps> = ({
               <span
                 className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${
                   scorecard.isFullyFunded
-                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800'
+                    ? 'bg-primary-50 text-primary-700 border-primary-200 dark:bg-primary-950/60 dark:text-primary-300 dark:border-primary-800'
                     : 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800'
                 }`}
               >
@@ -127,7 +127,7 @@ export const PlanInsightsCard: React.FC<PlanInsightsCardProps> = ({
             </div>
             <div className="text-[10px] font-bold">
               {scorecard.isFullyFunded ? (
-                <span className="text-emerald-600 dark:text-emerald-400">
+                <span className="text-primary-600 dark:text-primary-400">
                   +£{(scorecard.finalPotBalance || 0).toLocaleString()} surplus at 90
                 </span>
               ) : (
@@ -142,7 +142,7 @@ export const PlanInsightsCard: React.FC<PlanInsightsCardProps> = ({
           <div className="bg-slate-50/80 dark:bg-slate-800/40 p-3.5 rounded-2xl border border-slate-200/70 dark:border-slate-800 space-y-1">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">Initial SWR</span>
-              <Percent className="w-3.5 h-3.5 text-emerald-500" />
+              <Percent className="w-3.5 h-3.5 text-primary-500" />
             </div>
             <div className="text-base font-black text-slate-900 dark:text-white">
               {scorecard.initialSwr > 0 ? `${scorecard.initialSwr}%` : '0%'}
@@ -151,7 +151,7 @@ export const PlanInsightsCard: React.FC<PlanInsightsCardProps> = ({
               <span
                 className={
                   scorecard.swrStatus === 'conservative'
-                    ? 'text-emerald-600 dark:text-emerald-400'
+                    ? 'text-primary-600 dark:text-primary-400'
                     : scorecard.swrStatus === 'moderate'
                     ? 'text-indigo-600 dark:text-indigo-400'
                     : 'text-amber-600 dark:text-amber-400'
@@ -193,7 +193,7 @@ export const PlanInsightsCard: React.FC<PlanInsightsCardProps> = ({
               <span
                 className={
                   scorecard.taxEfficiencyStatus === 'optimal'
-                    ? 'text-emerald-600 dark:text-emerald-400'
+                    ? 'text-primary-600 dark:text-primary-400'
                     : 'text-indigo-600 dark:text-indigo-400'
                 }
               >
@@ -211,7 +211,7 @@ export const PlanInsightsCard: React.FC<PlanInsightsCardProps> = ({
             <div className="text-base font-black text-slate-900 dark:text-white">
               {scorecard.monteCarloEstimatedSuccess}%
             </div>
-            <div className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+            <div className="text-[10px] font-bold text-primary-600 dark:text-primary-400">
               {scorecard.monteCarloEstimatedSuccess >= 85 ? 'High Volatility Resilience' : 'Review Guardrails'}
             </div>
           </div>
@@ -285,7 +285,7 @@ export const PlanInsightsCard: React.FC<PlanInsightsCardProps> = ({
                     {opp.status === 'recommended' ? (
                       <Flame className="w-3.5 h-3.5 text-amber-500" />
                     ) : opp.status === 'already_optimised' ? (
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                      <CheckCircle2 className="w-3.5 h-3.5 text-primary-500" />
                     ) : (
                       <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
                     )}
@@ -300,7 +300,7 @@ export const PlanInsightsCard: React.FC<PlanInsightsCardProps> = ({
                   <span
                     className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
                       opp.impactLevel === 'High Impact'
-                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800'
+                        ? 'bg-primary-50 text-primary-700 border-primary-200 dark:bg-primary-950/60 dark:text-primary-300 dark:border-primary-800'
                         : 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-800'
                     }`}
                   >
@@ -309,7 +309,7 @@ export const PlanInsightsCard: React.FC<PlanInsightsCardProps> = ({
                   <span
                     className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                       opp.status === 'already_optimised'
-                        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-200'
+                        ? 'bg-primary-100 text-primary-800 dark:bg-primary-900/60 dark:text-primary-200'
                         : opp.status === 'recommended'
                         ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-200'
                         : 'bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-slate-200'
@@ -342,9 +342,9 @@ export const PlanInsightsCard: React.FC<PlanInsightsCardProps> = ({
               </div>
 
               {/* Projected Benefit */}
-              <div className="flex items-center gap-2 p-2.5 bg-emerald-50/70 dark:bg-emerald-950/30 rounded-xl border border-emerald-200/60 dark:border-emerald-800/50 text-xs">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                <div className="text-[11px] text-emerald-900 dark:text-emerald-200">
+              <div className="flex items-center gap-2 p-2.5 bg-primary-50/70 dark:bg-primary-950/30 rounded-xl border border-primary-200/60 dark:border-primary-800/50 text-xs">
+                <CheckCircle2 className="w-4 h-4 text-primary-600 dark:text-primary-400 shrink-0" />
+                <div className="text-[11px] text-primary-900 dark:text-primary-200">
                   <span className="font-bold">Projected Financial Benefit: </span>
                   {opp.projectedBenefit}
                 </div>

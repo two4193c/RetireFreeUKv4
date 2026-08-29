@@ -146,7 +146,7 @@ export const AiTaxAdvisorModal: React.FC<AiTaxAdvisorModalProps> = ({
         {/* Header - Fixed at Top */}
         <div className="flex items-center justify-between p-5 sm:p-6 border-b border-slate-100 dark:border-slate-800 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-slate-950 shadow-md shrink-0">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-primary-600 to-teal-400 flex items-center justify-center text-slate-950 shadow-md shrink-0">
               <Sparkles className="w-5 h-5 fill-slate-950" />
             </div>
             <div>
@@ -173,7 +173,7 @@ export const AiTaxAdvisorModal: React.FC<AiTaxAdvisorModalProps> = ({
           {/* Generate Trigger if no analysis yet */}
           {!analysis && !loading && (
             <div className="text-center py-6 space-y-4">
-              <div className="w-16 h-16 rounded-2xl bg-emerald-50 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto border border-emerald-200/50 dark:border-emerald-800/50 shadow-xs">
+              <div className="w-16 h-16 rounded-2xl bg-primary-50 dark:bg-primary-950/80 text-primary-600 dark:text-primary-400 flex items-center justify-center mx-auto border border-primary-200/50 dark:border-primary-800/50 shadow-xs">
                 <Sparkles className="w-8 h-8" />
               </div>
               <div className="max-w-md mx-auto space-y-1">
@@ -190,7 +190,7 @@ export const AiTaxAdvisorModal: React.FC<AiTaxAdvisorModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowApiKeyInput(!showApiKeyInput)}
-                  className="text-xs font-bold text-slate-500 hover:text-emerald-600 dark:text-slate-400 dark:hover:text-emerald-400 flex items-center justify-center gap-1.5 mx-auto cursor-pointer"
+                  className="text-xs font-bold text-slate-500 hover:text-primary-600 dark:text-slate-400 dark:hover:text-primary-400 flex items-center justify-center gap-1.5 mx-auto cursor-pointer"
                 >
                   <Key className="w-3.5 h-3.5" />
                   <span>{showApiKeyInput ? 'Hide API Key Settings' : 'Optional: Set Custom Gemini API Key'}</span>
@@ -204,7 +204,7 @@ export const AiTaxAdvisorModal: React.FC<AiTaxAdvisorModalProps> = ({
                       placeholder="AIzaSy..."
                       value={customApiKey}
                       onChange={(e) => saveCustomApiKey(e.target.value)}
-                      className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-mono text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-mono text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
                     />
                     <p className="text-[10px] text-slate-400">Saved locally in your browser. If empty, uses server key or deterministic UK Tax Audit engine.</p>
                   </div>
@@ -213,7 +213,7 @@ export const AiTaxAdvisorModal: React.FC<AiTaxAdvisorModalProps> = ({
 
               <button
                 onClick={runAiAnalysis}
-                className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs sm:text-sm px-6 py-3 rounded-2xl shadow-lg shadow-emerald-600/20 transition-all flex items-center gap-2 mx-auto cursor-pointer active:scale-95"
+                className="bg-gradient-to-r from-primary-600 to-teal-600 hover:from-primary-500 hover:to-teal-500 text-white font-extrabold text-xs sm:text-sm px-6 py-3 rounded-2xl shadow-lg shadow-primary-600/20 transition-all flex items-center gap-2 mx-auto cursor-pointer active:scale-95"
               >
                 <Sparkles className="w-4 h-4" />
                 <span>Generate AI Tax Efficiency Audit</span>
@@ -224,7 +224,7 @@ export const AiTaxAdvisorModal: React.FC<AiTaxAdvisorModalProps> = ({
           {/* Loading Spinner */}
           {loading && (
             <div className="text-center py-12 space-y-3">
-              <RefreshCw className="w-8 h-8 text-emerald-600 animate-spin mx-auto" />
+              <RefreshCw className="w-8 h-8 text-primary-600 animate-spin mx-auto" />
               <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">
                 Evaluating UK 2024/25 tax bands, allowances & retirement drawdown...
               </p>
@@ -239,7 +239,7 @@ export const AiTaxAdvisorModal: React.FC<AiTaxAdvisorModalProps> = ({
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-slate-900 text-white p-5 rounded-2xl border border-slate-800 shadow-md">
                 <div className="space-y-1 shrink-0">
                   <span className="text-[10px] text-slate-400 uppercase font-extrabold tracking-wider block">Tax Efficiency Score</span>
-                  <div className="text-3xl font-black text-emerald-400 flex items-center gap-2">
+                  <div className="text-3xl font-black text-primary-400 flex items-center gap-2">
                     <span>{analysis.taxEfficiencyScore}</span>
                     <span className="text-sm text-slate-400 font-bold">/ 100</span>
                   </div>
@@ -259,7 +259,7 @@ export const AiTaxAdvisorModal: React.FC<AiTaxAdvisorModalProps> = ({
                   <ul className="space-y-2">
                     {analysis.keyOpportunities.map((op, i) => (
                       <li key={i} className="flex items-start gap-2.5 bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 text-slate-700 dark:text-slate-200 font-medium leading-normal">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                        <CheckCircle2 className="w-4 h-4 text-primary-600 dark:text-primary-400 shrink-0 mt-0.5" />
                         <span>{op}</span>
                       </li>
                     ))}
@@ -291,9 +291,9 @@ export const AiTaxAdvisorModal: React.FC<AiTaxAdvisorModalProps> = ({
 
               {/* Drawdown Strategy Tips */}
               {analysis.drawdownStrategyTips && (
-                <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/60 p-4 rounded-2xl space-y-1.5 text-emerald-950 dark:text-emerald-200">
-                  <h5 className="font-extrabold text-emerald-900 dark:text-emerald-300 flex items-center gap-1.5 text-xs">
-                    <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <div className="bg-primary-50 dark:bg-primary-950/40 border border-primary-200/80 dark:border-primary-800/60 p-4 rounded-2xl space-y-1.5 text-primary-950 dark:text-primary-200">
+                  <h5 className="font-extrabold text-primary-900 dark:text-primary-300 flex items-center gap-1.5 text-xs">
+                    <Sparkles className="w-4 h-4 text-primary-600 dark:text-primary-400 shrink-0" />
                     <span>Drawdown & Tax-Free Lump Sum Guidance</span>
                   </h5>
                   <p className="leading-relaxed font-medium">{analysis.drawdownStrategyTips}</p>
@@ -307,7 +307,7 @@ export const AiTaxAdvisorModal: React.FC<AiTaxAdvisorModalProps> = ({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     {analysis.nextSteps.map((step, idx) => (
                       <div key={idx} className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-200/70 dark:border-slate-700/70 font-semibold text-slate-800 dark:text-slate-200 flex items-start gap-2.5">
-                        <span className="w-5 h-5 rounded-full bg-emerald-600 text-white font-extrabold text-[10px] flex items-center justify-center shrink-0 mt-0.5">
+                        <span className="w-5 h-5 rounded-full bg-primary-600 text-white font-extrabold text-[10px] flex items-center justify-center shrink-0 mt-0.5">
                           {idx + 1}
                         </span>
                         <span className="leading-snug">{step}</span>
@@ -320,7 +320,7 @@ export const AiTaxAdvisorModal: React.FC<AiTaxAdvisorModalProps> = ({
               <div className="pt-2 text-center">
                 <button
                   onClick={runAiAnalysis}
-                  className="text-xs font-extrabold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer inline-flex items-center gap-1.5"
+                  className="text-xs font-extrabold text-primary-600 dark:text-primary-400 hover:underline cursor-pointer inline-flex items-center gap-1.5"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
                   <span>Re-run AI Tax Efficiency Audit</span>
