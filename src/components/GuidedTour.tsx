@@ -9,10 +9,13 @@ interface GuidedTourProps {
 }
 
 export const GuidedTour: React.FC<GuidedTourProps> = ({ run, onFinish, theme = 'dark', onSetTab }) => {
-  const [currentStep, setCurrentStep] = useState(0);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
+    const [currentStep, setCurrentStep] = useState(0);
+  
+  // Start near the top-left (e.g. 24px padding)
+  const [position, setPosition] = useState({ x: 24, y: 24 });
   const [isDragging, setIsDragging] = useState(false);
   const dragRef = useRef<{ startX: number, startY: number, startPosX: number, startPosY: number } | null>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.button !== 0) return;
@@ -28,12 +31,21 @@ export const GuidedTour: React.FC<GuidedTourProps> = ({ run, onFinish, theme = '
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!isDragging || !dragRef.current) return;
+    if (!isDragging || !dragRef.current || !modalRef.current) return;
     const dx = e.clientX - dragRef.current.startX;
     const dy = e.clientY - dragRef.current.startY;
+    
+    let newX = dragRef.current.startPosX + dx;
+    let newY = dragRef.current.startPosY + dy;
+
+    // Constrain to window bounds
+    const rect = modalRef.current.getBoundingClientRect();
+    const maxX = window.innerWidth - rect.width;
+    const maxY = window.innerHeight - rect.height;
+
     setPosition({
-      x: dragRef.current.startPosX + dx,
-      y: dragRef.current.startPosY + dy
+      x: Math.max(0, Math.min(newX, maxX)),
+      y: Math.max(0, Math.min(newY, maxY))
     });
   };
 
@@ -177,8 +189,9 @@ export const GuidedTour: React.FC<GuidedTourProps> = ({ run, onFinish, theme = '
       
       {/* Floating Tour Modal */}
             <div 
-        className="fixed bottom-6 right-6 sm:bottom-12 sm:right-12 w-[90%] max-w-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl z-[9999] animate-in slide-in-from-bottom-8 fade-in duration-300 flex flex-col overflow-hidden"
-        style={{ transform: `translate(${position.x}px, ${position.y}px)` }}
+        ref={modalRef}
+        className="fixed w-[90%] max-w-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl z-[9999] animate-in slide-in-from-top-8 fade-in duration-300 flex flex-col overflow-hidden"
+        style={{ left: `${position.x}px`, top: `${position.y}px` }}
       >
         
         {/* Header */}
