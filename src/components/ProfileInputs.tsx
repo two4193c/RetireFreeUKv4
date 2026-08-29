@@ -76,7 +76,7 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
       isStudioMode ? 'rounded-2xl p-4 sm:p-5 space-y-4' : 'rounded-3xl p-6 space-y-6'
     }`}>
       {/* SECTION HEADER & NMPA BADGES */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+      <div className={`flex flex-col justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800 ${isStudioMode ? "" : "sm:flex-row sm:items-center"}`}>
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-400 flex items-center justify-center border border-emerald-200/50 dark:border-emerald-800/50 shrink-0">
             <User className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
@@ -158,7 +158,7 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
 
       {/* PRIMARY & PARTNER PROFILE INPUTS */}
       {isCouple ? (
-        <div className={`grid grid-cols-1 gap-4 lg:grid-cols-2`}>
+        <div className={`grid grid-cols-1 gap-4 ${isStudioMode ? "" : "lg:grid-cols-2"}`}>
           {/* PRIMARY USER CARD */}
           <div className="bg-slate-50/70 dark:bg-slate-800/40 rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-700/60 space-y-4">
             <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-slate-700/60">
