@@ -127,6 +127,12 @@ export const GuidedTour: React.FC<GuidedTourProps> = ({ run, onFinish, theme = '
       title: 'Step 9: The Projection',
       titleColor: 'text-amber-600 dark:text-amber-400',
       content: 'Watch your wealth grow! See exactly when you might run out of money, or how large your estate will be at age 100.',
+    },
+    {
+      target: 'sidebar-mode-switcher',
+      title: 'Step 10: App Modes',
+      titleColor: 'text-purple-600 dark:text-purple-400',
+      content: 'Once you are comfortable with Basic Mode, try switching to Advanced Mode for extra features, or Studio Mode for a dense, split-screen pro view!',
     }
   ];
 

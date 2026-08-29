@@ -681,7 +681,7 @@ export function SidebarNav({
         {/* Bottom Navigation Panel: Mode Control, Light/Dark Mode Control & Save Option */}
         <div className="p-2.5 border-t border-slate-200/80 dark:border-slate-800 shrink-0 bg-slate-50/60 dark:bg-slate-900/60 rounded-b-2xl space-y-2">
           {onSetAppMode && !isCollapsed && (
-            <div className="flex items-center gap-1 bg-white dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xs">
+            <div id="sidebar-mode-switcher" className="flex items-center gap-1 bg-white dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xs">
               <button
                 type="button"
                 onClick={() => handleModeChange('basic')}
