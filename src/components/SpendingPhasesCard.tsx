@@ -631,7 +631,7 @@ export const SpendingPhasesCard: React.FC<SpendingPhasesCardProps> = ({
       </div>
 
       {/* Spending Mode Options (Flat Spending vs Flexible Age-Based) */}
-      {(appMode === 'advanced' || isStudio) && (
+      {true && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {/* Option 1: Flat Spending */}
           <button
@@ -739,7 +739,7 @@ export const SpendingPhasesCard: React.FC<SpendingPhasesCardProps> = ({
           </p>
         )}
 
-        {(appMode === 'advanced' || isStudio) && (
+        {true && (
           <div className="pt-3 mt-3 border-t border-slate-200 dark:border-slate-700/80 space-y-2">
             <label className="text-xs font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
               <TrendingUp className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
