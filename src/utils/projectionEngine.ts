@@ -2294,7 +2294,7 @@ function parseAnnuityTypeConfig(type?: string) {
 
       // Phased Crystallisation / PCLS Tax-Free Income secured this year
       const phasedTaxFreeIncomeThisYear = primaryPclsDrawnThisYear + partnerPclsDrawnThisYear;
-      const netInitialIncomeSecured = netGuaranteedIncomeSecured + phasedTaxFreeIncomeThisYear + giltLadderIncomeThisYear;
+      const netInitialIncomeSecured = netGuaranteedIncomeSecured + giltLadderIncomeThisYear;
 
       // Remaining net income needed from investment pots to reach drawdownNetTarget
       let remainingIncomeNeeded = Math.max(0, drawdownNetTarget - netInitialIncomeSecured);
