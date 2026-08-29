@@ -40,12 +40,6 @@ export const GuidedTour: React.FC<GuidedTourProps> = ({ run, onFinish, theme = '
       title: 'Step 4: The Projection',
       titleColor: 'text-amber-600 dark:text-amber-400',
       content: 'Watch your wealth grow! See exactly when you might run out of money, or how large your estate will be at age 100.',
-    },
-    {
-      target: 'card-ai-advisor',
-      title: 'Step 5: AI Tax Advisor',
-      titleColor: 'text-rose-600 dark:text-rose-400',
-      content: 'Click here at any time to run an automated AI audit of your plan. It will spot tax inefficiencies and suggest improvements.',
     }
   ];
 
