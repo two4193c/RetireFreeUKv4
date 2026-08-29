@@ -234,16 +234,22 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
   const matrixRows = useMemo(() =>
     retRows.map((r) => {
       const pGross =
-        r.primaryNetIncome !== undefined
-          ? (r.primaryTaxPaid ?? 0) + (r.primaryNetIncome ?? 0)
-          : r.totalWithdrawalAmount ?? 0;
+        (r.primaryStatePensionReceived || 0) +
+        (r.primaryDbPensionIncomeReceived || 0) +
+        (r.primaryTaxableFixedIncomeReceived || 0) +
+        (r.primaryAnnuityIncomeReceived || 0) +
+        (r.primaryPensionDrawdownTaxable || 0);
       const pPA = Math.min(pGross, PA);
       const pBasic = clamp(pGross - PA, 0, BASIC_CEIL - PA);
       const pHigher = Math.max(0, pGross - BASIC_CEIL);
       const p60Trap = pGross > 100000 && pGross < 125140 ? Math.min(pGross - 100000, 25140) : 0;
 
       const qGross =
-        r.partnerNetIncome !== undefined ? (r.partnerTaxPaid ?? 0) + (r.partnerNetIncome ?? 0) : 0;
+        (r.partnerStatePensionReceived || 0) +
+        (r.partnerDbPensionIncomeReceived || 0) +
+        (r.partnerTaxableFixedIncomeReceived || 0) +
+        (r.partnerAnnuityIncomeReceived || 0) +
+        (r.partnerPensionDrawdownTaxable || 0);
       const qPA = isCouple ? Math.min(qGross, PA) : null;
       const qBasic = isCouple ? clamp(qGross - PA, 0, BASIC_CEIL - PA) : null;
       const qHigher = isCouple ? Math.max(0, qGross - BASIC_CEIL) : null;
@@ -269,10 +275,15 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
   [retRows, isCouple]);
 
   const incomeData = useMemo(() =>
-    retRows.map((r) => ({
-      age: r.age,
-      Income: Math.round(r.totalWithdrawalAmount ?? 0),
-    })),
+    retRows.map((r) => {
+      const taxable = (r.statePensionReceived || 0) + (r.dbPensionIncomeReceived || 0) + (r.taxableFixedIncomeReceived || 0) + (r.annuityIncomeReceived || 0) + (r.pensionDrawdownTaxable || 0);
+      const nonTaxable = (r.taxFreeFixedIncomeReceived || 0) + (r.giltLadderIncomeReceived || 0) + (r.isaDrawdown || 0) + (r.cashDrawdown || 0) + (r.pensionDrawdownTaxFree || 0);
+      return {
+        age: r.age,
+        Taxable: Math.round(taxable),
+        NonTaxable: Math.round(nonTaxable),
+      };
+    }),
   [retRows]);
 
   if (retRows.length === 0) {
@@ -624,7 +635,7 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
 
           <Panel
             title="Annual Income & Tax Band Utilisation"
-            subtitle="Annual withdrawal demand vs Personal Allowance (£12,570) and Basic Rate ceiling (£50,270)"
+            subtitle="Annual Taxable vs Non-Taxable income compared to Tax Bands"
           >
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={incomeData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
@@ -634,7 +645,8 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
                 <Tooltip content={<CurrencyTooltip />} />
                 <ReferenceLine y={BASIC_CEIL} stroke="#ef4444" strokeDasharray="5 4" strokeWidth={1.5} label={{ value: '40% cliff £50,270', position: 'insideTopLeft', fontSize: 9, fill: '#ef4444' }} />
                 <ReferenceLine y={PA} stroke="#10b981" strokeDasharray="5 4" strokeWidth={1.5} label={{ value: 'PA £12,570', position: 'insideTopLeft', fontSize: 9, fill: '#10b981' }} />
-                <Bar dataKey="Income" fill="#6366f1" radius={[3, 3, 0, 0]} maxBarSize={16} />
+                <Bar dataKey="Taxable" stackId="a" fill="#38bdf8" radius={[0, 0, 0, 0]} maxBarSize={16} />
+                <Bar dataKey="NonTaxable" stackId="a" fill="#10b981" radius={[3, 3, 0, 0]} maxBarSize={16} />
               </BarChart>
             </ResponsiveContainer>
           </Panel>
