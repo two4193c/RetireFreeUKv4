@@ -172,14 +172,37 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
 
   const kpis = useMemo(() => {
     if (!retRows.length) return null;
-    const totalGross = retRows.reduce((s, r) => s + (r.totalWithdrawalAmount ?? 0), 0);
-    const totalTax = retRows.reduce((s, r) => s + (r.totalTaxPaid ?? 0), 0);
+    let totalGross = 0;
+    let totalTax = 0;
+    let paCap = 0;
+
+    retRows.forEach((r) => {
+      const pGross = (r.primaryStatePensionReceived || 0) + (r.primaryDbPensionIncomeReceived || 0) + (r.primaryTaxableFixedIncomeReceived || 0) + (r.primaryAnnuityIncomeReceived || 0) + (r.primaryPensionDrawdownTaxable || 0);
+      const qGross = (r.partnerStatePensionReceived || 0) + (r.partnerDbPensionIncomeReceived || 0) + (r.partnerTaxableFixedIncomeReceived || 0) + (r.partnerAnnuityIncomeReceived || 0) + (r.partnerPensionDrawdownTaxable || 0);
+
+      if (viewMode === 'combined') {
+        totalGross += r.totalWithdrawalAmount ?? 0;
+        totalTax += r.totalTaxPaid ?? 0;
+        if (pGross >= PA || (isCouple && qGross >= PA)) {
+          paCap++;
+        }
+      } else if (viewMode === 'primary') {
+        totalGross += (r.primaryNetRetirementIncome ?? 0) + (r.primaryTaxPaid ?? 0);
+        totalTax += r.primaryTaxPaid ?? 0;
+        if (pGross >= PA) paCap++;
+      } else if (viewMode === 'partner') {
+        totalGross += (r.partnerNetRetirementIncome ?? 0) + (r.partnerTaxPaid ?? 0);
+        totalTax += r.partnerTaxPaid ?? 0;
+        if (qGross >= PA) paCap++;
+      }
+    });
+
     const avgRate = totalGross > 0 ? (totalTax / totalGross) * 100 : 0;
-    const paCap = retRows.filter((r) => (r.primaryNetIncome ?? 0) >= PA).length;
     const paRate = retRows.length > 0 ? (paCap / retRows.length) * 100 : 0;
     const taxSaved = Math.max(0, totalGross * 0.2 - totalTax);
+    
     return { taxSaved, avgRate, paRate };
-  }, [retRows]);
+  }, [retRows, viewMode, isCouple]);
 
   const streamData = useMemo(() =>
     retRows.map((r) => {
