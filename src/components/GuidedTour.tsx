@@ -86,8 +86,7 @@ export const GuidedTour: React.FC<GuidedTourProps> = ({ run, onFinish, theme = '
 
   return (
     <>
-      {/* Dim Overlay */}
-      <div className="fixed inset-0 bg-slate-900/40 dark:bg-slate-900/60 backdrop-blur-[2px] z-[9998] transition-opacity duration-300" />
+      {/* Dim Overlay Removed to allow interaction */}
       
       {/* Floating Tour Modal */}
       <div className="fixed bottom-6 right-6 sm:bottom-12 sm:right-12 w-[90%] max-w-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl z-[9999] animate-in slide-in-from-bottom-8 fade-in duration-300 flex flex-col overflow-hidden">
