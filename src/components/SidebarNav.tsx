@@ -722,7 +722,7 @@ export function SidebarNav({
             </div>
           )}
 
-          <div className="flex items-center gap-2">
+          <div className={`flex gap-2 ${isCollapsed ? 'flex-col items-center w-full' : 'items-center'}`}>
             {onStartTour && (
               <button
                 onClick={onStartTour}
@@ -754,7 +754,7 @@ export function SidebarNav({
             {/* Save Option Button */}
             <button
               onClick={onSaveScenario}
-              className="flex-1 flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all cursor-pointer shadow-2xs"
+              className={`flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all cursor-pointer shadow-2xs ${isCollapsed ? 'w-full' : 'flex-1'}`}
               title="Save active plan"
               aria-label="Save active plan"
             >
