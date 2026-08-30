@@ -1160,10 +1160,20 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       }
 
       // SECTION 1b: AUTOMATED STRATEGIC NARRATIVE ANALYSIS
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      const execLines = doc.splitTextToSize(`• Executive Summary: ${autoNarrative.executiveSummary}`, 174);
+      const decumLines = doc.splitTextToSize(`• Decumulation & Tax Strategy: ${autoNarrative.decumulationStrategy}`, 174);
+      
+      const lineHeight = 3.5;
+      const execHeight = execLines.length * lineHeight;
+      const decumHeight = decumLines.length * lineHeight;
+      const narrativeBoxH = 12.5 + execHeight + 2.5 + decumHeight + 3.5;
+
       doc.setFillColor(248, 250, 252);
-      doc.roundedRect(14, y, 182, 32, 3, 3, 'F');
+      doc.roundedRect(14, y, 182, narrativeBoxH, 3, 3, 'F');
       doc.setDrawColor(226, 232, 240);
-      doc.roundedRect(14, y, 182, 32, 3, 3, 'D');
+      doc.roundedRect(14, y, 182, narrativeBoxH, 3, 3, 'D');
 
       doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
       doc.setFont('helvetica', 'bold');
@@ -1173,14 +1183,10 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(7.5);
       doc.setTextColor(51, 65, 85);
-
-      const execLines = doc.splitTextToSize(`• Executive Summary: ${autoNarrative.executiveSummary}`, 174);
       doc.text(execLines, 18, y + 12.5);
+      doc.text(decumLines, 18, y + 12.5 + execHeight + 2.5);
 
-      const decumLines = doc.splitTextToSize(`• Decumulation & Tax Strategy: ${autoNarrative.decumulationStrategy}`, 174);
-      doc.text(decumLines, 18, y + 23);
-
-      y += 37;
+      y += narrativeBoxH + 5;
 
       // =========================================================================
       // SECTION 1c: PLAN INSIGHTS & STRATEGIC OPPORTUNITIES (MIRRORING APP)
@@ -1369,7 +1375,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
           doc.setFontSize(7.2);
           doc.setFont('helvetica', 'bold');
           doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
-          const pdfTitle = opp.owner ? `[${opp.owner}] ${opp.title}` : opp.title;
+          const pdfTitle = (opp.owner && profile.isCouplePlanning) ? `[${opp.owner}] ${opp.title}` : opp.title;
           doc.text(pdfTitle, 18, y + 4.5);
 
           // Category tag
