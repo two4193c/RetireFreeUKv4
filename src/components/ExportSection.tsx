@@ -3504,7 +3504,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       const chartH = 26;
       const chartX = 18;
       const chartY = p3Y + 12;
-      const barW = chartW / Math.max(1, streamData.length);
+      const streamBarW = chartW / Math.max(1, streamData.length);
 
       // Draw Grid Lines
       doc.setDrawColor(226, 232, 240);
@@ -3519,7 +3519,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       });
 
       streamData.forEach((d, i) => {
-        const bx = chartX + i * barW;
+        const bx = chartX + i * streamBarW;
         let currentY = chartY + chartH;
 
         // Draw PA (Green)
@@ -3527,7 +3527,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
           const bh = (d.pa / maxStreamVal) * chartH;
           currentY -= bh;
           doc.setFillColor(16, 185, 129); // emerald-500
-          doc.rect(bx, currentY, Math.max(0.5, barW - 0.2), bh, 'F');
+          doc.rect(bx, currentY, Math.max(0.5, streamBarW - 0.2), bh, 'F');
         }
 
         // Draw Basic (Blue)
@@ -3535,7 +3535,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
           const bh = (d.basic / maxStreamVal) * chartH;
           currentY -= bh;
           doc.setFillColor(14, 165, 233); // sky-500
-          doc.rect(bx, currentY, Math.max(0.5, barW - 0.2), bh, 'F');
+          doc.rect(bx, currentY, Math.max(0.5, streamBarW - 0.2), bh, 'F');
         }
 
         // Draw Higher (Red)
@@ -3543,7 +3543,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
           const bh = (d.higher / maxStreamVal) * chartH;
           currentY -= bh;
           doc.setFillColor(239, 68, 68); // red-500
-          doc.rect(bx, currentY, Math.max(0.5, barW - 0.2), bh, 'F');
+          doc.rect(bx, currentY, Math.max(0.5, streamBarW - 0.2), bh, 'F');
         }
 
         // Draw TaxFree (Indigo)
@@ -3551,14 +3551,14 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
           const bh = (d.taxFree / maxStreamVal) * chartH;
           currentY -= bh;
           doc.setFillColor(99, 102, 241); // indigo-500
-          doc.rect(bx, currentY, Math.max(0.5, barW - 0.2), bh, 'F');
+          doc.rect(bx, currentY, Math.max(0.5, streamBarW - 0.2), bh, 'F');
         }
 
         if (i % 5 === 0 || i === streamData.length - 1) {
           doc.setFont('helvetica', 'normal');
           doc.setFontSize(4.5);
           doc.setTextColor(100, 116, 139);
-          doc.text(`${d.age}`, bx + (barW/2), chartY + chartH + 3, { align: 'center' });
+          doc.text(`${d.age}`, bx + (streamBarW/2), chartY + chartH + 3, { align: 'center' });
         }
       });
 
