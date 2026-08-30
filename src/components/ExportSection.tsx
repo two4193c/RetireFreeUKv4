@@ -6620,6 +6620,13 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
           addArbitrageRow('Invest (Low Scenario)', Math.max(1, expectedInvestmentReturn - 3), lowBal, false);
           addArbitrageRow('Invest (Your Configured)', expectedInvestmentReturn, finalInvest, true);
           addArbitrageRow('Invest (High Scenario)', expectedInvestmentReturn + 3, highBal, false);
+          
+          mY += 10;
+          doc.setFontSize(7);
+          doc.setTextColor(100, 116, 139);
+          doc.setFont('helvetica', 'normal');
+          doc.text('Important Note: Overpaying your mortgage provides a 100% guaranteed, tax-free return equal to your mortgage interest rate.', 14, mY);
+          doc.text('Investing in the stock market carries inherent risk; your capital can go down as well as up, and actual returns will fluctuate year over year.', 14, mY + 3.5);
         } else {
         doc.setFillColor(248, 250, 252);
         doc.roundedRect(14, mY, 182, 18, 3, 3, 'F');

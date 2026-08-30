@@ -329,6 +329,10 @@ export const MortgageArbitrageInsight: React.FC<Props> = ({ profile }) => {
         </table>
       </div>
 
+      <div className="mt-4 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700/80 text-[11px] text-slate-500 dark:text-slate-400">
+        <strong className="text-slate-700 dark:text-slate-300">Important Note:</strong> Overpaying your mortgage provides a 100% guaranteed, tax-free return equal to your mortgage interest rate. Investing in the stock market carries inherent risk; your capital can go down as well as up, and actual returns will fluctuate year over year.
+      </div>
+
     </div>
   );
 };
