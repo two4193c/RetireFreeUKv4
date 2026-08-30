@@ -288,10 +288,15 @@ export const PlanInsightsCard: React.FC<PlanInsightsCardProps> = ({
                       <CheckCircle2 className="w-3.5 h-3.5 text-primary-500" />
                     ) : (
                       <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
-                    )}
-                    {opp.title}
-                  </span>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-200/80 dark:bg-slate-700/80 text-slate-700 dark:text-slate-300">
+                      )}
+                      {opp.owner && (
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border border-slate-300 dark:border-slate-600 ${opp.owner === 'Household' ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400' : opp.owner === 'Primary' ? 'bg-sky-50 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400' : 'bg-fuchsia-50 dark:bg-fuchsia-900/30 text-fuchsia-600 dark:text-fuchsia-400'}`}>
+                          {opp.owner}
+                        </span>
+                      )}
+                      {opp.title}
+                    </span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-200/80 dark:bg-slate-700/80 text-slate-700 dark:text-slate-300">
                     {opp.category}
                   </span>
                 </div>

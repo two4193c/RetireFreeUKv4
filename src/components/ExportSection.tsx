@@ -1369,7 +1369,8 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
           doc.setFontSize(7.2);
           doc.setFont('helvetica', 'bold');
           doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
-          doc.text(opp.title, 18, y + 4.5);
+          const pdfTitle = opp.owner ? `[${opp.owner}] ${opp.title}` : opp.title;
+          doc.text(pdfTitle, 18, y + 4.5);
 
           // Category tag
           doc.setFontSize(5.5);

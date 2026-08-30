@@ -405,6 +405,7 @@ export function computePlanInsights(
         observation: `${ownerName}'s Adjusted Net Income is £${Math.round(adjustedNetIncome).toLocaleString()}, placing £${Math.round(trapAmount).toLocaleString()} in the Personal Allowance taper zone where earnings suffer an effective 60% marginal tax rate.`,
         actionableStep: `Contribute an additional £${Math.round(recommendedTrapContrib).toLocaleString()}/yr into a workplace pension or SIPP to pull Adjusted Net Income down to exactly £100,000.`,
         projectedBenefit: `Reclaims £${Math.round(trapAmount * 0.5).toLocaleString()} of tax-free Personal Allowance, saving £${Math.round(trapAmount * 0.6).toLocaleString()}/yr in income tax (60% effective relief).`,
+        owner: 'Household',
       });
     } else if (salary > 100000 && !is60TrapActive) {
       opportunities.push({
@@ -416,6 +417,7 @@ export function computePlanInsights(
         observation: `Gross salary of £${salary.toLocaleString()} is above £100,000, but active pension contributions of £${Math.round(tRes?.totalPensionContributionsAnnual || 0).toLocaleString()}/yr successfully reduce Adjusted Net Income to £${Math.round(adjustedNetIncome).toLocaleString()}.`,
         actionableStep: `Maintain current pension contributions to protect the full £12,570 Personal Allowance each tax year.`,
         projectedBenefit: `Successfully avoiding up to £${Math.round(Math.min(25140, (salary - 100000)) * 0.6).toLocaleString()}/yr in 60% marginal tax drag.`,
+        owner: 'Household',
       });
     }
   };
@@ -444,6 +446,7 @@ export function computePlanInsights(
         observation: `Pension contributions are currently set to '${method.replace(/_/g, ' ')}'. Paying employee National Insurance on £${Math.round(employeePensionContrib).toLocaleString()}/yr of pension contributions.`,
         actionableStep: `Switch pension contributions to workplace Salary Sacrifice (SMART pensions) if offered by the employer.`,
         projectedBenefit: `Immediately saves ~£${estNicSavings.toLocaleString()}/yr in employee National Insurance, plus potential employer NI rebate pass-through.`,
+        owner: 'Household',
       });
     } else if (isSalarySacrifice && (tRes?.salarySacrificeNicSavedEmployee || 0) > 0) {
       opportunities.push({
@@ -455,6 +458,7 @@ export function computePlanInsights(
         observation: `Salary Sacrifice is enabled on the workplace pension, shielding £${Math.round(employeePensionContrib).toLocaleString()}/yr from National Insurance.`,
         actionableStep: `Continue channeling all regular salary increments and annual bonuses via salary sacrifice to maximize NI relief.`,
         projectedBenefit: `Saving £${Math.round(tRes?.salarySacrificeNicSavedEmployee || 0).toLocaleString()}/yr in employee National Insurance.`,
+        owner: 'Household',
       });
     }
   };
@@ -481,6 +485,7 @@ export function computePlanInsights(
           observation: `Profile has ${qualifyingYears} qualifying years (${missingYears} years short of the 35 years required for the full New State Pension).`,
           actionableStep: `Check National Insurance record on gov.uk and consider purchasing voluntary Class 3 NI contributions (~£${estClass3Cost.toLocaleString()} total).`,
           projectedBenefit: `Boosts guaranteed State Pension by +£${annualStatePensionLoss.toLocaleString()}/yr index-linked for life, typically breaking even in under 3 years of retirement.`,
+        owner: 'Household',
         });
       } else {
         const spaAge = ownerPrefix === 'primary' ? (profile.statePensionAge || 67) : (profile.partnerStatePensionAge || 67);
@@ -493,6 +498,7 @@ export function computePlanInsights(
           observation: `Full 35 qualifying National Insurance years achieved, securing 100% of the New State Pension (£12,548/yr).`,
           actionableStep: `Maintain NI record until State Pension Age (${spaAge}).`,
           projectedBenefit: `Guarantees £${Math.round(12547.6 * (horizonAge - spaAge)).toLocaleString()} of cumulative triple-lock indexed income across retirement.`,
+        owner: 'Household',
         });
       }
     }
@@ -557,6 +563,7 @@ export function computePlanInsights(
           : `Spousal pension pots are well-balanced (£${Math.round(priPension).toLocaleString()} vs £${Math.round(partPension).toLocaleString()}), enabling dual Personal Allowance utilization.`,
         actionableStep: `Continue scheduled monthly spousal contributions to maximize dual Personal Allowance utilisation (£25,140/yr combined) throughout retirement.`,
         projectedBenefit: `Maximises joint tax-free Personal Allowances and basic rate tax bands in retirement, saving up to £2,514/yr in joint income tax.`,
+        owner: 'Household',
       });
     } else {
       const lowerMember = (partPension < priPension) ? (profile.partnerName || 'Partner') : (profile.name || 'Primary');
@@ -569,6 +576,7 @@ export function computePlanInsights(
         observation: `Significant disparity between spousal pension sizes (${profile.name || 'Primary'}: £${Math.round(priPension).toLocaleString()} vs ${profile.partnerName || 'Partner'}: £${Math.round(partPension).toLocaleString()}), and no regular spousal pension contributions are currently configured.`,
         actionableStep: `Direct new pension contributions or spousal SIPP contributions (£2,880 net / £3,600 gross for non-earners) toward ${lowerMember}.`,
         projectedBenefit: `Utilises both spouses' £12,570 Personal Allowances and 20% basic rate bands in retirement, saving up to £2,514/yr in joint income tax.`,
+        owner: 'Household',
       });
     }
   }
@@ -595,6 +603,7 @@ export function computePlanInsights(
         observation: `Outstanding mortgage of £${Math.round(mortgageBal).toLocaleString()} (${profile.mortgage.interestRatePercent}%) is projected to extend ${yearsIntoRetirement} years into retirement${overpaymentText}.`,
         actionableStep: `Evaluate enabling 'Pay off at retirement' using 25% Tax-Free Pension Lump Sum (PCLS) or increasing monthly overpayments (currently £${profile.mortgage.regularMonthlyOverpayment || 0}/mo).`,
         projectedBenefit: `Removes ongoing monthly debt service in retirement, reducing required gross portfolio withdrawals and lowering sequence risk.`,
+        owner: 'Household',
       });
     } else if (isPayoffAtRetirement || clearanceAge <= targetAge) {
       opportunities.push({
@@ -608,6 +617,7 @@ export function computePlanInsights(
           : `Mortgage will be fully repaid by Age ${clearanceAge} before retirement.`,
         actionableStep: `Ensure required payoff capital remains ring-fenced and protected from market volatility.`,
         projectedBenefit: `Ensures 100% of retirement cash flow is directed to living expenditure without debt drag.`,
+        owner: 'Household',
       });
     }
   }
@@ -630,6 +640,7 @@ export function computePlanInsights(
       observation: `Taxable General Investment Accounts (GIA) hold £${Math.round(giaTotal).toLocaleString()} exposed to dividend tax and capital gains tax.`,
       actionableStep: `Schedule an annual Bed & ISA transfer of £20,000 per spouse in the Pot Transfer Manager, utilizing the £3,000 annual CGT allowance.`,
       projectedBenefit: `Permanently shelters investment capital in the zero-tax ISA wrapper, eliminating future dividend and capital gains tax liabilities.`,
+        owner: 'Household',
     });
   } else if (giaTotal > 0 && hasActiveGiaTransfer) {
     opportunities.push({
@@ -641,6 +652,7 @@ export function computePlanInsights(
       observation: `Annual Bed & ISA transfer is actively configured to systematically drain taxable GIA assets into tax-free ISAs.`,
       actionableStep: `Continue annual executions to migrate remaining GIA capital into ISAs.`,
       projectedBenefit: `Maximizes ISA wrapper utilization and prevents dividend tax leakage.`,
+        owner: 'Household',
     });
   }
 
@@ -660,6 +672,7 @@ export function computePlanInsights(
       observation: `Projected pension pots (£${Math.round(priPensionAtTake).toLocaleString()}) produce a ${profile.pclsLumpSumPercent || 25}% tax-free cash entitlement of £${priRawPcls.toLocaleString()}, which exceeds your LSA allowance of £${priMaxPcls.lsaLimit.toLocaleString()} by £${(priRawPcls - priMaxPcls.lsaLimit).toLocaleString()}.`,
       actionableStep: `Check if you hold historic transitional protection (Enhanced, Fixed, or Individual Protection) or consider redirecting future surplus savings into ISAs.`,
       projectedBenefit: `Prevents excess pension lump sum withdrawals above your LSA from being taxed at marginal income tax rates (up to 40%–45%).`,
+        owner: 'Primary',
     });
   } else {
     opportunities.push({
@@ -671,6 +684,7 @@ export function computePlanInsights(
       observation: `Projected pension pots (£${Math.round(priPensionAtTake).toLocaleString()}) produce a tax-free cash entitlement of £${priRawPcls.toLocaleString()}, leaving £${(priMaxPcls.lsaLimit - priRawPcls).toLocaleString()} of Lump Sum Allowance headroom.`,
       actionableStep: `Your projected pension size remains securely below the LSA threshold. No immediate action required.`,
       projectedBenefit: `Ensures all available tax-free cash can be withdrawn without incurring marginal tax penalties.`,
+        owner: 'Primary',
     });
   }
 
@@ -690,6 +704,7 @@ export function computePlanInsights(
         observation: `Partner's projected pension pots (£${Math.round(partPensionAtTake).toLocaleString()}) produce a ${profile.partnerPclsLumpSumPercent || 25}% tax-free cash entitlement of £${partRawPcls.toLocaleString()}, which exceeds their LSA allowance of £${partMaxPcls.lsaLimit.toLocaleString()} by £${(partRawPcls - partMaxPcls.lsaLimit).toLocaleString()}.`,
         actionableStep: `Check if the partner holds historic transitional protection or consider redirecting their surplus savings into ISAs.`,
         projectedBenefit: `Prevents partner's excess pension lump sum withdrawals above their LSA from being taxed at marginal income tax rates (up to 40%–45%).`,
+        owner: 'Partner',
       });
     } else {
       opportunities.push({
@@ -701,6 +716,7 @@ export function computePlanInsights(
         observation: `Partner's projected pension pots (£${Math.round(partPensionAtTake).toLocaleString()}) produce a tax-free cash entitlement of £${partRawPcls.toLocaleString()}, leaving £${(partMaxPcls.lsaLimit - partRawPcls).toLocaleString()} of Lump Sum Allowance headroom.`,
         actionableStep: `Partner's projected pension size remains securely below the LSA threshold. No immediate action required.`,
         projectedBenefit: `Ensures all available tax-free cash can be withdrawn without incurring marginal tax penalties.`,
+        owner: 'Partner',
       });
     }
   }
@@ -716,6 +732,7 @@ export function computePlanInsights(
       observation: `Your plan is actively running in Maximized Spend mode with solved sustainable spending of £${Math.round(targetIncome).toLocaleString()}/yr, calibrating portfolio depletion to Age ${profile.maximizedSpendConfig.targetEndAge || horizonAge}.`,
       actionableStep: `Review actual annual spending vs solved drawdown capacity to decide whether to enjoy higher lifestyle spending or reinvest excess surplus into ISAs.`,
       projectedBenefit: `Unlocks 100% of your portfolio's sustainable spending capacity without running out of capital.`,
+        owner: 'Household',
     });
   } else if (isFullyFunded && finalPotBalance > targetIncome * 2) {
     try {
@@ -750,6 +767,7 @@ export function computePlanInsights(
           observation: `Your portfolio maintains full solvency with a projected surplus of £${finalPotBalance.toLocaleString()} remaining at Age ${horizonAge}. Initial SWR is conservative (${initialSwr.toFixed(1)}%).`,
           actionableStep: actionableText,
           projectedBenefit: `Safely unlocks up to +£${extraLifetime.toLocaleString()} in extra lifetime lifestyle spending during retirement without running out of capital.`,
+        owner: 'Household',
         });
       } else {
         opportunities.push({
@@ -761,6 +779,7 @@ export function computePlanInsights(
           observation: `Your baseline target spending of £${Math.round(targetIncome).toLocaleString()}/yr closely matches your portfolio's maximum sustainable drawdown capacity.`,
           actionableStep: `Maintain your current spending and drawdown sequencing.`,
           projectedBenefit: `Ensures full lifetime financial independence through Age ${horizonAge}.`,
+        owner: 'Household',
         });
       }
     } catch {
@@ -773,6 +792,7 @@ export function computePlanInsights(
         observation: `Your portfolio maintains full solvency with a projected surplus of £${finalPotBalance.toLocaleString()} remaining at Age ${horizonAge}. Initial SWR is conservative (${initialSwr.toFixed(1)}%).`,
         actionableStep: `Use the 'Maximize Sustainable Spend' modal to calculate your exact personalized maximum spending capacity.`,
         projectedBenefit: `Safely unlocks maximum lifestyle spending in your active retirement years without risk of running out of capital.`,
+        owner: 'Household',
       });
     }
   } else if (!isFullyFunded) {
@@ -787,6 +807,7 @@ export function computePlanInsights(
       observation: `Projected capital depletion occurs at Age ${firstDeficit?.age || targetAge} (${deficitYears} years of deficit before Horizon Age ${horizonAge}).`,
       actionableStep: `Review actionable levers: 1) Increase monthly accumulation contributions; 2) Adjust retirement age by +1 to +2 years; or 3) Optimize dynamic spending phases.`,
       projectedBenefit: `Eliminates the projected capital deficit and restores 100% lifetime portfolio solvency through age ${horizonAge}.`,
+        owner: 'Household',
     });
   }
 
@@ -807,6 +828,7 @@ export function computePlanInsights(
       observation: `Under Autumn 2024 UK Budget legislation, unspent defined contribution pensions enter the scope of Inheritance Tax (IHT) from April 2027.`,
       actionableStep: `Model your IHT exposure in the Estate Planning tab, utilizing spousal exemptions, annual £3,000 gifting allowances, and normal expenditure from income rules.`,
       projectedBenefit: `Mitigates up to 40% IHT on residual estate passing to non-spousal beneficiaries.`,
+        owner: 'Household',
     });
   }
 
