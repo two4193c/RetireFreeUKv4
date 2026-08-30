@@ -30,7 +30,7 @@ export const MortgageArbitrageInsight: React.FC<Props> = ({ profile }) => {
 
   // Base timeframe on mortgage term (max 25 years to keep chart readable)
   const mortgageYears = mortgage.remainingTermYears || 10;
-  const years = Math.min(25, Math.max(5, mortgageYears));
+  const years = Math.max(1, mortgageYears);
 
   const rMort = (effectiveMortgageCost / 100) / 12;
   const rConfig = (expectedInvestmentReturn / 100) / 12;

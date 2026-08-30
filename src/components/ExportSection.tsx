@@ -6514,7 +6514,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
           const isBetterToInvest = expectedInvestmentReturn > effectiveMortgageCost;
 
           const mortgageYears = mConfig.remainingTermYears || 10;
-          const years = Math.min(25, Math.max(5, mortgageYears));
+          const years = Math.max(1, mortgageYears);
           const rMort = (effectiveMortgageCost / 100) / 12;
           const rConfig = (expectedInvestmentReturn / 100) / 12;
           const rLow = (Math.max(1, expectedInvestmentReturn - 3) / 100) / 12;
