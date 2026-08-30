@@ -352,6 +352,16 @@ export interface CustomTaxBandOverrides {
   scotTopRatePercent?: number; // default 48 (%)
 }
 
+
+export interface DynamicSpendingRules {
+  enabled: boolean;
+  capitalPreservationThresholdPercent: number; // e.g. 20 (withdraw rate rises 20% above initial)
+  capitalPreservationCutPercent: number; // e.g. 10 (cut spending 10%)
+  prosperityThresholdPercent: number; // e.g. 20 (withdraw rate drops 20% below initial)
+  prosperityIncreasePercent: number; // e.g. 10 (increase spending 10%)
+  skipInflationOnNegativeReturn: boolean;
+}
+
 export interface UserProfile {
   name?: string;
   dateOfBirth: string; // e.g. '1988-05-15'
@@ -456,6 +466,7 @@ export interface UserProfile {
   partnerLumpSumSplits?: LumpSumSplit[];
   
   // Drawdown & Income Options
+  dynamicSpendingRules?: DynamicSpendingRules;
   drawdownStrategy: DrawdownStrategy;
   partnerDrawdownStrategy?: DrawdownStrategy;
   incomeProductOption: IncomeProductOption; // 'flexi_drawdown' | 'annuity' | 'hybrid'
