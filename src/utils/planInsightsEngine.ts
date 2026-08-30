@@ -1,5 +1,5 @@
 import { UserProfile, InvestmentPots, TaxCalculationResult, YearProjection } from '../types';
-import { getPensionAccessAge, getPartnerPensionAccessAge } from './ukTaxEngine';
+import { getPensionAccessAge, getPartnerPensionAccessAge, getProjectedPensionAtTakeAge, getLumpSumTakeAge, getPartnerLumpSumTakeAge, calculateMaxPcls, calculatePartnerMaxPcls } from './ukTaxEngine';
 import { sanitizePots, DEFAULT_POTS, DEFAULT_PARTNER_POTS } from './defaultData';
 import { solveMaximizedSpend } from './maximizedSpendSolver';
 
@@ -619,23 +619,41 @@ export function computePlanInsights(
   }
 
   // Opportunity 7: Lump Sum Allowance (LSA £268,275) Protection Check
-  const projectedPensionAtRet = retProj
-    ? (retProj.primaryPensionPot || 0) + (retProj.partnerPensionPot || 0)
-    : 0;
-  const potentialPcls = Math.round(projectedPensionAtRet * (profile.pclsLumpSumPercent ? profile.pclsLumpSumPercent / 100 : 0.25));
-  const lsaLimit = profile.customLsaAllowance || 268275;
-
-  if (potentialPcls > lsaLimit && profile.lsaProtectionType === 'standard') {
+  const priTakeAge = getLumpSumTakeAge(profile);
+  const priPensionAtTake = getProjectedPensionAtTakeAge(profile, pots, priTakeAge, false);
+  const priMaxPcls = calculateMaxPcls(priPensionAtTake, profile);
+  
+  if (priMaxPcls.isCappedByLsa && profile.lsaProtectionType === 'standard') {
+    const rawPcls = Math.round(priPensionAtTake * (profile.pclsLumpSumPercent ? profile.pclsLumpSumPercent / 100 : 0.25));
     opportunities.push({
-      id: 'lsa_cap_monitoring',
+      id: 'lsa_cap_monitoring_primary',
       category: 'Tax Efficiency',
       title: 'Lump Sum Allowance (£268,275 LSA Cap) Headroom Review',
       impactLevel: 'Medium Impact',
       status: 'review_suggested',
-      observation: `Projected pension pots (£${Math.round(projectedPensionAtRet).toLocaleString()}) produce a 25% tax-free cash entitlement of £${potentialPcls.toLocaleString()}, which exceeds the standard £268,275 Lump Sum Allowance by £${(potentialPcls - lsaLimit).toLocaleString()}.`,
+      observation: `Projected pension pots (£${Math.round(priPensionAtTake).toLocaleString()}) produce a 25% tax-free cash entitlement of £${rawPcls.toLocaleString()}, which exceeds the standard £268,275 Lump Sum Allowance by £${(rawPcls - priMaxPcls.lsaLimit).toLocaleString()}.`,
       actionableStep: `Check if you hold historic transitional protection (Enhanced, Fixed, or Individual Protection) or consider redirecting future surplus savings into ISAs.`,
       projectedBenefit: `Prevents excess pension lump sum withdrawals above £268,275 from being taxed at marginal income tax rates (up to 40%–45%).`,
     });
+  }
+
+  if (profile.isCouplePlanning) {
+    const partTakeAge = getPartnerLumpSumTakeAge(profile);
+    const partPensionAtTake = getProjectedPensionAtTakeAge(profile, pots, partTakeAge, true);
+    const partMaxPcls = calculatePartnerMaxPcls(partPensionAtTake, profile);
+    if (partMaxPcls.isCappedByLsa && profile.partnerLsaProtectionType === 'standard') {
+      const rawPcls = Math.round(partPensionAtTake * (profile.partnerPclsLumpSumPercent ? profile.partnerPclsLumpSumPercent / 100 : 0.25));
+      opportunities.push({
+        id: 'lsa_cap_monitoring_partner',
+        category: 'Tax Efficiency',
+        title: 'Partner Lump Sum Allowance (£268,275 LSA Cap) Headroom Review',
+        impactLevel: 'Medium Impact',
+        status: 'review_suggested',
+        observation: `Partner projected pension pots (£${Math.round(partPensionAtTake).toLocaleString()}) produce a 25% tax-free cash entitlement of £${rawPcls.toLocaleString()}, which exceeds the standard £268,275 Lump Sum Allowance by £${(rawPcls - partMaxPcls.lsaLimit).toLocaleString()}.`,
+        actionableStep: `Check if the partner holds historic transitional protection or consider redirecting their surplus savings into ISAs.`,
+        projectedBenefit: `Prevents partner excess pension lump sum withdrawals above £268,275 from being taxed at marginal income tax rates (up to 40%–45%).`,
+      });
+    }
   }
 
   // Opportunity 8: Plan Longevity & Maximized Spend Advisory
