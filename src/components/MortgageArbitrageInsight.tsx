@@ -60,7 +60,31 @@ export const MortgageArbitrageInsight: React.FC<Props> = ({ profile }) => {
     });
   }
 
+  const finalOverpay = chartData[chartData.length - 1]['Overpay (Guaranteed)'];
+  const finalInvest = chartData[chartData.length - 1][`Invest (${expectedInvestmentReturn}%)`];
+  const difference = Math.abs(finalInvest - finalOverpay);
+
   const formatCurrency = (val: number) => '£' + val.toLocaleString();
+
+  // Custom tooltip for light/dark mode support
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl rounded-lg p-3 text-xs min-w-[200px]">
+          <p className="font-bold text-slate-900 dark:text-white mb-2">{label}</p>
+          <div className="space-y-1">
+            {payload.map((entry: any, index: number) => (
+              <div key={index} className="flex justify-between gap-4">
+                <span style={{ color: entry.color }} className="font-medium">{entry.name}:</span>
+                <span className="font-bold text-slate-900 dark:text-white">£{entry.value.toLocaleString()}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
 
   // Heatmap Data (Mortgage vs Invest)
   const mortRates = [2, 3, 4, 5, 6, 7];
@@ -102,10 +126,10 @@ export const MortgageArbitrageInsight: React.FC<Props> = ({ profile }) => {
                 </p>
                 <div className="mt-3 flex items-center gap-2">
                   <span className="text-[10px] uppercase tracking-wider font-bold opacity-70">Verdict:</span>
-                  <span className="text-xs font-bold px-2.5 py-1 rounded-md bg-white/60 dark:bg-black/20">
+                  <span className="text-xs font-bold px-2.5 py-1.5 rounded-md bg-white/60 dark:bg-black/20">
                     {isBetterToInvest 
-                      ? `Invest surplus for a +${netSpread.toFixed(2)}% arbitrage spread.` 
-                      : `Overpay debt for a guaranteed ${effectiveMortgageCost.toFixed(2)}% saving.`}
+                      ? `Invest surplus to generate an extra £${difference.toLocaleString()} over ${years} years.`
+                      : `Overpay debt to save an extra £${difference.toLocaleString()} over ${years} years.`}
                   </span>
                 </div>
               </div>
@@ -122,10 +146,7 @@ export const MortgageArbitrageInsight: React.FC<Props> = ({ profile }) => {
                   <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
                   <XAxis dataKey="year" fontSize={10} tickLine={false} stroke="#888888" />
                   <YAxis fontSize={10} tickLine={false} stroke="#888888" tickFormatter={(v) => `£${(v / 1000).toFixed(0)}k`} width={45} />
-                  <RechartsTooltip 
-                    formatter={(val: number) => formatCurrency(val)}
-                    contentStyle={{ borderRadius: '8px', fontSize: '11px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                  />
+                  <RechartsTooltip content={<CustomTooltip />} />
                   <Legend wrapperStyle={{ fontSize: '10px' }} />
                   <Line type="monotone" dataKey="Overpay (Guaranteed)" stroke="#f59e0b" strokeWidth={3} dot={false} />
                   <Line type="monotone" dataKey={`Invest (${expectedInvestmentReturn}%)`} stroke="#3b82f6" strokeWidth={3} dot={false} />
