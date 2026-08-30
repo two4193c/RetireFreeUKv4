@@ -132,7 +132,10 @@ export function runHistoricModelingSimulation(
     const rawSequence = getHistoricSequence(startIndex, numYears);
     const sequence = reverseSequence ? [...rawSequence].reverse() : rawSequence;
 
-    let primaryUncrystallisedPot = cleanPots.workplacePensionBalance + cleanPots.sippBalance;
+    let gkMultiplier = 1.0;
+      let initialWithdrawalRate = 0;
+
+      let primaryUncrystallisedPot = cleanPots.workplacePensionBalance + cleanPots.sippBalance;
     let primaryCrystallisedPot = 0;
     let primaryPensionPot = primaryUncrystallisedPot + primaryCrystallisedPot;
     let partnerUncrystallisedPot = profile.isCouplePlanning ? (partnerPots.workplacePensionBalance + partnerPots.sippBalance) : 0;
@@ -772,8 +775,34 @@ export function runHistoricModelingSimulation(
         if (partnerWorkingCashGiaContrib > 0) addProRata('cashGia', partnerWorkingCashGiaContrib * cumulativeInflationFactor * ((1 + cashGiaReturnRate / 2) / (1 + cashGiaReturnRate)), true);
 
         // Target income calculations accounting for Maximized Spend & Reinvest Excess
-        const maxDrawdownIncomeTarget = getTargetIncomeForAge(profile, age);
-        const actualSpendingBase = getActualSpendingTargetForAge(profile, age);
+          if (profile.dynamicSpendingRules?.enabled) {
+            const totalWealth = pensionPot + isaPot + cashGiaPot;
+            const nominalBaseTarget = getActualSpendingTargetForAge(profile, age) * cumulativeInflationFactor;
+            
+            if (initialWithdrawalRate === 0 && totalWealth > 0) {
+              initialWithdrawalRate = nominalBaseTarget / totalWealth;
+            } else if (initialWithdrawalRate > 0 && totalWealth > 0) {
+              const currentWithdrawalRate = (nominalBaseTarget * gkMultiplier) / totalWealth;
+              const presThresh = 1 + (profile.dynamicSpendingRules.capitalPreservationThresholdPercent / 100);
+              const presCut = profile.dynamicSpendingRules.capitalPreservationCutPercent / 100;
+              const prospThresh = 1 - (profile.dynamicSpendingRules.prosperityThresholdPercent / 100);
+              const prospInc = profile.dynamicSpendingRules.prosperityIncreasePercent / 100;
+              
+              if (currentWithdrawalRate > (initialWithdrawalRate * presThresh)) {
+                gkMultiplier *= (1 - presCut);
+              } else if (currentWithdrawalRate < (initialWithdrawalRate * prospThresh)) {
+                gkMultiplier *= (1 + prospInc);
+              }
+              
+              if (profile.dynamicSpendingRules.skipInflationOnNegativeReturn && blendedReturnRate < 0) {
+                // Cancel out this year's inflation growth
+                gkMultiplier /= (1 + hInf);
+              }
+            }
+          }
+
+          const maxDrawdownIncomeTarget = getTargetIncomeForAge(profile, age) * gkMultiplier;
+          const actualSpendingBase = getActualSpendingTargetForAge(profile, age) * gkMultiplier;
 
         const isReinvestExcess = Boolean(
           profile.reinvestExcessDrawdown ||
