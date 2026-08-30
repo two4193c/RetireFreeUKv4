@@ -2339,15 +2339,23 @@ export async function generateFormulaExcelWorkbook(
     const totalTaxableYouFormula = `G${rowNum} + I${rowNum} + O${rowNum}`;
     const totalTaxablePartnerFormula = `H${rowNum} + J${rowNum} + P${rowNum}`;
 
-    const taxPaidYouFormula = `IF(Q${rowNum}>'Settings'!$B$5, MAX(0, MIN(Q${rowNum}-'Settings'!$B$5, 'Settings'!$B$6-'Settings'!$B$5)*0.20) + MAX(0, MIN(Q${rowNum}-'Settings'!$B$6, 'Settings'!$B$7-'Settings'!$B$6))*0.40 + MAX(0, Q${rowNum}-'Settings'!$B$7)*0.45, 0)`;
-    const taxPaidPartnerFormula = isCouple ? `IF(R${rowNum}>'Settings'!$B$5, MAX(0, MIN(R${rowNum}-'Settings'!$B$5, 'Settings'!$B$6-'Settings'!$B$5)*0.20) + MAX(0, MIN(R${rowNum}-'Settings'!$B$6, 'Settings'!$B$7-'Settings'!$B$6))*0.40 + MAX(0, R${rowNum}-'Settings'!$B$7)*0.45, 0)` : '0';
+    const paYou = `MAX(0, 'Settings'!$B$5 - MAX(0, (Q${rowNum} - 100000)/2))`;
+      const taxPaidYouFormula = `IF(Q${rowNum}>${paYou}, MAX(0, MIN(Q${rowNum}-${paYou}, 'Settings'!$B$6-${paYou})*0.20) + MAX(0, MIN(Q${rowNum}-'Settings'!$B$6, 'Settings'!$B$7-'Settings'!$B$6))*0.40 + MAX(0, Q${rowNum}-'Settings'!$B$7)*0.45, 0)`;
+    const paPartner = `MAX(0, 'Settings'!$B$5 - MAX(0, (R${rowNum} - 100000)/2))`;
+      const taxPaidPartnerFormula = isCouple ? `IF(R${rowNum}>${paPartner}, MAX(0, MIN(R${rowNum}-${paPartner}, 'Settings'!$B$6-${paPartner})*0.20) + MAX(0, MIN(R${rowNum}-'Settings'!$B$6, 'Settings'!$B$7-'Settings'!$B$6))*0.40 + MAX(0, R${rowNum}-'Settings'!$B$7)*0.45, 0)` : '0';
 
-    const netIncomeYouFormula = `IF(D${rowNum}="Accumulation", 0, Q${rowNum} - S${rowNum} + M${rowNum})`;
-    const netIncomePartnerFormula = isCouple ? `IF(D${rowNum}="Accumulation", 0, R${rowNum} - T${rowNum} + N${rowNum})` : '0';
+    const netIncomeYouFormula = `IF(D${rowNum}="Accumulation", 0, ${baseNetIncomeYouFormula} + (${isaDrawdownYouFormula}) + (${cashDrawdownYouFormula}))`;
+    const netIncomePartnerFormula = isCouple ? `IF(D${rowNum}="Accumulation", 0, ${baseNetIncomePartnerFormula} + (${isaDrawdownPartnerFormula}) + (${cashDrawdownPartnerFormula}))` : '0';
     const householdNetIncomeFormula = `U${rowNum} + V${rowNum}`;
 
-    const remainingShortfallYouFormula = `MAX(0, F${rowNum} - (U${rowNum}))`;
-    const remainingShortfallPartnerFormula = isCouple ? `MAX(0, (F${rowNum}/2) - (V${rowNum}))` : '0';
+    const dynamicCrystYouFormula = `MAX(0, O${rowNum} - (${prevCrystYouRef} + K${rowNum} - M${rowNum})) / 0.75`;
+      const dynamicPclsYouFormula = `(${dynamicCrystYouFormula}) * 0.25`;
+      const baseNetIncomeYouFormula = `Q${rowNum} - S${rowNum} + M${rowNum} + ${dynamicPclsYouFormula}`;
+      const remainingShortfallYouFormula = `MAX(0, F${rowNum} - (${baseNetIncomeYouFormula}))`;
+    const dynamicCrystPartnerFormula = isCouple ? `MAX(0, P${rowNum} - (${prevCrystPartnerRef} + L${rowNum} - N${rowNum})) / 0.75` : '0';
+      const dynamicPclsPartnerFormula = isCouple ? `(${dynamicCrystPartnerFormula}) * 0.25` : '0';
+      const baseNetIncomePartnerFormula = isCouple ? `R${rowNum} - T${rowNum} + N${rowNum} + ${dynamicPclsPartnerFormula}` : '0';
+      const remainingShortfallPartnerFormula = isCouple ? `MAX(0, (F${rowNum}/2) - (${baseNetIncomePartnerFormula}))` : '0';
 
     let isaDrawdownYouFormula = `IF(D${rowNum}="Accumulation", 0, MIN(MAX(0, ${prevIsaYouRef}), ${remainingShortfallYouFormula}))`;
     let cashDrawdownYouFormula = `IF(D${rowNum}="Accumulation", 0, MIN(MAX(0, ${prevCashYouRef}), MAX(0, ${remainingShortfallYouFormula} - MIN(MAX(0, ${prevIsaYouRef}), ${remainingShortfallYouFormula}))))`;
@@ -2370,7 +2378,7 @@ export async function generateFormulaExcelWorkbook(
     const pclsToCashPartner = isCouple ? `SUMIFS('Tax Free Lump Sums'!$L$4:$L$25, 'Tax Free Lump Sums'!$D$4:$D$25, A${rowNum}, 'Tax Free Lump Sums'!$A$4:$A$25, "PARTNER")` : '0';
 
     // Separate Uncrystallised Pot and Crystallised Drawdown Pot
-    const uncrystPensionBalYouFormula = `MAX(0, (${prevUncrystYouRef} - K${rowNum}) * (1 + 'Settings'!$B$12) + 'Contributions'!G${contribRowNum} + (${pInYou}) + (${pTrInYou}) - (${pTrOutYou}))`;
+    const uncrystPensionBalYouFormula = `MAX(0, (${prevUncrystYouRef} - K${rowNum} - (${dynamicCrystYouFormula})) * (1 + 'Settings'!$B$12) + 'Contributions'!G${contribRowNum} + (${pInYou}) + (${pTrInYou}) - (${pTrOutYou}))`;
     const crystPensionBalYouFormula = `MAX(0, (${prevCrystYouRef} + (K${rowNum} - M${rowNum}) - O${rowNum}) * (1 + 'Settings'!$B$12))`;
     const totalPensionBalYouFormula = `X${rowNum} + Y${rowNum}`;
 
