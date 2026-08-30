@@ -604,6 +604,11 @@ export interface MortgageDebtConfig {
   regularMonthlyOverpayment: number; // Regular extra overpayment (£/mo)
   lumpSumOverpayments?: LumpSumOverpayment[]; // Specific age lump sum overpayments
   
+  // Early Repayment Charge (ERC)
+  ercEnabled?: boolean;
+  ercPercent?: number; // e.g. 1.0, 2.0, 5.0
+  ercThresholdPercent?: number; // Allowable annual overpayment without charge (e.g. 10%)
+
   // Retirement Lump Sum Payoff Strategy
   payoffAtRetirement: boolean; // Pay off remaining mortgage balance at target retirement age
   payoffSourcePot?: 'pension_lump_sum' | 'cash_savings' | 'stocks_and_shares_isa' | 'cash_isa';

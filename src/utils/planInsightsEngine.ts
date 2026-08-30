@@ -37,6 +37,7 @@ export interface ActionableOpportunity {
   observation: string;
   actionableStep: string;
   projectedBenefit: string;
+  owner?: 'Household' | 'Primary' | 'Partner';
 }
 
 export interface ComprehensivePlanInsights {
@@ -679,7 +680,7 @@ export function computePlanInsights(
       id: 'lsa_cap_monitoring_primary',
       category: 'Tax Efficiency',
       title: 'Lump Sum Allowance (£268,275 LSA Cap) Headroom Review',
-      impactLevel: 'Low Impact',
+      impactLevel: 'Strategic Value',
       status: 'already_optimised',
       observation: `Projected pension pots (£${Math.round(priPensionAtTake).toLocaleString()}) produce a tax-free cash entitlement of £${priRawPcls.toLocaleString()}, leaving £${(priMaxPcls.lsaLimit - priRawPcls).toLocaleString()} of Lump Sum Allowance headroom.`,
       actionableStep: `Your projected pension size remains securely below the LSA threshold. No immediate action required.`,
@@ -711,7 +712,7 @@ export function computePlanInsights(
         id: 'lsa_cap_monitoring_partner',
         category: 'Tax Efficiency',
         title: 'Partner Lump Sum Allowance (£268,275 LSA Cap) Headroom Review',
-        impactLevel: 'Low Impact',
+        impactLevel: 'Strategic Value',
         status: 'already_optimised',
         observation: `Partner's projected pension pots (£${Math.round(partPensionAtTake).toLocaleString()}) produce a tax-free cash entitlement of £${partRawPcls.toLocaleString()}, leaving £${(partMaxPcls.lsaLimit - partRawPcls).toLocaleString()} of Lump Sum Allowance headroom.`,
         actionableStep: `Partner's projected pension size remains securely below the LSA threshold. No immediate action required.`,
