@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { UserProfile, MortgageDebtConfig, LumpSumOverpayment, MortgageRepaymentType } from '../types';
 import { DEFAULT_MORTGAGE } from '../utils/defaultData';
+import { MortgageArbitrageInsight } from './MortgageArbitrageInsight';
 import { getPensionAccessAge } from '../utils/ukTaxEngine';
 import {
   Home,
