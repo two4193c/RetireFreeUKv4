@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { UserProfile } from '../types';
 import { TrendingUp, CheckCircle2, Zap } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, Cell } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
 
 interface Props {
   profile: UserProfile;
@@ -28,29 +28,37 @@ export const MortgageArbitrageInsight: React.FC<Props> = ({ profile }) => {
   const isBetterToInvest = expectedInvestmentReturn > effectiveMortgageCost;
   const netSpread = expectedInvestmentReturn - effectiveMortgageCost;
 
-  // 10-Year projection based on actual overpayment (fallback to £500/mo if none planned)
+  // Multi-year projection based on actual overpayment
   const isHypothetical = (mortgage.regularMonthlyOverpayment || 0) === 0;
   const monthlySurplus = isHypothetical ? 500 : mortgage.regularMonthlyOverpayment;
-  const years = 10;
-  const months = years * 12;
+  
+  // Base timeframe on mortgage term (max 25 years to keep chart readable)
+  const mortgageYears = mortgage.remainingTermYears || 10;
+  const years = Math.min(25, Math.max(5, mortgageYears));
 
-  // Future Value of a series of monthly payments
-  // Formula: PMT * (((1 + r)^n - 1) / r)
   const rMort = (effectiveMortgageCost / 100) / 12;
-  const rInv = (expectedInvestmentReturn / 100) / 12;
+  const rConfig = (expectedInvestmentReturn / 100) / 12;
+  const rLow = (Math.max(1, expectedInvestmentReturn - 3) / 100) / 12;
+  const rHigh = ((expectedInvestmentReturn + 3) / 100) / 12;
 
-  const totalPrincipal = monthlySurplus * months;
+  const chartData = [];
+  for(let y = 0; y <= years; y++) {
+    const m = y * 12;
+    const totalPrincipal = monthlySurplus * m;
 
-  const overpayFV = rMort === 0 ? totalPrincipal : monthlySurplus * ((Math.pow(1 + rMort, months) - 1) / rMort);
-  const overpaySavings = overpayFV - totalPrincipal;
+    const overpayFV = rMort === 0 ? totalPrincipal : monthlySurplus * ((Math.pow(1 + rMort, m) - 1) / rMort);
+    const configFV = rConfig === 0 ? totalPrincipal : monthlySurplus * ((Math.pow(1 + rConfig, m) - 1) / rConfig);
+    const lowFV = rLow === 0 ? totalPrincipal : monthlySurplus * ((Math.pow(1 + rLow, m) - 1) / rLow);
+    const highFV = rHigh === 0 ? totalPrincipal : monthlySurplus * ((Math.pow(1 + rHigh, m) - 1) / rHigh);
 
-  const investFV = rInv === 0 ? totalPrincipal : monthlySurplus * ((Math.pow(1 + rInv, months) - 1) / rInv);
-  const investGrowth = investFV - totalPrincipal;
-
-  const chartData = [
-    { name: 'Overpay Mortgage', value: Math.round(overpaySavings), fill: '#f59e0b', label: 'Guaranteed Interest Saved' },
-    { name: 'Invest in ISA/Pension', value: Math.round(investGrowth), fill: '#3b82f6', label: 'Projected Tax-Free Growth' }
-  ];
+    chartData.push({
+      year: `Yr ${y}`,
+      'Overpay (Guaranteed)': Math.round(overpayFV),
+      [`Invest (${expectedInvestmentReturn}%)`]: Math.round(configFV),
+      [`Invest (${Math.max(1, expectedInvestmentReturn - 3)}%)`]: Math.round(lowFV),
+      [`Invest (${expectedInvestmentReturn + 3}%)`]: Math.round(highFV),
+    });
+  }
 
   const formatCurrency = (val: number) => '£' + val.toLocaleString();
 
@@ -105,24 +113,25 @@ export const MortgageArbitrageInsight: React.FC<Props> = ({ profile }) => {
           </div>
 
           <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200/80 dark:border-slate-700/80">
-                        <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-4 text-center">
-              10-Year Impact of {isHypothetical ? 'a Hypothetical £500/mo' : `Your £${monthlySurplus}/mo`} Surplus
+            <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-4 text-center">
+              {years}-Year Trajectory of {isHypothetical ? 'a Hypothetical £500/mo' : `Your £${monthlySurplus}/mo`} Surplus
             </h4>
-            <div className="h-40 w-full">
+            <div className="h-48 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} layout="vertical" margin={{ top: 0, right: 30, left: 10, bottom: 0 }}>
-                  <XAxis type="number" hide />
-                  <YAxis dataKey="name" type="category" width={110} tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                <LineChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
+                  <XAxis dataKey="year" fontSize={10} tickLine={false} stroke="#888888" />
+                  <YAxis fontSize={10} tickLine={false} stroke="#888888" tickFormatter={(v) => `£${(v / 1000).toFixed(0)}k`} width={45} />
                   <RechartsTooltip 
-                    formatter={(val: number) => formatCurrency(val)} 
+                    formatter={(val: number) => formatCurrency(val)}
                     contentStyle={{ borderRadius: '8px', fontSize: '11px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                   />
-                  <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={24}>
-                    {chartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.fill} />
-                    ))}
-                  </Bar>
-                </BarChart>
+                  <Legend wrapperStyle={{ fontSize: '10px' }} />
+                  <Line type="monotone" dataKey="Overpay (Guaranteed)" stroke="#f59e0b" strokeWidth={3} dot={false} />
+                  <Line type="monotone" dataKey={`Invest (${expectedInvestmentReturn}%)`} stroke="#3b82f6" strokeWidth={3} dot={false} />
+                  <Line type="monotone" dataKey={`Invest (${Math.max(1, expectedInvestmentReturn - 3)}%)`} stroke="#94a3b8" strokeWidth={1.5} strokeDasharray="4 4" dot={false} />
+                  <Line type="monotone" dataKey={`Invest (${expectedInvestmentReturn + 3}%)`} stroke="#64748b" strokeWidth={1.5} strokeDasharray="4 4" dot={false} />
+                </LineChart>
               </ResponsiveContainer>
             </div>
           </div>
