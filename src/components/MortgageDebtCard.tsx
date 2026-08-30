@@ -1266,6 +1266,8 @@ export const MortgageDebtCard: React.FC<MortgageDebtCardProps> = ({ profile, onC
         </div>
       )}
 
+      <MortgageArbitrageInsight profile={profile} />
+
       {/* Add Lump Sum Modal */}
       {showAddLumpSumModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
