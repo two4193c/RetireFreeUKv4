@@ -2344,9 +2344,6 @@ export async function generateFormulaExcelWorkbook(
     const paPartner = `MAX(0, 'Settings'!$B$5 - MAX(0, (R${rowNum} - 100000)/2))`;
       const taxPaidPartnerFormula = isCouple ? `IF(R${rowNum}>${paPartner}, MAX(0, MIN(R${rowNum}-${paPartner}, 'Settings'!$B$6-${paPartner})*0.20) + MAX(0, MIN(R${rowNum}-'Settings'!$B$6, 'Settings'!$B$7-'Settings'!$B$6))*0.40 + MAX(0, R${rowNum}-'Settings'!$B$7)*0.45, 0)` : '0';
 
-    const netIncomeYouFormula = `IF(D${rowNum}="Accumulation", 0, ${baseNetIncomeYouFormula} + (${isaDrawdownYouFormula}) + (${cashDrawdownYouFormula}))`;
-    const netIncomePartnerFormula = isCouple ? `IF(D${rowNum}="Accumulation", 0, ${baseNetIncomePartnerFormula} + (${isaDrawdownPartnerFormula}) + (${cashDrawdownPartnerFormula}))` : '0';
-    const householdNetIncomeFormula = `U${rowNum} + V${rowNum}`;
 
     const dynamicCrystYouFormula = `MAX(0, O${rowNum} - (${prevCrystYouRef} + K${rowNum} - M${rowNum})) / 0.75`;
       const dynamicPclsYouFormula = `(${dynamicCrystYouFormula}) * 0.25`;
@@ -2362,6 +2359,12 @@ export async function generateFormulaExcelWorkbook(
 
     let isaDrawdownPartnerFormula = isCouple ? `IF(D${rowNum}="Accumulation", 0, MIN(MAX(0, ${prevIsaPartnerRef}), ${remainingShortfallPartnerFormula}))` : '0';
     let cashDrawdownPartnerFormula = isCouple ? `IF(D${rowNum}="Accumulation", 0, MIN(MAX(0, ${prevCashPartnerRef}), MAX(0, ${remainingShortfallPartnerFormula} - MIN(MAX(0, ${prevIsaPartnerRef}), ${remainingShortfallPartnerFormula}))))` : '0';
+
+    const netIncomeYouFormula = `IF(D${rowNum}="Accumulation", 0, ${baseNetIncomeYouFormula} + (${isaDrawdownYouFormula}) + (${cashDrawdownYouFormula}))`;
+    const netIncomePartnerFormula = isCouple ? `IF(D${rowNum}="Accumulation", 0, ${baseNetIncomePartnerFormula} + (${isaDrawdownPartnerFormula}) + (${cashDrawdownPartnerFormula}))` : '0';
+    const householdNetIncomeFormula = `U${rowNum} + V${rowNum}`;
+
+
 
     const pInYou = `SUMIFS('One-Off Contributions'!$G$4:$G$50, 'One-Off Contributions'!$C$4:$C$50, "DC Pensions", 'One-Off Contributions'!$D$4:$D$50, A${rowNum}, 'One-Off Contributions'!$B$4:$B$50, "YOU")`;
     const pTrInYou = `SUMIFS('Pot Transfers'!$I$4:$I$50, 'Pot Transfers'!$F$4:$F$50, "DC Pensions", 'Pot Transfers'!$D$4:$D$50, A${rowNum}, 'Pot Transfers'!$L$4:$L$50, "YOU")`;
