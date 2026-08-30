@@ -27,6 +27,7 @@ import { SpendingPhasesCard } from './components/SpendingPhasesCard';
 import { ProjectionChart } from './components/ProjectionChart';
 import { AnnualBreakdownTable } from './components/AnnualBreakdownTable';
 import { MonteCarloCard } from './components/MonteCarloCard';
+import { DynamicSpendingCard } from './components/DynamicSpendingCard';
 import { DrawdownPlanner } from './components/DrawdownPlanner';
 import { GiltLadderCard } from './components/GiltLadderCard';
 import { ExportSection } from './components/ExportSection';
@@ -1184,7 +1185,10 @@ function App() {
                     <div id="card-risk-monte" className="scroll-mt-24 transition-all duration-300">
                       <MonteCarloCard profile={profile} pots={pots} taxResult={taxResult} onChange={handleProfileChange} appMode={appMode} />
                     </div>
-                    <div id="card-risk-historic" className="scroll-mt-24 transition-all duration-300">
+                    <div id="card-risk-dynamic-spending" className="scroll-mt-24 transition-all duration-300">
+                        <DynamicSpendingCard profile={profile} onChange={handleProfileChange} />
+                      </div>
+                      <div id="card-risk-historic" className="scroll-mt-24 transition-all duration-300">
                       <HistoricModelingCard profile={profile} pots={pots} taxResult={taxResult} onChange={handleProfileChange} appMode={appMode} />
                     </div>
                     <div id="card-pwr-metric" className="scroll-mt-24 transition-all duration-300">
@@ -1525,7 +1529,10 @@ function App() {
                 <div id="card-risk-monte" className="scroll-mt-24 transition-all duration-300">
                   <MonteCarloCard profile={profile} pots={pots} taxResult={taxResult} onChange={handleProfileChange} appMode={appMode} />
                 </div>
-                {appMode === 'advanced' && (
+                <div id="card-risk-dynamic-spending" className="scroll-mt-24 transition-all duration-300">
+                    <DynamicSpendingCard profile={profile} onChange={handleProfileChange} />
+                  </div>
+                  {appMode === 'advanced' && (
                   <div id="card-risk-historic" className="scroll-mt-24 transition-all duration-300">
                     <HistoricModelingCard profile={profile} pots={pots} taxResult={taxResult} onChange={handleProfileChange} appMode={appMode} />
                   </div>
