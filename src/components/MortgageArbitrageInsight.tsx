@@ -119,6 +119,36 @@ export const MortgageArbitrageInsight: React.FC<Props> = ({ profile }) => {
   const mortRates = [2, 3, 4, 5, 6, 7];
   const invRates = [3, 4, 5, 6, 7, 8, 9];
 
+  // Pre-calculate the final values for all rates to render in the heatmap
+  const getFV = (rate: number) => {
+    let bal = 0;
+    const r = (rate / 100) / 12;
+    for(let y = 1; y <= years; y++) {
+      const currentAgeLoop = profile.currentAge + y - 1;
+      bal = bal * Math.pow(1 + r, 12);
+      if (monthlySurplus > 0) {
+        bal += r === 0 ? monthlySurplus * 12 : monthlySurplus * ((Math.pow(1 + r, 12) - 1) / r);
+      }
+      const yearLumpSums = lumpSums.filter(ls => ls.enabled && ls.age === currentAgeLoop).reduce((sum, ls) => sum + ls.amount, 0);
+      if (yearLumpSums > 0 && !isHypothetical) {
+        bal += yearLumpSums;
+      }
+    }
+    return bal;
+  };
+
+  const overpayVals = new Map();
+  mortRates.forEach(mr => overpayVals.set(mr, getFV(mr)));
+  
+  const investVals = new Map();
+  invRates.forEach(ir => investVals.set(ir, getFV(ir)));
+
+  const formatK = (val: number) => {
+    const absVal = Math.abs(val);
+    if (absVal >= 1000) return `£${(absVal / 1000).toFixed(1)}k`;
+    return `£${Math.round(absVal)}`;
+  };
+
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 md:p-6 shadow-xs space-y-6 mt-6">
       <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800">
@@ -157,8 +187,8 @@ export const MortgageArbitrageInsight: React.FC<Props> = ({ profile }) => {
                   <span className="text-[10px] uppercase tracking-wider font-bold opacity-70">Verdict:</span>
                   <span className="text-xs font-bold px-2.5 py-1.5 rounded-md bg-white/60 dark:bg-black/20">
                     {isBetterToInvest 
-                      ? `Invest surplus to generate an extra £${difference.toLocaleString()} over ${years} years.`
-                      : `Overpay debt to save an extra £${difference.toLocaleString()} over ${years} years.`}
+                      ? `Invest surplus to generate an extra £${Math.round(difference).toLocaleString()} over ${years} years.`
+                      : `Overpay debt to save an extra £${Math.round(difference).toLocaleString()} over ${years} years.`}
                   </span>
                 </div>
               </div>
@@ -188,15 +218,15 @@ export const MortgageArbitrageInsight: React.FC<Props> = ({ profile }) => {
         </div>
 
         {/* RIGHT COL: Heatmap */}
-        <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200/80 dark:border-slate-700/80">
+        <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200/80 dark:border-slate-700/80 flex flex-col">
           <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">
-            Net Yield Spread Heatmap (Invest Return vs Mortgage Rate)
+            Net Yield Arbitrage Heatmap (Value Gain/Loss over {years} Years)
           </h4>
           <p className="text-[10px] text-slate-500 mb-4">
-            Green cells mean investing wins. Red cells mean overpaying debt wins. Highlights show net spread (%).
+            Green cells mean investing wins. Red cells mean overpaying debt wins. Values show total absolute gain (+£X) vs loss (-£X) by investing.
           </p>
           
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto grow flex items-center justify-center">
             <table className="w-full text-[10px] text-center border-collapse">
               <thead>
                 <tr>
@@ -216,6 +246,9 @@ export const MortgageArbitrageInsight: React.FC<Props> = ({ profile }) => {
                     </td>
                     {invRates.map(ir => {
                       const spread = ir - mr;
+                      const valInvest = investVals.get(ir) || 0;
+                      const valOverpay = overpayVals.get(mr) || 0;
+                      const gain = valInvest - valOverpay;
                       
                       let bgClass = "bg-slate-50 dark:bg-slate-900";
                       if (spread >= 3) bgClass = "bg-emerald-200 dark:bg-emerald-900/60 text-emerald-900 dark:text-emerald-100";
@@ -233,7 +266,10 @@ export const MortgageArbitrageInsight: React.FC<Props> = ({ profile }) => {
 
                       return (
                         <td key={ir} className={`p-1.5 border border-slate-200 dark:border-slate-700 transition-all ${bgClass}`}>
-                          {spread > 0 ? '+' : ''}{spread}%
+                          <div className="flex flex-col gap-0.5">
+                            <span className="opacity-60 text-[8px] leading-none">{spread > 0 ? '+' : ''}{spread}%</span>
+                            <span className="font-bold leading-none tracking-tight">{gain > 0 ? '+' : (gain < 0 ? '-' : '')}{formatK(gain)}</span>
+                          </div>
                         </td>
                       );
                     })}
@@ -248,6 +284,7 @@ export const MortgageArbitrageInsight: React.FC<Props> = ({ profile }) => {
              <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 bg-rose-200 rounded-sm"></div> Overpay Debt</div>
           </div>
         </div>
+
       </div>
 
       {/* BOTTOM SUMMARY TABLE */}
