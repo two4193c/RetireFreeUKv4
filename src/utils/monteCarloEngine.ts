@@ -144,9 +144,13 @@ export function calculateCashBufferRequiredDetails(
     let dbIncome = 0;
     (profile.dbPensions || []).filter((p) => p.enabled).forEach((db) => {
       const isPartner = db.owner === 'partner';
+      const ownerCurrentAge = isPartner ? (profile.partnerCurrentAge ?? profile.currentAge) : profile.currentAge;
       const evalAge = isPartner ? age + ((profile.partnerCurrentAge ?? profile.currentAge) - profile.currentAge) : age;
       if (evalAge >= db.startAge) {
-        dbIncome += db.inflationLinked ? db.annualIncome * inflationFactor : db.annualIncome;
+        const effectiveStartAge = Math.max(db.startAge, ownerCurrentAge);
+        const yearsInPayment = Math.max(0, evalAge - effectiveStartAge);
+        const dbEscalation = db.inflationLinked ? Math.pow(1 + inflation, yearsInPayment) : 1;
+        dbIncome += db.annualIncome * dbEscalation;
       }
     });
 
@@ -592,9 +596,15 @@ function parseAnnuityTypeConfig(type?: string) {
           : age;
 
         if (evalAge >= db.startAge) {
-          const dbIncome = db.inflationLinked
-            ? db.annualIncome * inflationFactor
-            : db.annualIncome;
+          const ownerCurrentAge = isPartner
+            ? (profile.partnerCurrentAge ?? profile.currentAge)
+            : profile.currentAge;
+          const effectiveStartAge = Math.max(db.startAge, ownerCurrentAge);
+          const yearsInPayment = Math.max(0, evalAge - effectiveStartAge);
+          const dbEscalation = db.inflationLinked
+            ? Math.pow(1 + inflation, yearsInPayment)
+            : 1;
+          const dbIncome = db.annualIncome * dbEscalation;
           if (isPartner) {
             partnerDbIncomeThisYear += dbIncome;
           } else {
@@ -602,20 +612,20 @@ function parseAnnuityTypeConfig(type?: string) {
           }
         }
         if (evalAge === db.startAge && db.taxFreeLumpSum > 0) {
-          const lumpSumInflated = db.taxFreeLumpSum * inflationFactor;
+          const lumpSumReceived = db.taxFreeLumpSum;
           
           if (profile.isCouplePlanning && isPartner) {
-            partnerCumulativeTaxFreeDrawn += lumpSumInflated;
+            partnerCumulativeTaxFreeDrawn += lumpSumReceived;
           } else {
-            primaryCumulativeTaxFreeDrawn += lumpSumInflated;
+            primaryCumulativeTaxFreeDrawn += lumpSumReceived;
           }
 
           const target = db.targetPot || 'cash_savings';
           if (target !== 'spend_clear_debt') {
             if (target === 'stocks_and_shares_isa' || target === 'cash_isa' || target === 'lisa') {
-              addProRata("isa", lumpSumInflated, isPartner);
+              addProRata("isa", lumpSumReceived, isPartner);
             } else {
-              addProRata("cashGia", lumpSumInflated, isPartner);
+              addProRata("cashGia", lumpSumReceived, isPartner);
             }
           }
         }

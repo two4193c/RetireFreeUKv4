@@ -180,6 +180,7 @@ export function runHistoricModelingSimulation(
     }> = [];
 
     let cumulativeInflationFactor = 1.0;
+    const dbStartInflation: Record<string, number> = {};
     const trajectory: HistoricYearSnapshot[] = [];
 
     for (let yr = 0; yr < numYears; yr++) {
@@ -461,11 +462,17 @@ export function runHistoricModelingSimulation(
         if (isPartner && (!profile.isCouplePlanning || partnerDead)) return;
         const evalAge = isPartner ? partnerAge : age;
         if (evalAge >= db.startAge) {
-          const dbInc = db.inflationLinked ? db.annualIncome * cumulativeInflationFactor : db.annualIncome;
+          if (dbStartInflation[db.id] === undefined) {
+            dbStartInflation[db.id] = cumulativeInflationFactor;
+          }
+          const startInflation = dbStartInflation[db.id] || 1;
+          const dbInc = db.inflationLinked
+            ? db.annualIncome * (cumulativeInflationFactor / startInflation)
+            : db.annualIncome;
           dbIncomeThisYr += dbInc;
         }
         if (evalAge === db.startAge && db.taxFreeLumpSum > 0) {
-          const lump = db.taxFreeLumpSum * cumulativeInflationFactor;
+          const lump = db.taxFreeLumpSum;
           if (isPartner) partnerCumulativeTaxFreeDrawn += lump;
           else primaryCumulativeTaxFreeDrawn += lump;
           if (db.targetPot !== 'spend_clear_debt') {

@@ -354,18 +354,26 @@ export const DbPensionManager: React.FC<DbPensionManagerProps> = ({ profile, onC
               )}
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block">Annual Income (£)</label>
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block">Annual Income at Start (£)</label>
+                  <span className="text-[10px] text-amber-700 dark:text-amber-400 font-semibold bg-amber-50 dark:bg-amber-950/60 px-1.5 py-0.5 rounded">At Start Age</span>
+                </div>
                 <input
                   type="number"
                   min={0} step={500}
                   value={editItem.annualIncome || ''}
                   onChange={(e) => handleUpdateDraft({ annualIncome: e.target.value === '' ? 0 : Number(e.target.value) })}
                   className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 text-sm"
+                  placeholder="e.g. 5000"
                 />
+                <p className="text-[10px] text-slate-400 dark:text-slate-500">Gross annual payment starting at age {editItem.startAge || 60}</p>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block">Tax-Free Lump Sum (£)</label>
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block">Tax-Free Lump Sum (£)</label>
+                  <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded">Paid Once</span>
+                </div>
                 <input
                   type="number"
                   min={0} step={1000}
@@ -373,6 +381,7 @@ export const DbPensionManager: React.FC<DbPensionManagerProps> = ({ profile, onC
                   onChange={(e) => handleUpdateDraft({ taxFreeLumpSum: e.target.value === '' ? 0 : Number(e.target.value) })}
                   className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 text-sm"
                 />
+                <p className="text-[10px] text-slate-400 dark:text-slate-500">One-off tax-free cash paid at commencement</p>
               </div>
               
               <div className="space-y-1.5">
@@ -393,24 +402,30 @@ export const DbPensionManager: React.FC<DbPensionManagerProps> = ({ profile, onC
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 pt-2 border-t border-slate-100 dark:border-slate-800">
-              <label className="flex items-center gap-2 cursor-pointer flex-1">
+              <label className="flex items-start gap-2.5 cursor-pointer flex-1">
                 <input
                   type="checkbox"
                   checked={editItem.inflationLinked}
                   onChange={(e) => handleUpdateDraft({ inflationLinked: e.target.checked })}
-                  className="w-4 h-4 text-amber-600 rounded border-slate-300 dark:border-slate-700 focus:ring-amber-500"
+                  className="w-4 h-4 text-amber-600 rounded border-slate-300 dark:border-slate-700 focus:ring-amber-500 mt-0.5 shrink-0"
                 />
-                <span className="text-sm font-bold text-slate-800 dark:text-slate-200">Inflation-Linked (CPI/RPI)</span>
+                <div>
+                  <span className="text-sm font-bold text-slate-800 dark:text-slate-200 block">Inflation-Linked (CPI/RPI)</span>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 block font-normal">Escalates annually with CPI from commencement age (not pre-retirement)</span>
+                </div>
               </label>
 
-              <label className="flex items-center gap-2 cursor-pointer flex-1">
+              <label className="flex items-start gap-2.5 cursor-pointer flex-1">
                 <input
                   type="checkbox"
                   checked={editItem.enabled}
                   onChange={(e) => handleUpdateDraft({ enabled: e.target.checked })}
-                  className="w-4 h-4 text-amber-600 rounded border-slate-300 dark:border-slate-700 focus:ring-amber-500"
+                  className="w-4 h-4 text-amber-600 rounded border-slate-300 dark:border-slate-700 focus:ring-amber-500 mt-0.5 shrink-0"
                 />
-                <span className="text-sm font-bold text-slate-800 dark:text-slate-200">Enabled in Projections</span>
+                <div>
+                  <span className="text-sm font-bold text-slate-800 dark:text-slate-200 block">Enabled in Projections</span>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 block font-normal">Include this guaranteed stream in your model</span>
+                </div>
               </label>
             </div>
           </div>

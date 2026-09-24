@@ -2287,8 +2287,8 @@ export async function generateFormulaExcelWorkbook(
       ? `IF(C${rowNum}>='Inputs & Setup'!$C$7, 'Inputs & Setup'!$C$8 * ((1 + 'Settings'!$B$15)^(${idx})), 0)`
       : '0';
 
-    const dbYouFormula = `SUMPRODUCT(('Fixed Income'!$E$4:$E$25) * ('Fixed Income'!$B$4:$B$25="YOU") * (B${rowNum}>='Fixed Income'!$C$4:$C$25) * (B${rowNum}<='Fixed Income'!$D$4:$D$25) * IF('Fixed Income'!$F$4:$F$25="CPI Indexed", (1+'Settings'!$B$11)^${idx}, 1))`;
-    const dbPartnerFormula = isCouple ? `SUMPRODUCT(('Fixed Income'!$E$4:$E$25) * ('Fixed Income'!$B$4:$B$25="PARTNER") * (C${rowNum}>='Fixed Income'!$C$4:$C$25) * (C${rowNum}<='Fixed Income'!$D$4:$D$25) * IF('Fixed Income'!$F$4:$F$25="CPI Indexed", (1+'Settings'!$B$11)^${idx}, 1))` : '0';
+    const dbYouFormula = `SUMPRODUCT(('Fixed Income'!$E$4:$E$25) * ('Fixed Income'!$B$4:$B$25="YOU") * (B${rowNum}>='Fixed Income'!$C$4:$C$25) * (B${rowNum}<='Fixed Income'!$D$4:$D$25) * IF('Fixed Income'!$F$4:$F$25="CPI Indexed", (1+'Settings'!$B$11)^(B${rowNum}-'Fixed Income'!$C$4:$C$25), 1))`;
+    const dbPartnerFormula = isCouple ? `SUMPRODUCT(('Fixed Income'!$E$4:$E$25) * ('Fixed Income'!$B$4:$B$25="PARTNER") * (C${rowNum}>='Fixed Income'!$C$4:$C$25) * (C${rowNum}<='Fixed Income'!$D$4:$D$25) * IF('Fixed Income'!$F$4:$F$25="CPI Indexed", (1+'Settings'!$B$11)^(C${rowNum}-'Fixed Income'!$C$4:$C$25), 1))` : '0';
 
     // Previous Pot Balances
     const prevUncrystYouRef = idx === 0 ? initPensionYou : `X${prevRowNum}`;

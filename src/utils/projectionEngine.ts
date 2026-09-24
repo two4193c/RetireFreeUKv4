@@ -397,7 +397,7 @@ function parseAnnuityTypeConfig(type?: string) {
     }
 
     // Partner Mortality Inheritance
-    if (profile.isCouplePlanning && !partnerDead && partnerAge >= (profile.partnerLifeExpectancyAge || profile.lifeExpectancyAge || 95)) {
+    if (profile.isCouplePlanning && !partnerDead && partnerAge >= (profile.partnerLifeExpectancyAge || 95)) {
       partnerDead = true;
       
       // Issue 4 Fix: Inherited pension must not generate further PCLS for the beneficiary.
@@ -633,19 +633,25 @@ function parseAnnuityTypeConfig(type?: string) {
       const isBeforeEndAge = !isUntilAge || (db.endAge !== undefined && evalAge <= db.endAge);
 
       if (isStartAgeReached && isBeforeEndAge) {
-        const dbIncome = db.inflationLinked
-          ? db.annualIncome * inflationFactor
-          : db.annualIncome;
+        const ownerCurrentAge = isPartner
+          ? (profile.partnerCurrentAge ?? profile.currentAge)
+          : profile.currentAge;
+        const effectiveStartAge = Math.max(db.startAge, ownerCurrentAge);
+        const yearsInPayment = Math.max(0, evalAge - effectiveStartAge);
+        const dbEscalation = db.inflationLinked
+          ? Math.pow(1 + inflation, yearsInPayment)
+          : 1;
+        const dbIncome = db.annualIncome * dbEscalation;
         if (isPartner) partnerDbPensionReceived += dbIncome;
         else primaryDbPensionReceived += dbIncome;
       }
       if (evalAge === db.startAge && db.taxFreeLumpSum > 0) {
-        const lumpSumInflated = db.taxFreeLumpSum * inflationFactor;
-        dbTaxFreeLumpSumReceived += lumpSumInflated;
+        const lumpSumReceived = db.taxFreeLumpSum;
+        dbTaxFreeLumpSumReceived += lumpSumReceived;
         if (profile.isCouplePlanning && isPartner) {
-          partnerCumulativeTaxFreeDrawn += lumpSumInflated;
+          partnerCumulativeTaxFreeDrawn += lumpSumReceived;
         } else {
-          primaryCumulativeTaxFreeDrawn += lumpSumInflated;
+          primaryCumulativeTaxFreeDrawn += lumpSumReceived;
         }
         const target = db.targetPot || 'cash_savings';
         if (target !== 'spend_clear_debt') {
@@ -653,24 +659,24 @@ function parseAnnuityTypeConfig(type?: string) {
           const isGiaTarget = target === 'gia';
           if (profile.isCouplePlanning && isPartner) {
             if (isIsaTarget) {
-              partnerIsaPot += lumpSumInflated;
-              partnerSsIsaPot += lumpSumInflated;
+              partnerIsaPot += lumpSumReceived;
+              partnerSsIsaPot += lumpSumReceived;
             } else if (isGiaTarget) {
-              partnerGiaPot += lumpSumInflated;
+              partnerGiaPot += lumpSumReceived;
               partnerCashGiaPot = partnerGiaPot + partnerCashSavingsPot;
             } else {
-              partnerCashSavingsPot += lumpSumInflated;
+              partnerCashSavingsPot += lumpSumReceived;
               partnerCashGiaPot = partnerGiaPot + partnerCashSavingsPot;
             }
           } else {
             if (isIsaTarget) {
-              primaryIsaPot += lumpSumInflated;
-              primarySsIsaPot += lumpSumInflated;
+              primaryIsaPot += lumpSumReceived;
+              primarySsIsaPot += lumpSumReceived;
             } else if (isGiaTarget) {
-              primaryGiaPot += lumpSumInflated;
+              primaryGiaPot += lumpSumReceived;
               primaryCashGiaPot = primaryGiaPot + primaryCashSavingsPot;
             } else {
-              primaryCashSavingsPot += lumpSumInflated;
+              primaryCashSavingsPot += lumpSumReceived;
               primaryCashGiaPot = primaryGiaPot + primaryCashSavingsPot;
             }
           }
@@ -737,7 +743,7 @@ function parseAnnuityTypeConfig(type?: string) {
         partnerCashIContribThisYr = partnerRegCashIsaContrib;
         partnerLisaContribThisYr = partnerRegLisaContrib + partnerTaxThisYr.lisaGovernmentBonusAnnual;
         partnerIContribThisYr = partnerSsIContribThisYr + partnerCashIContribThisYr + partnerLisaContribThisYr;
-        partnerCContribThisYr = partnerTaxThisYr.regularCashGiaContributionsAnnual ?? partnerTaxThisYr.totalCashGiaContributionsAnnual ?? 0;
+        partnerCContribThisYr = partnerTaxThisYr.regularCashGiaContributionsAnnual ?? partnerTaxThisYr.totalCashGiaContributionsAnnual;
         partnerGiaContribThisYr = partnerTaxThisYr.regularGiaContributionsAnnual ?? 0;
         partnerCashSavingsContribThisYr = partnerTaxThisYr.regularCashSavingsContributionsAnnual ?? 0;
       }
@@ -2261,9 +2267,7 @@ function parseAnnuityTypeConfig(type?: string) {
       }
 
       const requiredNetIncomeTarget = actualSpendingBase * incomeIncreaseFactor;
-            const isBracketStrategy = ['tax_optimizer', 'tax_free_bracket', 'basic_rate_bracket', 'higher_rate_bracket'].includes(profile.drawdownStrategy || 'isa_first');
-      const effectiveReinvestExcess = isReinvestExcess || isBracketStrategy;
-      const drawdownNetTarget = effectiveReinvestExcess ? (maxDrawdownIncomeTarget * incomeIncreaseFactor) : requiredNetIncomeTarget;
+      const drawdownNetTarget = isReinvestExcess ? (maxDrawdownIncomeTarget * incomeIncreaseFactor) : requiredNetIncomeTarget;
 
       // Individual Personal Allowance — indexed with CPI inflation or frozen at base level based on user preference
       const paBase = profile.customTaxBands?.enabled ? (profile.customTaxBands.personalAllowance ?? PERSONAL_ALLOWANCE) : PERSONAL_ALLOWANCE;
@@ -2294,7 +2298,7 @@ function parseAnnuityTypeConfig(type?: string) {
 
       // Phased Crystallisation / PCLS Tax-Free Income secured this year
       const phasedTaxFreeIncomeThisYear = primaryPclsDrawnThisYear + partnerPclsDrawnThisYear;
-      const netInitialIncomeSecured = netGuaranteedIncomeSecured + giltLadderIncomeThisYear;
+      const netInitialIncomeSecured = netGuaranteedIncomeSecured + phasedTaxFreeIncomeThisYear + giltLadderIncomeThisYear;
 
       // Remaining net income needed from investment pots to reach drawdownNetTarget
       let remainingIncomeNeeded = Math.max(0, drawdownNetTarget - netInitialIncomeSecured);
@@ -2528,23 +2532,15 @@ function parseAnnuityTypeConfig(type?: string) {
               }
             }
           } else if (strategy === 'tax_optimizer' || strategy === 'tax_free_bracket' || strategy === 'basic_rate_bracket' || strategy === 'higher_rate_bracket') {
-              const isScot = isPrimary ? profile.taxRegion === 'scotland' : (profile.partnerTaxRegion || profile.taxRegion) === 'scotland';
-              const inflMult = indexTaxBands ? inflationFactor : 1;
-  
-              const cb = profile.customTaxBands;
-              const cEnabled = cb?.enabled;
-              
-              const rukBasicThresh = cEnabled && cb.basicRateThreshold != null ? cb.basicRateThreshold : RUK_BASIC_THRESHOLD;
-              const rukAddThresh = cEnabled && cb.higherRateThreshold != null ? cb.higherRateThreshold : RUK_ADDITIONAL_THRESHOLD;
-              const scotIntThresh = cEnabled && cb.scotIntermediateThreshold != null ? cb.scotIntermediateThreshold : SCOT_INTERMEDIATE_THRESHOLD;
-              const scotHigherThresh = cEnabled && cb.scotHigherThreshold != null ? cb.scotHigherThreshold : SCOT_HIGHER_THRESHOLD;
+            const isScot = isPrimary ? profile.taxRegion === 'scotland' : (profile.partnerTaxRegion || profile.taxRegion) === 'scotland';
+            const inflMult = inflationFactor;
 
-              let thresholdGross = singlePersonalAllowance;
-              if (strategy === 'tax_optimizer' || strategy === 'basic_rate_bracket') {
-                thresholdGross = singlePersonalAllowance + ((isScot ? scotIntThresh : rukBasicThresh) * inflMult);
-              } else if (strategy === 'higher_rate_bracket') {
-                thresholdGross = (isScot ? (singlePersonalAllowance + (scotHigherThresh * inflMult)) : (rukAddThresh * inflMult));
-              }
+            let thresholdGross = 12570 * inflMult;
+            if (strategy === 'tax_optimizer' || strategy === 'basic_rate_bracket') {
+              thresholdGross = (12570 + (isScot ? SCOT_INTERMEDIATE_THRESHOLD : RUK_BASIC_THRESHOLD)) * inflMult;
+            } else if (strategy === 'higher_rate_bracket') {
+              thresholdGross = (isScot ? (12570 + SCOT_HIGHER_THRESHOLD) : RUK_ADDITIONAL_THRESHOLD) * inflMult;
+            }
 
             const incomeAlready = isPrimary ? primaryGuaranteedIncome : partnerGuaranteedIncome;
             const room = Math.max(0, thresholdGross - incomeAlready);
@@ -2552,22 +2548,19 @@ function parseAnnuityTypeConfig(type?: string) {
             const remLsa = Math.max(0, (isPrimary ? primaryMaxLsa : partnerMaxLsa) - (isPrimary ? primaryCumulativeTaxFreeDrawn : partnerCumulativeTaxFreeDrawn));
             const crystPot = isPrimary ? primaryCrystallisedPot : partnerCrystallisedPot;
 
-            const getGrossForTaxableTarget = (taxableTarget: number, cryst: number, remainingLsa: number): number => {
-              if (taxableTarget <= cryst) return taxableTarget;
-              let targetUncrystTaxable = taxableTarget - cryst;
-              const maxUncrystTaxableWithPcls = remainingLsa * 3;
-              if (targetUncrystTaxable <= maxUncrystTaxableWithPcls) {
-                return cryst + (targetUncrystTaxable / 0.75);
+            let maxGrossForBracket = 0;
+            if (room > 0) {
+              if (remLsa >= room / 3) {
+                maxGrossForBracket = room / 0.75;
+              } else {
+                maxGrossForBracket = room + remLsa;
               }
-              targetUncrystTaxable -= maxUncrystTaxableWithPcls;
-              return cryst + (maxUncrystTaxableWithPcls / 0.75) + targetUncrystTaxable;
-            };
+            }
 
-            const maxGrossForBracket = hasAccess ? getGrossForTaxableTarget(room, crystPot, remLsa) : 0;
             let targetGross = Math.min(hasAccess ? pPot : 0, maxGrossForBracket);
-
-            // Do not limit targetGross to remaining if they chose a tax bracket strategy
             if (targetGross > 0) {
+               const maxNet = approximateNetFromGrossForOwner(targetGross, owner);
+               if (maxNet > remaining) targetGross = getGrossPensionNeededForNetForOwner(remaining, pPot, owner);
                executePensionDeduct(targetGross);
             }
             if (iPot > 0 && remaining > 0) {

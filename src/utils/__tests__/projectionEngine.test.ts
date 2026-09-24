@@ -1571,4 +1571,79 @@ describe('projectionEngine - generateProjections', () => {
     });
   });
 
+  it('correctly CPI-links DB pension from the start age, NOT from today', () => {
+    const profile: any = {
+      ...DEFAULT_PROFILE,
+      currentAge: 50,
+      targetRetirementAge: 60,
+      expectedInflationRate: 2.5,
+      dbPensions: [
+        {
+          id: 'db-test-1',
+          name: 'Civil Service Pension',
+          enabled: true,
+          owner: 'primary',
+          startAge: 60,
+          annualIncome: 5000,
+          taxFreeLumpSum: 15000,
+          inflationLinked: true,
+        },
+      ],
+    };
+
+    const projections = generateProjections(profile, DEFAULT_POTS);
+
+    const row59 = projections.find((p) => p.age === 59);
+    const row60 = projections.find((p) => p.age === 60);
+    const row61 = projections.find((p) => p.age === 61);
+    const row62 = projections.find((p) => p.age === 62);
+
+    // Prior to start age, 0 DB pension income
+    expect(row59?.dbPensionIncomeReceived || 0).toBe(0);
+
+    // At start age 60, DB pension income starts at EXACTLY £5,000 (not compounded from age 50!)
+    expect(row60?.dbPensionIncomeReceived).toBe(5000);
+    expect(row60?.primaryDbPensionIncomeReceived).toBe(5000);
+
+    // At age 61 (1 year after start age), escalated by 1 year of CPI: 5000 * 1.025 = 5125
+    expect(row61?.dbPensionIncomeReceived).toBe(Math.round(5000 * 1.025));
+
+    // At age 62 (2 years after start age), escalated by 2 years of CPI: 5000 * 1.025^2 = 5253
+    expect(row62?.dbPensionIncomeReceived).toBe(Math.round(5000 * Math.pow(1.025, 2)));
+
+    // Lump sum at start age 60 should be £15,000 (not inflated from age 50)
+    expect(row60?.dbTaxFreeLumpSumReceived).toBe(15000);
+  });
+
+  it('keeps flat level DB pension income when inflationLinked is false', () => {
+    const profile: any = {
+      ...DEFAULT_PROFILE,
+      currentAge: 50,
+      targetRetirementAge: 60,
+      expectedInflationRate: 3.0,
+      dbPensions: [
+        {
+          id: 'db-test-2',
+          name: 'Fixed DB Pension',
+          enabled: true,
+          owner: 'primary',
+          startAge: 60,
+          annualIncome: 5000,
+          taxFreeLumpSum: 0,
+          inflationLinked: false,
+        },
+      ],
+    };
+
+    const projections = generateProjections(profile, DEFAULT_POTS);
+
+    const row60 = projections.find((p) => p.age === 60);
+    const row61 = projections.find((p) => p.age === 61);
+    const row65 = projections.find((p) => p.age === 65);
+
+    expect(row60?.dbPensionIncomeReceived).toBe(5000);
+    expect(row61?.dbPensionIncomeReceived).toBe(5000);
+    expect(row65?.dbPensionIncomeReceived).toBe(5000);
+  });
+
 });
