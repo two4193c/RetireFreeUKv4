@@ -345,6 +345,9 @@ export function sanitizeProfile(profile?: Partial<UserProfile> | null): UserProf
     partnerFullStatePensionAmount: fullSpPartner,
     partnerStatePensionAmountAnnual: partnerQYears < 10 ? 0 : (base.partnerStatePensionAmountAnnual ?? computedPartnerSp),
     partnerPots: sanitizePots(base.partnerPots, DEFAULT_PARTNER_POTS),
+    partnerWorkplacePensionBalance: base.partnerWorkplacePensionBalance ?? (base.partnerPots?.workplacePensionBalance ?? 0),
+    partnerSippBalance: base.partnerSippBalance ?? (base.partnerPots?.sippBalance ?? 0),
+    partnerIsaBalance: base.partnerIsaBalance ?? (base.partnerPots?.stocksAndSharesIsaBalance ?? 0),
     mortgage: {
       ...DEFAULT_MORTGAGE,
       ...(base.mortgage || {}),
@@ -386,12 +389,29 @@ export function createBlankScenario(id: string, name: string): PlannerScenario {
       partnerGrossAnnualSalary: 0,
       partnerQualifyingYears: 0,
       partnerStatePensionAmountAnnual: 0,
-      partnerPots: ZERO_POTS,
+      partnerPots: { ...ZERO_POTS },
+      partnerWorkplacePensionBalance: 0,
+      partnerSippBalance: 0,
+      partnerIsaBalance: 0,
       dbPensions: [],
       fixedIncomeStreams: [],
       oneOffContributions: [],
+      potTransfers: [],
+      mortgage: {
+        ...DEFAULT_MORTGAGE,
+        enabled: false,
+        currentBalance: 0,
+        regularMonthlyOverpayment: 0,
+      },
+      ihtSettings: {
+        ...DEFAULT_IHT_SETTINGS,
+        otherTaxableAssets: 0,
+        annualGiftingStrategy: 0,
+        businessReliefAssets: 0,
+        lifeInsuranceInTrust: 0,
+      },
     },
-    pots: ZERO_POTS,
+    pots: { ...ZERO_POTS },
   };
 }
 

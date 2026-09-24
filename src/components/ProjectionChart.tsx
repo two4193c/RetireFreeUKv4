@@ -17,7 +17,7 @@ import {
 import { YearProjection, UserProfile, InvestmentPots, AppMode } from '../types';
 import { getTargetIncomeForAge, generateProjections } from '../utils/projectionEngine';
 import { calculateUKTax, getPensionAccessAge, getPartnerPensionAccessAge } from '../utils/ukTaxEngine';
-import { DEFAULT_POTS, DEFAULT_PARTNER_POTS } from '../utils/defaultData';
+import { DEFAULT_POTS, DEFAULT_PARTNER_POTS, ZERO_POTS } from '../utils/defaultData';
 import { AlertTriangle, CheckCircle2, ShieldAlert, Info, ArrowUpRight, Users, User, Heart, PieChart, Wallet, Calendar, Clock, Sparkles, ArrowRight, Check } from 'lucide-react';
 
 interface ProjectionChartProps {
@@ -175,8 +175,8 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
     const priShare = combTotal > 0 ? (priTotal / combTotal) * 100 : 100;
     const partShare = combTotal > 0 ? (partTotal / combTotal) * 100 : 0;
 
-    const activePotsObj = pots || DEFAULT_POTS;
-    const partnerPotsObj = profile.partnerPots || DEFAULT_PARTNER_POTS;
+    const activePotsObj = pots || ZERO_POTS;
+    const partnerPotsObj = profile.partnerPots || (profile.isCouplePlanning ? DEFAULT_PARTNER_POTS : ZERO_POTS);
 
     const hasSsIsa = (portfolioViewMode === 'partner' ? partnerPotsObj.stocksAndSharesIsaBalance > 0 : activePotsObj.stocksAndSharesIsaBalance > 0) || projections.some((p) =>
       portfolioViewMode === 'combined'
@@ -263,7 +263,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
 
     const currentRetAge = profile.targetRetirementAge;
     const maxTestAge = Math.min(85, Math.max(75, currentRetAge + 15));
-    const activePots = pots || DEFAULT_POTS;
+    const activePots = pots || ZERO_POTS;
 
     interface DelayCandidate {
       testAge: number;

@@ -1,5 +1,5 @@
 import { UserProfile, InvestmentPots, TaxCalculationResult, LumpSumTargetPot, LumpSumSplit } from '../types';
-import { DEFAULT_PARTNER_POTS, DEFAULT_POTS, sanitizePots } from './defaultData';
+import { DEFAULT_PARTNER_POTS, DEFAULT_POTS, ZERO_POTS, sanitizePots } from './defaultData';
 import {
   PERSONAL_ALLOWANCE,
   PA_TAPER_THRESHOLD,
@@ -1425,14 +1425,18 @@ export function calculatePartnerUKTax(
   customPartnerPots?: InvestmentPots,
   evalAge?: number
 ): TaxCalculationResult {
+  const partnerPotsInput = customPartnerPots || profile.partnerPots;
+  const partnerFallback = profile.isCouplePlanning ? DEFAULT_PARTNER_POTS : ZERO_POTS;
   const pots = sanitizePots(
-    customPartnerPots || profile.partnerPots,
-    {
-      ...DEFAULT_PARTNER_POTS,
-      workplacePensionBalance: profile.partnerWorkplacePensionBalance || DEFAULT_PARTNER_POTS.workplacePensionBalance,
-      sippBalance: profile.partnerSippBalance || DEFAULT_PARTNER_POTS.sippBalance,
-      stocksAndSharesIsaBalance: profile.partnerIsaBalance || DEFAULT_PARTNER_POTS.stocksAndSharesIsaBalance,
-    }
+    partnerPotsInput,
+    partnerPotsInput
+      ? ZERO_POTS
+      : {
+          ...partnerFallback,
+          workplacePensionBalance: profile.partnerWorkplacePensionBalance ?? partnerFallback.workplacePensionBalance,
+          sippBalance: profile.partnerSippBalance ?? partnerFallback.sippBalance,
+          stocksAndSharesIsaBalance: profile.partnerIsaBalance ?? partnerFallback.stocksAndSharesIsaBalance,
+        }
   );
 
   const partnerAge = profile.partnerCurrentAge || profile.currentAge || 35;

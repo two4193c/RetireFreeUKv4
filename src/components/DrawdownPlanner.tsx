@@ -3,7 +3,7 @@ import { UserProfile, LsaProtectionType, IncomeProductOption, AnnuityType, Annui
 import { AnnuityPclsTaxAdviceCard } from './AnnuityPclsTaxAdviceCard';
 import { QuickDrawdownStrategyBar } from './QuickDrawdownStrategyBar';
 import { CrystallisationTrancheManager } from './CrystallisationTrancheManager';
-import { DEFAULT_PARTNER_POTS, DEFAULT_POTS, sanitizePots } from '../utils/defaultData';
+import { DEFAULT_PARTNER_POTS, DEFAULT_POTS, ZERO_POTS, sanitizePots } from '../utils/defaultData';
 import {
   calculateMaxPcls,
   getLsaLimit,
@@ -293,14 +293,17 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
   const primaryCurrentActualLumpSum = Math.min(primaryCurrentRawLumpSum, primaryLsaLimit);
 
   // Partner calculations
+  const partnerFallback = profile.isCouplePlanning ? DEFAULT_PARTNER_POTS : ZERO_POTS;
   const partnerPotsObj: InvestmentPots = sanitizePots(
     profile.partnerPots,
-    {
-      ...DEFAULT_PARTNER_POTS,
-      workplacePensionBalance: profile.partnerWorkplacePensionBalance || DEFAULT_PARTNER_POTS.workplacePensionBalance,
-      sippBalance: profile.partnerSippBalance || DEFAULT_PARTNER_POTS.sippBalance,
-      stocksAndSharesIsaBalance: profile.partnerIsaBalance || DEFAULT_PARTNER_POTS.stocksAndSharesIsaBalance,
-    }
+    profile.partnerPots
+      ? ZERO_POTS
+      : {
+          ...partnerFallback,
+          workplacePensionBalance: profile.partnerWorkplacePensionBalance ?? partnerFallback.workplacePensionBalance,
+          sippBalance: profile.partnerSippBalance ?? partnerFallback.sippBalance,
+          stocksAndSharesIsaBalance: profile.partnerIsaBalance ?? partnerFallback.stocksAndSharesIsaBalance,
+        }
   );
 
   const partnerCurrentPot = partnerPotsObj.workplacePensionBalance + partnerPotsObj.sippBalance;

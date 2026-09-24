@@ -1,5 +1,5 @@
 import { UserProfile, InvestmentPots, TaxCalculationResult } from '../types';
-import { DEFAULT_PARTNER_POTS, DEFAULT_POTS, sanitizePots } from './defaultData';
+import { DEFAULT_PARTNER_POTS, DEFAULT_POTS, ZERO_POTS, sanitizePots } from './defaultData';
 import { getPensionAccessAge, getPartnerPensionAccessAge, getLsaLimit, getPartnerLsaLimit, getLumpSumTakeAge, calculateUKTax, calculatePartnerUKTax, allocateLumpSumToPots } from './ukTaxEngine';
 import { getTargetIncomeForAge, getActualSpendingTargetForAge } from './projectionEngine';
 import { SCOT_INTERMEDIATE_THRESHOLD, RUK_BASIC_THRESHOLD, SCOT_HIGHER_THRESHOLD, RUK_ADDITIONAL_THRESHOLD } from '../config/ukTaxRates';
@@ -59,8 +59,8 @@ export function calculateCashBufferRequiredDetails(
   const currentYear = new Date().getFullYear();
   const inflation = (profile.expectedInflationRate || 2.5) / 100;
   
-  const sanitizedPots = sanitizePots(pots);
-  const sanitizedPartnerPots = sanitizePots(profile.partnerPots || DEFAULT_PARTNER_POTS);
+  const sanitizedPots = sanitizePots(pots, pots ? ZERO_POTS : DEFAULT_POTS);
+  const sanitizedPartnerPots = sanitizePots(profile.partnerPots, profile.partnerPots ? ZERO_POTS : (profile.isCouplePlanning ? DEFAULT_PARTNER_POTS : ZERO_POTS));
 
   const startingCashToday = (sanitizedPots.cashSavingsBalance || 0) + (sanitizedPots.cashIsaBalance || 0) +
     (profile.isCouplePlanning ? ((sanitizedPartnerPots.cashSavingsBalance || 0) + (sanitizedPartnerPots.cashIsaBalance || 0)) : 0);
@@ -329,15 +329,18 @@ export function runMonteCarloSimulation(
   const maxLsa = getLsaLimit(profile);
   const partnerMaxLsa = profile.isCouplePlanning ? getPartnerLsaLimit(profile) : maxLsa;
 
-  const cleanPots = sanitizePots(pots, DEFAULT_POTS);
+  const cleanPots = sanitizePots(pots, pots ? ZERO_POTS : DEFAULT_POTS);
+  const partnerFallback = profile.isCouplePlanning ? DEFAULT_PARTNER_POTS : ZERO_POTS;
   const partnerPots = sanitizePots(
     profile.partnerPots,
-    {
-      ...DEFAULT_PARTNER_POTS,
-      workplacePensionBalance: profile.partnerWorkplacePensionBalance || DEFAULT_PARTNER_POTS.workplacePensionBalance,
-      sippBalance: profile.partnerSippBalance || DEFAULT_PARTNER_POTS.sippBalance,
-      stocksAndSharesIsaBalance: profile.partnerIsaBalance || DEFAULT_PARTNER_POTS.stocksAndSharesIsaBalance,
-    }
+    profile.partnerPots
+      ? ZERO_POTS
+      : {
+          ...partnerFallback,
+          workplacePensionBalance: profile.partnerWorkplacePensionBalance ?? partnerFallback.workplacePensionBalance,
+          sippBalance: profile.partnerSippBalance ?? partnerFallback.sippBalance,
+          stocksAndSharesIsaBalance: profile.partnerIsaBalance ?? partnerFallback.stocksAndSharesIsaBalance,
+        }
   );
 
   const partnerTaxResult = profile.isCouplePlanning ? calculatePartnerUKTax(profile, partnerPots) : null;

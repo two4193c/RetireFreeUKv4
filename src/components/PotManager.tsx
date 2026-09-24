@@ -30,13 +30,13 @@ export const PotManager: React.FC<PotManagerProps> = ({
 
   // Fallback partner pots structure
   const fallbackPartnerPots: InvestmentPots = partnerPots || profile.partnerPots || {
-    workplacePensionBalance: profile.partnerWorkplacePensionBalance || 0,
+    workplacePensionBalance: profile.partnerWorkplacePensionBalance ?? 0,
     workplacePensionMonthlyEmployee: 0,
     workplacePensionMonthlyEmployeeType: 'percent',
     employerMatchPercentage: 0,
-    sippBalance: profile.partnerSippBalance || 0,
+    sippBalance: profile.partnerSippBalance ?? 0,
     sippMonthlyContribution: 0,
-    stocksAndSharesIsaBalance: profile.partnerIsaBalance || 0,
+    stocksAndSharesIsaBalance: profile.partnerIsaBalance ?? 0,
     stocksAndSharesIsaMonthlyContribution: 0,
     cashIsaBalance: 0,
     cashIsaMonthlyContribution: 0,
@@ -340,8 +340,9 @@ export const PotManager: React.FC<PotManagerProps> = ({
                 <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300">Starting Balance (£)</label>
                 <input
                   type="number"
-                  value={currentPots.workplacePensionBalance || ''}
-                  onChange={(e) => updateField('workplacePensionBalance', Math.max(0, Number(e.target.value)))}
+                  value={currentPots.workplacePensionBalance ?? ''}
+                  onFocus={(e) => { if (e.target.value === '0') e.target.select(); }}
+                  onChange={(e) => updateField('workplacePensionBalance', e.target.value === '' ? 0 : Math.max(0, Number(e.target.value)))}
                   className="w-full mt-1 px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm sm:text-xs font-bold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                   placeholder="0"
                 />
@@ -361,8 +362,9 @@ export const PotManager: React.FC<PotManagerProps> = ({
                 <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300">Starting Balance (£)</label>
                 <input
                   type="number"
-                  value={currentPots.sippBalance || ''}
-                  onChange={(e) => updateField('sippBalance', Math.max(0, Number(e.target.value)))}
+                  value={currentPots.sippBalance ?? ''}
+                  onFocus={(e) => { if (e.target.value === '0') e.target.select(); }}
+                  onChange={(e) => updateField('sippBalance', e.target.value === '' ? 0 : Math.max(0, Number(e.target.value)))}
                   className="w-full mt-1 px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm sm:text-xs font-bold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                   placeholder="0"
                 />
@@ -383,8 +385,9 @@ export const PotManager: React.FC<PotManagerProps> = ({
                 <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300">Starting Balance (£)</label>
                 <input
                   type="number"
-                  value={currentPots.stocksAndSharesIsaBalance || ''}
-                  onChange={(e) => updateField('stocksAndSharesIsaBalance', Math.max(0, Number(e.target.value)))}
+                  value={currentPots.stocksAndSharesIsaBalance ?? ''}
+                  onFocus={(e) => { if (e.target.value === '0') e.target.select(); }}
+                  onChange={(e) => updateField('stocksAndSharesIsaBalance', e.target.value === '' ? 0 : Math.max(0, Number(e.target.value)))}
                   className="w-full mt-1 px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm sm:text-xs font-bold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                   placeholder="0"
                 />
@@ -398,8 +401,9 @@ export const PotManager: React.FC<PotManagerProps> = ({
                 <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300">Starting Balance (£)</label>
                 <input
                   type="number"
-                  value={currentPots.cashIsaBalance || ''}
-                  onChange={(e) => updateField('cashIsaBalance', Math.max(0, Number(e.target.value)))}
+                  value={currentPots.cashIsaBalance ?? ''}
+                  onFocus={(e) => { if (e.target.value === '0') e.target.select(); }}
+                  onChange={(e) => updateField('cashIsaBalance', e.target.value === '' ? 0 : Math.max(0, Number(e.target.value)))}
                   className="w-full mt-1 px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm sm:text-xs font-bold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                   placeholder="0"
                 />
@@ -415,8 +419,9 @@ export const PotManager: React.FC<PotManagerProps> = ({
                 <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300">Starting Balance (£)</label>
                 <input
                   type="number"
-                  value={currentPots.lisaBalance || ''}
-                  onChange={(e) => updateField('lisaBalance', Math.max(0, Number(e.target.value)))}
+                  value={currentPots.lisaBalance ?? ''}
+                  onFocus={(e) => { if (e.target.value === '0') e.target.select(); }}
+                  onChange={(e) => updateField('lisaBalance', e.target.value === '' ? 0 : Math.max(0, Number(e.target.value)))}
                   className="w-full mt-1 px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm sm:text-xs font-bold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                   placeholder="0"
                 />
@@ -437,8 +442,9 @@ export const PotManager: React.FC<PotManagerProps> = ({
                 <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300">Starting Balance (£)</label>
                 <input
                   type="number"
-                  value={currentPots.giaBalance || ''}
-                  onChange={(e) => updateField('giaBalance', Math.max(0, Number(e.target.value)))}
+                  value={currentPots.giaBalance ?? ''}
+                  onFocus={(e) => { if (e.target.value === '0') e.target.select(); }}
+                  onChange={(e) => updateField('giaBalance', e.target.value === '' ? 0 : Math.max(0, Number(e.target.value)))}
                   className="w-full mt-1 px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm sm:text-xs font-bold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                   placeholder="0"
                 />
@@ -452,8 +458,9 @@ export const PotManager: React.FC<PotManagerProps> = ({
                 <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300">Starting Balance (£)</label>
                 <input
                   type="number"
-                  value={currentPots.cashSavingsBalance || ''}
-                  onChange={(e) => updateField('cashSavingsBalance', Math.max(0, Number(e.target.value)))}
+                  value={currentPots.cashSavingsBalance ?? ''}
+                  onFocus={(e) => { if (e.target.value === '0') e.target.select(); }}
+                  onChange={(e) => updateField('cashSavingsBalance', e.target.value === '' ? 0 : Math.max(0, Number(e.target.value)))}
                   className="w-full mt-1 px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm sm:text-xs font-bold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                   placeholder="0"
                 />

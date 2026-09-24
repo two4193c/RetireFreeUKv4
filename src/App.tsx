@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, Component, ErrorInfo, ReactNode } from 'react';
 import { PlannerScenario, UserProfile, InvestmentPots, DrawdownStrategy, AppMode, DashboardTab } from './types';
 import { STRATEGY_DEFINITIONS } from './components/QuickDrawdownStrategyBar';
-import { DEFAULT_PROFILE, DEFAULT_POTS, DEFAULT_PARTNER_POTS, PRESET_SCENARIOS, sanitizePots, sanitizeProfile, createBlankScenario } from './utils/defaultData';
+import { DEFAULT_PROFILE, DEFAULT_POTS, DEFAULT_PARTNER_POTS, PRESET_SCENARIOS, sanitizePots, sanitizeProfile, createBlankScenario, ZERO_POTS } from './utils/defaultData';
 import { NewPlanModal } from './components/NewPlanModal';
 import { JsonImportModal } from './components/JsonImportModal';
 import { DeletePlanModal } from './components/DeletePlanModal';
@@ -243,7 +243,7 @@ function App() {
             id: s?.id || `scenario_${idx}_${Date.now()}`,
             name: s?.name || `Plan ${idx + 1}`,
             profile: sanitizeProfile(s?.profile),
-            pots: sanitizePots(s?.pots, DEFAULT_POTS),
+            pots: sanitizePots(s?.pots, s?.pots ? ZERO_POTS : DEFAULT_POTS),
           }));
           if (validated.length > 0) return validated;
         }
@@ -373,7 +373,7 @@ function App() {
   // Current active scenario, profile & pots
   const activeScenario = scenarios.find((s) => s.id === activeScenarioId) || scenarios[0] || PRESET_SCENARIOS[0];
   const profile = useMemo(() => sanitizeProfile(activeScenario?.profile), [activeScenario?.profile]);
-  const pots = useMemo(() => sanitizePots(activeScenario?.pots, DEFAULT_POTS), [activeScenario?.pots]);
+  const pots = useMemo(() => sanitizePots(activeScenario?.pots, activeScenario?.pots ? ZERO_POTS : DEFAULT_POTS), [activeScenario?.pots]);
 
   // Update profile for active scenario
   const handleProfileChange = (updatedProfile: UserProfile) => {
@@ -389,7 +389,7 @@ function App() {
 
   // Update pots for active scenario
   const handlePotsChange = (updatedPots: InvestmentPots) => {
-    const sanitized = sanitizePots(updatedPots, DEFAULT_POTS);
+    const sanitized = sanitizePots(updatedPots, ZERO_POTS);
     setScenarios((prev) =>
       prev.map((s) =>
         s.id === activeScenarioId
@@ -400,11 +400,21 @@ function App() {
   };
 
   const handlePartnerPotsChange = (updatedPartnerPots: InvestmentPots) => {
-    const cleanPartnerPots = sanitizePots(updatedPartnerPots, DEFAULT_PARTNER_POTS);
+    const cleanPartnerPots = sanitizePots(updatedPartnerPots, ZERO_POTS);
     setScenarios((prev) =>
       prev.map((s) =>
         s.id === activeScenarioId
-          ? { ...s, profile: { ...s.profile, partnerPots: cleanPartnerPots }, updatedAt: new Date().toISOString() }
+          ? {
+              ...s,
+              profile: {
+                ...s.profile,
+                partnerPots: cleanPartnerPots,
+                partnerWorkplacePensionBalance: cleanPartnerPots.workplacePensionBalance,
+                partnerSippBalance: cleanPartnerPots.sippBalance,
+                partnerIsaBalance: cleanPartnerPots.stocksAndSharesIsaBalance,
+              },
+              updatedAt: new Date().toISOString(),
+            }
           : s
       )
     );
@@ -675,7 +685,7 @@ function App() {
         id: s?.id || `scenario_${idx}_${Date.now()}`,
         name: s?.name || `Imported Plan ${idx + 1}`,
         profile: sanitizeProfile(s?.profile),
-        pots: sanitizePots(s?.pots, DEFAULT_POTS),
+        pots: sanitizePots(s?.pots, s?.pots ? ZERO_POTS : DEFAULT_POTS),
       }));
       setPendingImportScenarios(sanitized);
     }

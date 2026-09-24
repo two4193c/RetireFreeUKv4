@@ -1,5 +1,5 @@
 import { UserProfile, InvestmentPots, YearProjection, TaxCalculationResult } from '../types';
-import { DEFAULT_PARTNER_POTS, DEFAULT_POTS, sanitizePots } from './defaultData';
+import { DEFAULT_PARTNER_POTS, DEFAULT_POTS, ZERO_POTS, sanitizePots } from './defaultData';
 import { calculateGiltLadder } from './giltLadderEngine';
 import { getEffectiveAccumulationReturn, getEffectiveDecumulationReturn, getTotalFeePercent, getPotFeePercent, calculateWeightedAssetReturn, getPotGrossReturn } from './assetAllocation';
 import {
@@ -158,16 +158,19 @@ export function generateProjections(
   const safeCurrentAge = Math.max(18, Math.min(100, profile.currentAge || 30));
   const effectiveMaxAge = Math.max(safeCurrentAge + 1, maxAge || 100);
 
-  const cleanPots = sanitizePots(pots, DEFAULT_POTS);
+  const cleanPots = sanitizePots(pots, pots ? ZERO_POTS : DEFAULT_POTS);
   const effectiveTaxResult = taxResult || calculateUKTax(profile, cleanPots);
+  const partnerFallback = profile.isCouplePlanning ? DEFAULT_PARTNER_POTS : ZERO_POTS;
   const partnerPots = sanitizePots(
     profile.partnerPots,
-    {
-      ...DEFAULT_PARTNER_POTS,
-      workplacePensionBalance: profile.partnerWorkplacePensionBalance || DEFAULT_PARTNER_POTS.workplacePensionBalance,
-      sippBalance: profile.partnerSippBalance || DEFAULT_PARTNER_POTS.sippBalance,
-      stocksAndSharesIsaBalance: profile.partnerIsaBalance || DEFAULT_PARTNER_POTS.stocksAndSharesIsaBalance,
-    }
+    profile.partnerPots
+      ? ZERO_POTS
+      : {
+          ...partnerFallback,
+          workplacePensionBalance: profile.partnerWorkplacePensionBalance ?? partnerFallback.workplacePensionBalance,
+          sippBalance: profile.partnerSippBalance ?? partnerFallback.sippBalance,
+          stocksAndSharesIsaBalance: profile.partnerIsaBalance ?? partnerFallback.stocksAndSharesIsaBalance,
+        }
   );
 
   let primaryPensionPot = cleanPots.workplacePensionBalance + cleanPots.sippBalance;
