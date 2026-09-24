@@ -558,4 +558,43 @@ describe('monteCarloEngine - missing lines chunk 3', () => {
     );
     expect(result).toBeDefined();
   });
+
+  it('accurately updates probability in early_crash scenario and does not resurrect depleted pots', () => {
+    const profile = {
+      ...DEFAULT_PROFILE,
+      currentAge: 55,
+      targetRetirementAge: 60,
+      desiredRetirementIncome: 25000,
+      targetRetirementIncomeAnnual: 25000,
+    };
+    const pots = {
+      workplacePensionBalance: 300000,
+      sippBalance: 0,
+      stocksAndSharesIsaBalance: 50000,
+      cashSavingsBalance: 20000,
+      // intentionally omit cashIsaBalance, giaBalance, lisaBalance to ensure no NaN
+    };
+    const taxResult = calculateUKTax(profile, pots as any);
+
+    const stdResult = runMonteCarloSimulation(profile, pots as any, taxResult, {
+      numSimulations: 50,
+      maxAge: 85,
+      marketScenario: 'standard',
+    });
+
+    const crashResult = runMonteCarloSimulation(profile, pots as any, taxResult, {
+      numSimulations: 50,
+      maxAge: 85,
+      marketScenario: 'early_crash',
+      crashStartAge: 60,
+      crashDurationYears: 2,
+      crashYearDropsPercent: [30, 15],
+    });
+
+    expect(isNaN(stdResult.medianRetirementPot)).toBe(false);
+    expect(isNaN(crashResult.medianRetirementPot)).toBe(false);
+    expect(crashResult.params.marketScenario).toBe('early_crash');
+    expect(crashResult.medianEndPot).toBeLessThan(stdResult.medianEndPot);
+    expect(crashResult.successRateAge85).toBeLessThan(stdResult.successRateAge85);
+  });
 });

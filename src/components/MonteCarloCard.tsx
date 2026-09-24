@@ -980,7 +980,10 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
               type="button"
               role="radio"
               aria-checked={(localParams.marketScenario || 'standard') === 'standard'}
-              onClick={() => setLocalParams((prev) => ({ ...prev, marketScenario: 'standard' }))}
+              onClick={() => {
+                setLocalParams((prev) => ({ ...prev, marketScenario: 'standard' }));
+                setParams((prev) => ({ ...prev, marketScenario: 'standard' }));
+              }}
               className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between space-y-1 ${
                 (localParams.marketScenario || 'standard') === 'standard'
                   ? 'bg-indigo-50/90 dark:bg-indigo-950/80 border-indigo-300 dark:border-indigo-700 ring-2 ring-indigo-500/20 text-indigo-950 dark:text-indigo-100 shadow-xs'
@@ -1006,7 +1009,10 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
               type="button"
               role="radio"
               aria-checked={localParams.marketScenario === 'stressed'}
-              onClick={() => setLocalParams((prev) => ({ ...prev, marketScenario: 'stressed' }))}
+              onClick={() => {
+                setLocalParams((prev) => ({ ...prev, marketScenario: 'stressed' }));
+                setParams((prev) => ({ ...prev, marketScenario: 'stressed' }));
+              }}
               className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between space-y-1 ${
                 localParams.marketScenario === 'stressed'
                   ? 'bg-amber-50 dark:bg-amber-950/80 border-amber-300 dark:border-amber-700 ring-2 ring-amber-500/20 text-amber-950 dark:text-amber-100 shadow-xs'
@@ -1032,7 +1038,10 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
               type="button"
               role="radio"
               aria-checked={localParams.marketScenario === 'early_crash'}
-              onClick={() => setLocalParams((prev) => ({ ...prev, marketScenario: 'early_crash' }))}
+              onClick={() => {
+                setLocalParams((prev) => ({ ...prev, marketScenario: 'early_crash' }));
+                setParams((prev) => ({ ...prev, marketScenario: 'early_crash' }));
+              }}
               className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between space-y-1 ${
                 localParams.marketScenario === 'early_crash'
                   ? 'bg-rose-50 dark:bg-rose-950/80 border-rose-300 dark:border-rose-700 ring-2 ring-rose-500/20 text-rose-950 dark:text-rose-100 shadow-xs'
@@ -1097,11 +1106,18 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
                 <button
                   type="button"
                   onClick={() => {
-                    setLocalParams((prev) => ({
-                      ...prev,
+                    const defaults = {
                       crashStartAge: profile.targetRetirementAge,
                       crashDurationYears: 2,
                       crashYearDropsPercent: [30, 15],
+                    };
+                    setLocalParams((prev) => ({
+                      ...prev,
+                      ...defaults,
+                    }));
+                    setParams((prev) => ({
+                      ...prev,
+                      ...defaults,
                     }));
                   }}
                   className="text-[11px] font-bold text-rose-700 dark:text-rose-300 hover:underline cursor-pointer"
@@ -1355,7 +1371,7 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
                 <strong>Stressed Market Model Active:</strong> Reduces expected annual growth by {(localParams.stressedReturnDropPercent ?? 2.0).toFixed(1)}% p.a. across all years ({Math.max(0, (profile.expectedInvestmentReturn || 6) - (localParams.stressedReturnDropPercent ?? 2.0)).toFixed(1)}% pre-retirement / {Math.max(0, (profile.postRetirementReturn || 4.5) - (localParams.stressedReturnDropPercent ?? 2.0)).toFixed(1)}% post-retirement). This tests how your portfolio holds up under lower growth or sustained inflationary drag.
               </p>
             </div>
-          ) : params.marketScenario === 'early_crash' ? (
+          ) : (localParams.marketScenario || params.marketScenario) === 'early_crash' ? (
             <div className="bg-rose-50 dark:bg-rose-950/40 p-3 rounded-2xl border border-rose-200 dark:border-rose-800/60 flex items-start gap-2 text-xs text-rose-950 dark:text-rose-200 font-medium">
               <ShieldAlert className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
               <p>

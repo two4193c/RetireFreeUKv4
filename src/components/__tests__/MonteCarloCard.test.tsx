@@ -94,4 +94,42 @@ describe('MonteCarloCard', () => {
     expect(await screen.findByText(/Pot Success Rate \(Age 85\)/i, {}, { timeout: 2000 })).toBeInTheDocument();
     expect(screen.getAllByText('90%')[0]).toBeInTheDocument();
   });
+
+  it('immediately updates scenario to early_crash when Market Crash radio option is selected', async () => {
+    const mockResult = {
+      successRateAge80: 95,
+      successRateAge85: 90,
+      successRateAge90: 85,
+      incomeSuccessRateAge85: 95,
+      agePercentiles: [
+        { age: 60, year: 2034, isRetired: true, p50TotalPot: 100000, p10TotalPot: 50000, p90TotalPot: 150000, p50PensionPot: 80000, p50IsaPot: 10000, p50CashGiaPot: 10000, p25TotalPot: 75000, p75TotalPot: 125000, survivalRate: 100 },
+        { age: 85, year: 2059, isRetired: true, p50TotalPot: 50000, p10TotalPot: 0, p90TotalPot: 100000, p50PensionPot: 40000, p50IsaPot: 5000, p50CashGiaPot: 5000, p25TotalPot: 25000, p75TotalPot: 75000, survivalRate: 90 },
+      ]
+    };
+
+    (monteCarloEngine.runMonteCarloSimulation as any).mockReturnValue(mockResult);
+    (monteCarloEngine.calculateCashBufferRequiredDetails as any).mockReturnValue({
+      totalNetCashBufferRequired: 0,
+      existingCashAvailable: 0,
+      shortfallOrSurplus: 0,
+      isFullyCovered: true,
+      yearlyDetails: []
+    });
+
+    render(<MonteCarloCard profile={mockProfile} pots={mockPots} taxResult={mockTaxResult} />);
+    const runBtn = screen.getByRole('button', { name: /Run Simulation/i });
+    fireEvent.click(runBtn);
+
+    const crashRadio = await screen.findByRole('radio', { name: /Market Crash/i }, { timeout: 2000 });
+    fireEvent.click(crashRadio);
+
+    await waitFor(() => {
+      expect(monteCarloEngine.runMonteCarloSimulation).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+        expect.objectContaining({ marketScenario: 'early_crash' })
+      );
+    });
+  });
 });

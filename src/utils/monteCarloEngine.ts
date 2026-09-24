@@ -71,10 +71,10 @@ export function calculateCashBufferRequiredDetails(
     existingCashAvailable = projectedCashAtCrashStart;
   } else if (crashStartAge > safeCurrentAge) {
     const yearsToCrash = crashStartAge - safeCurrentAge;
-    const primaryTax = calculateUKTax(profile, pots, false, safeCurrentAge);
+    const primaryTax = calculateUKTax(profile, sanitizedPots, false, safeCurrentAge);
     const partnerTax = profile.isCouplePlanning ? calculatePartnerUKTax(profile, profile.partnerPots || DEFAULT_PARTNER_POTS, profile.partnerCurrentAge ?? safeCurrentAge) : null;
     
-    const annualCashContribPrimary = (primaryTax.regularCashIsaContributionsAnnual ?? 0) + ((pots.cashSavingsMonthlyContribution || 0) * 12);
+    const annualCashContribPrimary = (primaryTax.regularCashIsaContributionsAnnual ?? 0) + ((sanitizedPots.cashSavingsMonthlyContribution || 0) * 12);
     const annualCashContribPartner = partnerTax ? ((partnerTax.regularCashIsaContributionsAnnual ?? 0) + ((profile.partnerPots?.cashSavingsMonthlyContribution || 0) * 12)) : 0;
     const totalAnnualCashContrib = annualCashContribPrimary + annualCashContribPartner;
 
@@ -360,7 +360,7 @@ function parseAnnuityTypeConfig(type?: string) {
   // Annual contribution totals (regular ongoing recurring contributions; one-offs and transfers added separately)
   const annualPensionContribution = taxResult.regularPensionContributionsAnnual ?? taxResult.totalPensionContributionsAnnual;
   const annualIsaContribution = (taxResult.regularIsaContributionsAnnual ?? taxResult.totalIsaContributionsAnnual) + taxResult.lisaGovernmentBonusAnnual;
-  const annualCashGiaContribution = taxResult.regularCashGiaContributionsAnnual ?? taxResult.totalCashGiaContributionsAnnual ?? ((pots.giaMonthlyContribution + pots.cashSavingsMonthlyContribution) * 12);
+  const annualCashGiaContribution = taxResult.regularCashGiaContributionsAnnual ?? taxResult.totalCashGiaContributionsAnnual ?? ((cleanPots.giaMonthlyContribution + cleanPots.cashSavingsMonthlyContribution) * 12);
 
   const partnerAnnualPensionContrib = partnerTaxResult
     ? (partnerTaxResult.regularPensionContributionsAnnual ?? partnerTaxResult.totalPensionContributionsAnnual)
@@ -383,19 +383,19 @@ function parseAnnuityTypeConfig(type?: string) {
   
   const depletionAges: number[] = [];
 
-  const initialGia = pots.giaBalance + (profile.isCouplePlanning ? partnerPots.giaBalance : 0);
-  const initialCash = pots.cashSavingsBalance + pots.cashIsaBalance + (profile.isCouplePlanning ? (partnerPots.cashSavingsBalance + partnerPots.cashIsaBalance) : 0);
+  const initialGia = cleanPots.giaBalance + (profile.isCouplePlanning ? partnerPots.giaBalance : 0);
+  const initialCash = cleanPots.cashSavingsBalance + cleanPots.cashIsaBalance + (profile.isCouplePlanning ? (partnerPots.cashSavingsBalance + partnerPots.cashIsaBalance) : 0);
   const totalInitial = initialGia + initialCash;
   const giaRatio = totalInitial > 0 ? initialGia / totalInitial : 0.5;
   const accCashGiaMult = giaRatio * 0.90 + (1 - giaRatio) * 0.80;
   const decumCashGiaMult = giaRatio * 0.95 + (1 - giaRatio) * 0.85;
   
   for (let sim = 0; sim < numSimulations; sim++) {
-    let primaryPensionPot = pots.workplacePensionBalance + pots.sippBalance;
+    let primaryPensionPot = cleanPots.workplacePensionBalance + cleanPots.sippBalance;
     let partnerPensionPot = profile.isCouplePlanning ? (partnerPots.workplacePensionBalance + partnerPots.sippBalance) : 0;
-    let primaryIsaPot = pots.stocksAndSharesIsaBalance + pots.lisaBalance;
+    let primaryIsaPot = cleanPots.stocksAndSharesIsaBalance + cleanPots.lisaBalance;
     let partnerIsaPot = profile.isCouplePlanning ? (partnerPots.stocksAndSharesIsaBalance + partnerPots.lisaBalance) : 0;
-    let primaryCashGiaPot = pots.giaBalance + pots.cashSavingsBalance + pots.cashIsaBalance;
+    let primaryCashGiaPot = cleanPots.giaBalance + cleanPots.cashSavingsBalance + cleanPots.cashIsaBalance;
     let partnerCashGiaPot = profile.isCouplePlanning ? (partnerPots.giaBalance + partnerPots.cashSavingsBalance + partnerPots.cashIsaBalance) : 0;
 
     let pensionPot = primaryPensionPot + partnerPensionPot;
@@ -1279,7 +1279,7 @@ function parseAnnuityTypeConfig(type?: string) {
           isaPot = primaryIsaPot + partnerIsaPot;
         }
 
-        let remainingNeeded = Math.max(0, drawdownNetTarget - netGuaranteedIncomeSecured);
+        remainingNeeded = Math.max(0, drawdownNetTarget - netGuaranteedIncomeSecured);
 
                 const executeDeduct = (potType: 'pension' | 'isa' | 'cashGia', amount: number, owner: 'primary' | 'partner') => {
           if (amount <= 0) return;
