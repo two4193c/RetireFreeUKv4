@@ -414,7 +414,7 @@ export const PotTransferManager: React.FC<PotTransferManagerProps> = ({
                       </div>
                       <div className="text-xs text-slate-500 flex items-center gap-1 ml-auto sm:ml-0">
                         <Calendar className="w-3.5 h-3.5" />
-                        {transfer.transferDate || `${targetYear}-04-06`}
+                        {executionDateStr}
                       </div>
                     </div>
 
@@ -455,7 +455,7 @@ export const PotTransferManager: React.FC<PotTransferManagerProps> = ({
                         <div className="flex items-center gap-2">
                           <Calendar className="w-4 h-4 text-primary-600 dark:text-primary-400 shrink-0" />
                           <span className="text-xs font-bold text-slate-700 dark:text-slate-200 leading-snug">
-                            Transfer Execution Date: <strong className="text-slate-900 dark:text-white">{transfer.transferDate || `${targetYear}-04-06`}</strong> (Tax Year {targetYear}/{(targetYear + 1).toString().slice(2)})
+                            Transfer Execution Date: <strong className="text-slate-900 dark:text-white">{executionDateStr}</strong> (Tax Year {targetYear}/{(targetYear + 1).toString().slice(2)})
                           </span>
                         </div>
                         <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">

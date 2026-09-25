@@ -121,36 +121,43 @@ export function getProjectedPotBalance(
 
   const selectedPots = owner === 'partner' && isCouple ? partPots : pPots;
 
+  const primaryAge = profile.currentAge || 35;
+  const partnerAge = profile.partnerCurrentAge || primaryAge;
+  const ownerBaseAge = owner === 'partner' ? partnerAge : primaryAge;
+  const ownerRetireAge = owner === 'partner' ? (profile.partnerTargetRetirementAge || 57) : (profile.targetRetirementAge || 55);
+
   let balance = 0;
-  let monthlyContrib = 0;
+  let baselineMonthlyContrib = 0;
 
   if (potType === 'workplace_pension') {
     balance = selectedPots.workplacePensionBalance || 0;
     const salary = owner === 'partner' ? (profile.partnerGrossAnnualSalary || 0) : (profile.grossAnnualSalary || 0);
     if (selectedPots.workplacePensionMonthlyEmployeeType === 'percent') {
-      monthlyContrib = (salary * ((selectedPots.workplacePensionMonthlyEmployee || 0) / 100)) / 12;
+      baselineMonthlyContrib = (salary * ((selectedPots.workplacePensionMonthlyEmployee || 0) / 100)) / 12;
     } else {
-      monthlyContrib = selectedPots.workplacePensionMonthlyEmployee || 0;
+      baselineMonthlyContrib = selectedPots.workplacePensionMonthlyEmployee || 0;
     }
-    monthlyContrib += (salary * ((selectedPots.employerMatchPercentage || 0) / 100)) / 12;
+    baselineMonthlyContrib += (salary * ((selectedPots.employerMatchPercentage || 0) / 100)) / 12;
   } else if (potType === 'sipp') {
     balance = selectedPots.sippBalance || 0;
-    monthlyContrib = selectedPots.sippMonthlyContribution || 0;
+    // SIPP personal net contribution receives +25% basic rate tax relief
+    baselineMonthlyContrib = (selectedPots.sippMonthlyContribution || 0) * 1.25;
   } else if (potType === 'stocks_and_shares_isa') {
     balance = selectedPots.stocksAndSharesIsaBalance || 0;
-    monthlyContrib = selectedPots.stocksAndSharesIsaMonthlyContribution || 0;
+    baselineMonthlyContrib = selectedPots.stocksAndSharesIsaMonthlyContribution || 0;
   } else if (potType === 'cash_isa') {
     balance = selectedPots.cashIsaBalance || 0;
-    monthlyContrib = selectedPots.cashIsaMonthlyContribution || 0;
+    baselineMonthlyContrib = selectedPots.cashIsaMonthlyContribution || 0;
   } else if (potType === 'lisa') {
     balance = selectedPots.lisaBalance || 0;
-    monthlyContrib = selectedPots.lisaMonthlyContribution || 0;
+    const net = selectedPots.lisaMonthlyContribution || 0;
+    baselineMonthlyContrib = net + Math.min(net, 4000 / 12) * 0.25;
   } else if (potType === 'gia') {
     balance = selectedPots.giaBalance || 0;
-    monthlyContrib = selectedPots.giaMonthlyContribution || 0;
+    baselineMonthlyContrib = selectedPots.giaMonthlyContribution || 0;
   } else if (potType === 'cash_savings') {
     balance = selectedPots.cashSavingsBalance || 0;
-    monthlyContrib = selectedPots.cashSavingsMonthlyContribution || 0;
+    baselineMonthlyContrib = selectedPots.cashSavingsMonthlyContribution || 0;
   }
 
   // Determine annual growth rate
@@ -174,10 +181,6 @@ export function getProjectedPotBalance(
 
   const monthlyRate = annualRate / 12;
 
-  const primaryAge = profile.currentAge || 35;
-  const partnerAge = profile.partnerCurrentAge || primaryAge;
-  const ownerBaseAge = owner === 'partner' ? partnerAge : primaryAge;
-
   const targetInfo = parseTransferTarget(transferDate, undefined, undefined, now);
   // If targetYear was explicitly provided and differs, prioritize the provided targetYear
   const finalTargetYear = targetYear || targetInfo.targetYear;
@@ -199,13 +202,34 @@ export function getProjectedPotBalance(
       if (!c.enabled) return;
       const cOwner = c.owner || 'primary';
       if (cOwner !== owner || c.targetPot !== potType) return;
-      if (c.frequency !== 'regular_monthly' && c.date) {
-        const cTarget = parseTransferTarget(c.date, undefined, undefined, now);
-        if (cTarget.targetYear === yr && cTarget.targetMonth === mo) {
-          if (!isTgtMo || cTarget.targetDay <= tgtDay) {
+      if (c.frequency !== 'regular_monthly') {
+        let match = false;
+        let cDay = 6;
+        if (c.date && c.date.trim()) {
+          const cTarget = parseTransferTarget(c.date, undefined, undefined, now);
+          if (cTarget.targetYear === yr && cTarget.targetMonth === mo) {
+            match = true;
+            cDay = cTarget.targetDay;
+          }
+        } else if (c.startAge !== undefined && c.startAge > 0) {
+          const cYear = currentYear + (c.startAge - ownerBaseAge);
+          if (cYear === yr && mo === 4) {
+            match = true;
+            cDay = 6;
+          }
+        }
+
+        if (match) {
+          if (!isTgtMo || cDay <= tgtDay) {
             let gross = c.grossAmount || 0;
-            if (c.targetPot === 'sipp' && c.sippContributionType !== 'gross') gross *= 1.25;
-            else if (c.targetPot === 'lisa') gross += Math.min(gross, 4000) * 0.25;
+            if (c.targetPot === 'sipp' && c.sippContributionType !== 'gross') {
+              gross *= 1.25;
+            } else if (c.targetPot === 'lisa') {
+              const evalAge = ownerBaseAge + (yr - currentYear);
+              if (evalAge < 50) {
+                gross += Math.min(gross, 4000) * 0.25;
+              }
+            }
             balance += gross;
           }
         }
@@ -267,20 +291,26 @@ export function getProjectedPotBalance(
       break;
     }
 
-    // Add regular monthly pot contribution
-    balance += monthlyContrib;
+    const evalAge = ownerBaseAge + (iterYear - currentYear);
+    const isRetired = evalAge >= ownerRetireAge;
 
-    // Add additional regular monthly contributions from oneOffContributions
-    (profile.oneOffContributions || []).forEach((c) => {
-      if (!c.enabled) return;
+    // Check if there are active regular monthly contributions in profile.oneOffContributions for this pot
+    const activeRegularOneOffs = (profile.oneOffContributions || []).filter((c) => {
+      if (!c.enabled) return false;
       const cOwner = c.owner || 'primary';
-      if (cOwner !== owner || c.targetPot !== potType) return;
+      if (cOwner !== owner || c.targetPot !== potType) return false;
+      if (c.frequency !== 'regular_monthly') return false;
+      const startAge = c.startAge ?? ownerBaseAge;
+      const endAge = c.endAge ?? ownerRetireAge;
+      return evalAge >= startAge && evalAge <= endAge;
+    });
 
-      if (c.frequency === 'regular_monthly') {
-        const evalAge = ownerBaseAge + (iterYear - currentYear);
-        const startAge = c.startAge ?? 18;
-        const endAge = c.endAge ?? 100;
-        if (evalAge >= startAge && evalAge <= endAge) {
+    let currentMonthContrib = 0;
+
+    if (!isRetired) {
+      if (activeRegularOneOffs.length > 0) {
+        // Use regular monthly contributions from oneOffContributions (replaces baseline pot contribution to prevent double counting)
+        activeRegularOneOffs.forEach((c) => {
           let monthly = c.grossAmount || 0;
           if (c.targetPot === 'workplace_pension') {
             const salary = owner === 'partner' ? (profile.partnerGrossAnnualSalary || 0) : (profile.grossAnnualSalary || 0);
@@ -289,15 +319,32 @@ export function getProjectedPotBalance(
             } else {
               monthly = (salary * (((c.employeePercent ?? 5) + (c.employerPercent ?? 3)) / 100)) / 12;
             }
-          } else if (c.targetPot === 'sipp' && c.sippContributionType !== 'gross') {
-            monthly *= 1.25;
+          } else if (c.targetPot === 'sipp') {
+            if (c.sippContributionType !== 'gross') {
+              monthly *= 1.25;
+            }
           } else if (c.targetPot === 'lisa') {
-            monthly += Math.min(monthly, 4000 / 12) * 0.25;
+            if (evalAge < 50) {
+              monthly += Math.min(monthly, 4000 / 12) * 0.25;
+            } else {
+              monthly = 0; // LISA contributions stop at age 50
+            }
           }
-          balance += monthly;
+          currentMonthContrib += monthly;
+        });
+      } else {
+        // Fallback to baseline pot monthly contribution (only if no active regular one-off for this pot)
+        if (potType === 'lisa') {
+          if (evalAge < 50) {
+            currentMonthContrib = baselineMonthlyContrib;
+          }
+        } else {
+          currentMonthContrib = baselineMonthlyContrib;
         }
       }
-    });
+    }
+
+    balance += currentMonthContrib;
 
     // Apply any lump sums or other scheduled transfers this month
     applyMonthOneOffsAndTransfers(iterYear, iterMonth, isTargetMonth, finalTargetDay);

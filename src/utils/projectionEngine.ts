@@ -1,6 +1,7 @@
 import { UserProfile, InvestmentPots, YearProjection, TaxCalculationResult } from '../types';
 import { DEFAULT_PARTNER_POTS, DEFAULT_POTS, ZERO_POTS, sanitizePots } from './defaultData';
 import { calculateGiltLadder } from './giltLadderEngine';
+import { parseTransferYear } from './potTransferUtils';
 import { getEffectiveAccumulationReturn, getEffectiveDecumulationReturn, getTotalFeePercent, getPotFeePercent, calculateWeightedAssetReturn, getPotGrossReturn } from './assetAllocation';
 import {
   getPensionAccessAge,
@@ -883,8 +884,8 @@ function parseAnnuityTypeConfig(type?: string) {
 
       let match = false;
       if (transfer.transferDate) {
-        const transferYear = parseInt(transfer.transferDate.split('-')[0], 10);
-        if (!isNaN(transferYear) && transferYear === calendarYear) {
+        const transferYear = parseTransferYear(transfer.transferDate);
+        if (transferYear !== undefined && transferYear === calendarYear) {
           match = true;
         }
       } else if (transfer.transferAge !== undefined && transfer.transferAge > 0) {

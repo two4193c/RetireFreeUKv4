@@ -1,5 +1,6 @@
 import { UserProfile, InvestmentPots, TaxCalculationResult } from '../types';
 import { DEFAULT_PARTNER_POTS, DEFAULT_POTS, ZERO_POTS, sanitizePots } from './defaultData';
+import { parseTransferYear } from './potTransferUtils';
 import { getPensionAccessAge, getPartnerPensionAccessAge, getLsaLimit, getPartnerLsaLimit, getLumpSumTakeAge, calculateUKTax, calculatePartnerUKTax, allocateLumpSumToPots, computeIncomeTaxOnAmount } from './ukTaxEngine';
 import { getTargetIncomeForAge, getActualSpendingTargetForAge } from './projectionEngine';
 import { SCOT_INTERMEDIATE_THRESHOLD, RUK_BASIC_THRESHOLD, SCOT_HIGHER_THRESHOLD, RUK_ADDITIONAL_THRESHOLD } from '../config/ukTaxRates';
@@ -514,8 +515,8 @@ export function runHistoricModelingSimulation(
 
         let match = false;
         if (transfer.transferDate) {
-          const transferYear = parseInt(transfer.transferDate.split('-')[0], 10);
-          if (!isNaN(transferYear) && transferYear === calendarYear) match = true;
+          const transferYear = parseTransferYear(transfer.transferDate);
+          if (transferYear !== undefined && transferYear === calendarYear) match = true;
         } else if (transfer.transferAge !== undefined && transfer.transferAge > 0) {
           const evalAge = isSrcPartner ? partnerAge : age;
           if (evalAge === transfer.transferAge) match = true;

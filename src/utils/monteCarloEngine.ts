@@ -1,5 +1,6 @@
 import { UserProfile, InvestmentPots, TaxCalculationResult } from '../types';
 import { DEFAULT_PARTNER_POTS, DEFAULT_POTS, ZERO_POTS, sanitizePots } from './defaultData';
+import { parseTransferYear } from './potTransferUtils';
 import { getPensionAccessAge, getPartnerPensionAccessAge, getLsaLimit, getPartnerLsaLimit, getLumpSumTakeAge, calculateUKTax, calculatePartnerUKTax, allocateLumpSumToPots } from './ukTaxEngine';
 import { getTargetIncomeForAge, getActualSpendingTargetForAge } from './projectionEngine';
 import { SCOT_INTERMEDIATE_THRESHOLD, RUK_BASIC_THRESHOLD, SCOT_HIGHER_THRESHOLD, RUK_ADDITIONAL_THRESHOLD } from '../config/ukTaxRates';
@@ -694,8 +695,8 @@ function parseAnnuityTypeConfig(type?: string) {
 
         let match = false;
         if (transfer.transferDate) {
-          const transferYear = parseInt(transfer.transferDate.split('-')[0], 10);
-          if (!isNaN(transferYear) && transferYear === simCalendarYear) {
+          const transferYear = parseTransferYear(transfer.transferDate);
+          if (transferYear !== undefined && transferYear === simCalendarYear) {
             match = true;
           }
         } else if (transfer.transferAge !== undefined && transfer.transferAge > 0) {

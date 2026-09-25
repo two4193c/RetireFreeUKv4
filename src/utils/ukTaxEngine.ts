@@ -1,5 +1,6 @@
 import { UserProfile, InvestmentPots, TaxCalculationResult, LumpSumTargetPot, LumpSumSplit } from '../types';
 import { DEFAULT_PARTNER_POTS, DEFAULT_POTS, ZERO_POTS, sanitizePots } from './defaultData';
+import { parseTransferYear } from './potTransferUtils';
 import {
   PERSONAL_ALLOWANCE,
   PA_TAPER_THRESHOLD,
@@ -429,7 +430,7 @@ export function getProjectedPensionAtTakeAge(
 
       let tYear: number | undefined;
       if (t.transferDate) {
-        tYear = parseInt(t.transferDate.split('-')[0], 10);
+        tYear = parseTransferYear(t.transferDate);
       } else if (t.transferAge !== undefined && t.transferAge > 0) {
         tYear = new Date().getFullYear() + (t.transferAge - currentAge);
       }
@@ -793,7 +794,7 @@ export function calculateUKTax(
   activeTransfers.forEach((t) => {
     let tYear: number | undefined;
     if (t.transferDate) {
-      tYear = parseInt(t.transferDate.split('-')[0], 10);
+      tYear = parseTransferYear(t.transferDate);
     } else if (t.transferAge !== undefined && t.transferAge > 0) {
       tYear = currentCalYear + (t.transferAge - ownerCurrentAge);
     }
@@ -833,21 +834,31 @@ export function calculateUKTax(
   const totalOneOffPensionGross = oneOffWorkplacePensionGross + oneOffSippGross;
   const totalOneOffIsaGross = oneOffSsIsa + oneOffCashIsa + oneOffLisa;
 
-  // Calculate annual workplace pension employee contribution
-  const hasWorkplaceInActive = activeContributions.some((c) => {
-    if (c.frequency !== 'regular_monthly' || c.targetPot !== 'workplace_pension') return false;
-    let startAge = c.startAge;
-    if (startAge === undefined && c.date && c.date.trim() !== '') {
-      const parts = c.date.split('-');
-      if (parts.length >= 1) {
-        const year = parseInt(parts[0], 10);
-        if (!isNaN(year)) startAge = ownerCurrentAge + (year - new Date().getFullYear());
+  // Check which pots have active regular monthly contributions defined in profile.oneOffContributions
+  const isPotActiveInContributions = (targetPot: string) => {
+    return activeContributions.some((c) => {
+      if (c.frequency !== 'regular_monthly' || c.targetPot !== targetPot) return false;
+      let startAge = c.startAge;
+      if (startAge === undefined && c.date && c.date.trim() !== '') {
+        const parts = c.date.split('-');
+        if (parts.length >= 1) {
+          const year = parseInt(parts[0], 10);
+          if (!isNaN(year)) startAge = ownerCurrentAge + (year - new Date().getFullYear());
+        }
       }
-    }
-    const effectiveStartAge = startAge ?? ownerCurrentAge;
-    const effectiveEndAge = c.endAge ?? ownerRetireAge;
-    return currentEvalAge >= effectiveStartAge && currentEvalAge <= effectiveEndAge && currentEvalAge < ownerRetireAge;
-  });
+      const effectiveStartAge = startAge ?? ownerCurrentAge;
+      const effectiveEndAge = c.endAge ?? ownerRetireAge;
+      return currentEvalAge >= effectiveStartAge && currentEvalAge <= effectiveEndAge && currentEvalAge < ownerRetireAge;
+    });
+  };
+
+  const hasWorkplaceInActive = isPotActiveInContributions('workplace_pension');
+  const hasSippInActive = isPotActiveInContributions('sipp');
+  const hasSsIsaInActive = isPotActiveInContributions('stocks_and_shares_isa');
+  const hasCashIsaInActive = isPotActiveInContributions('cash_isa');
+  const hasLisaInActive = isPotActiveInContributions('lisa');
+  const hasGiaInActive = isPotActiveInContributions('gia');
+  const hasCashSavingsInActive = isPotActiveInContributions('cash_savings');
 
   let workplaceEmployeeAnnual = regularWorkplaceEmployeeAnnual;
   let employerMatchAnnual = regularEmployerMatchAnnual;
@@ -861,18 +872,27 @@ export function calculateUKTax(
     employerMatchAnnual += grossSalary * ((pots.employerMatchPercentage || 0) / 100);
   }
 
-  // Include baseline pot monthly contributions if pre-retirement
+  // Include baseline pot monthly contributions if pre-retirement (and not already provided via active regular contribution)
   if (currentEvalAge < ownerRetireAge) {
-    regularSippNetAnnual += (pots.sippMonthlyContribution || 0) * 12;
-    regularSippGrossAnnual += (pots.sippMonthlyContribution || 0) * 12 * 1.25;
-
-    regularSsIsaAnnual += (pots.stocksAndSharesIsaMonthlyContribution || 0) * 12;
-    regularCashIsaAnnual += (pots.cashIsaMonthlyContribution || 0) * 12;
-    if (currentEvalAge < 50) {
+    if (!hasSippInActive) {
+      regularSippNetAnnual += (pots.sippMonthlyContribution || 0) * 12;
+      regularSippGrossAnnual += (pots.sippMonthlyContribution || 0) * 12 * 1.25;
+    }
+    if (!hasSsIsaInActive) {
+      regularSsIsaAnnual += (pots.stocksAndSharesIsaMonthlyContribution || 0) * 12;
+    }
+    if (!hasCashIsaInActive) {
+      regularCashIsaAnnual += (pots.cashIsaMonthlyContribution || 0) * 12;
+    }
+    if (!hasLisaInActive && currentEvalAge < 50) {
       regularLisaAnnual += (pots.lisaMonthlyContribution || 0) * 12;
     }
-    regularGiaAnnual += (pots.giaMonthlyContribution || 0) * 12;
-    regularCashSavingsAnnual += (pots.cashSavingsMonthlyContribution || 0) * 12;
+    if (!hasGiaInActive) {
+      regularGiaAnnual += (pots.giaMonthlyContribution || 0) * 12;
+    }
+    if (!hasCashSavingsInActive) {
+      regularCashSavingsAnnual += (pots.cashSavingsMonthlyContribution || 0) * 12;
+    }
   }
 
   const sippNetAnnual = regularSippNetAnnual + oneOffSippNet;
