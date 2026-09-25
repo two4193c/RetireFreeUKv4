@@ -19,6 +19,12 @@ import {
   Pencil
 } from 'lucide-react';
 import { ModalShell } from './ModalShell';
+import {
+  getProjectedPotBalance,
+  parseTransferTarget,
+  parseTransferYear,
+  normalizeTransferDate
+} from '../utils/potTransferUtils';
 
 interface PotTransferManagerProps {
   isStudioMode?: boolean;
@@ -56,207 +62,6 @@ function getPotLabel(potType: string): string {
   return potType;
 }
 
-// Helper to simulate projected pot balance at target year
-function getProjectedPotBalance(
-  profile: UserProfile,
-  pots: InvestmentPots,
-  owner: 'primary' | 'partner',
-  potType: string,
-  targetYear: number,
-  transferDate?: string,
-  currentTransferId?: string
-): number {
-  const currentYear = new Date().getFullYear();
-  const isCouple = Boolean(profile.isCouplePlanning);
-  const pPots = sanitizePots(pots, DEFAULT_POTS);
-  const partPots = sanitizePots(profile.partnerPots, {
-    ...DEFAULT_PARTNER_POTS,
-    sippBalance: profile.partnerSippBalance ?? DEFAULT_PARTNER_POTS.sippBalance,
-  });
-
-  const selectedPots = owner === 'partner' && isCouple ? partPots : pPots;
-
-  let balance = 0;
-  let monthlyContrib = 0;
-
-  if (potType === 'workplace_pension') {
-    balance = selectedPots.workplacePensionBalance || 0;
-    const salary = owner === 'partner' ? (profile.partnerGrossAnnualSalary || 0) : (profile.grossAnnualSalary || 0);
-    if (selectedPots.workplacePensionMonthlyEmployeeType === 'percent') {
-      monthlyContrib = (salary * ((selectedPots.workplacePensionMonthlyEmployee || 0) / 100)) / 12;
-    } else {
-      monthlyContrib = selectedPots.workplacePensionMonthlyEmployee || 0;
-    }
-    monthlyContrib += (salary * ((selectedPots.employerMatchPercentage || 0) / 100)) / 12;
-  } else if (potType === 'sipp') {
-    balance = selectedPots.sippBalance || 0;
-    monthlyContrib = selectedPots.sippMonthlyContribution || 0;
-  } else if (potType === 'stocks_and_shares_isa') {
-    balance = selectedPots.stocksAndSharesIsaBalance || 0;
-    monthlyContrib = selectedPots.stocksAndSharesIsaMonthlyContribution || 0;
-  } else if (potType === 'cash_isa') {
-    balance = selectedPots.cashIsaBalance || 0;
-    monthlyContrib = selectedPots.cashIsaMonthlyContribution || 0;
-  } else if (potType === 'lisa') {
-    balance = selectedPots.lisaBalance || 0;
-    monthlyContrib = selectedPots.lisaMonthlyContribution || 0;
-  } else if (potType === 'gia') {
-    balance = selectedPots.giaBalance || 0;
-    monthlyContrib = selectedPots.giaMonthlyContribution || 0;
-  } else if (potType === 'cash_savings') {
-    balance = selectedPots.cashSavingsBalance || 0;
-    monthlyContrib = selectedPots.cashSavingsMonthlyContribution || 0;
-  }
-
-  // Determine annual growth rate
-  const overrides = profile.potReturnOverrides;
-  let rate = profile.expectedInvestmentReturn / 100;
-  if (overrides?.enabled) {
-    if (potType === 'workplace_pension') rate = (overrides.workplacePensionReturn || 7.0) / 100;
-    else if (potType === 'sipp') rate = (overrides.sippReturn || 7.5) / 100;
-    else if (potType === 'stocks_and_shares_isa') rate = (overrides.stocksAndSharesIsaReturn || 7.5) / 100;
-    else if (potType === 'cash_isa') rate = (overrides.cashIsaReturn || 4.2) / 100;
-    else if (potType === 'lisa') rate = (overrides.lisaReturn || 6.5) / 100;
-    else if (potType === 'gia') rate = (overrides.giaReturn || 6.5) / 100;
-    else if (potType === 'cash_savings') rate = (overrides.cashSavingsReturn || 3.5) / 100;
-  }
-
-  const primaryAge = profile.currentAge || 35;
-  const partnerAge = profile.partnerCurrentAge || primaryAge;
-  const ownerBaseAge = owner === 'partner' ? partnerAge : primaryAge;
-
-  const potTransfers = profile.potTransfers || [];
-
-  // Helper to check if another transfer `t` occurred BEFORE current transfer in year `yr`
-  const isOtherTransferBefore = (t: PotTransfer, yr: number) => {
-    if (!t.enabled || t.id === currentTransferId) return false;
-    const srcOwner = t.owner || 'primary';
-    const dstOwner = t.destinationOwner || srcOwner;
-    if (!isCouple && (srcOwner === 'partner' || dstOwner === 'partner')) return false;
-
-    let tYear: number | undefined;
-    if (t.transferDate) {
-      const parsed = parseInt(t.transferDate.split('-')[0], 10);
-      if (!isNaN(parsed)) tYear = parsed;
-    } else if (t.transferAge !== undefined && t.transferAge > 0) {
-      const tOwnerAge = srcOwner === 'partner' ? partnerAge : primaryAge;
-      tYear = currentYear + (t.transferAge - tOwnerAge);
-    }
-
-    if (tYear === undefined) return false;
-    if (tYear !== yr) return false;
-
-    if (yr === targetYear) {
-      if (t.transferDate && transferDate) {
-        if (t.transferDate < transferDate) return true;
-        if (t.transferDate > transferDate) return false;
-      }
-      const idxT = potTransfers.findIndex((p) => p.id === t.id);
-      const idxCurrent = potTransfers.findIndex((p) => p.id === currentTransferId);
-      if (idxT !== -1 && idxCurrent !== -1) {
-        return idxT < idxCurrent;
-      }
-      return false;
-    }
-
-    return true;
-  };
-
-  // Simulate year by year from currentYear up to targetYear inclusive
-  for (let yr = currentYear; yr <= targetYear; yr++) {
-    const isTargetYr = yr === targetYear;
-    const currentEvalAge = ownerBaseAge + (yr - currentYear);
-
-    // Prior years get full annual growth and monthly contributions; target year gets annual monthly contributions
-    if (!isTargetYr) {
-      balance = balance * (1 + rate) + (monthlyContrib * 12) * (1 + rate / 2);
-    } else {
-      balance += (monthlyContrib * 12);
-    }
-
-    // Add one-off & custom regular contributions for this pot in year yr
-    (profile.oneOffContributions || []).forEach((c) => {
-      if (!c.enabled) return;
-      const cOwner = c.owner || 'primary';
-      if (cOwner !== owner || c.targetPot !== potType) return;
-
-      if (c.frequency === 'regular_monthly') {
-        const startAge = c.startAge ?? 18;
-        const endAge = c.endAge ?? 100;
-        if (currentEvalAge >= startAge && currentEvalAge <= endAge) {
-          let annual = (c.grossAmount || 0) * 12;
-          if (c.targetPot === 'workplace_pension') {
-            const salary = owner === 'partner' ? (profile.partnerGrossAnnualSalary || 0) : (profile.grossAnnualSalary || 0);
-            if (c.workplaceContributionType === 'fixed') {
-              annual = ((c.employeeMonthlyAmount ?? c.grossAmount ?? 0) + (c.employerMonthlyAmount ?? 0)) * 12;
-            } else {
-              annual = salary * (((c.employeePercent ?? 5) + (c.employerPercent ?? 3)) / 100);
-            }
-          } else if (c.targetPot === 'sipp' && c.sippContributionType !== 'gross') {
-            annual *= 1.25;
-          } else if (c.targetPot === 'lisa') {
-            annual += Math.min(annual, 4000) * 0.25;
-          }
-          if (!isTargetYr) {
-            balance += annual * (1 + rate / 2);
-          } else {
-            balance += annual;
-          }
-        }
-      } else {
-        // One-off lump sum
-        let cYear: number | undefined;
-        if (c.date) {
-          const parsed = parseInt(c.date.split('-')[0], 10);
-          if (!isNaN(parsed)) cYear = parsed;
-        }
-        if (cYear === yr) {
-          if (isTargetYr && transferDate && c.date) {
-            if (c.date <= transferDate) {
-              let gross = c.grossAmount || 0;
-              if (c.targetPot === 'sipp') {
-                gross = c.sippContributionType === 'gross' ? gross : gross * 1.25;
-              } else if (c.targetPot === 'lisa') {
-                gross += Math.min(gross, 4000) * 0.25;
-              }
-              balance += gross;
-            }
-          } else {
-            let gross = c.grossAmount || 0;
-            if (c.targetPot === 'sipp') {
-              gross = c.sippContributionType === 'gross' ? gross : gross * 1.25;
-            } else if (c.targetPot === 'lisa') {
-              gross += Math.min(gross, 4000) * 0.25;
-            }
-            balance += gross;
-          }
-        }
-      }
-    });
-
-    // Account for other transfers occurring in this year `yr`
-    potTransfers.forEach((t) => {
-      if (isOtherTransferBefore(t, yr)) {
-        const srcOwner = t.owner || 'primary';
-        const dstOwner = t.destinationOwner || srcOwner;
-        const amt = t.amount || 0;
-
-        if (srcOwner === owner && t.sourcePot === potType) {
-          balance = Math.max(0, balance - amt);
-        }
-        if (dstOwner === owner && t.destinationPot === potType) {
-          let added = amt;
-          if (t.destinationPot === 'sipp') added *= 1.25;
-          else if (t.destinationPot === 'lisa') added += Math.min(added, 4000) * 0.25;
-          balance += added;
-        }
-      }
-    });
-  }
-
-  return Math.max(0, balance);
-}
-
 export const PotTransferManager: React.FC<PotTransferManagerProps> = ({
   profile,
   onChange,
@@ -281,23 +86,8 @@ export const PotTransferManager: React.FC<PotTransferManagerProps> = ({
         const getSortInfo = (t: PotTransfer) => {
           const srcOwner = t.owner || 'primary';
           const baseAge = srcOwner === 'partner' ? (profile.partnerCurrentAge || profile.currentAge || 35) : (profile.currentAge || 35);
-
-          let targetYear = currentYear;
-          let sortKey = '';
-
-          if (t.transferDate && t.transferDate.trim() !== '') {
-            const yr = parseInt(t.transferDate.split('-')[0], 10);
-            if (!isNaN(yr)) targetYear = yr;
-            sortKey = t.transferDate;
-          } else if (t.transferAge !== undefined && t.transferAge > 0) {
-            targetYear = currentYear + (t.transferAge - baseAge);
-            sortKey = `${targetYear}-01-01`;
-          } else {
-            targetYear = currentYear + 1;
-            sortKey = `${targetYear}-01-01`;
-          }
-
-          return { targetYear, sortKey };
+          const target = parseTransferTarget(t.transferDate, t.transferAge, baseAge);
+          return { targetYear: target.targetYear, sortKey: target.isoDate };
         };
 
         const infoA = getSortInfo(a);
@@ -407,11 +197,15 @@ export const PotTransferManager: React.FC<PotTransferManagerProps> = ({
 
   const handleSave = () => {
     if (!editItem) return;
+    const normalizedItem: PotTransfer = {
+      ...editItem,
+      transferDate: normalizeTransferDate(editItem.transferDate),
+    };
     let updatedTransfers;
     if (isAdding) {
-      updatedTransfers = [...transfers, editItem];
+      updatedTransfers = [...transfers, normalizedItem];
     } else {
-      updatedTransfers = transfers.map((t) => (t.id === editItem.id ? editItem : t));
+      updatedTransfers = transfers.map((t) => (t.id === editItem.id ? normalizedItem : t));
     }
     onChange({
       ...profile,
@@ -557,20 +351,16 @@ export const PotTransferManager: React.FC<PotTransferManagerProps> = ({
           {sortedTransfers.map((transfer) => {
             const srcOwner = transfer.owner || 'primary';
             const dstOwner = transfer.destinationOwner || srcOwner;
+            const baseAge = srcOwner === 'partner' ? (profile.partnerCurrentAge || profile.currentAge || 35) : (profile.currentAge || 35);
 
-            // Calculate transfer target year
-            let targetYear = currentYear;
-            if (transfer.transferDate) {
-              const yr = parseInt(transfer.transferDate.split('-')[0], 10);
-              if (!isNaN(yr)) targetYear = yr;
-            } else if (transfer.transferAge !== undefined && transfer.transferAge > 0) {
-              const baseAge = srcOwner === 'partner' ? (profile.partnerCurrentAge || profile.currentAge || 35) : (profile.currentAge || 35);
-              targetYear = currentYear + (transfer.transferAge - baseAge);
-            }
+            // Calculate transfer target date and year
+            const targetInfo = parseTransferTarget(transfer.transferDate, transfer.transferAge, baseAge);
+            const targetYear = targetInfo.targetYear;
+            const executionDateStr = transfer.transferDate || targetInfo.isoDate;
 
             // Calculate projected balances at target transfer year BEFORE transfer
-            const srcBalanceBefore = getProjectedPotBalance(profile, pots, srcOwner, transfer.sourcePot, targetYear, transfer.transferDate, transfer.id);
-            const dstBalanceBefore = getProjectedPotBalance(profile, pots, dstOwner, transfer.destinationPot, targetYear, transfer.transferDate, transfer.id);
+            const srcBalanceBefore = getProjectedPotBalance(profile, pots, srcOwner, transfer.sourcePot, targetYear, executionDateStr, transfer.id);
+            const dstBalanceBefore = getProjectedPotBalance(profile, pots, dstOwner, transfer.destinationPot, targetYear, executionDateStr, transfer.id);
 
             const requestedAmount = transfer.amount || 0;
             const actualTransferred = Math.min(requestedAmount, srcBalanceBefore);
