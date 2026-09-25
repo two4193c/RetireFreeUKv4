@@ -2,6 +2,8 @@ import React from 'react';
 import { UserProfile, InvestmentPots, CustomTaxBandOverrides } from '../types';
 import { getPensionAccessAge, getPartnerPensionAccessAge } from '../utils/ukTaxEngine';
 import { DEFAULT_CUSTOM_TAX_BANDS } from '../utils/defaultData';
+import { RetirementTargetInput } from './RetirementTargetInput';
+import { calculateRetirementDateFromAge, calculateAgeFromRetirementDate } from '../utils/dateAgeUtils';
 import { User, Heart, Users, HelpCircle, AlertTriangle, ShieldCheck, Sliders, RotateCcw, Receipt, Percent, Sparkles, CheckCircle2 } from 'lucide-react';
 
 interface ProfileInputsProps {
@@ -35,10 +37,21 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
     }
     const computedAge = Math.max(18, age);
 
+    let updatedRetAge = profile.targetRetirementAge;
+    let updatedRetDate = profile.targetRetirementDate;
+    if (profile.targetRetirementInputMode === 'date' && profile.targetRetirementDate) {
+      const computed = calculateAgeFromRetirementDate(dobStr, computedAge, profile.targetRetirementDate);
+      updatedRetAge = Math.min(95, Math.max(computedAge + 1, computed.targetAge));
+    } else {
+      updatedRetDate = calculateRetirementDateFromAge(dobStr, computedAge, profile.targetRetirementAge || 60);
+    }
+
     onChange({
       ...profile,
       dateOfBirth: dobStr,
       currentAge: computedAge,
+      targetRetirementAge: updatedRetAge,
+      targetRetirementDate: updatedRetDate,
     });
   };
 
@@ -56,10 +69,21 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
     }
     const computedAge = Math.max(18, age);
 
+    let updatedPartnerRetAge = profile.partnerTargetRetirementAge ?? 60;
+    let updatedPartnerRetDate = profile.partnerTargetRetirementDate;
+    if (profile.partnerTargetRetirementInputMode === 'date' && profile.partnerTargetRetirementDate) {
+      const computed = calculateAgeFromRetirementDate(dobStr, computedAge, profile.partnerTargetRetirementDate);
+      updatedPartnerRetAge = Math.min(95, Math.max(computedAge + 1, computed.targetAge));
+    } else {
+      updatedPartnerRetDate = calculateRetirementDateFromAge(dobStr, computedAge, updatedPartnerRetAge);
+    }
+
     onChange({
       ...profile,
       partnerDateOfBirth: dobStr,
       partnerCurrentAge: computedAge,
+      partnerTargetRetirementAge: updatedPartnerRetAge,
+      partnerTargetRetirementDate: updatedPartnerRetDate,
     });
   };
 
@@ -221,40 +245,25 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
                 </div>
               </div>
 
-              {/* Primary Target Retirement Age */}
-              <div className="space-y-1.5">
-                <label htmlFor="primary-retire-age" className="text-xs font-bold text-slate-700 dark:text-slate-300 flex justify-between">
-                  <span>Target Retire Age</span>
-                  <span className="text-primary-600 dark:text-primary-400 font-extrabold text-[10px] bg-primary-50 dark:bg-primary-950/80 px-1.5 py-0.5 rounded-md border border-primary-200/60 dark:border-primary-800/60">
-                    {profile.targetRetirementAge || ''} yrs ({(profile.targetRetirementAge || 60) - profile.currentAge}y away)
-                  </span>
-                </label>
-                <input
-                  id="primary-retire-age"
-                  type="number"
-                  min={profile.currentAge + 1}
-                  max="90"
-                  value={profile.targetRetirementAge || ''}
-                  onChange={(e) => {
-                    const raw = e.target.value;
-                    if (raw === '') {
-                      updateField('targetRetirementAge', '' as any);
-                    } else {
-                      const val = Number(raw);
-                      if (!isNaN(val)) updateField('targetRetirementAge', val);
-                    }
-                  }}
-                  onBlur={(e) => {
-                    let val = Number(e.target.value);
-                    if (isNaN(val) || e.target.value === '' || val <= profile.currentAge) {
-                      val = profile.currentAge + 1;
-                    }
-                    val = Math.min(90, val);
-                    updateField('targetRetirementAge', val);
-                  }}
-                  className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
-                />
-              </div>
+              {/* Primary Target Retirement Age / Date */}
+              <RetirementTargetInput
+                id="primary-retire-target"
+                label="Target Retirement"
+                dob={profile.dateOfBirth}
+                currentAge={profile.currentAge}
+                targetAge={profile.targetRetirementAge}
+                targetDate={profile.targetRetirementDate}
+                initialMode={profile.targetRetirementInputMode || 'age'}
+                accentColor="primary"
+                onChange={(newAge, newDate, mode) => {
+                  onChange({
+                    ...profile,
+                    targetRetirementAge: newAge,
+                    targetRetirementDate: newDate,
+                    targetRetirementInputMode: mode,
+                  });
+                }}
+              />
 
               {/* Primary Private Pension Access Age Input */}
               <div className="space-y-1.5 sm:col-span-2">
@@ -383,40 +392,25 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
                 </div>
               </div>
 
-              {/* Partner Target Retirement Age */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex justify-between">
-                  <span>Partner Target Retire Age</span>
-                  <span className="text-indigo-600 dark:text-indigo-400 font-extrabold text-[10px] bg-indigo-50 dark:bg-indigo-950/80 px-1.5 py-0.5 rounded-md border border-indigo-200/60 dark:border-indigo-800/60">
-                    {profile.partnerTargetRetirementAge || ''} yrs ({((profile.partnerTargetRetirementAge ?? 60) - partnerAge)}y away)
-                  </span>
-                </label>
-                <input
-                  type="number"
-                  min={(profile.partnerCurrentAge ?? 35) + 1}
-                  max="90"
-                  value={profile.partnerTargetRetirementAge ?? ''}
-                  onChange={(e) => {
-                    const raw = e.target.value;
-                    if (raw === '') {
-                      updateField('partnerTargetRetirementAge', '' as any);
-                    } else {
-                      const val = Number(raw);
-                      if (!isNaN(val)) updateField('partnerTargetRetirementAge', val);
-                    }
-                  }}
-                  onBlur={(e) => {
-                    const pAge = profile.partnerCurrentAge ?? 35;
-                    let val = Number(e.target.value);
-                    if (isNaN(val) || e.target.value === '' || val <= pAge) {
-                      val = pAge + 1;
-                    }
-                    val = Math.min(90, val);
-                    updateField('partnerTargetRetirementAge', val);
-                  }}
-                  className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                />
-              </div>
+              {/* Partner Target Retirement Age / Date */}
+              <RetirementTargetInput
+                id="partner-retire-target"
+                label="Partner Target Retirement"
+                dob={profile.partnerDateOfBirth}
+                currentAge={profile.partnerCurrentAge ?? 35}
+                targetAge={profile.partnerTargetRetirementAge ?? 60}
+                targetDate={profile.partnerTargetRetirementDate}
+                initialMode={profile.partnerTargetRetirementInputMode || 'age'}
+                accentColor="indigo"
+                onChange={(newAge, newDate, mode) => {
+                  onChange({
+                    ...profile,
+                    partnerTargetRetirementAge: newAge,
+                    partnerTargetRetirementDate: newDate,
+                    partnerTargetRetirementInputMode: mode,
+                  });
+                }}
+              />
 
               {/* Partner Private Pension Access Age Input */}
               <div className="space-y-1.5 sm:col-span-2">
@@ -553,40 +547,25 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
               </div>
             </div>
 
-            {/* Target Retirement Age */}
-            <div className="space-y-1.5">
-              <label htmlFor="single-retire-age" className="text-xs font-bold text-slate-700 dark:text-slate-300 flex justify-between">
-                <span>Target Retire Age</span>
-                <span className="text-primary-600 dark:text-primary-400 font-extrabold text-[10px] bg-primary-50 dark:bg-primary-950/80 px-1.5 py-0.5 rounded-md border border-primary-200/60 dark:border-primary-800/60">
-                  {profile.targetRetirementAge || 60} yrs ({(profile.targetRetirementAge || 60) - profile.currentAge}y away)
-                </span>
-              </label>
-              <input
-                id="single-retire-age"
-                type="number"
-                min={profile.currentAge + 1}
-                max="90"
-                value={profile.targetRetirementAge || ''}
-                onChange={(e) => {
-                  const raw = e.target.value;
-                  if (raw === '') {
-                    updateField('targetRetirementAge', '' as any);
-                  } else {
-                    const val = Number(raw);
-                    if (!isNaN(val)) updateField('targetRetirementAge', val);
-                  }
-                }}
-                onBlur={(e) => {
-                  let val = Number(e.target.value);
-                  if (isNaN(val) || e.target.value === '' || val <= profile.currentAge) {
-                    val = profile.currentAge + 1;
-                  }
-                  val = Math.min(90, val);
-                  updateField('targetRetirementAge', val);
-                }}
-                className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
-              />
-            </div>
+            {/* Target Retirement Age / Date */}
+            <RetirementTargetInput
+              id="single-retire-target"
+              label="Target Retirement"
+              dob={profile.dateOfBirth}
+              currentAge={profile.currentAge}
+              targetAge={profile.targetRetirementAge}
+              targetDate={profile.targetRetirementDate}
+              initialMode={profile.targetRetirementInputMode || 'age'}
+              accentColor="primary"
+              onChange={(newAge, newDate, mode) => {
+                onChange({
+                  ...profile,
+                  targetRetirementAge: newAge,
+                  targetRetirementDate: newDate,
+                  targetRetirementInputMode: mode,
+                });
+              }}
+            />
 
             {/* Private Pension Access Age Input */}
             <div className="space-y-1.5 sm:col-span-2">

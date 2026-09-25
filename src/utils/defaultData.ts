@@ -131,6 +131,8 @@ export const DEFAULT_PROFILE: UserProfile = {
   dateOfBirth: '1989-06-15', // Currently ~35 years old
   currentAge: 35,
   targetRetirementAge: 60,
+  targetRetirementDate: '2049-06-15',
+  targetRetirementInputMode: 'age',
   lifeExpectancyAge: 90,
   statePensionAge: 67,
   includeStatePension: true,
@@ -146,6 +148,8 @@ export const DEFAULT_PROFILE: UserProfile = {
   partnerDateOfBirth: '1989-06-15',
   partnerCurrentAge: 35,
   partnerTargetRetirementAge: 60,
+  partnerTargetRetirementDate: '2049-06-15',
+  partnerTargetRetirementInputMode: 'age',
   partnerStatePensionAge: 67,
   partnerIncludeStatePension: true,
   partnerEnableTripleLock: true,

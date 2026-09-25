@@ -367,6 +367,8 @@ export interface UserProfile {
   dateOfBirth: string; // e.g. '1988-05-15'
   currentAge: number;
   targetRetirementAge: number;
+  targetRetirementDate?: string; // e.g. '2049-06-15'
+  targetRetirementInputMode?: 'age' | 'date';
   lifeExpectancyAge?: number;
   statePensionAge: number;
   includeStatePension: boolean;
@@ -386,6 +388,8 @@ export interface UserProfile {
   partnerDateOfBirth?: string;
   partnerCurrentAge?: number;
   partnerTargetRetirementAge?: number;
+  partnerTargetRetirementDate?: string;
+  partnerTargetRetirementInputMode?: 'age' | 'date';
   partnerStatePensionAge?: number;
   partnerLifeExpectancyAge?: number;
   partnerIncludeStatePension?: boolean;
