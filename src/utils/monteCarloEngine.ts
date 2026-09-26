@@ -115,7 +115,9 @@ export function calculateCashBufferRequiredDetails(
 
     // Guaranteed State Pension
     let statePension = 0;
-    if ((profile.includeStatePension ?? true) && age >= (profile.statePensionAge || 67)) {
+    const primaryDeferralYears = profile.statePensionDeferralYears || 0;
+    const primaryDeferralBoost = 1 + (0.058 * primaryDeferralYears);
+    if ((profile.includeStatePension ?? true) && age >= (profile.statePensionAge || 67) + primaryDeferralYears) {
       const primaryYears = Math.min(35, profile.qualifyingYears ?? 35);
       if (primaryYears >= 10) {
         const primaryTripleLock = profile.enableTripleLock ?? true;
@@ -123,12 +125,14 @@ export function calculateCashBufferRequiredDetails(
         const primaryFull = profile.fullStatePensionAmount ?? 12547.60;
         const primaryAnnualCalculated = Math.round((primaryYears / 35) * primaryFull * 100) / 100;
         const primaryBaseAmount = profile.statePensionAmountAnnual ?? primaryAnnualCalculated;
-        statePension += primaryBaseAmount * primaryIndexFactor;
+        statePension += primaryBaseAmount * primaryIndexFactor * primaryDeferralBoost;
       }
     }
     if (profile.isCouplePlanning && (profile.partnerIncludeStatePension ?? true)) {
       const partnerAge = age + ((profile.partnerCurrentAge ?? profile.currentAge) - profile.currentAge);
-      if (partnerAge >= (profile.partnerStatePensionAge || 67)) {
+      const partnerDeferralYears = profile.partnerStatePensionDeferralYears || 0;
+      const partnerDeferralBoost = 1 + (0.058 * partnerDeferralYears);
+      if (partnerAge >= (profile.partnerStatePensionAge || 67) + partnerDeferralYears) {
         const partnerYears = Math.min(35, profile.partnerQualifyingYears ?? 35);
         if (partnerYears >= 10) {
           const partnerTripleLock = profile.partnerEnableTripleLock ?? true;
@@ -136,7 +140,7 @@ export function calculateCashBufferRequiredDetails(
           const partnerFull = profile.partnerFullStatePensionAmount ?? 12547.60;
           const partnerAnnualCalculated = Math.round((partnerYears / 35) * partnerFull * 100) / 100;
           const partnerBaseAmount = profile.partnerStatePensionAmountAnnual ?? partnerAnnualCalculated;
-          statePension += partnerBaseAmount * partnerIndexFactor;
+          statePension += partnerBaseAmount * partnerIndexFactor * partnerDeferralBoost;
         }
       }
     }
@@ -1181,7 +1185,9 @@ function parseAnnuityTypeConfig(type?: string) {
 
         // State Pension (Primary + Partner if couple mode)
         let primaryStatePension = 0;
-        if ((profile.includeStatePension ?? true) && age >= (profile.statePensionAge || 67)) {
+        const primaryDeferralYears = profile.statePensionDeferralYears || 0;
+        const primaryDeferralBoost = 1 + (0.058 * primaryDeferralYears);
+        if ((profile.includeStatePension ?? true) && age >= (profile.statePensionAge || 67) + primaryDeferralYears) {
           const primaryYears = Math.min(35, profile.qualifyingYears ?? 35);
           if (primaryYears >= 10) {
             const primaryTripleLock = profile.enableTripleLock ?? true;
@@ -1189,13 +1195,15 @@ function parseAnnuityTypeConfig(type?: string) {
             const primaryFull = profile.fullStatePensionAmount ?? 12547.60;
             const primaryAnnualCalculated = Math.round((primaryYears / 35) * primaryFull * 100) / 100;
             const primaryBaseAmount = profile.statePensionAmountAnnual ?? primaryAnnualCalculated;
-            primaryStatePension = primaryBaseAmount * primaryIndexFactor;
+            primaryStatePension = primaryBaseAmount * primaryIndexFactor * primaryDeferralBoost;
           }
         }
         let partnerStatePension = 0;
         if (profile.isCouplePlanning && !partnerDead && (profile.partnerIncludeStatePension ?? true)) {
           const partnerAge = age + ((profile.partnerCurrentAge ?? profile.currentAge) - profile.currentAge);
-          if (partnerAge >= (profile.partnerStatePensionAge || 67)) {
+          const partnerDeferralYears = profile.partnerStatePensionDeferralYears || 0;
+          const partnerDeferralBoost = 1 + (0.058 * partnerDeferralYears);
+          if (partnerAge >= (profile.partnerStatePensionAge || 67) + partnerDeferralYears) {
             const partnerYears = Math.min(35, profile.partnerQualifyingYears ?? 35);
             if (partnerYears >= 10) {
               const partnerTripleLock = profile.partnerEnableTripleLock ?? true;
@@ -1203,7 +1211,7 @@ function parseAnnuityTypeConfig(type?: string) {
               const partnerFull = profile.partnerFullStatePensionAmount ?? 12547.60;
               const partnerAnnualCalculated = Math.round((partnerYears / 35) * partnerFull * 100) / 100;
               const partnerBaseAmount = profile.partnerStatePensionAmountAnnual ?? partnerAnnualCalculated;
-              partnerStatePension = partnerBaseAmount * partnerIndexFactor;
+              partnerStatePension = partnerBaseAmount * partnerIndexFactor * partnerDeferralBoost;
             }
           }
         }

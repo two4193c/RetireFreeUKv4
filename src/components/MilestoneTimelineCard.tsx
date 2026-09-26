@@ -253,7 +253,9 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
     }
 
     // 8. Primary State Pension Age
-    const primarySpa = profile.statePensionAge || 67;
+    const primaryDeferralYears = profile.statePensionDeferralYears || 0;
+    const primarySpa = (profile.statePensionAge || 67) + primaryDeferralYears;
+    const primaryBoostPct = (primaryDeferralYears * 5.8).toFixed(1);
     list.push({
       id: 'ms-primary-spa',
       key: 'primary_spa',
@@ -264,17 +266,21 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
       year: currentYear + (primarySpa - currentAge),
       color: '#6366f1', // indigo-500
       icon: ShieldCheck,
-      description: `Guaranteed DWP State Pension commences (Triple-Lock indexed). Reduces reliance on private pot drawdowns.`,
+      description: primaryDeferralYears > 0
+        ? `Guaranteed DWP State Pension commences (deferred by ${primaryDeferralYears} yr${primaryDeferralYears > 1 ? 's' : ''} to age ${primarySpa}, with +${primaryBoostPct}% deferral boost).`
+        : `Guaranteed DWP State Pension commences (Triple-Lock indexed). Reduces reliance on private pot drawdowns.`,
       isEditable: true,
       minAge: 65,
-      maxAge: 72,
-      badge: 'State Pension',
+      maxAge: 75,
+      badge: primaryDeferralYears > 0 ? `State Pension (+${primaryBoostPct}%)` : 'State Pension',
       owner: 'primary',
     });
 
     // 9. Partner State Pension Age
     if (isCouple) {
-      const partnerSpa = profile.partnerStatePensionAge || 67;
+      const partnerDeferralYears = profile.partnerStatePensionDeferralYears || 0;
+      const partnerSpa = (profile.partnerStatePensionAge || 67) + partnerDeferralYears;
+      const partnerBoostPct = (partnerDeferralYears * 5.8).toFixed(1);
       const partnerOffset = (profile.partnerCurrentAge || currentAge) - currentAge;
       const primaryAgeAtPartnerSpa = partnerSpa - partnerOffset;
       if (primaryAgeAtPartnerSpa !== primarySpa) {
@@ -288,11 +294,13 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
           year: currentYear + (primaryAgeAtPartnerSpa - currentAge),
           color: '#818cf8', // indigo-400
           icon: ShieldCheck,
-          description: `${profile.partnerName || 'Partner'} DWP State Pension commences at partner age ${partnerSpa}.`,
+          description: partnerDeferralYears > 0
+            ? `${profile.partnerName || 'Partner'} DWP State Pension commences at partner age ${partnerSpa} (deferred by ${partnerDeferralYears} yr${partnerDeferralYears > 1 ? 's' : ''}, +${partnerBoostPct}% boost).`
+            : `${profile.partnerName || 'Partner'} DWP State Pension commences at partner age ${partnerSpa}.`,
           isEditable: true,
           minAge: 65,
-          maxAge: 72,
-          badge: 'Partner State Pension',
+          maxAge: 75,
+          badge: partnerDeferralYears > 0 ? `Partner SP (+${partnerBoostPct}%)` : 'Partner State Pension',
           owner: 'partner',
         });
       }

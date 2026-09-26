@@ -239,6 +239,7 @@ export interface DecumulationLifeEvent {
   inflationLinked?: boolean; // Scales with CPI inflation to target age (default true)
   enabled: boolean;
   description?: string;
+  allowWaterfall?: boolean; // If true, allows drawing remaining shortfall from other liquid pots if target pot is exhausted
 }
 
 export type InvestmentContribution = OneOffContribution;

@@ -359,8 +359,14 @@ export async function generateFormulaExcelWorkbook(
   wsInputs.addRow(['Current Age', profile.currentAge || 50, isCouple ? (profile.partnerCurrentAge || 50) : 0, 'Cell B4 (YOU) & Cell C4 (PARTNER)']); // Row 4
   wsInputs.addRow(['Normal Minimum Pension Access Age (NMPA)', primaryNmpa, isCouple ? partnerNmpa : 0, 'Cell B5 (YOU) & Cell C5 (PARTNER)']); // Row 5
   wsInputs.addRow(['Target Retirement Age', profile.targetRetirementAge || 55, isCouple ? (profile.partnerTargetRetirementAge || 57) : 0, 'Cell B6 (YOU) & Cell C6 (PARTNER)']); // Row 6
-  wsInputs.addRow(['State Pension Start Age (SPA)', profile.statePensionAge || 67, isCouple ? (profile.partnerStatePensionAge || 67) : 67, 'Cell B7 (YOU) & Cell C7 (PARTNER)']); // Row 7
-  wsInputs.addRow(['State Pension Today (£/yr)', profile.statePensionAmountAnnual || 12548, isCouple ? (profile.partnerStatePensionAmountAnnual || 12548) : 0, 'Cell B8 (YOU) & Cell C8 (PARTNER)']); // Row 8
+  const priSpaWithDef = (profile.statePensionAge || 67) + (profile.statePensionDeferralYears || 0);
+  const partSpaWithDef = isCouple ? ((profile.partnerStatePensionAge || 67) + (profile.partnerStatePensionDeferralYears || 0)) : 67;
+  const priSpBoost = 1 + (0.058 * (profile.statePensionDeferralYears || 0));
+  const partSpBoost = 1 + (0.058 * (profile.partnerStatePensionDeferralYears || 0));
+  const priSpAmount = Math.round((profile.statePensionAmountAnnual || 12548) * priSpBoost);
+  const partSpAmount = Math.round((profile.partnerStatePensionAmountAnnual || 12548) * partSpBoost);
+  wsInputs.addRow(['State Pension Start Age (SPA)', priSpaWithDef, isCouple ? partSpaWithDef : 67, 'Cell B7 (YOU) & Cell C7 (PARTNER)']); // Row 7
+  wsInputs.addRow(['State Pension Today (£/yr)', priSpAmount, isCouple ? partSpAmount : 0, 'Cell B8 (YOU) & Cell C8 (PARTNER)']); // Row 8
 
   for (let r = 4; r <= 7; r++) {
     wsInputs.getCell(`B${r}`).numFmt = '0';

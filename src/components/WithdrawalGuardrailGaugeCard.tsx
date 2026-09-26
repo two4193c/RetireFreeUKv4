@@ -44,18 +44,24 @@ export const WithdrawalGuardrailGaugeCard: React.FC<WithdrawalGuardrailGaugeCard
   let guaranteedIncomeAtRetirement = 0;
   
   // State Pension
-  if ((profile.includeStatePension ?? true) && retAge >= (profile.statePensionAge || 67)) {
+  const priDefYears = profile.statePensionDeferralYears || 0;
+  const priDefBoost = 1 + (0.058 * priDefYears);
+  if ((profile.includeStatePension ?? true) && retAge >= ((profile.statePensionAge || 67) + priDefYears)) {
     const yrs = Math.min(35, profile.qualifyingYears ?? 35);
     if (yrs >= 10) {
-      guaranteedIncomeAtRetirement += profile.statePensionAmountAnnual ?? (Math.round((yrs / 35) * (profile.fullStatePensionAmount ?? 12547.6) * 100) / 100);
+      const baseSp = profile.statePensionAmountAnnual ?? (Math.round((yrs / 35) * (profile.fullStatePensionAmount ?? 12547.6) * 100) / 100);
+      guaranteedIncomeAtRetirement += baseSp * priDefBoost;
     }
   }
   if (profile.isCouplePlanning && (profile.partnerIncludeStatePension ?? true)) {
     const pRetAge = profile.partnerTargetRetirementAge || retAge;
-    if (pRetAge >= (profile.partnerStatePensionAge || 67)) {
+    const partDefYears = profile.partnerStatePensionDeferralYears || 0;
+    const partDefBoost = 1 + (0.058 * partDefYears);
+    if (pRetAge >= ((profile.partnerStatePensionAge || 67) + partDefYears)) {
       const yrs = Math.min(35, profile.partnerQualifyingYears ?? 35);
       if (yrs >= 10) {
-        guaranteedIncomeAtRetirement += profile.partnerStatePensionAmountAnnual ?? (Math.round((yrs / 35) * (profile.partnerFullStatePensionAmount ?? 12547.6) * 100) / 100);
+        const baseSp = profile.partnerStatePensionAmountAnnual ?? (Math.round((yrs / 35) * (profile.partnerFullStatePensionAmount ?? 12547.6) * 100) / 100);
+        guaranteedIncomeAtRetirement += baseSp * partDefBoost;
       }
     }
   }

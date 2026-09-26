@@ -1800,20 +1800,48 @@ function parseAnnuityTypeConfig(type?: string) {
                   return amt - drawn;
                 };
 
+                const deductFromPrimaryPension = (amt: number) => {
+                  const drawn = Math.min(primaryPensionPot, amt);
+                  if (drawn > 0) {
+                    const uncrystDrawn = Math.min(primaryUncrystallisedPot, drawn);
+                    primaryUncrystallisedPot = Math.max(0, primaryUncrystallisedPot - uncrystDrawn);
+                    const crystDrawn = drawn - uncrystDrawn;
+                    primaryCrystallisedPot = Math.max(0, primaryCrystallisedPot - crystDrawn);
+                    primaryPensionPot = primaryUncrystallisedPot + primaryCrystallisedPot;
+                  }
+                  return amt - drawn;
+                };
+                const deductFromPartnerPension = (amt: number) => {
+                  const drawn = Math.min(partnerPensionPot, amt);
+                  if (drawn > 0) {
+                    const uncrystDrawn = Math.min(partnerUncrystallisedPot, drawn);
+                    partnerUncrystallisedPot = Math.max(0, partnerUncrystallisedPot - uncrystDrawn);
+                    const crystDrawn = drawn - uncrystDrawn;
+                    partnerCrystallisedPot = Math.max(0, partnerCrystallisedPot - crystDrawn);
+                    partnerPensionPot = partnerUncrystallisedPot + partnerCrystallisedPot;
+                  }
+                  return amt - drawn;
+                };
+
                 if (potTarget === 'stocks_and_shares_isa' || potTarget === 'cash_isa') {
                   remainingToDeduct = isPartnerEvent ? deductFromPartnerIsa(remainingToDeduct) : deductFromPrimaryIsa(remainingToDeduct);
                 } else if (potTarget === 'gia') {
                   remainingToDeduct = isPartnerEvent ? deductFromPartnerGia(remainingToDeduct) : deductFromPrimaryGia(remainingToDeduct);
                 } else if (potTarget === 'cash_savings') {
                   remainingToDeduct = isPartnerEvent ? deductFromPartnerCash(remainingToDeduct) : deductFromPrimaryCash(remainingToDeduct);
+                } else if (potTarget === 'sipp') {
+                  remainingToDeduct = isPartnerEvent ? deductFromPartnerPension(remainingToDeduct) : deductFromPrimaryPension(remainingToDeduct);
                 }
 
-                if (remainingToDeduct > 0) remainingToDeduct = deductFromPrimaryCash(remainingToDeduct);
-                if (remainingToDeduct > 0 && profile.isCouplePlanning) remainingToDeduct = deductFromPartnerCash(remainingToDeduct);
-                if (remainingToDeduct > 0) remainingToDeduct = deductFromPrimaryGia(remainingToDeduct);
-                if (remainingToDeduct > 0 && profile.isCouplePlanning) remainingToDeduct = deductFromPartnerGia(remainingToDeduct);
-                if (remainingToDeduct > 0) remainingToDeduct = deductFromPrimaryIsa(remainingToDeduct);
-                if (remainingToDeduct > 0 && profile.isCouplePlanning) remainingToDeduct = deductFromPartnerIsa(remainingToDeduct);
+                const shouldWaterfall = event.allowWaterfall ?? false;
+                if (shouldWaterfall && remainingToDeduct > 0) {
+                  if (remainingToDeduct > 0) remainingToDeduct = deductFromPrimaryCash(remainingToDeduct);
+                  if (remainingToDeduct > 0 && profile.isCouplePlanning) remainingToDeduct = deductFromPartnerCash(remainingToDeduct);
+                  if (remainingToDeduct > 0) remainingToDeduct = deductFromPrimaryGia(remainingToDeduct);
+                  if (remainingToDeduct > 0 && profile.isCouplePlanning) remainingToDeduct = deductFromPartnerGia(remainingToDeduct);
+                  if (remainingToDeduct > 0) remainingToDeduct = deductFromPrimaryIsa(remainingToDeduct);
+                  if (remainingToDeduct > 0 && profile.isCouplePlanning) remainingToDeduct = deductFromPartnerIsa(remainingToDeduct);
+                }
               }
 
               primaryCashGiaPot = primaryGiaPot + primaryCashSavingsPot;
@@ -2097,6 +2125,8 @@ function parseAnnuityTypeConfig(type?: string) {
         decumulationLifeEventsSummary: decumulationEventSummaries.join(', '),
         annualTaxReliefTotal: Math.round(primaryTaxThisYr.totalPensionTaxRelief + primaryTaxThisYr.lisaGovernmentBonusAnnual + (partnerTaxThisYr ? partnerTaxThisYr.totalPensionTaxRelief + partnerTaxThisYr.lisaGovernmentBonusAnnual : 0)),
         statePensionReceived: Math.round(statePensionReceived),
+        primaryStatePensionReceived: Math.round(primaryStatePensionReceived),
+        partnerStatePensionReceived: Math.round(partnerStatePensionReceived),
         dbPensionIncomeReceived: Math.round(dbPensionIncomeReceived),
         dbTaxFreeLumpSumReceived: Math.round(dbTaxFreeLumpSumReceived),
         taxableFixedIncomeReceived: Math.round(taxableFixedIncomeReceived),

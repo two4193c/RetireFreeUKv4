@@ -66,9 +66,10 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
   const isCouple = Boolean(profile.isCouplePlanning);
   const primarySpEnabled = profile.includeStatePension ?? true;
   const partnerSpEnabled = isCouple && (profile.partnerIncludeStatePension ?? true);
-  const primarySpa = profile.statePensionAge || 67;
+  const primarySpa = (profile.statePensionAge || 67) + (profile.statePensionDeferralYears || 0);
   const partnerAgeDiff = (profile.partnerCurrentAge ?? profile.currentAge) - profile.currentAge;
-  const partnerSpaPrimaryAge = (profile.partnerStatePensionAge || 67) - partnerAgeDiff;
+  const partnerEffectiveSpa = (profile.partnerStatePensionAge || 67) + (profile.partnerStatePensionDeferralYears || 0);
+  const partnerSpaPrimaryAge = partnerEffectiveSpa - partnerAgeDiff;
   const isSameSpaYear = primarySpEnabled && partnerSpEnabled && (primarySpa === partnerSpaPrimaryAge);
 
   const primaryRetireAge = profile.targetRetirementAge || 60;

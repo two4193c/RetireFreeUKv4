@@ -521,8 +521,8 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       const targetRetireAgeVal = targetAge;
       const primaryAccessAgeVal = getPensionAccessAge(profile);
       const partnerAccessAgeVal = isCouple ? getPartnerPensionAccessAge(profile) : primaryAccessAgeVal;
-      const primarySpaVal = profile.statePensionAge || 67;
-      const partnerSpaVal = isCouple ? (profile.partnerStatePensionAge || 67) : primarySpaVal;
+      const primarySpaVal = (profile.statePensionAge || 67) + (profile.statePensionDeferralYears || 0);
+      const partnerSpaVal = isCouple ? ((profile.partnerStatePensionAge || 67) + (profile.partnerStatePensionDeferralYears || 0)) : primarySpaVal;
 
       interface RawMilestoneEvent {
         primaryAge: number;
@@ -753,7 +753,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
 
       // Milestone Projections
       const primaryAccessAge = getPensionAccessAge(profile);
-      const primarySpaAge = profile.statePensionAge || 67;
+      const primarySpaAge = (profile.statePensionAge || 67) + (profile.statePensionDeferralYears || 0);
 
       const getSnapshotForAge = (targetAgeVal: number) => {
         if (!projections || projections.length === 0) {
@@ -1479,18 +1479,22 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       doc.setFont('helvetica', 'normal');
       doc.text(`• Current Gross Annual Salary: £${(profile.grossAnnualSalary || 0).toLocaleString()}/yr`, 18, y + 23);
       doc.text(`• Current Age: ${currentAge} | Pension Access Age: ${profile.pensionAccessAge || 57}`, 18, y + 29);
-      doc.text(`• Target Retirement Age: ${targetAge} | State Pension Age: ${profile.statePensionAge || 67}`, 18, y + 35);
-      doc.text(`• State Pension: ${profile.includeStatePension ? `Included (£${(profile.fullStatePensionAmount || 12548).toLocaleString()}/yr - ${priTripleLockStr})` : 'Excluded'}`, 18, y + 41);
+      const priDefYrs = profile.statePensionDeferralYears || 0;
+      const priSpaEff = (profile.statePensionAge || 67) + priDefYrs;
+      doc.text(`• Target Retirement Age: ${targetAge} | State Pension Age: ${priSpaEff}${priDefYrs > 0 ? ` (Deferred +${priDefYrs}y)` : ''}`, 18, y + 35);
+      doc.text(`• State Pension: ${profile.includeStatePension ? `Included (£${(profile.fullStatePensionAmount || 12548).toLocaleString()}/yr - ${priTripleLockStr}${priDefYrs > 0 ? ` +${(priDefYrs * 5.8).toFixed(1)}% deferral boost` : ''})` : 'Excluded'}`, 18, y + 41);
 
       // Partner Profile Column (if couple)
       if (profile.isCouplePlanning) {
+        const partDefYrs = profile.partnerStatePensionDeferralYears || 0;
+        const partSpaEff = (profile.partnerStatePensionAge || 67) + partDefYrs;
         doc.setFont('helvetica', 'bold');
         doc.text(`Partner Member: ${partnerName}`, 108, y + 17);
         doc.setFont('helvetica', 'normal');
         doc.text(`• Gross Annual Salary: £${(profile.partnerGrossAnnualSalary || 0).toLocaleString()}/yr`, 108, y + 23);
         doc.text(`• Current Age: ${profile.partnerCurrentAge || currentAge} | Access Age: ${profile.partnerPensionAccessAge || 57}`, 108, y + 29);
-        doc.text(`• Target Retirement Age: ${profile.partnerTargetRetirementAge || targetAge} | State Pension Age: ${profile.partnerStatePensionAge || 67}`, 108, y + 35);
-        doc.text(`• State Pension: ${profile.partnerIncludeStatePension !== false ? `Included (£${(profile.partnerFullStatePensionAmount || 12548).toLocaleString()}/yr - ${partTripleLockStr})` : 'Excluded'}`, 108, y + 41);
+        doc.text(`• Target Retirement Age: ${profile.partnerTargetRetirementAge || targetAge} | State Pension Age: ${partSpaEff}${partDefYrs > 0 ? ` (Deferred +${partDefYrs}y)` : ''}`, 108, y + 35);
+        doc.text(`• State Pension: ${profile.partnerIncludeStatePension !== false ? `Included (£${(profile.partnerFullStatePensionAmount || 12548).toLocaleString()}/yr - ${partTripleLockStr}${partDefYrs > 0 ? ` +${(partDefYrs * 5.8).toFixed(1)}% deferral boost` : ''})` : 'Excluded'}`, 108, y + 41);
       } else {
         doc.setFont('helvetica', 'bold');
         doc.text(`Planning Parameters:`, 108, y + 17);
@@ -7161,32 +7165,38 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
         }
 
         // 8. Primary State Pension
-        const pSpa = profile.statePensionAge || 67;
+        const pDefYrs = profile.statePensionDeferralYears || 0;
+        const pSpa = (profile.statePensionAge || 67) + pDefYrs;
         pdfMilestones.push({
           label: `${profile.name || 'Primary'} State Pension`,
-          shortLabel: 'State Pension',
+          shortLabel: pDefYrs > 0 ? `SP (+${(pDefYrs * 5.8).toFixed(1)}%)` : 'State Pension',
           age: pSpa,
           year: baseYear + (pSpa - curAge),
           color: [99, 102, 241],
           category: 'Pension',
-          impact: 'DWP State Pension Triple-Lock floor commences',
+          impact: pDefYrs > 0 
+            ? `DWP State Pension commences (deferred +${pDefYrs}y, +${(pDefYrs * 5.8).toFixed(1)}% boost)`
+            : 'DWP State Pension Triple-Lock floor commences',
           owner: profile.name || 'Primary',
           level: 2,
         });
 
         // 9. Partner State Pension
         if (isCouple && (profile.partnerIncludeStatePension ?? true)) {
-          const partSpa = profile.partnerStatePensionAge || 67;
+          const partDefYrs = profile.partnerStatePensionDeferralYears || 0;
+          const partSpa = (profile.partnerStatePensionAge || 67) + partDefYrs;
           const partOff = (profile.partnerCurrentAge || curAge) - curAge;
           const pAgeAtPartSpa = partSpa - partOff;
           pdfMilestones.push({
             label: `${profile.partnerName || 'Partner'} State Pension`,
-            shortLabel: 'Partner State Pen.',
+            shortLabel: partDefYrs > 0 ? `Part. SP (+${(partDefYrs * 5.8).toFixed(1)}%)` : 'Partner State Pen.',
             age: pAgeAtPartSpa,
             year: baseYear + (pAgeAtPartSpa - curAge),
             color: [129, 140, 248],
             category: 'Pension',
-            impact: 'Partner DWP State Pension floor commences',
+            impact: partDefYrs > 0
+              ? `Partner DWP State Pension commences (deferred +${partDefYrs}y, +${(partDefYrs * 5.8).toFixed(1)}% boost)`
+              : 'Partner DWP State Pension floor commences',
             owner: profile.partnerName || 'Partner',
             level: 3,
           });

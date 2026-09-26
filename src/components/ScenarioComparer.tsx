@@ -215,12 +215,13 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
 
     // 1. Primary State Pension
     if (profile.includeStatePension) {
-      const stateAge = profile.statePensionAge || 67;
+      const priDefYears = profile.statePensionDeferralYears || 0;
+      const stateAge = (profile.statePensionAge || 67) + priDefYears;
       const startYear = currentYear + (stateAge - primaryCurrentAge);
-      const amount = profile.statePensionAmountAnnual || 12547.6;
+      const amount = (profile.statePensionAmountAnnual || 12547.6) * (1 + 0.058 * priDefYears);
       items.push({
         id: 'pri_state',
-        name: 'State Pension',
+        name: priDefYears > 0 ? `State Pension (Deferred to ${stateAge})` : 'State Pension',
         owner: 'Primary',
         startAge: stateAge,
         startYear,
@@ -231,12 +232,13 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
 
     // 2. Partner State Pension
     if (profile.isCouplePlanning && (profile.partnerIncludeStatePension ?? true)) {
-      const partStateAge = profile.partnerStatePensionAge || 67;
+      const partDefYears = profile.partnerStatePensionDeferralYears || 0;
+      const partStateAge = (profile.partnerStatePensionAge || 67) + partDefYears;
       const startYear = currentYear + (partStateAge - partnerCurrentAge);
-      const amount = profile.partnerStatePensionAmountAnnual || 12547.6;
+      const amount = (profile.partnerStatePensionAmountAnnual || 12547.6) * (1 + 0.058 * partDefYears);
       items.push({
         id: 'part_state',
-        name: 'State Pension',
+        name: partDefYears > 0 ? `State Pension (Deferred to ${partStateAge})` : 'State Pension',
         owner: 'Partner',
         startAge: partStateAge,
         startYear,
@@ -392,9 +394,9 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
   const streamsB = useMemo(() => getItemizedGuaranteedStreams(scenarioB.profile, scenarioB.pots), [scenarioB]);
   const streamsC = useMemo(() => showScenarioC ? getItemizedGuaranteedStreams(scenarioC.profile, scenarioC.pots) : [], [showScenarioC, scenarioC]);
 
-  const floorStateA = calcGuaranteedFloor(projA, scenarioA.profile, scenarioA.profile.statePensionAge || 67);
-  const floorStateB = calcGuaranteedFloor(projB, scenarioB.profile, scenarioB.profile.statePensionAge || 67);
-  const floorStateC = showScenarioC ? calcGuaranteedFloor(projC, scenarioC.profile, scenarioC.profile.statePensionAge || 67) : null;
+  const floorStateA = calcGuaranteedFloor(projA, scenarioA.profile, (scenarioA.profile.statePensionAge || 67) + (scenarioA.profile.statePensionDeferralYears || 0));
+  const floorStateB = calcGuaranteedFloor(projB, scenarioB.profile, (scenarioB.profile.statePensionAge || 67) + (scenarioB.profile.statePensionDeferralYears || 0));
+  const floorStateC = showScenarioC ? calcGuaranteedFloor(projC, scenarioC.profile, (scenarioC.profile.statePensionAge || 67) + (scenarioC.profile.statePensionDeferralYears || 0)) : null;
 
   const targetAgeC = scenarioC.profile.targetRetirementAge || 60;
   const retC = projC.find((p) => p.age === targetAgeC) || projC[0];

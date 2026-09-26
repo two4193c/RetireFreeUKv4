@@ -65,16 +65,19 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
   };
 
   const retirementYear = projections.find((p) => p.age === profile.targetRetirementAge);
-  const statePensionYear = projections.find((p) => p.age === profile.statePensionAge);
+  const primaryDeferralYears = profile.statePensionDeferralYears || 0;
+  const primarySpa = (profile.statePensionAge || 67) + primaryDeferralYears;
+  const statePensionYear = projections.find((p) => p.age === primarySpa);
   const depletedYear = projections.find((p) => p.potDepleted);
 
   // State Pension milestone age calculations for Primary and Partner
   const isCouple = Boolean(profile.isCouplePlanning);
   const primarySpEnabled = profile.includeStatePension ?? true;
   const partnerSpEnabled = isCouple && (profile.partnerIncludeStatePension ?? true);
-  const primarySpa = profile.statePensionAge || 67;
+  const partnerDeferralYears = profile.partnerStatePensionDeferralYears || 0;
+  const partnerSpaEffective = (profile.partnerStatePensionAge || 67) + partnerDeferralYears;
   const partnerAgeDiff = (profile.partnerCurrentAge ?? profile.currentAge) - profile.currentAge;
-  const partnerSpaPrimaryAge = (profile.partnerStatePensionAge || 67) - partnerAgeDiff;
+  const partnerSpaPrimaryAge = partnerSpaEffective - partnerAgeDiff;
   const isSameSpaYear = primarySpEnabled && partnerSpEnabled && (primarySpa === partnerSpaPrimaryAge);
 
   const primaryRetireAge = profile.targetRetirementAge || 60;
@@ -688,7 +691,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
             </span>
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 font-extrabold border border-purple-200 dark:border-purple-800/80">
               <span className="w-2 h-2 rounded-full bg-purple-500"></span>
-              State Pension: Age {primarySpa} {isCouple && `(Partner: ${profile.partnerStatePensionAge || 67})`}
+              State Pension: Age {primarySpa} {isCouple && `(Partner: ${partnerSpaEffective})`}
             </span>
           </div>
         </div>

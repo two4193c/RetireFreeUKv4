@@ -1911,7 +1911,7 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
       }
     }
 
-    const spa = profile.statePensionAge || 67;
+    const spa = (profile.statePensionAge || 67) + (profile.statePensionDeferralYears || 0);
     if (spa && !ages.some((a) => a.age === spa)) {
       ages.push({ age: spa, label: `State Pension (${spa})`, type: 'spa' });
     }

@@ -113,7 +113,9 @@ export function computePlanInsights(
   const targetAge = profile.targetRetirementAge || 60;
   const horizonAge = profile.lifeExpectancyAge || 90;
   const targetIncome = profile.targetRetirementIncomeAnnual || 35000;
-  const priSpaAge = profile.statePensionAge || 67;
+  const priDefYears = profile.statePensionDeferralYears || 0;
+  const priDefBoost = 1 + (0.058 * priDefYears);
+  const priSpaAge = (profile.statePensionAge || 67) + priDefYears;
   const priAccessAge = getPensionAccessAge(profile);
   const primaryName = profile.name || 'Primary';
   const partnerName = profile.partnerName || 'Partner';
@@ -159,10 +161,12 @@ export function computePlanInsights(
   // 3. Guaranteed Floor & State Pension Coverage
   // ---------------------------------------------------------------------------
   const priStatePension = profile.includeStatePension
-    ? (profile.statePensionAmountAnnual || profile.fullStatePensionAmount || 12547.6)
+    ? (profile.statePensionAmountAnnual || profile.fullStatePensionAmount || 12547.6) * priDefBoost
     : 0;
+  const partDefYears = profile.partnerStatePensionDeferralYears || 0;
+  const partDefBoost = 1 + (0.058 * partDefYears);
   const partStatePension = isCouple && profile.partnerIncludeStatePension !== false
-    ? (profile.partnerStatePensionAmountAnnual || profile.partnerFullStatePensionAmount || 12547.6)
+    ? (profile.partnerStatePensionAmountAnnual || profile.partnerFullStatePensionAmount || 12547.6) * partDefBoost
     : 0;
   const statePensionTotalAnnual = priStatePension + partStatePension;
 
@@ -489,7 +493,9 @@ export function computePlanInsights(
         owner: ownerPrefix === 'primary' ? 'Primary' : 'Partner',
         });
       } else {
-        const spaAge = ownerPrefix === 'primary' ? (profile.statePensionAge || 67) : (profile.partnerStatePensionAge || 67);
+        const spaAge = ownerPrefix === 'primary' 
+          ? (profile.statePensionAge || 67) + (profile.statePensionDeferralYears || 0)
+          : (profile.partnerStatePensionAge || 67) + (profile.partnerStatePensionDeferralYears || 0);
         opportunities.push({
           id: `state_pension_maxed_${ownerPrefix}`,
           category: 'Allowances & Reliefs',

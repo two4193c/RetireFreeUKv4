@@ -448,8 +448,10 @@ export const AnnualBreakdownTable: React.FC<AnnualBreakdownTableProps> = ({
                 const isRetireYear = p.age === profile.targetRetirementAge;
                 const isCouple = Boolean(profile.isCouplePlanning);
                 const partnerAgeDiff = (profile.partnerCurrentAge ?? profile.currentAge) - profile.currentAge;
-                const partnerSpaPrimaryAge = (profile.partnerStatePensionAge || 67) - partnerAgeDiff;
-                const isPrimarySpYear = (profile.includeStatePension ?? true) && p.age === (profile.statePensionAge || 67);
+                const partnerEffectiveSpa = (profile.partnerStatePensionAge || 67) + (profile.partnerStatePensionDeferralYears || 0);
+                const partnerSpaPrimaryAge = partnerEffectiveSpa - partnerAgeDiff;
+                const primaryEffectiveSpa = (profile.statePensionAge || 67) + (profile.statePensionDeferralYears || 0);
+                const isPrimarySpYear = (profile.includeStatePension ?? true) && p.age === primaryEffectiveSpa;
                 const isPartnerSpYear = isCouple && (profile.partnerIncludeStatePension ?? true) && p.age === partnerSpaPrimaryAge;
                 const isStatePensionYear = isPrimarySpYear || isPartnerSpYear;
                 const hasShortfall = p.isRetired && (p.incomeShortfall || 0) > 0;

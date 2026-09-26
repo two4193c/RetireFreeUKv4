@@ -631,11 +631,14 @@ export function aggregateIncome(
 
   let statePensionIncome = 0;
   const includeSp = isPartner ? profile.partnerIncludeStatePension : profile.includeStatePension;
-  const spAge = isPartner ? (profile.partnerStatePensionAge ?? 67) : (profile.statePensionAge ?? 67);
+  const deferralYears = isPartner ? (profile.partnerStatePensionDeferralYears || 0) : (profile.statePensionDeferralYears || 0);
+  const deferralBoost = 1 + (0.058 * deferralYears);
+  const spAge = (isPartner ? (profile.partnerStatePensionAge ?? 67) : (profile.statePensionAge ?? 67)) + deferralYears;
   if (includeSp && currentEvalAge >= spAge) {
-    statePensionIncome = isPartner
+    const rawSp = isPartner
       ? (profile.partnerStatePensionAmountAnnual ?? profile.partnerFullStatePensionAmount ?? 11502)
       : (profile.statePensionAmountAnnual ?? profile.fullStatePensionAmount ?? 11502);
+    statePensionIncome = rawSp * deferralBoost;
   }
 
   const nonInvestmentTaxableIncome = grossSalary + taxableFixedIncome + dbPensionIncome + statePensionIncome;

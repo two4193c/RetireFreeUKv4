@@ -15,7 +15,7 @@ export const PwrMetricBannerCard: React.FC<PwrMetricBannerCardProps> = ({ profil
   const baseTargetIncome = getActualSpendingTargetForAge(profile, profile.targetRetirementAge);
   
   const pensionAccessAge = getPensionAccessAge(profile);
-  const statePensionAge = profile.statePensionAge || 67;
+  const statePensionAge = (profile.statePensionAge || 67) + (profile.statePensionDeferralYears || 0);
 
   // --- Correct InvestmentPots field names per types.ts ---
   let todayAssets =

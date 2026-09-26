@@ -267,7 +267,9 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
 
   const isCouple = Boolean(profile.isCouplePlanning);
 
-  const activeSpa = activeIncomePerson === 'partner' ? (profile.partnerStatePensionAge || 67) : (profile.statePensionAge || 67);
+  const activeSpa = activeIncomePerson === 'partner'
+    ? ((profile.partnerStatePensionAge || 67) + (profile.partnerStatePensionDeferralYears || 0))
+    : ((profile.statePensionAge || 67) + (profile.statePensionDeferralYears || 0));
   const activeRetireAge = activeIncomePerson === 'partner' ? (profile.partnerTargetRetirementAge || profile.targetRetirementAge) : profile.targetRetirementAge;
   const bridgeYears = Math.max(0, activeSpa - activeRetireAge);
 

@@ -142,9 +142,9 @@ export const StatePensionNiGuideCard: React.FC = () => {
       <div className="p-5 rounded-2xl bg-amber-50/60 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-800/60 flex items-start gap-3">
         <Sparkles className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
         <div className="space-y-1 text-xs">
-          <p className="font-bold text-amber-900 dark:text-amber-300">Modelling State Pension in RetireFree UK v4</p>
+          <p className="font-bold text-amber-900 dark:text-amber-300">Modelling State Pension & Deferral in RetireFree UK</p>
           <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
-            In the <strong>Profile Inputs</strong> card, you can enter your exact expected <strong>State Pension Annual Amount</strong> and <strong>State Pension Start Age</strong>. The engine automatically indexes this income by inflation annually and adjusts portfolio drawdown requirements from that year forward.
+            In the <strong>State Pension Forecast</strong> card, you can enter qualifying NI years, adjust benchmark amounts, and test <strong>Delaying / Deferring State Pension</strong> (0–10 years). The engine dynamically calculates the +5.8%/yr permanent boost, break-even payback timelines, and automatically models increased cash-flows and adjusted bridge drawdown from your delayed claim age.
           </p>
         </div>
       </div>

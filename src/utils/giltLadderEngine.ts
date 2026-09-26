@@ -195,7 +195,9 @@ export function calculateGiltLadder(
   const isPartner = config.owner === 'partner';
   const personCurrentAge = isPartner ? (profile.partnerCurrentAge ?? profile.currentAge) : profile.currentAge;
   const personRetireAge = isPartner ? (profile.partnerTargetRetirementAge ?? profile.targetRetirementAge ?? 60) : profile.targetRetirementAge;
-  const personStatePensionAge = isPartner ? (profile.partnerStatePensionAge ?? profile.statePensionAge ?? 67) : (profile.statePensionAge || 67);
+  const personStatePensionAge = isPartner
+    ? ((profile.partnerStatePensionAge ?? profile.statePensionAge ?? 67) + (profile.partnerStatePensionDeferralYears || 0))
+    : ((profile.statePensionAge || 67) + (profile.statePensionDeferralYears || 0));
   const personSalary = isPartner ? (profile.partnerGrossAnnualSalary ?? 0) : (profile.grossAnnualSalary || 50000);
   const personDOB = isPartner ? profile.partnerDateOfBirth : profile.dateOfBirth;
 
@@ -427,7 +429,7 @@ export function calculateGiltLadder(
  */
 export function getDefaultGiltLadderConfig(profile: UserProfile): GiltLadderConfig {
   const startAge = profile.targetRetirementAge || 60;
-  const endAge = Math.max(startAge + 1, Math.min(startAge + 8, profile.statePensionAge || 67));
+  const endAge = Math.max(startAge + 1, Math.min(startAge + 8, (profile.statePensionAge || 67) + (profile.statePensionDeferralYears || 0)));
   const bridgeGap = Math.max(15000, profile.targetRetirementIncomeAnnual || 25000);
 
   return {

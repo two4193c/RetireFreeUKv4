@@ -181,6 +181,7 @@ export function getScopeEvaluationInputs(
     evalProfile.currentAge = profileInput.partnerCurrentAge ?? profileInput.currentAge;
     evalProfile.targetRetirementAge = profileInput.partnerTargetRetirementAge ?? profileInput.targetRetirementAge;
     evalProfile.statePensionAge = profileInput.partnerStatePensionAge ?? 67;
+    evalProfile.statePensionDeferralYears = profileInput.partnerStatePensionDeferralYears ?? 0;
     evalProfile.grossAnnualSalary = profileInput.partnerGrossAnnualSalary ?? 0;
     evalProfile.taxRegion = profileInput.partnerTaxRegion ?? profileInput.taxRegion;
     evalProfile.includeStatePension = profileInput.partnerIncludeStatePension ?? profileInput.includeStatePension;

@@ -290,38 +290,60 @@ export const StrategySummaryCard: React.FC<StrategySummaryCardProps> = ({
             </span>
           </div>
           <div className="space-y-1.5 text-[11px] text-slate-700 dark:text-slate-300">
-            <div className="flex justify-between">
-              <span className="text-slate-500 dark:text-slate-400">{profile.name || 'Primary'} SP Age:</span>
-              <span className="font-bold text-slate-900 dark:text-white">Age {profile.statePensionAge || 67}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-500 dark:text-slate-400">{profile.name || 'Primary'} Entitlement:</span>
-              <span className="font-bold text-primary-600 dark:text-primary-400">
-                {profile.includeStatePension
-                  ? (profile.qualifyingYears ?? 35) < 10
-                    ? `£0/yr (${profile.qualifyingYears ?? 0}/35 Yrs - Min 10 Yrs Required)`
-                    : `£${(profile.statePensionAmountAnnual ?? 12547.60).toLocaleString()}/yr (${profile.qualifyingYears ?? 35}/35 Yrs)`
-                  : 'Excluded'}
-              </span>
-            </div>
-            {isCouple && (
-              <>
-                <div className="flex justify-between border-t border-slate-100 dark:border-slate-700/60 pt-1">
-                  <span className="text-slate-500 dark:text-slate-400">{profile.partnerName || 'Partner'} SP Age:</span>
-                  <span className="font-bold text-slate-900 dark:text-white">Age {profile.partnerStatePensionAge || 67}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500 dark:text-slate-400">{profile.partnerName || 'Partner'} Entitlement:</span>
-                  <span className="font-bold text-indigo-700 dark:text-indigo-300">
-                    {(profile.partnerIncludeStatePension ?? true)
-                      ? (profile.partnerQualifyingYears ?? 35) < 10
-                        ? `£0/yr (${profile.partnerQualifyingYears ?? 0}/35 Yrs - Min 10 Yrs Required)`
-                        : `£${(profile.partnerStatePensionAmountAnnual ?? 12547.60).toLocaleString()}/yr (${profile.partnerQualifyingYears ?? 35}/35 Yrs)`
-                      : 'Excluded'}
-                  </span>
-                </div>
-              </>
-            )}
+            {(() => {
+              const priDef = profile.statePensionDeferralYears || 0;
+              const priSpa = (profile.statePensionAge || 67) + priDef;
+              const priBoost = 1 + (0.058 * priDef);
+              const priBase = profile.statePensionAmountAnnual ?? 12547.60;
+              const priFinal = Math.round(priBase * priBoost * 100) / 100;
+              return (
+                <>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500 dark:text-slate-400">{profile.name || 'Primary'} SP Age:</span>
+                    <span className="font-bold text-slate-900 dark:text-white">
+                      Age {priSpa} {priDef > 0 && `(Deferred +${priDef}y)`}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500 dark:text-slate-400">{profile.name || 'Primary'} Entitlement:</span>
+                    <span className="font-bold text-primary-600 dark:text-primary-400">
+                      {profile.includeStatePension
+                        ? (profile.qualifyingYears ?? 35) < 10
+                          ? `£0/yr (${profile.qualifyingYears ?? 0}/35 Yrs - Min 10 Yrs Required)`
+                          : `£${priFinal.toLocaleString('en-GB', { minimumFractionDigits: 2 })}/yr ${priDef > 0 ? `(+${(priDef * 5.8).toFixed(1)}%)` : `(${profile.qualifyingYears ?? 35}/35 Yrs)`}`
+                        : 'Excluded'}
+                    </span>
+                  </div>
+                </>
+              );
+            })()}
+            {isCouple && (() => {
+              const partDef = profile.partnerStatePensionDeferralYears || 0;
+              const partSpa = (profile.partnerStatePensionAge || 67) + partDef;
+              const partBoost = 1 + (0.058 * partDef);
+              const partBase = profile.partnerStatePensionAmountAnnual ?? 12547.60;
+              const partFinal = Math.round(partBase * partBoost * 100) / 100;
+              return (
+                <>
+                  <div className="flex justify-between border-t border-slate-100 dark:border-slate-700/60 pt-1">
+                    <span className="text-slate-500 dark:text-slate-400">{profile.partnerName || 'Partner'} SP Age:</span>
+                    <span className="font-bold text-slate-900 dark:text-white">
+                      Age {partSpa} {partDef > 0 && `(Deferred +${partDef}y)`}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500 dark:text-slate-400">{profile.partnerName || 'Partner'} Entitlement:</span>
+                    <span className="font-bold text-indigo-700 dark:text-indigo-300">
+                      {(profile.partnerIncludeStatePension ?? true)
+                        ? (profile.partnerQualifyingYears ?? 35) < 10
+                          ? `£0/yr (${profile.partnerQualifyingYears ?? 0}/35 Yrs - Min 10 Yrs Required)`
+                          : `£${partFinal.toLocaleString('en-GB', { minimumFractionDigits: 2 })}/yr ${partDef > 0 ? `(+${(partDef * 5.8).toFixed(1)}%)` : `(${profile.partnerQualifyingYears ?? 35}/35 Yrs)`}`
+                        : 'Excluded'}
+                    </span>
+                  </div>
+                </>
+              );
+            })()}
             <div className="flex justify-between border-t border-slate-100 dark:border-slate-700/60 pt-1">
               <span className="text-slate-500 dark:text-slate-400">Inflation Indexing:</span>
               <span className="font-bold text-slate-900 dark:text-white">
