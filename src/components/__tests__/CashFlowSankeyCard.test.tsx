@@ -44,7 +44,7 @@ describe('CashFlowSankeyCard', () => {
     
     expect(screen.getByText(/Interactive Cash Flow Waterfall & Sankey Diagram/i)).toBeInTheDocument();
     
-    expect(screen.getByText('Combined')).toBeInTheDocument();
+    expect(screen.getByText('Household')).toBeInTheDocument();
     expect(screen.getByText('Split')).toBeInTheDocument();
     expect(screen.getByText('John')).toBeInTheDocument();
     expect(screen.getByText('Jane')).toBeInTheDocument();
@@ -53,7 +53,7 @@ describe('CashFlowSankeyCard', () => {
   it('view mode toggles correctly update the internal state', () => {
     render(<CashFlowSankeyCard projections={mockProjections} profile={mockProfile} />);
     
-    const combinedBtn = screen.getByText('Combined');
+    const combinedBtn = screen.getByText('Household');
     const johnBtn = screen.getByText('John');
     
     // Default mode is 'combined'

@@ -95,6 +95,30 @@ export const CrystallisationTrancheManager: React.FC<CrystallisationTrancheManag
       pclsPercent: 25,
       targetPot: 'stocks_and_shares_isa',
       enabled: true,
+      frequency: 'one_off',
+    };
+
+    const updated = [...tranches, newTranche];
+    onTranchesChange(updated);
+    setExpandedTrancheId(newTranche.id);
+  };
+
+  const handleAddRecurringTranche = (annualAmount: number = 100000) => {
+    const nextAge = tranches.length > 0
+      ? Math.max(...tranches.map((t) => t.age)) + 1
+      : Math.max(pensionAccessAge, 58);
+
+    const newTranche: CrystallisationTranche = {
+      id: `tranche-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+      name: `Annual Crystallisation (£${Math.round(annualAmount / 1000)}k/yr)`,
+      owner,
+      age: nextAge,
+      endAge: Math.min(85, nextAge + 4),
+      frequency: 'recurring',
+      amount: annualAmount,
+      pclsPercent: 25,
+      targetPot: 'stocks_and_shares_isa',
+      enabled: true,
     };
 
     const updated = [...tranches, newTranche];
@@ -113,13 +137,19 @@ export const CrystallisationTrancheManager: React.FC<CrystallisationTrancheManag
     if (expandedTrancheId === id) setExpandedTrancheId(null);
   };
 
-  // Calculate total crystallised and total PCLS from tranches
+  // Calculate total crystallised and total PCLS from tranches accounting for recurring
+  const getTrancheMultiplier = (t: CrystallisationTranche) => {
+    if (t.frequency !== 'recurring') return 1;
+    const end = t.endAge && t.endAge >= t.age ? t.endAge : t.age;
+    return Math.max(1, end - t.age + 1);
+  };
+
   const totalCrystallised = tranches
     .filter((t) => t.enabled)
-    .reduce((sum, t) => sum + (t.amount || 0), 0);
+    .reduce((sum, t) => sum + (t.amount || 0) * getTrancheMultiplier(t), 0);
   const totalPclsFromTranches = tranches
     .filter((t) => t.enabled)
-    .reduce((sum, t) => sum + Math.round((t.amount || 0) * ((t.pclsPercent ?? 25) / 100)), 0);
+    .reduce((sum, t) => sum + Math.round((t.amount || 0) * ((t.pclsPercent ?? 25) / 100)) * getTrancheMultiplier(t), 0);
   const totalDrawdownFromTranches = totalCrystallised - totalPclsFromTranches;
 
   // Compute Uncrystallised balance and remaining LSA
@@ -239,19 +269,52 @@ export const CrystallisationTrancheManager: React.FC<CrystallisationTrancheManag
               <div className="text-center py-6 text-slate-500 dark:text-slate-400 text-xs bg-white dark:bg-slate-900 rounded-xl border border-dashed border-slate-200 dark:border-slate-700 space-y-2">
                 <p className="font-semibold text-slate-700 dark:text-slate-300">No crystallisation tranches defined yet.</p>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-                  Click below to add your first crystallisation event (e.g. Crystallise £100,000 at age 58 to take £25k tax-free into ISA and £75k into Flexi-Access drawdown).
+                  Add one-off or annual recurring crystallisations (e.g. Crystallise £100,000/yr to take £25k tax-free into ISA and £75k into Flexi-Access drawdown).
                 </p>
-                <button
-                  type="button"
-                  onClick={handleAddTranche}
-                  className="mt-2 px-4 py-2 bg-slate-900 dark:bg-slate-800 text-white rounded-xl text-xs font-bold hover:bg-slate-800 dark:hover:bg-slate-700 transition-colors inline-flex items-center gap-1.5 cursor-pointer shadow-xs"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Add First Tranche</span>
-                </button>
+                <div className="flex items-center justify-center gap-2 pt-1 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={handleAddTranche}
+                    className="px-3.5 py-2 bg-slate-900 dark:bg-slate-800 text-white rounded-xl text-xs font-bold hover:bg-slate-800 dark:hover:bg-slate-700 transition-colors inline-flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add One-Off Tranche</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleAddRecurringTranche(100000)}
+                    className="px-3.5 py-2 bg-teal-600 text-white rounded-xl text-xs font-bold hover:bg-teal-700 transition-colors inline-flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  >
+                    <Coins className="w-3.5 h-3.5" />
+                    <span>Add £100k/yr Annual Crystallisation</span>
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="space-y-2.5 pt-1">
+                <div className="flex items-center justify-between gap-2 pb-1">
+                  <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                    Active Tranche List ({tranches.length})
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleAddRecurringTranche(100000)}
+                      className="px-2.5 py-1 bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800 rounded-lg text-[11px] font-bold hover:bg-teal-100 transition-colors inline-flex items-center gap-1 cursor-pointer"
+                    >
+                      <Plus className="w-3 h-3" />
+                      <span>+ £100k/yr Annual</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleAddTranche}
+                      className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-lg text-[11px] font-bold hover:bg-slate-200 transition-colors inline-flex items-center gap-1 cursor-pointer"
+                    >
+                      <Plus className="w-3 h-3" />
+                      <span>+ Single Tranche</span>
+                    </button>
+                  </div>
+                </div>
                 {tranches.map((tranche, idx) => {
                   const isExpanded = expandedTrancheId === tranche.id;
                   const pclsAmount = Math.round((tranche.amount || 0) * ((tranche.pclsPercent ?? 25) / 100));
@@ -292,21 +355,27 @@ export const CrystallisationTrancheManager: React.FC<CrystallisationTrancheManag
                             className="w-4 h-4 text-primary-600 rounded border-slate-300 dark:border-slate-700 focus:ring-primary-500 cursor-pointer"
                           />
                           <div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
                               <span className="font-bold text-xs text-slate-900 dark:text-white">
-                                {tranche.name || `Tranche ${idx + 1}`} (Age {tranche.age})
+                                {tranche.name || (tranche.frequency === 'recurring' ? 'Annual Crystallisation' : `Tranche ${idx + 1}`)}
+                                {tranche.frequency === 'recurring' ? ` (Ages ${tranche.age}–${tranche.endAge || 'depleted'})` : ` (Age ${tranche.age})`}
                               </span>
                               <span className="text-[9px] font-bold px-1.5 py-0.2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded">
-                                Gross: £{(tranche.amount || 0).toLocaleString()}
+                                Gross: £{(tranche.amount || 0).toLocaleString()}{tranche.frequency === 'recurring' ? '/yr' : ''}
                               </span>
+                              {tranche.frequency === 'recurring' && (
+                                <span className="text-[9px] font-extrabold px-1.5 py-0.2 bg-teal-100 dark:bg-teal-950 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800 rounded">
+                                  Annual Recurring
+                                </span>
+                              )}
                             </div>
                             <div className="text-[11px] text-slate-500 dark:text-slate-400 flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5">
                               <span className={textAccent}>
-                                PCLS Tax-Free: <strong>£{pclsAmount.toLocaleString()}</strong>
+                                PCLS Tax-Free: <strong>£{pclsAmount.toLocaleString()}{tranche.frequency === 'recurring' ? '/yr' : ''}</strong>
                               </span>
                               <span>&bull;</span>
                               <span className="text-indigo-600 dark:text-indigo-400">
-                                Drawdown Pot: <strong>£{designatedDrawdown.toLocaleString()}</strong>
+                                Drawdown Pot: <strong>£{designatedDrawdown.toLocaleString()}{tranche.frequency === 'recurring' ? '/yr' : ''}</strong>
                               </span>
                               <span>&bull;</span>
                               <span className="text-slate-400 dark:text-slate-500 text-[10px]">
@@ -339,7 +408,7 @@ export const CrystallisationTrancheManager: React.FC<CrystallisationTrancheManag
                       {/* Tranche Expanded Edit Panel */}
                       {isExpanded && (
                         <div className="p-3.5 pt-2 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 space-y-3">
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                             {/* Tranche Name */}
                             <div className="space-y-1">
                               <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300">
@@ -349,34 +418,87 @@ export const CrystallisationTrancheManager: React.FC<CrystallisationTrancheManag
                                 type="text"
                                 value={tranche.name || ''}
                                 onChange={(e) => handleUpdateTranche(tranche.id, { name: e.target.value })}
-                                placeholder="e.g. Initial Drawdown Tranche"
+                                placeholder="e.g. Annual Crystallisation"
                                 className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-900 dark:text-slate-100"
                               />
                             </div>
 
-                            {/* Crystallisation Age */}
+                            {/* Frequency: One-off vs Recurring */}
                             <div className="space-y-1">
                               <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300">
-                                Age at Crystallisation
+                                Frequency
                               </label>
-                              <input
-                                type="number"
-                                min={pensionAccessAge}
-                                max={85}
-                                value={tranche.age}
-                                onChange={(e) => handleUpdateTranche(tranche.id, { age: Math.max(pensionAccessAge, Number(e.target.value)) })}
-                                className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-900 dark:text-slate-100"
-                              />
+                              <div className="flex items-center gap-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-0.5">
+                                <button
+                                  type="button"
+                                  onClick={() => handleUpdateTranche(tranche.id, { frequency: 'one_off' })}
+                                  className={`flex-1 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                                    tranche.frequency !== 'recurring'
+                                      ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 shadow-xs'
+                                      : 'text-slate-500 hover:text-slate-900'
+                                  }`}
+                                >
+                                  One-Off
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleUpdateTranche(tranche.id, { frequency: 'recurring', endAge: tranche.endAge || Math.min(85, tranche.age + 4) })}
+                                  className={`flex-1 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                                    tranche.frequency === 'recurring'
+                                      ? 'bg-teal-600 text-white shadow-xs'
+                                      : 'text-slate-500 hover:text-slate-900'
+                                  }`}
+                                >
+                                  Annual / Yr
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Crystallisation Age(s) */}
+                            <div className="space-y-1">
+                              <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300">
+                                {tranche.frequency === 'recurring' ? 'Ages (Start – End)' : 'Age at Crystallisation'}
+                              </label>
+                              {tranche.frequency === 'recurring' ? (
+                                <div className="flex items-center gap-1.5">
+                                  <input
+                                    type="number"
+                                    min={pensionAccessAge}
+                                    max={85}
+                                    value={tranche.age}
+                                    onChange={(e) => handleUpdateTranche(tranche.id, { age: Math.max(pensionAccessAge, Number(e.target.value)) })}
+                                    className="w-full px-2 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-900 dark:text-slate-100"
+                                  />
+                                  <span className="text-slate-400 font-bold">–</span>
+                                  <input
+                                    type="number"
+                                    min={tranche.age}
+                                    max={85}
+                                    value={tranche.endAge ?? Math.min(85, tranche.age + 4)}
+                                    onChange={(e) => handleUpdateTranche(tranche.id, { endAge: Math.max(tranche.age, Number(e.target.value)) })}
+                                    className="w-full px-2 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-900 dark:text-slate-100"
+                                  />
+                                </div>
+                              ) : (
+                                <input
+                                  type="number"
+                                  min={pensionAccessAge}
+                                  max={85}
+                                  value={tranche.age}
+                                  onChange={(e) => handleUpdateTranche(tranche.id, { age: Math.max(pensionAccessAge, Number(e.target.value)) })}
+                                  className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-900 dark:text-slate-100"
+                                />
+                              )}
                             </div>
 
                             {/* Gross Amount Crystallised */}
                             <div className="space-y-1">
                               <div className="flex items-center justify-between">
                                 <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300">
-                                  Gross Amount (£)
+                                  Gross (£{tranche.frequency === 'recurring' ? '/yr' : ''})
                                 </label>
                                 <span className="text-[10px] font-bold text-primary-700 dark:text-primary-400">
-                                  Max LSA: £{maxGrossForLsa.toLocaleString()}
+                                  Max: £{maxGrossForLsa.toLocaleString()}
                                 </span>
                               </div>
                               <input

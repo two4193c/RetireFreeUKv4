@@ -1489,70 +1489,68 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
           )}
         </div>
 
-        {/* Excess Income Reinvestment Destination (Advanced Mode Only) */}
-        {appMode === 'advanced' && (
-          <div className="p-5 bg-slate-50/80 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-4">
-            {/* EXCESS ANNUITY & RETIREMENT INCOME DESTINATION */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                <PiggyBank className="w-4 h-4 text-teal-600 dark:text-teal-400" />
-                <span>Excess Income Destination</span>
-              </label>
-              <span className="text-[10px] font-bold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950 px-2 py-0.5 rounded-md border border-teal-200 dark:border-teal-800">
-                Surplus Pot Deposit
-              </span>
-            </div>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-              When guaranteed annuity or retirement income exceeds your target income requirement, select which non-pension pot your annual surplus cash should be deposited into:
-            </p>
-
-            <div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
-              {[
-                { id: 'stocks_and_shares_isa', label: '📈 S&S ISA', desc: 'Tax-Free Equity Growth' },
-                { id: 'cash_isa', label: '🏦 Cash ISA', desc: 'Tax-Free Cash Interest' },
-                { id: 'gia', label: '📊 GIA Account', desc: 'Taxable Growth' },
-                { id: 'cash_savings', label: '💰 Cash Savings', desc: 'Interest & PSA Tax' },
-                { id: 'none', label: '💸 Spend Surplus', desc: 'Do Not Reinvest' },
-              ].map((opt) => {
-                const currentOpt = profile.annuityExcessReinvestOption || (profile.reinvestDestinationPot === 'cash' ? 'cash_savings' : profile.reinvestDestinationPot === 'gia' ? 'gia' : 'stocks_and_shares_isa');
-                const isSelected = currentOpt === opt.id || (opt.id === 'cash_savings' && currentOpt === 'cash') || (opt.id === 'stocks_and_shares_isa' && currentOpt === 'isa');
-                return (
-                  <label
-                    key={opt.id}
-                    className={`flex flex-col justify-between p-2.5 rounded-xl border cursor-pointer transition-all ${
-                      isSelected
-                        ? 'border-teal-600 bg-teal-50/50 dark:bg-teal-950/40 text-teal-950 dark:text-teal-200 font-bold shadow-xs'
-                        : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300'
-                    }`}
-                  >
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <input
-                        type="radio"
-                        name="excessReinvest"
-                        checked={isSelected}
-                        onChange={() => {
-                          const destPot: 'isa' | 'gia' | 'cash' = opt.id === 'gia' ? 'gia' : (opt.id === 'cash' || opt.id === 'cash_savings') ? 'cash' : 'isa';
-                          const updatedMaxConfig = profile.maximizedSpendConfig
-                            ? { ...profile.maximizedSpendConfig, reinvestDestinationPot: destPot }
-                            : undefined;
-                          onChange({
-                            ...profile,
-                            annuityExcessReinvestOption: opt.id as any,
-                            reinvestDestinationPot: destPot,
-                            ...(updatedMaxConfig ? { maximizedSpendConfig: updatedMaxConfig } : {}),
-                          });
-                        }}
-                        className="accent-teal-600 w-3.5 h-3.5"
-                      />
-                      <span className="text-xs font-bold">{opt.label}</span>
-                    </div>
-                    <span className="text-[10px] text-slate-400 dark:text-slate-400 block pl-5">{opt.desc}</span>
-                  </label>
-                );
-              })}
-            </div>
+        {/* Excess Income Reinvestment Destination */}
+        <div className="p-5 bg-slate-50/80 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-4">
+          {/* EXCESS ANNUITY & RETIREMENT INCOME DESTINATION */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+              <PiggyBank className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+              <span>Excess Income Destination</span>
+            </label>
+            <span className="text-[10px] font-bold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950 px-2 py-0.5 rounded-md border border-teal-200 dark:border-teal-800">
+              Surplus Pot Deposit
+            </span>
           </div>
-        )}
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+            When pension drawdown, bracket-fill strategies, or guaranteed retirement income exceeds your target income requirement, select which non-pension pot your annual surplus cash should be deposited into:
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
+            {[
+              { id: 'stocks_and_shares_isa', label: '📈 S&S ISA', desc: 'Tax-Free Equity Growth' },
+              { id: 'cash_isa', label: '🏦 Cash ISA', desc: 'Tax-Free Cash Interest' },
+              { id: 'gia', label: '📊 GIA Account', desc: 'Taxable Growth' },
+              { id: 'cash_savings', label: '💰 Cash Savings', desc: 'Interest & PSA Tax' },
+              { id: 'none', label: '💸 Spend Surplus', desc: 'Do Not Reinvest' },
+            ].map((opt) => {
+              const currentOpt = profile.annuityExcessReinvestOption || (profile.reinvestDestinationPot === 'cash' ? 'cash_savings' : profile.reinvestDestinationPot === 'gia' ? 'gia' : 'stocks_and_shares_isa');
+              const isSelected = currentOpt === opt.id || (opt.id === 'cash_savings' && currentOpt === 'cash') || (opt.id === 'stocks_and_shares_isa' && currentOpt === 'isa');
+              return (
+                <label
+                  key={opt.id}
+                  className={`flex flex-col justify-between p-2.5 rounded-xl border cursor-pointer transition-all ${
+                    isSelected
+                      ? 'border-teal-600 bg-teal-50/50 dark:bg-teal-950/40 text-teal-950 dark:text-teal-200 font-bold shadow-xs'
+                      : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <input
+                      type="radio"
+                      name="excessReinvest"
+                      checked={isSelected}
+                      onChange={() => {
+                        const destPot: 'isa' | 'gia' | 'cash' = opt.id === 'gia' ? 'gia' : (opt.id === 'cash' || opt.id === 'cash_savings') ? 'cash' : 'isa';
+                        const updatedMaxConfig = profile.maximizedSpendConfig
+                          ? { ...profile.maximizedSpendConfig, reinvestDestinationPot: destPot }
+                          : undefined;
+                        onChange({
+                          ...profile,
+                          annuityExcessReinvestOption: opt.id as any,
+                          reinvestDestinationPot: destPot,
+                          ...(updatedMaxConfig ? { maximizedSpendConfig: updatedMaxConfig } : {}),
+                        });
+                      }}
+                      className="accent-teal-600 w-3.5 h-3.5"
+                    />
+                    <span className="text-xs font-bold">{opt.label}</span>
+                  </div>
+                  <span className="text-[10px] text-slate-400 dark:text-slate-400 block pl-5">{opt.desc}</span>
+                </label>
+              );
+            })}
+          </div>
+        </div>
 
       </div>
     </div>

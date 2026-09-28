@@ -435,8 +435,8 @@ function parseAnnuityTypeConfig(type?: string) {
       const isRetired = age >= profile.targetRetirementAge;
       const isPhasedPrimary = profile.crystallisationMode === 'phased_tranches';
       const isPhasedPartner = profile.partnerCrystallisationMode === 'phased_tranches';
-      const canAccessPension = age >= pensionAccessAge || (isPhasedPrimary && (profile.crystallisationTranches || []).some((t) => t.enabled && t.age <= age && (t.owner || 'primary') !== 'partner'));
-      const partnerCanAccessPension = profile.isCouplePlanning && !partnerDead && (partnerAge >= partnerPensionAccessAge || (isPhasedPartner && (profile.partnerCrystallisationTranches || profile.crystallisationTranches || []).some((t) => t.enabled && t.age <= partnerAge && t.owner === 'partner')));
+      const canAccessPension = age >= pensionAccessAge || (isPhasedPrimary && (profile.crystallisationTranches || []).some((t) => t.enabled && (t.frequency === 'recurring' ? (age >= t.age && (!t.endAge || age <= t.endAge)) : t.age <= age) && (t.owner || 'primary') !== 'partner'));
+      const partnerCanAccessPension = profile.isCouplePlanning && !partnerDead && (partnerAge >= partnerPensionAccessAge || (isPhasedPartner && (profile.partnerCrystallisationTranches || profile.crystallisationTranches || []).some((t) => t.enabled && (t.frequency === 'recurring' ? (partnerAge >= t.age && (!t.endAge || partnerAge <= t.endAge)) : t.age <= partnerAge) && t.owner === 'partner')));
       const inflationFactor = Math.pow(1 + inflation, yr);
 
       const deductProRata = (potType, amount) => {
@@ -497,7 +497,11 @@ function parseAnnuityTypeConfig(type?: string) {
       // Phased Crystallisation Tranches - Primary
       const primaryActiveTranches = isPhasedPrimary
         ? (profile.crystallisationTranches || []).filter(
-            (t) => t.enabled && t.age === age && t.owner !== 'partner'
+            (t) => t.enabled && (t.owner || 'primary') !== 'partner' && (
+              t.frequency === 'recurring'
+                ? (age >= t.age && (!t.endAge || age <= t.endAge))
+                : (t.age === age)
+            )
           )
         : [];
       if (primaryPensionPot > 0 && primaryActiveTranches.length > 0) {
@@ -522,7 +526,11 @@ function parseAnnuityTypeConfig(type?: string) {
       // Phased Crystallisation Tranches - Partner
       const partnerActiveTranches = isPhasedPartner
         ? (profile.partnerCrystallisationTranches || profile.crystallisationTranches || []).filter(
-            (t) => t.enabled && t.age === partnerAge && t.owner === 'partner'
+            (t) => t.enabled && t.owner === 'partner' && (
+              t.frequency === 'recurring'
+                ? (partnerAge >= t.age && (!t.endAge || partnerAge <= t.endAge))
+                : (t.age === partnerAge)
+            )
           )
         : [];
       if (profile.isCouplePlanning && !partnerDead && partnerPensionPot > 0 && partnerActiveTranches.length > 0) {
@@ -1571,16 +1579,16 @@ function parseAnnuityTypeConfig(type?: string) {
         const totalNetAchieved = priAchieved + partAchieved;
         remainingNeeded = Math.max(0, drawdownNetTarget - netGuaranteedIncomeSecured - totalNetAchieved);
 
-        // Handle Reinvest Surplus (drawdown excess only � guaranteed surplus already reinvested above)
-        if (effectiveReinvestExcess && !isCashBufferActiveYr) {
+        // Handle Reinvest Surplus (drawdown excess only — guaranteed surplus already reinvested above)
+        if (!isCashBufferActiveYr) {
             const guaranteedAlreadyReinvested = Math.max(0, netGuaranteedIncomeSecured - requiredNetIncomeTarget);
             const actualNetSecured = netGuaranteedIncomeSecured + totalNetAchieved;
             if (actualNetSecured > requiredNetIncomeTarget) {
                 const surplus = Math.max(0, actualNetSecured - requiredNetIncomeTarget - guaranteedAlreadyReinvested);
                 if (surplus <= 0) { /* no drawdown excess to reinvest */ }
-                const reinvestOpt = profile.annuityExcessReinvestOption || profile.reinvestDestinationPot || profile.maximizedSpendConfig?.reinvestDestinationPot || 'stocks_and_shares_isa';
+                const reinvestOpt = profile.reinvestDestinationPot || profile.annuityExcessReinvestOption || profile.maximizedSpendConfig?.reinvestDestinationPot || 'stocks_and_shares_isa';
                 if (profile.isCouplePlanning && !partnerDead) {
-                  const partnerReinvestOpt = profile.partnerAnnuityExcessReinvestOption || reinvestOpt;
+                  const partnerReinvestOpt = profile.partnerReinvestDestinationPot || profile.partnerAnnuityExcessReinvestOption || reinvestOpt;
                   applyReinvest(reinvestOpt, surplus * 0.5, false);
                   applyReinvest(partnerReinvestOpt, surplus * 0.5, true);
                 } else {

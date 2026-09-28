@@ -54,7 +54,7 @@ describe('planInsightsEngine', () => {
     const projections = generateProjections(profile, pots);
 
     const insights = computePlanInsights(profile, pots, projections, taxResult);
-    const trapOpp = insights.opportunities.find((o) => o.id === 'tax_trap_mitigation');
+    const trapOpp = insights.opportunities.find((o) => o.id.startsWith('tax_trap_mitigation'));
 
     expect(trapOpp).toBeDefined();
     expect(trapOpp?.status).toBe('recommended');
@@ -76,7 +76,7 @@ describe('planInsightsEngine', () => {
     const projections = generateProjections(profile, pots);
 
     const insights = computePlanInsights(profile, pots, projections, taxResult);
-    const trapOptimisedOpp = insights.opportunities.find((o) => o.id === 'tax_trap_optimised');
+    const trapOptimisedOpp = insights.opportunities.find((o) => o.id.startsWith('tax_trap_optimised'));
 
     expect(trapOptimisedOpp).toBeDefined();
     expect(trapOptimisedOpp?.status).toBe('already_optimised');
@@ -92,7 +92,7 @@ describe('planInsightsEngine', () => {
     const projections = generateProjections(profile, DEFAULT_POTS);
 
     const insights = computePlanInsights(profile, DEFAULT_POTS, projections, taxResult);
-    const niOpp = insights.opportunities.find((o) => o.id === 'state_pension_gap_fill');
+    const niOpp = insights.opportunities.find((o) => o.id.startsWith('state_pension_gap_fill'));
 
     expect(niOpp).toBeDefined();
     expect(niOpp?.status).toBe('recommended');

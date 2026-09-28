@@ -136,12 +136,14 @@ export interface CrystallisationTranche {
   id: string;
   name?: string; // e.g. "Tranche 1 (Age 58)"
   owner?: ItemOwner; // 'primary' | 'partner'
-  age: number; // Age when crystallisation occurs (e.g. 58)
+  age: number; // Age when crystallisation occurs (e.g. 58, or start age if recurring)
   amount: number; // Gross amount crystallised (£) e.g. 100,000
   pclsPercent?: number; // % taken as tax-free cash (default 25%)
   targetPot?: LumpSumTargetPot; // Where the 25% tax-free goes (e.g. 'stocks_and_shares_isa', 'cash_savings', 'spend_clear_debt')
   splits?: LumpSumSplit[];
   enabled: boolean;
+  frequency?: 'one_off' | 'recurring'; // 'one_off' (single year) or 'recurring' (annually between age and endAge)
+  endAge?: number; // Optional ending age for recurring crystallisation tranches
 }
 
 export interface LumpSumSplit {
