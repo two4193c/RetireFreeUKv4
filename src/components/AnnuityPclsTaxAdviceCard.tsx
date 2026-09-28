@@ -57,13 +57,14 @@ export const AnnuityPclsTaxAdviceCard: React.FC<AnnuityPclsTaxAdviceCardProps> =
   const isStatePensionActive = purchaseAge >= statePensionAge;
   const statePensionIncome = isStatePensionActive
     ? isPartner
-      ? profile.partnerStatePensionAmount || 11975
-      : profile.statePensionAmount || 11975
+      ? profile.partnerStatePensionAmountAnnual ?? profile.partnerFullStatePensionAmount ?? profile.partnerStatePensionAmount ?? 12547.6
+      : profile.statePensionAmountAnnual ?? profile.fullStatePensionAmount ?? profile.statePensionAmount ?? 12547.6
     : 0;
 
-  const dbPensionIncome = isPartner
-    ? profile.partnerDbPensionAmount || 0
-    : profile.dbPensionAmount || 0;
+  const activeDbs = (profile.dbPensions || []).filter(
+    (p) => p.enabled && (isPartner ? p.owner === 'partner' : (p.owner || 'primary') === 'primary') && purchaseAge >= (p.startAge || 65)
+  );
+  const dbPensionIncome = activeDbs.reduce((acc, p) => acc + (p.annualIncome || 0), 0) || (isPartner ? profile.partnerDbPensionAmount || 0 : profile.dbPensionAmount || 0);
 
   // 1. SCENARIO A: Taking 25% PCLS Tax-Free Lump Sum Upfront
   const pclsAmount = Math.round(projectedPot * (pclsPercent / 100));

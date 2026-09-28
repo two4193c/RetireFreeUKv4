@@ -473,7 +473,8 @@ export function runHistoricModelingSimulation(
         const isPartner = db.owner === 'partner';
         if (isPartner && (!profile.isCouplePlanning || partnerDead)) return;
         const evalAge = isPartner ? partnerAge : age;
-        if (evalAge >= db.startAge) {
+        const dbStartAge = db.startAge || 65;
+        if (evalAge >= dbStartAge) {
           if (dbStartInflation[db.id] === undefined) {
             dbStartInflation[db.id] = cumulativeInflationFactor;
           }
@@ -483,7 +484,7 @@ export function runHistoricModelingSimulation(
             : db.annualIncome;
           dbIncomeThisYr += dbInc;
         }
-        if (evalAge === db.startAge && db.taxFreeLumpSum > 0) {
+        if (evalAge === dbStartAge && db.taxFreeLumpSum > 0) {
           const lump = db.taxFreeLumpSum;
           if (isPartner) partnerCumulativeTaxFreeDrawn += lump;
           else primaryCumulativeTaxFreeDrawn += lump;

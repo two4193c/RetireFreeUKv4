@@ -611,11 +611,12 @@ function parseAnnuityTypeConfig(type?: string) {
           ? partnerAge
           : age;
 
-        if (evalAge >= db.startAge) {
+        const dbStartAge = db.startAge || 65;
+        if (evalAge >= dbStartAge) {
           const ownerCurrentAge = isPartner
             ? (profile.partnerCurrentAge ?? profile.currentAge)
             : profile.currentAge;
-          const effectiveStartAge = Math.max(db.startAge, ownerCurrentAge);
+          const effectiveStartAge = Math.max(dbStartAge, ownerCurrentAge);
           const yearsInPayment = Math.max(0, evalAge - effectiveStartAge);
           const dbEscalation = db.inflationLinked
             ? Math.pow(1 + inflation, yearsInPayment)
@@ -627,7 +628,7 @@ function parseAnnuityTypeConfig(type?: string) {
             primaryDbIncomeThisYear += dbIncome;
           }
         }
-        if (evalAge === db.startAge && db.taxFreeLumpSum > 0) {
+        if (evalAge === dbStartAge && db.taxFreeLumpSum > 0) {
           const lumpSumReceived = db.taxFreeLumpSum;
           
           if (profile.isCouplePlanning && isPartner) {

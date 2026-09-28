@@ -3,7 +3,7 @@ import { UserProfile, InvestmentPots, TaxCalculationResult, YearProjection } fro
 import { calculateMaxPcls, calculatePartnerMaxPcls, getProjectedPensionAtTakeAge, getLumpSumTakeAge, getPartnerLumpSumTakeAge } from '../utils/ukTaxEngine';
 import { STRATEGY_DEFINITIONS } from './QuickDrawdownStrategyBar';
 
-import { User, Heart, TrendingUp, ShieldCheck, Zap, Sparkles, Banknote } from 'lucide-react';
+import { User, Heart, TrendingUp, ShieldCheck, Zap, Sparkles, Banknote, Building2 } from 'lucide-react';
 
 interface StrategySummaryCardProps {
   profile: UserProfile;
@@ -177,13 +177,13 @@ export const StrategySummaryCard: React.FC<StrategySummaryCardProps> = ({
               </div>
             )}
             <div className="flex justify-between">
-              <span className="text-slate-500 dark:text-slate-400">PCLS Tax-Free Cash Taken:</span>
+              <span className="text-slate-500 dark:text-slate-400">DC Pension PCLS (SIPP / Workplace):</span>
               <span className="font-bold text-primary-700 dark:text-primary-400">
                 £{primaryPclsInfo.taxFreeCashTaken.toLocaleString()} ({primaryPclsInfo.pclsPercent}% at age {primaryPclsInfo.takeAge})
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-500 dark:text-slate-400">PCLS Access Age:</span>
+              <span className="text-slate-500 dark:text-slate-400">DC Pension Access Age (NMPA):</span>
               <span className="font-bold text-slate-900 dark:text-white font-mono">Age {primaryPclsInfo.takeAge}</span>
             </div>
           </div>
@@ -257,13 +257,13 @@ export const StrategySummaryCard: React.FC<StrategySummaryCardProps> = ({
                 </div>
               )}
               <div className="flex justify-between">
-                <span className="text-slate-500 dark:text-slate-400">PCLS Tax-Free Cash Taken:</span>
+                <span className="text-slate-500 dark:text-slate-400">DC Pension PCLS (SIPP / Workplace):</span>
                 <span className="font-bold text-indigo-700 dark:text-indigo-300">
                   £{partnerPclsInfo.taxFreeCashTaken.toLocaleString()} ({partnerPclsInfo.pclsPercent}% at age {partnerPclsInfo.takeAge})
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500 dark:text-slate-400">PCLS Access Age:</span>
+                <span className="text-slate-500 dark:text-slate-400">DC Pension Access Age (NMPA):</span>
                 <span className="font-bold text-slate-900 dark:text-white font-mono">Age {partnerPclsInfo.takeAge}</span>
               </div>
             </div>
@@ -353,6 +353,66 @@ export const StrategySummaryCard: React.FC<StrategySummaryCardProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Defined Benefit (DB) Pensions Callout (if active) */}
+      {(() => {
+        const activeDbs = (profile.dbPensions || []).filter(
+          (p) => p.enabled && (isCouple || (p.owner || 'primary') === 'primary')
+        );
+        if (activeDbs.length === 0) return null;
+
+        return (
+          <div className="bg-amber-50/80 dark:bg-amber-950/40 p-4 rounded-xl border border-amber-300 dark:border-amber-700/60 space-y-2 text-xs shadow-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-amber-200 dark:border-amber-800/60 pb-2">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 rounded-lg">
+                  <Building2 className="w-4 h-4" />
+                </div>
+                <span className="font-extrabold text-amber-950 dark:text-amber-100 text-xs">
+                  Defined Benefit (DB) Schemes &amp; Lump Sums
+                </span>
+              </div>
+              <span className="text-[10px] font-bold text-amber-800 dark:text-amber-300 bg-amber-200/70 dark:bg-amber-900/70 px-2 py-0.5 rounded">
+                Paid at Scheme Start Age (Independent of DC Age 57)
+              </span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+              {activeDbs.map((db, idx) => {
+                const isPart = db.owner === 'partner';
+                const ownerName = isPart ? (profile.partnerName || 'Partner') : (profile.name || 'Primary');
+                const targetPotName = (db.targetPot || 'cash_savings').replace(/_/g, ' ');
+                return (
+                  <div key={db.id || idx} className="bg-white/80 dark:bg-slate-900/70 p-3 rounded-lg border border-amber-200/80 dark:border-amber-800/40 space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-slate-900 dark:text-slate-100 text-xs">{db.name || `DB Scheme ${idx + 1}`}</span>
+                      <span className="text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/80 text-amber-900 dark:text-amber-200">
+                        {ownerName} • Starts Age {db.startAge || 65}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-[11px] text-slate-600 dark:text-slate-300">
+                      <span>Annual Income:</span>
+                      <span className="font-bold text-slate-900 dark:text-white">
+                        £{Math.round(db.annualIncome).toLocaleString()}/yr {db.inflationLinked ? '(CPI-linked)' : '(fixed)'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-[11px] text-slate-600 dark:text-slate-300">
+                      <span>Scheme Tax-Free Lump Sum:</span>
+                      <span className="font-bold text-amber-700 dark:text-amber-300">
+                        {db.taxFreeLumpSum && db.taxFreeLumpSum > 0
+                          ? `£${Math.round(db.taxFreeLumpSum).toLocaleString()} at Age ${db.startAge || 65} (into ${targetPotName})`
+                          : 'None'}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="text-[10px] text-amber-800/80 dark:text-amber-300/80 italic pt-0.5">
+              * Note: Defined Benefit scheme lump sums are paid directly by the scheme upon commencing at scheme start age ({activeDbs.map(d => `Age ${d.startAge || 65}`).join(', ')}). They are completely distinct from private DC pension 25% PCLS (drawn at age 57).
+            </p>
+          </div>
+        );
+      })()}
 
       {/* Gilt Ladder Strategy Callout (if active) */}
       {profile.giltLadderConfig?.enabled && (

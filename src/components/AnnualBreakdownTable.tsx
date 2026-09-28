@@ -145,6 +145,7 @@ export const AnnualBreakdownTable: React.FC<AnnualBreakdownTableProps> = ({
       'Income Shortfall (£)',
       'State Pension (£)',
       'DB Pension (£)',
+      'DC PCLS (£)',
       'DB Lump Sum (£)',
       'Annuity Payout (£)',
       'Gilt Payout (£)',
@@ -173,6 +174,7 @@ export const AnnualBreakdownTable: React.FC<AnnualBreakdownTableProps> = ({
         Math.round((p.incomeShortfall || 0) * scale),
         Math.round((p.statePensionReceived || 0) * scale),
         Math.round((p.dbPensionIncomeReceived || 0) * scale),
+        Math.round((p.pclsTaxFreeDrawnThisYear || 0) * scale),
         Math.round((p.dbTaxFreeLumpSumReceived || 0) * scale),
         Math.round((p.annuityIncomeReceived || 0) * scale),
         Math.round((p.giltLadderIncomeReceived || 0) * scale),
@@ -561,20 +563,34 @@ export const AnnualBreakdownTable: React.FC<AnnualBreakdownTableProps> = ({
                               +{formatCurrency(p.giltLadderIncomeReceived, adjustInflation, yearOffset)} (Gilt Payout)
                             </span>
                           )}
+                          {(p.pclsTaxFreeDrawnThisYear || 0) > 0 && (
+                            <span className="text-emerald-600 dark:text-emerald-400 text-[11px] font-bold">
+                              +{formatCurrency(p.pclsTaxFreeDrawnThisYear, adjustInflation, yearOffset)} (DC PCLS)
+                            </span>
+                          )}
                           {(p.dbTaxFreeLumpSumReceived || 0) > 0 && (
                             <span className="text-amber-600 dark:text-amber-400 text-[11px] font-bold">
                               +{formatCurrency(p.dbTaxFreeLumpSumReceived, adjustInflation, yearOffset)} (DB Lump Sum)
                             </span>
                           )}
-                          {p.totalWithdrawalAmount === 0 && (p.annuityIncomeReceived || 0) === 0 && (p.giltLadderIncomeReceived || 0) === 0 && (p.dbTaxFreeLumpSumReceived || 0) === 0 && (
+                          {p.totalWithdrawalAmount === 0 && (p.annuityIncomeReceived || 0) === 0 && (p.giltLadderIncomeReceived || 0) === 0 && (p.dbTaxFreeLumpSumReceived || 0) === 0 && (p.pclsTaxFreeDrawnThisYear || 0) === 0 && (
                             <span className="text-slate-300 dark:text-slate-600">-</span>
                           )}
                         </div>
                       ) : (
-                        (p.dbTaxFreeLumpSumReceived || 0) > 0 ? (
-                          <span className="text-amber-600 dark:text-amber-400 text-[11px] font-bold">
-                            +{formatCurrency(p.dbTaxFreeLumpSumReceived, adjustInflation, yearOffset)} (DB Lump Sum)
-                          </span>
+                        ((p.dbTaxFreeLumpSumReceived || 0) > 0 || (p.pclsTaxFreeDrawnThisYear || 0) > 0) ? (
+                          <div className="flex flex-col text-right">
+                            {(p.pclsTaxFreeDrawnThisYear || 0) > 0 && (
+                              <span className="text-emerald-600 dark:text-emerald-400 text-[11px] font-bold">
+                                +{formatCurrency(p.pclsTaxFreeDrawnThisYear, adjustInflation, yearOffset)} (DC PCLS)
+                              </span>
+                            )}
+                            {(p.dbTaxFreeLumpSumReceived || 0) > 0 && (
+                              <span className="text-amber-600 dark:text-amber-400 text-[11px] font-bold">
+                                +{formatCurrency(p.dbTaxFreeLumpSumReceived, adjustInflation, yearOffset)} (DB Lump Sum)
+                              </span>
+                            )}
+                          </div>
                         ) : (
                           <span className="text-slate-300 dark:text-slate-600">-</span>
                         )
