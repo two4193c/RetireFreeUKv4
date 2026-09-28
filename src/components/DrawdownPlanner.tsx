@@ -942,7 +942,7 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
         <div className="p-5 bg-slate-50/80 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1 border-b border-slate-200/60 dark:border-slate-700/60">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="font-bold text-xs text-slate-800 dark:text-slate-200">Tax-Free Lump Sum (PCLS & LSA)</span>
+              <span className="font-bold text-xs text-slate-800 dark:text-slate-200">DC Pension Tax-Free Lump Sum (PCLS &amp; LSA)</span>
               {!(isStudioMode || appMode === 'studio') && (
                 isCouple ? (
                   <>
@@ -1221,7 +1221,7 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
               <div className="text-[11px] text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-700 leading-relaxed">
                 {(profile.crystallisationMode === 'upfront' || (!profile.crystallisationMode && profile.takeLumpSumAtStart)) ? (
                   <span>
-                    <strong>Upfront PCLS ({profile.name || 'Primary'}):</strong> Takes {primaryPclsPct}% tax-free cash (<strong>£{Math.round(primaryActualLumpSum || 0).toLocaleString()}</strong>) at <strong>Age {primaryLumpSumTakeAge}</strong> {
+                    <strong>Upfront DC PCLS ({profile.name || 'Primary'}):</strong> Takes {primaryPclsPct}% tax-free cash (<strong>£{Math.round(primaryActualLumpSum || 0).toLocaleString()}</strong>) from Defined Contribution (SIPP/Workplace) pots at <strong>Age {primaryLumpSumTakeAge}</strong> {
                       profile.lumpSumTargetPot === 'spend_clear_debt' ? 'used to Spend / Clear Debt' :
                       profile.lumpSumTargetPot === 'split' ? 'split across multiple destination pots' :
                       `added into ${
@@ -1230,7 +1230,7 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
                         profile.lumpSumTargetPot === 'gia' ? 'GIA' :
                         'Stocks & Shares ISA'
                       }`
-                    } {profile.lumpSumTiming === 'access_age' || !profile.lumpSumTiming ? `(when private pension is first accessed at age ${primaryPensionAccessAge})` : `(age ${primaryLumpSumTakeAge})`}.
+                    } {profile.lumpSumTiming === 'access_age' || !profile.lumpSumTiming ? `(when private DC pension is first accessed at age ${primaryPensionAccessAge})` : `(age ${primaryLumpSumTakeAge})`}. (Defined Benefit scheme lump sums are scheduled separately at their own scheme start age in the DB Pension card).
                   </span>
                 ) : profile.crystallisationMode === 'phased_tranches' ? (
                   <span>

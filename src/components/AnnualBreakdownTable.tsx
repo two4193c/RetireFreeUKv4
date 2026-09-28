@@ -145,6 +145,7 @@ export const AnnualBreakdownTable: React.FC<AnnualBreakdownTableProps> = ({
       'Income Shortfall (£)',
       'State Pension (£)',
       'DB Pension (£)',
+      'DB Lump Sum (£)',
       'Annuity Payout (£)',
       'Gilt Payout (£)',
       'Contributions (£)',
@@ -172,6 +173,7 @@ export const AnnualBreakdownTable: React.FC<AnnualBreakdownTableProps> = ({
         Math.round((p.incomeShortfall || 0) * scale),
         Math.round((p.statePensionReceived || 0) * scale),
         Math.round((p.dbPensionIncomeReceived || 0) * scale),
+        Math.round((p.dbTaxFreeLumpSumReceived || 0) * scale),
         Math.round((p.annuityIncomeReceived || 0) * scale),
         Math.round((p.giltLadderIncomeReceived || 0) * scale),
         Math.round((p.annualContributionTotal || 0) * scale),
@@ -559,12 +561,23 @@ export const AnnualBreakdownTable: React.FC<AnnualBreakdownTableProps> = ({
                               +{formatCurrency(p.giltLadderIncomeReceived, adjustInflation, yearOffset)} (Gilt Payout)
                             </span>
                           )}
-                          {p.totalWithdrawalAmount === 0 && (p.annuityIncomeReceived || 0) === 0 && (p.giltLadderIncomeReceived || 0) === 0 && (
+                          {(p.dbTaxFreeLumpSumReceived || 0) > 0 && (
+                            <span className="text-amber-600 dark:text-amber-400 text-[11px] font-bold">
+                              +{formatCurrency(p.dbTaxFreeLumpSumReceived, adjustInflation, yearOffset)} (DB Lump Sum)
+                            </span>
+                          )}
+                          {p.totalWithdrawalAmount === 0 && (p.annuityIncomeReceived || 0) === 0 && (p.giltLadderIncomeReceived || 0) === 0 && (p.dbTaxFreeLumpSumReceived || 0) === 0 && (
                             <span className="text-slate-300 dark:text-slate-600">-</span>
                           )}
                         </div>
                       ) : (
-                        <span className="text-slate-300 dark:text-slate-600">-</span>
+                        (p.dbTaxFreeLumpSumReceived || 0) > 0 ? (
+                          <span className="text-amber-600 dark:text-amber-400 text-[11px] font-bold">
+                            +{formatCurrency(p.dbTaxFreeLumpSumReceived, adjustInflation, yearOffset)} (DB Lump Sum)
+                          </span>
+                        ) : (
+                          <span className="text-slate-300 dark:text-slate-600">-</span>
+                        )
                       )}
                     </td>
 
@@ -871,6 +884,18 @@ export const AnnualBreakdownTable: React.FC<AnnualBreakdownTableProps> = ({
                           <span className="text-slate-500 dark:text-slate-400 font-medium">🏛️ UK Gilt Ladder Payout (0% CGT):</span>
                           <span className="font-bold text-teal-600 dark:text-teal-400">
                             +£{(showTaxBreakdownModal.giltLadderIncomeReceived || 0).toLocaleString()}
+                          </span>
+                        </div>
+                      )}
+
+                      {(showTaxBreakdownModal.dbTaxFreeLumpSumReceived || 0) > 0 && (
+                        <div className="py-2.5 flex justify-between items-center bg-amber-50 dark:bg-amber-950/40 px-3 rounded-xl border border-amber-200 dark:border-amber-800/60 my-1">
+                          <div>
+                            <span className="text-amber-800 dark:text-amber-300 font-bold block text-xs">🏛️ DB Scheme Tax-Free Lump Sum:</span>
+                            <span className="text-[10px] text-amber-600 dark:text-amber-400">Paid once upon DB pension commencement</span>
+                          </div>
+                          <span className="font-extrabold text-amber-700 dark:text-amber-300 text-sm">
+                            +£{(showTaxBreakdownModal.dbTaxFreeLumpSumReceived || 0).toLocaleString()}
                           </span>
                         </div>
                       )}

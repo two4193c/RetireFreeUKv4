@@ -270,7 +270,7 @@ export const DbPensionManager: React.FC<DbPensionManagerProps> = ({ profile, onC
         <div className="bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-start gap-2.5 text-xs text-slate-600 dark:text-slate-300 mt-4">
           <AlertCircle className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0 mt-0.5" />
           <p>
-            <strong>Defined Benefit vs Defined Contribution:</strong> DB pensions pay a guaranteed index-linked income for life based on salary & service length, unlike DC pensions which depend on investment pot value. The tax-free lump sum reduces required DC drawdown and boosts tax-sheltered ISA/cash reserves upon commencement.
+            <strong>Defined Benefit vs Defined Contribution:</strong> DB pensions pay a guaranteed index-linked income for life based on salary & service length, unlike DC pensions which depend on investment pot value. The DB tax-free lump sum is paid at your DB scheme start age (completely independent of the private DC pension access age 57) and boosts tax-sheltered ISA/cash reserves upon commencement.
           </p>
         </div>
       )}
@@ -381,7 +381,7 @@ export const DbPensionManager: React.FC<DbPensionManagerProps> = ({ profile, onC
                   onChange={(e) => handleUpdateDraft({ taxFreeLumpSum: e.target.value === '' ? 0 : Number(e.target.value) })}
                   className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 text-sm"
                 />
-                <p className="text-[10px] text-slate-400 dark:text-slate-500">One-off tax-free cash paid at commencement</p>
+                <p className="text-[10px] text-slate-400 dark:text-slate-500">Paid once at scheme start age ({editItem.startAge || 60}), independent of DC access age (57)</p>
               </div>
               
               <div className="space-y-1.5">

@@ -150,16 +150,16 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
     list.push({
       id: 'ms-primary-nmpa',
       key: 'primary_nmpa',
-      label: `${profile.name || 'Primary'} Pension Access`,
-      shortLabel: 'Pension Access',
+      label: `${profile.name || 'Primary'} DC Pension Access (NMPA)`,
+      shortLabel: 'DC Pension Access',
       category: 'pension',
       age: primaryNmpa,
       year: currentYear + (primaryNmpa - currentAge),
       color: '#10b981', // primary-500
       icon: Coins,
-      description: `Normal Minimum Pension Age (${primaryNmpa}). 25% Tax-Free Cash (PCLS) & flexible drawdown unlocked.`,
+      description: `Normal Minimum Pension Age (${primaryNmpa}) for private DC pensions (SIPP / Workplace). 25% Tax-Free Cash (PCLS) & flexible drawdown unlocked. Defined Benefit scheme start ages are set independently.`,
       isEditable: false,
-      badge: 'PCLS Unlocked',
+      badge: 'DC PCLS Unlocked',
       owner: 'primary',
     });
 
@@ -171,16 +171,16 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
       list.push({
         id: 'ms-partner-nmpa',
         key: 'partner_nmpa',
-        label: `${profile.partnerName || 'Partner'} Pension Access`,
-        shortLabel: 'Partner Access',
+        label: `${profile.partnerName || 'Partner'} DC Pension Access (NMPA)`,
+        shortLabel: 'Partner DC Access',
         category: 'pension',
         age: primaryAgeAtPartnerNmpa,
         year: currentYear + (primaryAgeAtPartnerNmpa - currentAge),
         color: '#34d399', // primary-400
         icon: Coins,
-        description: `${profile.partnerName || 'Partner'} reaches pension access age (${partnerNmpa}). SIPP/DC pots accessible.`,
+        description: `${profile.partnerName || 'Partner'} reaches Normal Minimum Pension Age (${partnerNmpa}) for private DC pensions (SIPP / Workplace pots).`,
         isEditable: false,
-        badge: 'Partner NMPA',
+        badge: 'Partner DC NMPA',
         owner: 'partner',
       });
     }
@@ -332,11 +332,13 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
 
     // 11. Defined Benefit (DB) Pensions Start Dates
     (profile.dbPensions || [])
-      .filter((db) => db.enabled && db.annualIncome > 0)
+      .filter((db) => db.enabled && (db.annualIncome > 0 || (db.taxFreeLumpSum && db.taxFreeLumpSum > 0)))
       .forEach((db, idx) => {
         const isPartner = db.owner === 'partner';
         const partnerOffset = isPartner ? (profile.partnerCurrentAge || currentAge) - currentAge : 0;
         const primaryAgeAtStart = db.startAge - partnerOffset;
+        const lumpSumText = db.taxFreeLumpSum && db.taxFreeLumpSum > 0 ? ` plus £${Math.round(db.taxFreeLumpSum).toLocaleString()} tax-free lump sum` : '';
+        const targetPotLabel = db.targetPot ? db.targetPot.replace(/_/g, ' ') : 'cash savings';
         list.push({
           id: `ms-db-pension-${db.id || idx}`,
           key: `db_pension_${db.id || idx}`,
@@ -347,11 +349,11 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
           year: currentYear + (primaryAgeAtStart - currentAge),
           color: '#2563eb', // blue-600
           icon: Building,
-          description: `Guaranteed Defined Benefit pension commences, paying £${Math.round(db.annualIncome).toLocaleString()}/yr${db.taxFreeLumpSum ? ` with £${Math.round(db.taxFreeLumpSum).toLocaleString()} tax-free lump sum` : ''}${db.inflationLinked ? ' (CPI inflation-linked)' : ' (fixed)'}.`,
+          description: `Guaranteed Defined Benefit pension commences at age ${db.startAge}, paying £${Math.round(db.annualIncome).toLocaleString()}/yr${lumpSumText ? `${lumpSumText} (paid into ${targetPotLabel})` : ''}${db.inflationLinked ? ' (CPI inflation-linked)' : ' (fixed)'}.`,
           isEditable: true,
           minAge: Math.max(currentAge, 50),
           maxAge: 75,
-          badge: 'DB Pension',
+          badge: db.taxFreeLumpSum ? 'DB + Lump Sum' : 'DB Pension',
           owner: db.owner || 'primary',
         });
       });
