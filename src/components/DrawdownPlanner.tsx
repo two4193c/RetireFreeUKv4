@@ -1126,6 +1126,7 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
                 dbLumpSum={primaryDbLumpSum}
                 mode={profile.crystallisationMode || (profile.takeLumpSumAtStart ? 'upfront' : 'ufpls')}
                 tranches={profile.crystallisationTranches || []}
+                projections={projections}
                 onModeChange={(newMode) => {
                   onChange({
                     ...profile,
@@ -1258,7 +1259,7 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
                   </span>
                 ) : profile.crystallisationMode === 'phased_tranches' ? (
                   <span>
-                    <strong>Phased Crystallisation ({profile.name || 'Primary'}):</strong> Pension pot is split into <em>Uncrystallised</em> (retains 25% tax-free growth potential) and <em>Crystallised Drawdown</em> sub-pots. {primaryDbLumpSum > 0 ? `Your £${primaryDbLumpSum.toLocaleString()} Defined Benefit pension lump sum counts towards your £${(primaryLsaLimit || 0).toLocaleString()} LSA limit, leaving £${Math.max(0, primaryLsaLimit - primaryDbLumpSum).toLocaleString()} available for phased crystallisation tranches.` : ''}
+                    <strong>Phased Crystallisation ({profile.name || 'Primary'}):</strong> Pension pot is split into <em>Uncrystallised</em> (retains 25% tax-free growth potential) and <em>Crystallised Drawdown</em> sub-pots. Displays your full £{(primaryLsaLimit || 0).toLocaleString()} Tax-Free Cash (TFC) allowance across scheduled tranches.
                   </span>
                 ) : (
                   <span>
@@ -1384,6 +1385,8 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
                 dbLumpSum={partnerDbLumpSum}
                 mode={profile.partnerCrystallisationMode || (profile.partnerTakeLumpSumAtStart ? 'upfront' : 'ufpls')}
                 tranches={(profile.partnerCrystallisationTranches || profile.crystallisationTranches || []).filter((t) => t.owner === 'partner')}
+                projections={projections}
+                partnerAgeOffset={(profile.partnerCurrentAge ?? profile.currentAge) - profile.currentAge}
                 onModeChange={(newMode) => {
                   onChange({
                     ...profile,
@@ -1511,7 +1514,7 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
                   </span>
                 ) : profile.partnerCrystallisationMode === 'phased_tranches' ? (
                   <span>
-                    <strong>Partner Phased Crystallisation ({profile.partnerName || 'Partner'}):</strong> Pension pot is split into <em>Uncrystallised</em> (retains 25% tax-free growth potential) and <em>Crystallised Drawdown</em> sub-pots. {partnerDbLumpSum > 0 ? `Partner's £${partnerDbLumpSum.toLocaleString()} Defined Benefit pension lump sum counts towards their £${(partnerLsaLimit || 0).toLocaleString()} LSA limit, leaving £${Math.max(0, partnerLsaLimit - partnerDbLumpSum).toLocaleString()} available for partner phased crystallisation tranches.` : ''}
+                    <strong>Partner Phased Crystallisation ({profile.partnerName || 'Partner'}):</strong> Pension pot is split into <em>Uncrystallised</em> (retains 25% tax-free growth potential) and <em>Crystallised Drawdown</em> sub-pots. Displays your full £{(partnerLsaLimit || 0).toLocaleString()} Tax-Free Cash (TFC) allowance across scheduled tranches.
                   </span>
                 ) : (
                   <span>

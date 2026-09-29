@@ -26,6 +26,7 @@ import {
   LumpSumSplit,
   LumpSumTargetPot,
   UserProfile,
+  YearProjection,
 } from '../types';
 
 interface CrystallisationTrancheManagerProps {
@@ -41,6 +42,8 @@ interface CrystallisationTrancheManagerProps {
   onModeChange: (mode: CrystallisationMode) => void;
   onTranchesChange: (tranches: CrystallisationTranche[]) => void;
   accentColor?: 'emerald' | 'rose';
+  projections?: YearProjection[];
+  partnerAgeOffset?: number;
 }
 
 const TARGET_POT_LABELS: Record<LumpSumTargetPot, string> = {
@@ -65,11 +68,14 @@ export const CrystallisationTrancheManager: React.FC<CrystallisationTrancheManag
   onModeChange,
   onTranchesChange,
   accentColor = 'emerald',
+  projections,
+  partnerAgeOffset = 0,
 }) => {
   const [expandedTrancheId, setExpandedTrancheId] = useState<string | null>(null);
 
   const dbLumpSumAmount = Math.max(0, dbLumpSum);
-  const effectiveLsaLimitForDc = Math.max(0, lsaLimit - dbLumpSumAmount);
+  // Phased crystallisation tranches have access to the full allowance, not minus DB pension lump sum
+  const effectiveLsaLimitForDc = lsaLimit;
 
   const isRose = accentColor === 'rose';
   const borderActive = isRose
@@ -258,7 +264,7 @@ export const CrystallisationTrancheManager: React.FC<CrystallisationTrancheManag
                   </span>
                 </div>
                 <p className="text-[11px] text-amber-800 dark:text-amber-300 leading-relaxed">
-                  Your Defined Benefit pension scheme provides <strong>£{dbLumpSumAmount.toLocaleString()}</strong> in tax-free cash. Under HMRC rules, this counts towards your single <strong>£{lsaLimit.toLocaleString()}</strong> lifetime Lump Sum Allowance (LSA), leaving <strong>£{effectiveLsaLimitForDc.toLocaleString()}</strong> available for your DC phased crystallisation tranches.
+                  Your Defined Benefit pension scheme provides <strong>£{dbLumpSumAmount.toLocaleString()}</strong> in tax-free cash at scheme start age. Phased crystallisation tranches display your full <strong>£{lsaLimit.toLocaleString()}</strong> Lifetime Lump Sum Allowance (LSA).
                 </p>
               </div>
             </div>
@@ -373,14 +379,30 @@ export const CrystallisationTrancheManager: React.FC<CrystallisationTrancheManag
                   const cumulativeCrystallisedUpToThis = tranches
                     .slice(0, idx + 1)
                     .filter((t) => t.enabled)
-                    .reduce((sum, t) => sum + (t.amount || 0), 0);
-                  const remainingUncrystAfterThis = Math.max(0, referencePensionPot - cumulativeCrystallisedUpToThis);
+                    .reduce((sum, t) => sum + (t.amount || 0) * getTrancheMultiplier(t), 0);
                   const cumulativePclsUpToThis = tranches
                     .slice(0, idx + 1)
                     .filter((t) => t.enabled)
-                    .reduce((sum, t) => sum + Math.round((t.amount || 0) * ((t.pclsPercent ?? 25) / 100)), 0);
+                    .reduce((sum, t) => sum + Math.round((t.amount || 0) * ((t.pclsPercent ?? 25) / 100)) * getTrancheMultiplier(t), 0);
                   const remainingLsaAfterThis = Math.max(0, effectiveLsaLimitForDc - cumulativePclsUpToThis);
                   const totalRemainingLsaAfterThis = Math.max(0, lsaLimit - dbLumpSumAmount - cumulativePclsUpToThis);
+
+                  // Compute real projected pot and uncrystallised remaining after this tranche
+                  const targetAge = tranche.frequency === 'recurring' && tranche.endAge && tranche.endAge >= tranche.age
+                    ? tranche.endAge
+                    : tranche.age;
+                  const primaryLookupAge = owner === 'partner' ? targetAge - (partnerAgeOffset || 0) : targetAge;
+                  const projYear = projections?.find((p) => p.age === primaryLookupAge);
+
+                  const engineUncryst = owner === 'partner' ? projYear?.partnerUncrystallisedPot : projYear?.primaryUncrystallisedPot;
+                  const engineCryst = owner === 'partner' ? projYear?.partnerCrystallisedPot : projYear?.primaryCrystallisedPot;
+
+                  const remainingUncrystAfterThis = (mode === 'phased_tranches' && engineUncryst !== undefined && (engineUncryst > 0 || projYear?.potDepleted))
+                    ? engineUncryst
+                    : Math.max(0, referencePensionPot - cumulativeCrystallisedUpToThis);
+                  const cumulativeDrawdownAfterThis = (mode === 'phased_tranches' && engineCryst !== undefined)
+                    ? engineCryst
+                    : Math.max(0, cumulativeCrystallisedUpToThis - cumulativePclsUpToThis);
 
                   return (
                     <div
@@ -636,8 +658,8 @@ export const CrystallisationTrancheManager: React.FC<CrystallisationTrancheManag
                                 <span className="font-bold block text-xs">£{Math.round(remainingUncrystAfterThis).toLocaleString()}</span>
                               </div>
                               <div className="p-1.5 bg-indigo-50 dark:bg-indigo-950/50 rounded-lg text-indigo-900 dark:text-indigo-200">
-                                <span>Total Crystallised Drawdown:</span>
-                                <span className="font-bold block text-xs">£{Math.round(cumulativeCrystallisedUpToThis - cumulativePclsUpToThis).toLocaleString()}</span>
+                                <span>Crystallised Pot Balance:</span>
+                                <span className="font-bold block text-xs">£{Math.round(cumulativeDrawdownAfterThis).toLocaleString()}</span>
                               </div>
                               <div className="p-1.5 bg-primary-50 dark:bg-primary-950/50 rounded-lg text-primary-900 dark:text-primary-200">
                                 <span>{dbLumpSumAmount > 0 ? 'DC LSA Remaining:' : 'LSA Limit Remaining:'}</span>

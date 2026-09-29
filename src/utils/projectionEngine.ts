@@ -543,10 +543,8 @@ function parseAnnuityTypeConfig(type?: string) {
         if (primaryUncrystallisedPot <= 0) break;
         const requestedGross = tranche.amount;
         const pclsPct = Math.min(25, Math.max(0, tranche.pclsPercent ?? 25)) / 100;
-        const pendingPrimaryDbLumpSum = activeDbPensions
-          .filter((db) => (db.owner || 'primary') !== 'partner' && (db.startAge || 65) > age && db.taxFreeLumpSum > 0)
-          .reduce((sum, db) => sum + db.taxFreeLumpSum, 0);
-        const remainingLsa = Math.max(0, primaryMaxLsa - primaryCumulativeTaxFreeDrawn - pendingPrimaryDbLumpSum);
+        // Phased crystallisation tranches have access to full LSA allowance without deduction of pending DB scheme lump sums
+        const remainingLsa = Math.max(0, primaryMaxLsa - primaryCumulativeTaxFreeDrawn);
         const grossCrystallised = Math.min(primaryUncrystallisedPot, requestedGross);
         if (grossCrystallised <= 0) continue;
 
@@ -596,10 +594,8 @@ function parseAnnuityTypeConfig(type?: string) {
         const requestedGross = tranche.amount;
         const pclsPct = Math.min(25, Math.max(0, tranche.pclsPercent ?? 25)) / 100;
         const partnerEvalAge = age + ((profile.partnerCurrentAge ?? profile.currentAge) - profile.currentAge);
-        const pendingPartnerDbLumpSum = activeDbPensions
-          .filter((db) => db.owner === 'partner' && (db.startAge || 65) > partnerEvalAge && db.taxFreeLumpSum > 0)
-          .reduce((sum, db) => sum + db.taxFreeLumpSum, 0);
-        const remainingLsa = Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn - pendingPartnerDbLumpSum);
+        // Partner phased crystallisation tranches have access to full LSA allowance without deduction of pending DB scheme lump sums
+        const remainingLsa = Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn);
         const grossCrystallised = Math.min(partnerUncrystallisedPot, requestedGross);
         if (grossCrystallised <= 0) continue;
 
