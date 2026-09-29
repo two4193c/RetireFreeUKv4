@@ -118,6 +118,7 @@ export const NAV_STRUCTURE: TabGroup[] = [
       { id: 'card-tranche-visualisation', label: 'Phased Crystallisation Tranches Breakdown' },
       { id: 'card-swr-trajectory-chart', label: 'Effective Withdrawal Rate Trajectory Chart' },
       { id: 'card-swr-uk-us-benchmark', label: 'Bengen (US) vs UK Return Benchmark' },
+      { id: 'card-strat-asset-location-analysis', label: 'Asset Location & Strategy Depletion Sequence' },
       { id: 'card-ai-advisor', label: 'AI Tax & Pension Advisor' },
     ],
   },

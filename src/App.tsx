@@ -1238,6 +1238,15 @@ function App() {
                     <div id="card-swr-uk-us-benchmark" className="scroll-mt-24 transition-all duration-300">
                       <SwrUkUsBenchmarkCard />
                     </div>
+                    {/* Asset Location & Strategy Depletion Sequence (strategy-contextualised) */}
+                    <div id="card-strat-asset-location-analysis" className="scroll-mt-24 transition-all duration-300">
+                      <AssetLocationTaxDragCard
+                        profile={profile}
+                        pots={pots}
+                        onChange={handleProfileChange}
+                        drawdownStrategy={profile.drawdownStrategy}
+                      />
+                    </div>
                     {/* Monthly Savings & Capacity */}
                     <div id="card-accum-savings" className="scroll-mt-24 transition-all duration-300">
                       <MonthlySavingsRateCard profile={profile} pots={pots} />
@@ -1503,6 +1512,15 @@ function App() {
                 </div>
                 <div id="card-swr-uk-us-benchmark" className="scroll-mt-24 transition-all duration-300">
                   <SwrUkUsBenchmarkCard />
+                </div>
+                {/* Asset Location & Strategy Depletion Sequence */}
+                <div id="card-strat-asset-location-analysis" className="scroll-mt-24 transition-all duration-300">
+                  <AssetLocationTaxDragCard
+                    profile={profile}
+                    pots={pots}
+                    onChange={handleProfileChange}
+                    drawdownStrategy={profile.drawdownStrategy}
+                  />
                 </div>
                 <div id="card-ai-advisor" className="scroll-mt-24 transition-all duration-300">
                   <div className={`bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 shadow-xs flex flex-col justify-between gap-4 ${studioMode ? "" : "sm:flex-row sm:items-center"}`}>

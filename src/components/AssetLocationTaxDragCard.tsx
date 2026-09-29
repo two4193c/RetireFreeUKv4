@@ -12,17 +12,157 @@ import {
   Lock,
   Flame,
   CheckCircle2,
+  Target,
+  Info,
 } from 'lucide-react';
-import { UserProfile, InvestmentPots } from '../types';
+import { UserProfile, InvestmentPots, DrawdownStrategy } from '../types';
 import { getLsaLimit } from '../utils/ukTaxEngine';
 
 interface AssetLocationTaxDragCardProps {
   profile: UserProfile;
   pots: InvestmentPots;
   onChange?: (updated: UserProfile) => void;
+  /** When provided, renders a strategy-aware depletion sequence overlay */
+  drawdownStrategy?: DrawdownStrategy;
 }
 
 type OwnerFilter = 'all' | 'primary' | 'partner';
+type DecumulationTaxRate = 0 | 20 | 40;
+
+const TAX_RATE_OPTIONS: { rate: DecumulationTaxRate; label: string }[] = [
+  { rate: 0, label: '0% (Tax Free)' },
+  { rate: 20, label: '20% (Basic)' },
+  { rate: 40, label: '40% (Higher)' },
+];
+
+// Each step: enclave key, display label, colour tokens
+type Enclave = 'tax_free' | 'tax_deferred' | 'tax_exposed';
+interface SequenceStep {
+  enclave: Enclave;
+  label: string;
+  reason: string;
+  colorClass: string;
+  badgeClass: string;
+  icon: React.ReactNode;
+}
+
+const ENCLAVE_STEP: Record<Enclave, Omit<SequenceStep, 'reason'>> = {
+  tax_free: {
+    enclave: 'tax_free',
+    label: 'Tax-Free (ISAs)',
+    colorClass: 'bg-emerald-500',
+    badgeClass: 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950/60 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700',
+    icon: <ShieldCheck className="w-3 h-3" />,
+  },
+  tax_deferred: {
+    enclave: 'tax_deferred',
+    label: 'Tax-Deferred (Pensions)',
+    colorClass: 'bg-blue-600',
+    badgeClass: 'bg-blue-100 text-blue-900 dark:bg-blue-950/60 dark:text-blue-200 border border-blue-300 dark:border-blue-700',
+    icon: <Lock className="w-3 h-3" />,
+  },
+  tax_exposed: {
+    enclave: 'tax_exposed',
+    label: 'Tax-Exposed (GIA/Cash)',
+    colorClass: 'bg-amber-500',
+    badgeClass: 'bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-200 border border-amber-300 dark:border-amber-700',
+    icon: <Flame className="w-3 h-3" />,
+  },
+};
+
+/** Maps each DrawdownStrategy to an ordered sequence of enclave depletion steps with rationale */
+const STRATEGY_SEQUENCE: Record<DrawdownStrategy, { steps: Array<{ enclave: Enclave; reason: string }>; summary: string; suggestedTaxRate: DecumulationTaxRate }> = {
+  tax_optimizer: {
+    steps: [
+      { enclave: 'tax_exposed', reason: 'Harvest £3k CGT allowance & clear tax-drag assets first' },
+      { enclave: 'tax_deferred', reason: 'Draw pensions within personal allowance / basic-rate band' },
+      { enclave: 'tax_free', reason: 'ISAs last — preserve 100% tax-free compounding' },
+    ],
+    summary: 'Minimises lifetime HMRC tax by depleting highest-drag assets first.',
+    suggestedTaxRate: 20,
+  },
+  isa_first: {
+    steps: [
+      { enclave: 'tax_free', reason: 'Draw ISAs first to delay pension taxation' },
+      { enclave: 'tax_deferred', reason: 'Access pensions once ISAs exhausted' },
+      { enclave: 'tax_exposed', reason: 'GIAs / cash drawn last' },
+    ],
+    summary: 'Delays pension drawdown — beneficial if pension tax rates may rise or future access is uncertain.',
+    suggestedTaxRate: 20,
+  },
+  cash_first: {
+    steps: [
+      { enclave: 'tax_exposed', reason: 'Spend cash savings & GIA first (lowest growth potential)' },
+      { enclave: 'tax_free', reason: 'Move to ISAs once cash exhausted' },
+      { enclave: 'tax_deferred', reason: 'Pensions drawn last' },
+    ],
+    summary: 'Low-risk approach — spend low-yielding liquid assets first.',
+    suggestedTaxRate: 20,
+  },
+  pension_first: {
+    steps: [
+      { enclave: 'tax_deferred', reason: 'Maximise PCLS tax-free cash & draw pension early' },
+      { enclave: 'tax_free', reason: 'ISAs bridge mid-retirement' },
+      { enclave: 'tax_exposed', reason: 'GIAs cleared last' },
+    ],
+    summary: 'Takes pension early — useful if health concerns or to shelter remaining pot via ISA/GIA.',
+    suggestedTaxRate: 20,
+  },
+  pro_rata: {
+    steps: [
+      { enclave: 'tax_deferred', reason: 'Proportional draw from all enclaves simultaneously' },
+      { enclave: 'tax_free', reason: 'ISA drawn in proportion' },
+      { enclave: 'tax_exposed', reason: 'GIA/cash drawn in proportion' },
+    ],
+    summary: 'Spreads drawdown across all enclaves equally — no optimisation for tax drag.',
+    suggestedTaxRate: 20,
+  },
+  tax_free_bracket: {
+    steps: [
+      { enclave: 'tax_deferred', reason: 'Draw pensions only up to £12,570 personal allowance (0% tax)' },
+      { enclave: 'tax_free', reason: 'Fill remaining income from ISAs (tax-free)' },
+      { enclave: 'tax_exposed', reason: 'GIA harvested within CGT allowance' },
+    ],
+    summary: 'Keeps taxable pension income below personal allowance — maximum tax efficiency at lower income levels.',
+    suggestedTaxRate: 0,
+  },
+  basic_rate_bracket: {
+    steps: [
+      { enclave: 'tax_deferred', reason: 'Draw pensions up to the £50,270 basic-rate ceiling' },
+      { enclave: 'tax_free', reason: 'ISAs top up income beyond pension drawings' },
+      { enclave: 'tax_exposed', reason: 'GIA harvested within CGT allowance' },
+    ],
+    summary: 'Maximises tax-deferred drawdown within basic-rate band — avoids 40% higher-rate tax on pension.',
+    suggestedTaxRate: 20,
+  },
+  higher_rate_bracket: {
+    steps: [
+      { enclave: 'tax_deferred', reason: 'Draw large pension income up to £125,140 (higher rate band)' },
+      { enclave: 'tax_free', reason: 'ISAs supplement income' },
+      { enclave: 'tax_exposed', reason: 'GIA/cash supplement if needed' },
+    ],
+    summary: 'Accepts 40% pension tax — appropriate when pension pot is very large and must be depleted quickly.',
+    suggestedTaxRate: 40,
+  },
+  annuity: {
+    steps: [
+      { enclave: 'tax_deferred', reason: 'Pension converted to guaranteed annuity income' },
+      { enclave: 'tax_free', reason: 'ISAs held for flexible top-up spending' },
+      { enclave: 'tax_exposed', reason: 'GIAs drawn as needed' },
+    ],
+    summary: 'Pension annuitised for longevity protection — ISAs & GIAs remain for flexible legacy/spending.',
+    suggestedTaxRate: 20,
+  },
+  hybrid_annuity: {
+    steps: [
+      { enclave: 'tax_deferred', reason: 'Part-pension annuitised for floor income' },
+      { enclave: 'tax_exposed', reason: 'GIAs drawn flexibly on top' },
+      { enclave: 'tax_free', reason: 'ISAs held for late-stage or legacy' },
+    ],
+    summary: 'Hybrid approach: guaranteed floor from pension annuity, flexible drawdown from ISAs & GIAs.',
+    suggestedTaxRate: 20,
+  },
+};
 
 interface WrapperItem {
   id: string;
@@ -36,10 +176,18 @@ interface WrapperItem {
 export const AssetLocationTaxDragCard: React.FC<AssetLocationTaxDragCardProps> = ({
   profile,
   pots,
+  drawdownStrategy,
 }) => {
   const isCouple = Boolean(profile.isCouplePlanning);
   const [selectedOwner, setSelectedOwner] = useState<OwnerFilter>('all');
-  const [retirementTaxRate, setRetirementTaxRate] = useState<number>(20); // 20% basic, 40% higher
+
+  // Default tax rates — auto-set suggestion from strategy if provided
+  const suggestedRate = drawdownStrategy ? STRATEGY_SEQUENCE[drawdownStrategy].suggestedTaxRate : 20;
+  const [primaryTaxRate, setPrimaryTaxRate] = useState<DecumulationTaxRate>(suggestedRate);
+  const [partnerTaxRate, setPartnerTaxRate] = useState<DecumulationTaxRate>(suggestedRate);
+
+  // Derived sequence data for overlay
+  const strategySequence = drawdownStrategy ? STRATEGY_SEQUENCE[drawdownStrategy] : null;
 
   // Extract individual wrapper pots
   const wrappers = useMemo<WrapperItem[]>(() => {
@@ -226,12 +374,34 @@ export const AssetLocationTaxDragCard: React.FC<AssetLocationTaxDragCardProps> =
     const taxFreeNet = taxFreeGross;
 
     // 2. Tax-Deferred Enclave (Pensions):
-    // 25% tax-free lump sum (PCLS up to LSA limit), remaining 75% taxed at retirement marginal rate
+    // 25% tax-free lump sum (PCLS up to LSA limit), remaining 75% taxed at decumulation tax rate per owner
+    // Primary Pensions
+    const primaryPensions = filteredWrappers.filter(
+      (w) => w.enclave === 'tax_deferred' && w.owner === 'primary'
+    );
+    const primaryPensionGross = primaryPensions.reduce((sum, w) => sum + w.balance, 0);
     const primaryLsa = getLsaLimit(profile);
-    const applicableLsa = isCouple && selectedOwner === 'all' ? primaryLsa * 2 : primaryLsa;
-    const estimatedPcls = Math.min(taxDeferredGross * 0.25, applicableLsa);
-    const taxableDrawdownGross = Math.max(0, taxDeferredGross - estimatedPcls);
-    const pensionTaxDrag = taxableDrawdownGross * (retirementTaxRate / 100);
+    const primaryEstimatedPcls = Math.min(primaryPensionGross * 0.25, primaryLsa);
+    const primaryTaxablePension = Math.max(0, primaryPensionGross - primaryEstimatedPcls);
+    const primaryPensionTaxDrag = primaryTaxablePension * (primaryTaxRate / 100);
+
+    // Partner Pensions
+    const partnerPensions = filteredWrappers.filter(
+      (w) => w.enclave === 'tax_deferred' && w.owner === 'partner'
+    );
+    const partnerPensionGross = partnerPensions.reduce((sum, w) => sum + w.balance, 0);
+    const partnerProfile = {
+      ...profile,
+      lsaProtectionType: profile.partnerLsaProtectionType ?? 'standard',
+      customLsaAllowance: profile.partnerCustomLsaAllowance,
+    };
+    const partnerLsa = getLsaLimit(partnerProfile as UserProfile);
+    const partnerEstimatedPcls = Math.min(partnerPensionGross * 0.25, partnerLsa);
+    const partnerTaxablePension = Math.max(0, partnerPensionGross - partnerEstimatedPcls);
+    const partnerPensionTaxDrag = partnerTaxablePension * (partnerTaxRate / 100);
+
+    const estimatedPcls = primaryEstimatedPcls + partnerEstimatedPcls;
+    const pensionTaxDrag = primaryPensionTaxDrag + partnerPensionTaxDrag;
     const taxDeferredNet = taxDeferredGross - pensionTaxDrag;
 
     // 3. Tax-Exposed Enclave (GIAs & Cash):
@@ -260,7 +430,7 @@ export const AssetLocationTaxDragCard: React.FC<AssetLocationTaxDragCardProps> =
       effectiveTaxDragPct,
       taxEfficiencyScore,
     };
-  }, [filteredWrappers, profile, isCouple, selectedOwner, retirementTaxRate]);
+  }, [filteredWrappers, profile, isCouple, selectedOwner, primaryTaxRate, partnerTaxRate]);
 
   const {
     totalGross,
@@ -343,35 +513,137 @@ export const AssetLocationTaxDragCard: React.FC<AssetLocationTaxDragCardProps> =
             </div>
           )}
 
+          {/* Primary Person Decumulation Tax */}
           <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800/80 px-2.5 py-1 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-300">
-            <span className="text-[11px] text-slate-400">Decumulation Tax:</span>
-            <button
-              type="button"
-              onClick={() => setRetirementTaxRate(20)}
-              className={`px-2 py-0.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                retirementTaxRate === 20
-                  ? 'bg-indigo-600 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              20% (Basic)
-            </button>
-            <button
-              type="button"
-              onClick={() => setRetirementTaxRate(40)}
-              className={`px-2 py-0.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                retirementTaxRate === 40
-                  ? 'bg-indigo-600 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              40% (Higher)
-            </button>
+            <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold whitespace-nowrap">
+              {isCouple ? `${profile.name || 'Primary'} Tax:` : 'Decumulation Tax:'}
+            </span>
+            {TAX_RATE_OPTIONS.map((opt) => (
+              <button
+                key={opt.rate}
+                type="button"
+                onClick={() => setPrimaryTaxRate(opt.rate)}
+                className={`px-2 py-0.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  primaryTaxRate === opt.rate
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
           </div>
+
+          {/* Partner Decumulation Tax (when couple planning) */}
+          {isCouple && (
+            <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800/80 px-2.5 py-1 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-300">
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold whitespace-nowrap">
+                {profile.partnerName || 'Partner'} Tax:
+              </span>
+              {TAX_RATE_OPTIONS.map((opt) => (
+                <button
+                  key={opt.rate}
+                  type="button"
+                  onClick={() => setPartnerTaxRate(opt.rate)}
+                  className={`px-2 py-0.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    partnerTaxRate === opt.rate
+                      ? 'bg-indigo-600 text-white shadow-xs'
+                      : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Main Grid: Treemap (Left) + Tax Drag Donut Ring (Right) */}
+      {/* Strategy-Aware Depletion Sequence Banner — only when drawdownStrategy is provided */}
+      {strategySequence && (
+        <div className="bg-indigo-50/80 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800/60 rounded-2xl p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <Target className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
+            <span className="text-xs font-extrabold text-indigo-900 dark:text-indigo-100">
+              Depletion Sequence for:{' '}
+              <span className="font-black text-indigo-700 dark:text-indigo-300">
+                {drawdownStrategy?.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
+              </span>
+            </span>
+          </div>
+
+          {/* Step chips with arrows */}
+          <div className="flex flex-wrap items-center gap-1.5">
+            {strategySequence.steps.map((step, idx) => {
+              const e = ENCLAVE_STEP[step.enclave];
+              return (
+                <React.Fragment key={step.enclave}>
+                  <div
+                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[11px] font-bold ${e.badgeClass}`}
+                    title={step.reason}
+                  >
+                    <span className={`w-4 h-4 rounded-full ${e.colorClass} flex items-center justify-center text-white shrink-0`}>
+                      <span className="text-[9px] font-black">{idx + 1}</span>
+                    </span>
+                    {e.icon}
+                    <span>{e.label}</span>
+                  </div>
+                  {idx < strategySequence.steps.length - 1 && (
+                    <ArrowRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </div>
+
+          {/* Per-step rationale */}
+          <div className="space-y-1">
+            {strategySequence.steps.map((step, idx) => {
+              const e = ENCLAVE_STEP[step.enclave];
+              return (
+                <div key={step.enclave} className="flex items-start gap-2 text-[11px]">
+                  <span className={`w-4 h-4 rounded-full ${e.colorClass} flex items-center justify-center text-white shrink-0 mt-0.5`}>
+                    <span className="text-[8px] font-black">{idx + 1}</span>
+                  </span>
+                  <span className="text-slate-600 dark:text-slate-400 leading-snug">
+                    <strong className="text-slate-800 dark:text-slate-200">{e.label}:</strong>{' '}
+                    {step.reason}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Summary insight */}
+          <div className="flex items-start gap-1.5 pt-1 border-t border-indigo-200/60 dark:border-indigo-800/40">
+            <Info className="w-3.5 h-3.5 text-indigo-500 shrink-0 mt-0.5" />
+            <p className="text-[11px] text-indigo-700 dark:text-indigo-300 leading-snug italic">
+              {strategySequence.summary}
+            </p>
+          </div>
+
+          {/* Enclave Coverage Warning */}
+          {totalGross > 0 && (() => {
+            const missingEnclaves = strategySequence.steps
+              .filter((s) => {
+                if (s.enclave === 'tax_free') return taxFreeGross === 0;
+                if (s.enclave === 'tax_deferred') return taxDeferredGross === 0;
+                return taxExposedGross === 0;
+              })
+              .map((s) => ENCLAVE_STEP[s.enclave].label);
+            return missingEnclaves.length > 0 ? (
+              <div className="flex items-start gap-1.5 p-2 bg-amber-50 dark:bg-amber-950/30 rounded-xl border border-amber-200 dark:border-amber-800/50">
+                <Flame className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
+                <p className="text-[11px] text-amber-800 dark:text-amber-300 leading-snug">
+                  <strong>Missing enclaves:</strong> This strategy uses{' '}
+                  {missingEnclaves.join(' & ')} but you currently have £0 in those wrappers.
+                  Consider contributing to these to fully execute the strategy.
+                </p>
+              </div>
+            ) : null;
+          })()}
+        </div>
+      )}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Asset Location Treemap (7 cols) */}
         <div className="lg:col-span-7 space-y-4">
@@ -468,7 +740,27 @@ export const AssetLocationTaxDragCard: React.FC<AssetLocationTaxDragCardProps> =
                 £{Math.round(taxDeferredGross).toLocaleString()}
               </div>
               <p className="text-[10px] text-blue-800/90 dark:text-blue-300/80 leading-snug">
-                Pensions &amp; SIPPs. <strong>25% Tax-Free PCLS</strong> up to LSA; remaining 75% taxed at {retirementTaxRate}% upon drawdown.
+                Pensions &amp; SIPPs. <strong>25% Tax-Free PCLS</strong> up to LSA; remaining 75% taxed at{' '}
+                {isCouple ? (
+                  selectedOwner === 'primary' ? (
+                    `${primaryTaxRate}%`
+                  ) : selectedOwner === 'partner' ? (
+                    `${partnerTaxRate}%`
+                  ) : primaryTaxRate === partnerTaxRate ? (
+                    `${primaryTaxRate}%`
+                  ) : (
+                    `${primaryTaxRate}% (${profile.name || 'Primary'}) / ${partnerTaxRate}% (${profile.partnerName || 'Partner'})`
+                  )
+                ) : (
+                  `${primaryTaxRate}%`
+                )}
+                {((!isCouple && primaryTaxRate === 0) ||
+                (isCouple && selectedOwner === 'primary' && primaryTaxRate === 0) ||
+                (isCouple && selectedOwner === 'partner' && partnerTaxRate === 0) ||
+                (isCouple && selectedOwner === 'all' && primaryTaxRate === 0 && partnerTaxRate === 0))
+                  ? ' (Tax Free)'
+                  : ''}{' '}
+                upon drawdown.
               </p>
               <div className="pt-1.5 border-t border-blue-200/60 dark:border-blue-800/40 space-y-1">
                 {filteredWrappers
