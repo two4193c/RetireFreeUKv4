@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   ShieldCheck,
   TrendingDown,
@@ -14,16 +14,21 @@ import {
   CheckCircle2,
   Target,
   Info,
+  Calendar,
 } from 'lucide-react';
-import { UserProfile, InvestmentPots, DrawdownStrategy } from '../types';
+import { UserProfile, InvestmentPots, DrawdownStrategy, YearProjection } from '../types';
 import { getLsaLimit } from '../utils/ukTaxEngine';
 
 interface AssetLocationTaxDragCardProps {
   profile: UserProfile;
   pots: InvestmentPots;
+  projections?: YearProjection[];
   onChange?: (updated: UserProfile) => void;
   /** When provided, renders a strategy-aware depletion sequence overlay */
   drawdownStrategy?: DrawdownStrategy;
+  partnerDrawdownStrategy?: DrawdownStrategy;
+  /** 'current' uses today's starting pots; 'retirement' uses projected pots entering retirement */
+  basis?: 'current' | 'retirement';
 }
 
 type OwnerFilter = 'all' | 'primary' | 'partner';
@@ -34,6 +39,23 @@ const TAX_RATE_OPTIONS: { rate: DecumulationTaxRate; label: string }[] = [
   { rate: 20, label: '20% (Basic)' },
   { rate: 40, label: '40% (Higher)' },
 ];
+
+export const STRATEGY_TAX_RATES: Record<DrawdownStrategy, DecumulationTaxRate> = {
+  tax_free_bracket: 0,
+  tax_optimizer: 20,
+  basic_rate_bracket: 20,
+  isa_first: 20,
+  cash_first: 20,
+  pension_first: 20,
+  pro_rata: 20,
+  annuity: 20,
+  hybrid_annuity: 20,
+  higher_rate_bracket: 40,
+};
+
+const formatStrategyName = (s: string) => {
+  return s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+};
 
 // Each step: enclave key, display label, colour tokens
 type Enclave = 'tax_free' | 'tax_deferred' | 'tax_exposed';
@@ -176,36 +198,106 @@ interface WrapperItem {
 export const AssetLocationTaxDragCard: React.FC<AssetLocationTaxDragCardProps> = ({
   profile,
   pots,
+  projections,
   drawdownStrategy,
+  partnerDrawdownStrategy,
+  basis,
 }) => {
   const isCouple = Boolean(profile.isCouplePlanning);
   const [selectedOwner, setSelectedOwner] = useState<OwnerFilter>('all');
+  const [activeBasis, setActiveBasis] = useState<'current' | 'retirement'>(
+    basis || (drawdownStrategy ? 'retirement' : 'current')
+  );
 
-  // Default tax rates — auto-set suggestion from strategy if provided
-  const suggestedRate = drawdownStrategy ? STRATEGY_SEQUENCE[drawdownStrategy].suggestedTaxRate : 20;
-  const [primaryTaxRate, setPrimaryTaxRate] = useState<DecumulationTaxRate>(suggestedRate);
-  const [partnerTaxRate, setPartnerTaxRate] = useState<DecumulationTaxRate>(suggestedRate);
+  useEffect(() => {
+    if (basis) {
+      setActiveBasis(basis);
+    }
+  }, [basis]);
+
+  // Selected drawdown strategy for primary and partner
+  const primaryStrategy: DrawdownStrategy = drawdownStrategy || profile.drawdownStrategy || 'tax_optimizer';
+  const partnerStrategy: DrawdownStrategy = partnerDrawdownStrategy || profile.partnerDrawdownStrategy || primaryStrategy;
+
+  // Auto-set decumulation tax rates derived from each person's selected drawdown strategy
+  const primarySuggestedRate = STRATEGY_TAX_RATES[primaryStrategy] ?? 20;
+  const partnerSuggestedRate = STRATEGY_TAX_RATES[partnerStrategy] ?? 20;
+
+  const [primaryTaxRate, setPrimaryTaxRate] = useState<DecumulationTaxRate>(primarySuggestedRate);
+  const [partnerTaxRate, setPartnerTaxRate] = useState<DecumulationTaxRate>(partnerSuggestedRate);
+
+  // Automatically update rates when selected strategy changes
+  useEffect(() => {
+    setPrimaryTaxRate(STRATEGY_TAX_RATES[primaryStrategy] ?? 20);
+  }, [primaryStrategy]);
+
+  useEffect(() => {
+    setPartnerTaxRate(STRATEGY_TAX_RATES[partnerStrategy] ?? 20);
+  }, [partnerStrategy]);
 
   // Derived sequence data for overlay
-  const strategySequence = drawdownStrategy ? STRATEGY_SEQUENCE[drawdownStrategy] : null;
+  const primarySequence = drawdownStrategy ? STRATEGY_SEQUENCE[primaryStrategy] : null;
+  const partnerSequence = drawdownStrategy && isCouple ? STRATEGY_SEQUENCE[partnerStrategy] : null;
+
+  // Milestone retirement ages
+  const targetRetireAge = profile.targetRetirementAge || 60;
+  const isAlreadyRetired = (profile.currentAge >= targetRetireAge);
+
+  // Extract retirement row entering retirement
+  const retirementRow = useMemo<YearProjection | undefined>(() => {
+    if (!projections || projections.length === 0) return undefined;
+    if (isAlreadyRetired) {
+      return projections[0];
+    }
+    // Row entering retirement: end of (targetRetireAge - 1), or targetRetireAge
+    return (
+      projections.find((p) => p.age === targetRetireAge - 1) ??
+      projections.find((p) => p.age === targetRetireAge) ??
+      projections[0]
+    );
+  }, [projections, isAlreadyRetired, targetRetireAge]);
 
   // Extract individual wrapper pots
   const wrappers = useMemo<WrapperItem[]>(() => {
     const list: WrapperItem[] = [];
+    const useRetirement = activeBasis === 'retirement' && Boolean(retirementRow);
 
-    // Primary Pots
-    const primaryWp = Number(pots.workplacePensionBalance || 0);
-    const primarySipp = Number(pots.sippBalance || 0);
-    const primarySsIsa = Number(pots.stocksAndSharesIsaBalance || 0);
-    const primaryCashIsa = Number(pots.cashIsaBalance || 0);
-    const primaryLisa = Number(pots.lisaBalance || 0);
-    const primaryGia = Number(pots.giaBalance || 0);
-    const primaryCash = Number(pots.cashSavingsBalance || 0);
+    let primaryWp = 0;
+    let primarySipp = 0;
+    let primarySsIsa = 0;
+    let primaryCashIsa = 0;
+    let primaryLisa = 0;
+    let primaryGia = 0;
+    let primaryCash = 0;
+
+    if (useRetirement && retirementRow) {
+      const totalInitPrimaryPension = (Number(pots.workplacePensionBalance) || 0) + (Number(pots.sippBalance) || 0);
+      const primaryWpRatio = totalInitPrimaryPension > 0 ? (Number(pots.workplacePensionBalance) || 0) / totalInitPrimaryPension : 0.7;
+      const primarySippRatio = totalInitPrimaryPension > 0 ? (Number(pots.sippBalance) || 0) / totalInitPrimaryPension : 0.3;
+
+      const projectedPrimaryPension = (retirementRow.primaryPensionPotBeforePcls ?? retirementRow.primaryPensionPot ?? retirementRow.pensionPot) || 0;
+      primaryWp = Math.round(projectedPrimaryPension * primaryWpRatio);
+      primarySipp = Math.round(projectedPrimaryPension * primarySippRatio);
+
+      primarySsIsa = Number(retirementRow.primaryStocksAndSharesIsaPot ?? (!isCouple ? retirementRow.stocksAndSharesIsaPot : 0) ?? 0);
+      primaryCashIsa = Number(retirementRow.primaryCashIsaPot ?? (!isCouple ? retirementRow.cashIsaPot : 0) ?? 0);
+      primaryLisa = Number(retirementRow.primaryLisaPot ?? (!isCouple ? retirementRow.lisaPot : 0) ?? 0);
+      primaryGia = Number(retirementRow.primaryGiaPot ?? (!isCouple ? retirementRow.giaPot : 0) ?? 0);
+      primaryCash = Number(retirementRow.primaryCashSavingsPot ?? (!isCouple ? retirementRow.cashSavingsPot : 0) ?? 0);
+    } else {
+      primaryWp = Number(pots.workplacePensionBalance || 0);
+      primarySipp = Number(pots.sippBalance || 0);
+      primarySsIsa = Number(pots.stocksAndSharesIsaBalance || 0);
+      primaryCashIsa = Number(pots.cashIsaBalance || 0);
+      primaryLisa = Number(pots.lisaBalance || 0);
+      primaryGia = Number(pots.giaBalance || 0);
+      primaryCash = Number(pots.cashSavingsBalance || 0);
+    }
 
     if (primaryWp > 0) {
       list.push({
         id: 'primary_wp',
-        name: 'Workplace Pension',
+        name: `${profile.name || 'Primary'} Workplace Pension`,
         enclave: 'tax_deferred',
         balance: primaryWp,
         owner: 'primary',
@@ -215,7 +307,7 @@ export const AssetLocationTaxDragCard: React.FC<AssetLocationTaxDragCardProps> =
     if (primarySipp > 0) {
       list.push({
         id: 'primary_sipp',
-        name: 'SIPP',
+        name: `${profile.name || 'Primary'} SIPP`,
         enclave: 'tax_deferred',
         balance: primarySipp,
         owner: 'primary',
@@ -225,7 +317,7 @@ export const AssetLocationTaxDragCard: React.FC<AssetLocationTaxDragCardProps> =
     if (primarySsIsa > 0) {
       list.push({
         id: 'primary_ss_isa',
-        name: 'Stocks & Shares ISA',
+        name: `${profile.name || 'Primary'} Stocks & Shares ISA`,
         enclave: 'tax_free',
         balance: primarySsIsa,
         owner: 'primary',
@@ -234,7 +326,7 @@ export const AssetLocationTaxDragCard: React.FC<AssetLocationTaxDragCardProps> =
     if (primaryCashIsa > 0) {
       list.push({
         id: 'primary_cash_isa',
-        name: 'Cash ISA',
+        name: `${profile.name || 'Primary'} Cash ISA`,
         enclave: 'tax_free',
         balance: primaryCashIsa,
         owner: 'primary',
@@ -243,7 +335,7 @@ export const AssetLocationTaxDragCard: React.FC<AssetLocationTaxDragCardProps> =
     if (primaryLisa > 0) {
       list.push({
         id: 'primary_lisa',
-        name: 'Lifetime ISA (LISA)',
+        name: `${profile.name || 'Primary'} Lifetime ISA (LISA)`,
         enclave: 'tax_free',
         balance: primaryLisa,
         owner: 'primary',
@@ -252,7 +344,7 @@ export const AssetLocationTaxDragCard: React.FC<AssetLocationTaxDragCardProps> =
     if (primaryGia > 0) {
       list.push({
         id: 'primary_gia',
-        name: 'General Investment Account (GIA)',
+        name: `${profile.name || 'Primary'} GIA`,
         enclave: 'tax_exposed',
         balance: primaryGia,
         owner: 'primary',
@@ -261,7 +353,7 @@ export const AssetLocationTaxDragCard: React.FC<AssetLocationTaxDragCardProps> =
     if (primaryCash > 0) {
       list.push({
         id: 'primary_cash',
-        name: 'Cash Savings',
+        name: `${profile.name || 'Primary'} Cash Savings`,
         enclave: 'tax_exposed',
         balance: primaryCash,
         owner: 'primary',
@@ -270,14 +362,40 @@ export const AssetLocationTaxDragCard: React.FC<AssetLocationTaxDragCardProps> =
 
     // Partner Pots (if couple)
     if (isCouple) {
-      const partnerPots = profile.partnerPots;
-      const partnerWp = Number(partnerPots?.workplacePensionBalance ?? profile.partnerWorkplacePensionBalance ?? 0);
-      const partnerSipp = Number(partnerPots?.sippBalance ?? profile.partnerSippBalance ?? 0);
-      const partnerSsIsa = Number(partnerPots?.stocksAndSharesIsaBalance ?? profile.partnerIsaBalance ?? 0);
-      const partnerCashIsa = Number(partnerPots?.cashIsaBalance ?? 0);
-      const partnerLisa = Number(partnerPots?.lisaBalance ?? 0);
-      const partnerGia = Number(partnerPots?.giaBalance ?? 0);
-      const partnerCash = Number(partnerPots?.cashSavingsBalance ?? 0);
+      let partnerWp = 0;
+      let partnerSipp = 0;
+      let partnerSsIsa = 0;
+      let partnerCashIsa = 0;
+      let partnerLisa = 0;
+      let partnerGia = 0;
+      let partnerCash = 0;
+
+      const partnerPotsObj = profile.partnerPots;
+      const partnerInitWp = Number(partnerPotsObj?.workplacePensionBalance ?? profile.partnerWorkplacePensionBalance ?? 0);
+      const partnerInitSipp = Number(partnerPotsObj?.sippBalance ?? profile.partnerSippBalance ?? 0);
+      const partnerPensionInit = partnerInitWp + partnerInitSipp;
+      const partnerWpRatio = partnerPensionInit > 0 ? partnerInitWp / partnerPensionInit : 0.7;
+      const partnerSippRatio = partnerPensionInit > 0 ? partnerInitSipp / partnerPensionInit : 0.3;
+
+      if (useRetirement && retirementRow) {
+        const projectedPartnerPension = (retirementRow.partnerPensionPotBeforePcls ?? retirementRow.partnerPensionPot) || 0;
+        partnerWp = Math.round(projectedPartnerPension * partnerWpRatio);
+        partnerSipp = Math.round(projectedPartnerPension * partnerSippRatio);
+
+        partnerSsIsa = Number(retirementRow.partnerStocksAndSharesIsaPot ?? 0);
+        partnerCashIsa = Number(retirementRow.partnerCashIsaPot ?? 0);
+        partnerLisa = Number(retirementRow.partnerLisaPot ?? 0);
+        partnerGia = Number(retirementRow.partnerGiaPot ?? 0);
+        partnerCash = Number(retirementRow.partnerCashSavingsPot ?? 0);
+      } else {
+        partnerWp = partnerInitWp;
+        partnerSipp = partnerInitSipp;
+        partnerSsIsa = Number(partnerPotsObj?.stocksAndSharesIsaBalance ?? profile.partnerIsaBalance ?? 0);
+        partnerCashIsa = Number(partnerPotsObj?.cashIsaBalance ?? 0);
+        partnerLisa = Number(partnerPotsObj?.lisaBalance ?? 0);
+        partnerGia = Number(partnerPotsObj?.giaBalance ?? 0);
+        partnerCash = Number(partnerPotsObj?.cashSavingsBalance ?? 0);
+      }
 
       if (partnerWp > 0) {
         list.push({
@@ -347,7 +465,7 @@ export const AssetLocationTaxDragCard: React.FC<AssetLocationTaxDragCardProps> =
     }
 
     return list;
-  }, [pots, profile, isCouple]);
+  }, [pots, profile, isCouple, activeBasis, retirementRow]);
 
   // Filtered by selected owner
   const filteredWrappers = useMemo(() => {
@@ -457,21 +575,58 @@ export const AssetLocationTaxDragCard: React.FC<AssetLocationTaxDragCardProps> =
       {/* Header Bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="p-2 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 rounded-xl">
               <Layers className="w-5 h-5" />
             </span>
             <h3 className="text-lg font-black text-slate-900 dark:text-white">
               Tax Wrapper &ldquo;Asset Location&rdquo; Treemap &amp; Tax-Drag Ring
             </h3>
+            {activeBasis === 'retirement' && (
+              <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 px-2.5 py-0.5 rounded-full border border-indigo-200 dark:border-indigo-800">
+                <Calendar className="w-3 h-3" />
+                At Retirement (Age {targetRetireAge})
+              </span>
+            )}
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-3xl">
-            Asset location dictates retirement decumulation efficiency. Categorize your gross portfolio into three distinct UK tax enclaves to identify your true net spendable wealth and eliminate unnecessary HMRC tax-drag.
+            {activeBasis === 'retirement'
+              ? `Projected portfolio asset location entering retirement at Age ${targetRetireAge}. Decumulation tax drag is evaluated against the selected drawdown strategy.`
+              : 'Asset location dictates retirement decumulation efficiency. Categorize your gross portfolio into three distinct UK tax enclaves to identify your true net spendable wealth and eliminate unnecessary HMRC tax-drag.'}
           </p>
         </div>
 
-        {/* Controls: Owner Filter & Tax Rate Toggle */}
+        {/* Controls: Basis Toggle, Owner Filter & Tax Rate Controls */}
         <div className="flex items-center gap-2 flex-wrap shrink-0">
+          {/* Basis Toggle: Today vs At Retirement */}
+          {projections && projections.length > 0 && (
+            <div className="flex items-center bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300">
+              <button
+                type="button"
+                onClick={() => setActiveBasis('current')}
+                className={`px-2.5 py-1 rounded-lg transition-colors cursor-pointer flex items-center gap-1 ${
+                  activeBasis === 'current'
+                    ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs font-black'
+                    : 'hover:text-slate-900'
+                }`}
+              >
+                <span>Today</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveBasis('retirement')}
+                className={`px-2.5 py-1 rounded-lg transition-colors cursor-pointer flex items-center gap-1 ${
+                  activeBasis === 'retirement'
+                    ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs font-black'
+                    : 'hover:text-slate-900'
+                }`}
+              >
+                <Calendar className="w-3.5 h-3.5" />
+                <span>At Retirement (Age {targetRetireAge})</span>
+              </button>
+            </div>
+          )}
+
           {isCouple && (
             <div className="flex items-center bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300">
               <button
@@ -514,9 +669,12 @@ export const AssetLocationTaxDragCard: React.FC<AssetLocationTaxDragCardProps> =
           )}
 
           {/* Primary Person Decumulation Tax */}
-          <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800/80 px-2.5 py-1 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-300">
+          <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800/80 px-2.5 py-1 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-300 flex-wrap">
             <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold whitespace-nowrap">
               {isCouple ? `${profile.name || 'Primary'} Tax:` : 'Decumulation Tax:'}
+            </span>
+            <span className="text-[10px] text-indigo-700 dark:text-indigo-300 font-bold bg-indigo-50 dark:bg-indigo-950/80 px-1.5 py-0.5 rounded border border-indigo-200 dark:border-indigo-800">
+              {formatStrategyName(primaryStrategy)} ({primarySuggestedRate}%)
             </span>
             {TAX_RATE_OPTIONS.map((opt) => (
               <button
@@ -536,9 +694,12 @@ export const AssetLocationTaxDragCard: React.FC<AssetLocationTaxDragCardProps> =
 
           {/* Partner Decumulation Tax (when couple planning) */}
           {isCouple && (
-            <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800/80 px-2.5 py-1 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-300">
+            <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800/80 px-2.5 py-1 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-300 flex-wrap">
               <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold whitespace-nowrap">
                 {profile.partnerName || 'Partner'} Tax:
+              </span>
+              <span className="text-[10px] text-indigo-700 dark:text-indigo-300 font-bold bg-indigo-50 dark:bg-indigo-950/80 px-1.5 py-0.5 rounded border border-indigo-200 dark:border-indigo-800">
+                {formatStrategyName(partnerStrategy)} ({partnerSuggestedRate}%)
               </span>
               {TAX_RATE_OPTIONS.map((opt) => (
                 <button
@@ -560,88 +721,127 @@ export const AssetLocationTaxDragCard: React.FC<AssetLocationTaxDragCardProps> =
       </div>
 
       {/* Strategy-Aware Depletion Sequence Banner — only when drawdownStrategy is provided */}
-      {strategySequence && (
-        <div className="bg-indigo-50/80 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800/60 rounded-2xl p-4 space-y-3">
-          <div className="flex items-center gap-2">
-            <Target className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
-            <span className="text-xs font-extrabold text-indigo-900 dark:text-indigo-100">
-              Depletion Sequence for:{' '}
-              <span className="font-black text-indigo-700 dark:text-indigo-300">
-                {drawdownStrategy?.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
-              </span>
-            </span>
-          </div>
-
-          {/* Step chips with arrows */}
-          <div className="flex flex-wrap items-center gap-1.5">
-            {strategySequence.steps.map((step, idx) => {
-              const e = ENCLAVE_STEP[step.enclave];
-              return (
-                <React.Fragment key={step.enclave}>
-                  <div
-                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[11px] font-bold ${e.badgeClass}`}
-                    title={step.reason}
-                  >
-                    <span className={`w-4 h-4 rounded-full ${e.colorClass} flex items-center justify-center text-white shrink-0`}>
-                      <span className="text-[9px] font-black">{idx + 1}</span>
-                    </span>
-                    {e.icon}
-                    <span>{e.label}</span>
-                  </div>
-                  {idx < strategySequence.steps.length - 1 && (
-                    <ArrowRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                  )}
-                </React.Fragment>
-              );
-            })}
-          </div>
-
-          {/* Per-step rationale */}
-          <div className="space-y-1">
-            {strategySequence.steps.map((step, idx) => {
-              const e = ENCLAVE_STEP[step.enclave];
-              return (
-                <div key={step.enclave} className="flex items-start gap-2 text-[11px]">
-                  <span className={`w-4 h-4 rounded-full ${e.colorClass} flex items-center justify-center text-white shrink-0 mt-0.5`}>
-                    <span className="text-[8px] font-black">{idx + 1}</span>
+      {primarySequence && (
+        <div className="space-y-3">
+          {/* Primary Sequence Banner */}
+          <div className="bg-indigo-50/80 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800/60 rounded-2xl p-4 space-y-3">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-2">
+                <Target className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                <span className="text-xs font-extrabold text-indigo-900 dark:text-indigo-100">
+                  {isCouple ? `${profile.name || 'Primary'} Depletion Sequence:` : 'Depletion Sequence for:'}{' '}
+                  <span className="font-black text-indigo-700 dark:text-indigo-300">
+                    {formatStrategyName(primaryStrategy)}
                   </span>
-                  <span className="text-slate-600 dark:text-slate-400 leading-snug">
-                    <strong className="text-slate-800 dark:text-slate-200">{e.label}:</strong>{' '}
-                    {step.reason}
+                </span>
+              </div>
+              <span className="text-[11px] font-bold px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/60 text-indigo-800 dark:text-indigo-200 rounded-lg">
+                Decumulation Tax Rate: <strong>{primaryTaxRate}%</strong>
+              </span>
+            </div>
+
+            {/* Step chips with arrows */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              {primarySequence.steps.map((step, idx) => {
+                const e = ENCLAVE_STEP[step.enclave];
+                return (
+                  <React.Fragment key={step.enclave}>
+                    <div
+                      className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[11px] font-bold ${e.badgeClass}`}
+                      title={step.reason}
+                    >
+                      <span className={`w-4 h-4 rounded-full ${e.colorClass} flex items-center justify-center text-white shrink-0`}>
+                        <span className="text-[9px] font-black">{idx + 1}</span>
+                      </span>
+                      {e.icon}
+                      <span>{e.label}</span>
+                    </div>
+                    {idx < primarySequence.steps.length - 1 && (
+                      <ArrowRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </div>
+
+            {/* Per-step rationale */}
+            <div className="space-y-1">
+              {primarySequence.steps.map((step, idx) => {
+                const e = ENCLAVE_STEP[step.enclave];
+                return (
+                  <div key={step.enclave} className="flex items-start gap-2 text-[11px]">
+                    <span className={`w-4 h-4 rounded-full ${e.colorClass} flex items-center justify-center text-white shrink-0 mt-0.5`}>
+                      <span className="text-[8px] font-black">{idx + 1}</span>
+                    </span>
+                    <span className="text-slate-600 dark:text-slate-400 leading-snug">
+                      <strong className="text-slate-800 dark:text-slate-200">{e.label}:</strong>{' '}
+                      {step.reason}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Summary insight */}
+            <div className="flex items-start gap-1.5 pt-1 border-t border-indigo-200/60 dark:border-indigo-800/40">
+              <Info className="w-3.5 h-3.5 text-indigo-500 shrink-0 mt-0.5" />
+              <p className="text-[11px] text-indigo-700 dark:text-indigo-300 leading-snug italic">
+                {primarySequence.summary}
+              </p>
+            </div>
+          </div>
+
+          {/* Partner Sequence Banner (if couple and partner strategy is defined and differs) */}
+          {partnerSequence && partnerStrategy !== primaryStrategy && (
+            <div className="bg-rose-50/70 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-800/60 rounded-2xl p-4 space-y-3">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <Target className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
+                  <span className="text-xs font-extrabold text-rose-900 dark:text-rose-100">
+                    {profile.partnerName || 'Partner'} Depletion Sequence:{' '}
+                    <span className="font-black text-rose-700 dark:text-rose-300">
+                      {formatStrategyName(partnerStrategy)}
+                    </span>
                   </span>
                 </div>
-              );
-            })}
-          </div>
+                <span className="text-[11px] font-bold px-2 py-0.5 bg-rose-100 dark:bg-rose-900/60 text-rose-800 dark:text-rose-200 rounded-lg">
+                  Decumulation Tax Rate: <strong>{partnerTaxRate}%</strong>
+                </span>
+              </div>
 
-          {/* Summary insight */}
-          <div className="flex items-start gap-1.5 pt-1 border-t border-indigo-200/60 dark:border-indigo-800/40">
-            <Info className="w-3.5 h-3.5 text-indigo-500 shrink-0 mt-0.5" />
-            <p className="text-[11px] text-indigo-700 dark:text-indigo-300 leading-snug italic">
-              {strategySequence.summary}
-            </p>
-          </div>
+              {/* Step chips with arrows */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                {partnerSequence.steps.map((step, idx) => {
+                  const e = ENCLAVE_STEP[step.enclave];
+                  return (
+                    <React.Fragment key={step.enclave}>
+                      <div
+                        className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[11px] font-bold ${e.badgeClass}`}
+                        title={step.reason}
+                      >
+                        <span className={`w-4 h-4 rounded-full ${e.colorClass} flex items-center justify-center text-white shrink-0`}>
+                          <span className="text-[9px] font-black">{idx + 1}</span>
+                        </span>
+                        {e.icon}
+                        <span>{e.label}</span>
+                      </div>
+                      {idx < partnerSequence.steps.length - 1 && (
+                        <ArrowRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+              </div>
 
-          {/* Enclave Coverage Warning */}
-          {totalGross > 0 && (() => {
-            const missingEnclaves = strategySequence.steps
-              .filter((s) => {
-                if (s.enclave === 'tax_free') return taxFreeGross === 0;
-                if (s.enclave === 'tax_deferred') return taxDeferredGross === 0;
-                return taxExposedGross === 0;
-              })
-              .map((s) => ENCLAVE_STEP[s.enclave].label);
-            return missingEnclaves.length > 0 ? (
-              <div className="flex items-start gap-1.5 p-2 bg-amber-50 dark:bg-amber-950/30 rounded-xl border border-amber-200 dark:border-amber-800/50">
-                <Flame className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
-                <p className="text-[11px] text-amber-800 dark:text-amber-300 leading-snug">
-                  <strong>Missing enclaves:</strong> This strategy uses{' '}
-                  {missingEnclaves.join(' & ')} but you currently have £0 in those wrappers.
-                  Consider contributing to these to fully execute the strategy.
+              {/* Summary insight */}
+              <div className="flex items-start gap-1.5 pt-1 border-t border-rose-200/60 dark:border-rose-800/40">
+                <Info className="w-3.5 h-3.5 text-rose-500 shrink-0 mt-0.5" />
+                <p className="text-[11px] text-rose-700 dark:text-rose-300 leading-snug italic">
+                  {partnerSequence.summary}
                 </p>
               </div>
-            ) : null;
-          })()}
+            </div>
+          )}
         </div>
       )}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

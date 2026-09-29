@@ -98,4 +98,112 @@ describe('AssetLocationTaxDragCard', () => {
     // In Bob only view: Bob is 40% -> £30,000 drag
     expect(screen.getByText(/-£30,000/i)).toBeInTheDocument();
   });
+
+  it('bases Treemap and Tax-Drag on pots at retirement when in retirement basis with projections', () => {
+    const profile = {
+      ...DEFAULT_PROFILE,
+      currentAge: 55,
+      targetRetirementAge: 60,
+      isCouplePlanning: false,
+      drawdownStrategy: 'basic_rate_bracket' as const,
+    };
+    // Today pots: 100k
+    const pots = {
+      ...ZERO_POTS,
+      workplacePensionBalance: 100000,
+    };
+    // Projected pots at retirement (age 59 / 60): 400k pension, 100k ISA
+    const projections = [
+      {
+        year: 2026,
+        age: 55,
+        isRetired: false,
+        pensionPot: 100000,
+        isaPot: 0,
+        cashGiaPot: 0,
+        totalPot: 100000,
+      },
+      {
+        year: 2030,
+        age: 59,
+        isRetired: false,
+        pensionPot: 400000,
+        primaryPensionPot: 400000,
+        isaPot: 100000,
+        primaryStocksAndSharesIsaPot: 100000,
+        cashGiaPot: 0,
+        totalPot: 500000,
+      },
+      {
+        year: 2031,
+        age: 60,
+        isRetired: true,
+        pensionPot: 380000,
+        primaryPensionPotBeforePcls: 400000,
+        primaryPensionPot: 380000,
+        isaPot: 100000,
+        primaryStocksAndSharesIsaPot: 100000,
+        cashGiaPot: 0,
+        totalPot: 480000,
+      },
+    ];
+
+    render(
+      <AssetLocationTaxDragCard
+        profile={profile}
+        pots={pots}
+        projections={projections as any}
+        drawdownStrategy="basic_rate_bracket"
+        basis="retirement"
+      />
+    );
+
+    // Should indicate "At Retirement (Age 60)"
+    expect(screen.getAllByText(/At Retirement \(Age 60\)/i).length).toBeGreaterThan(0);
+
+    // Total gross should be £500,000 (400k pension + 100k ISA), not today's 100k
+    expect(screen.getByText(/Total Gross: £500,000/i)).toBeInTheDocument();
+
+    // 400k pension: 25% PCLS = 100k tax-free, 300k taxable * 20% (basic_rate_bracket) = £60,000 tax drag
+    expect(screen.getByText(/-£60,000/i)).toBeInTheDocument();
+  });
+
+  it('sets decumulation tax based on drawdown strategy selected for each person in couple mode', () => {
+    const profile = {
+      ...DEFAULT_PROFILE,
+      currentAge: 60,
+      targetRetirementAge: 60,
+      isCouplePlanning: true,
+      name: 'Alice',
+      partnerName: 'Bob',
+      drawdownStrategy: 'tax_free_bracket' as const, // 0% tax
+      partnerDrawdownStrategy: 'higher_rate_bracket' as const, // 40% tax
+      partnerPots: {
+        ...ZERO_POTS,
+        workplacePensionBalance: 100000,
+      },
+    };
+    const pots = {
+      ...ZERO_POTS,
+      workplacePensionBalance: 100000,
+    };
+
+    render(
+      <AssetLocationTaxDragCard
+        profile={profile}
+        pots={pots}
+        drawdownStrategy="tax_free_bracket"
+        partnerDrawdownStrategy="higher_rate_bracket"
+      />
+    );
+
+    // Strategy badges should show on the tax buttons
+    expect(screen.getByText(/Tax Free Bracket \(0%\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/Higher Rate Bracket \(40%\)/i)).toBeInTheDocument();
+
+    // Alice: 75k taxable * 0% = £0 drag
+    // Bob: 75k taxable * 40% = £30,000 drag
+    // Household total = £30,000 drag
+    expect(screen.getByText(/-£30,000/i)).toBeInTheDocument();
+  });
 });

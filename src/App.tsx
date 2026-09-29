@@ -1243,8 +1243,11 @@ function App() {
                       <AssetLocationTaxDragCard
                         profile={profile}
                         pots={pots}
+                        projections={projections}
                         onChange={handleProfileChange}
                         drawdownStrategy={profile.drawdownStrategy}
+                        partnerDrawdownStrategy={profile.partnerDrawdownStrategy}
+                        basis="retirement"
                       />
                     </div>
                     {/* Monthly Savings & Capacity */}
@@ -1272,7 +1275,13 @@ function App() {
                     </div>
                     {/* Asset Location Treemap & Tax-Drag Ring */}
                     <div id="card-accum-asset-location" className="scroll-mt-24 transition-all duration-300">
-                      <AssetLocationTaxDragCard profile={profile} pots={pots} onChange={handleProfileChange} />
+                      <AssetLocationTaxDragCard
+                        profile={profile}
+                        pots={pots}
+                        projections={projections}
+                        onChange={handleProfileChange}
+                        basis="current"
+                      />
                     </div>
                     {/* Accumulation Ledger */}
                     <div id="card-accum-ledger" className="scroll-mt-24 transition-all duration-300">
@@ -1405,7 +1414,9 @@ function App() {
                   <AssetLocationTaxDragCard
                     profile={profile}
                     pots={pots}
+                    projections={projections}
                     onChange={handleProfileChange}
+                    basis="current"
                   />
                 </div>
                 <div id="card-accum-ledger" className="scroll-mt-24 transition-all duration-300">
@@ -1518,8 +1529,11 @@ function App() {
                   <AssetLocationTaxDragCard
                     profile={profile}
                     pots={pots}
+                    projections={projections}
                     onChange={handleProfileChange}
                     drawdownStrategy={profile.drawdownStrategy}
+                    partnerDrawdownStrategy={profile.partnerDrawdownStrategy}
+                    basis="retirement"
                   />
                 </div>
                 <div id="card-ai-advisor" className="scroll-mt-24 transition-all duration-300">
