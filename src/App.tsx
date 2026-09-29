@@ -29,6 +29,7 @@ import { AnnualBreakdownTable } from './components/AnnualBreakdownTable';
 import { MonteCarloCard } from './components/MonteCarloCard';
 import { DynamicSpendingCard } from './components/DynamicSpendingCard';
 import { DrawdownPlanner } from './components/DrawdownPlanner';
+import { AssetLocationTaxDragCard } from './components/AssetLocationTaxDragCard';
 import { GiltLadderCard } from './components/GiltLadderCard';
 import { ExportSection } from './components/ExportSection';
 import { ScenarioComparer } from './components/ScenarioComparer';
@@ -1083,7 +1084,11 @@ function App() {
                     <div id="card-inputs-fees" className="scroll-mt-24 transition-all duration-300">
                       <InvestmentFeesCard isStudioMode={true} profile={profile} pots={pots} onChange={handleProfileChange} />
                     </div>
-                    {/* 11. Drawdown strategy */}
+                    {/* 11. Asset Location & Tax Drag */}
+                    <div id="card-strat-asset-location" className="scroll-mt-24 transition-all duration-300">
+                      <AssetLocationTaxDragCard profile={profile} pots={pots} onChange={handleProfileChange} />
+                    </div>
+                    {/* 12. Drawdown strategy */}
                     <div id="card-strat-planner" className="scroll-mt-24 transition-all duration-300">
                       <DrawdownPlanner isStudioMode={true}
                         profile={profile}
@@ -1400,6 +1405,13 @@ function App() {
             {/* Tab 3: Strategy */}
             {!studioMode && activeTab === 'strategy' && (
               <div className="space-y-6">
+                <div id="card-strat-asset-location" className="scroll-mt-24 transition-all duration-300">
+                  <AssetLocationTaxDragCard
+                    profile={profile}
+                    pots={pots}
+                    onChange={handleProfileChange}
+                  />
+                </div>
                 <div id="card-strat-planner" className="scroll-mt-24 transition-all duration-300">
                   <DrawdownPlanner
                     profile={profile}

@@ -87,6 +87,7 @@ export const NAV_STRUCTURE: TabGroup[] = [
     icon: Percent,
     description: 'Drawdown sequencing, tax brackets, and spending phases',
     cards: [
+      { id: 'card-strat-asset-location', label: 'Asset Location Treemap & Tax-Drag' },
       { id: 'card-strat-planner', label: 'Drawdown Strategy Planner' },
       { id: 'card-strat-phases', label: 'Retirement Income Requirement' },
       { id: 'card-dynamic-optimiser', label: 'Dynamic Optimiser' },
