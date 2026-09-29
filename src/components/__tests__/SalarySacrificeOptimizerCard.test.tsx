@@ -177,4 +177,31 @@ describe('SalarySacrificeOptimizerCard', () => {
     // Check that the annual salary sacrificed state was initialized to £5,600 (7.0%)
     expect(screen.getByText(/£5,600 \(7.0%\)/i)).toBeInTheDocument();
   });
+
+  it('respects £0 annual salary without defaulting to £75,000', () => {
+    const profile = {
+      ...DEFAULT_PROFILE,
+      grossAnnualSalary: 0,
+      oneOffContributions: [],
+    };
+
+    render(
+      <SalarySacrificeOptimizerCard
+        profile={profile}
+        pots={ZERO_POTS}
+      />
+    );
+
+    // Should display the £0 salary notice
+    expect(
+      screen.getByText(/currently has an annual employment salary of £0/i)
+    ).toBeInTheDocument();
+
+    // Check that salary input value is 0 (not 75000)
+    const salaryInput = screen.getByLabelText(/Annual Gross Salary/i, { selector: 'input' }) as HTMLInputElement;
+    expect(salaryInput.value).toBe('0');
+
+    // Sacrifice amount is 0
+    expect(screen.getByText(/£0 \(0.0%\)/i)).toBeInTheDocument();
+  });
 });

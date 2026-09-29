@@ -51,8 +51,8 @@ export const SalarySacrificeOptimizerCard: React.FC<SalarySacrificeOptimizerCard
     : profile.name || 'Primary User';
 
   const defaultSalary = isPartner
-    ? profile.partnerGrossAnnualSalary || 0
-    : profile.grossAnnualSalary || 0;
+    ? (profile.partnerGrossAnnualSalary ?? 0)
+    : (profile.grossAnnualSalary ?? 0);
 
   const currentAge = isPartner
     ? profile.partnerCurrentAge || 40
@@ -70,17 +70,16 @@ export const SalarySacrificeOptimizerCard: React.FC<SalarySacrificeOptimizerCard
   }, [profile, pots, activePerson]);
 
   // Component state - initialized by looking at actual plan contributions
-  const [salary, setSalary] = useState<number>(defaultSalary || 75000);
+  const [salary, setSalary] = useState<number>(defaultSalary);
   const [sacrificeAmount, setSacrificeAmount] = useState<number>(() => {
     const initialPlan = getPlanContributionsInfo(profile, pots, 'primary');
     if (initialPlan.hasWorkplaceContributions) {
-      return initialPlan.employeeWorkplaceAnnual;
+      return Math.min(defaultSalary, initialPlan.employeeWorkplaceAnnual);
     }
     if (initialPlan.sippAnnual > 0) {
-      return initialPlan.sippAnnual;
+      return Math.min(defaultSalary, initialPlan.sippAnnual);
     }
-    const sal = profile.grossAnnualSalary || 75000;
-    return Math.min(sal, Math.round(sal * 0.05) || 3000);
+    return Math.min(defaultSalary, Math.round(defaultSalary * 0.05));
   });
   const [employerNiRate, setEmployerNiRate] = useState<number>(0.138); // 13.8% or 0.150 (15.0%)
   const [employerPassThroughPercent, setEmployerPassThroughPercent] = useState<number>(100); // 0%, 50%, 100%
@@ -92,12 +91,24 @@ export const SalarySacrificeOptimizerCard: React.FC<SalarySacrificeOptimizerCard
   const [showProjectionTable, setShowProjectionTable] = useState<boolean>(false);
   const [appliedSuccessMessage, setAppliedSuccessMessage] = useState<string | null>(null);
 
+  // Keep salary and sacrifice in sync when profile inputs change (e.g. from Capital Assets & Investments or ProfileInputs)
+  React.useEffect(() => {
+    setSalary(defaultSalary);
+    if (planContributions.hasWorkplaceContributions) {
+      setSacrificeAmount(Math.min(defaultSalary, planContributions.employeeWorkplaceAnnual));
+    } else if (planContributions.sippAnnual > 0) {
+      setSacrificeAmount(Math.min(defaultSalary, planContributions.sippAnnual));
+    } else {
+      setSacrificeAmount(Math.min(defaultSalary, Math.round(defaultSalary * 0.05)));
+    }
+  }, [defaultSalary, activePerson]);
+
   // Sync salary and contributions when switching person
   const handlePersonSwitch = (person: 'primary' | 'partner') => {
     setActivePerson(person);
     const newSalary = person === 'partner'
-      ? profile.partnerGrossAnnualSalary || 0
-      : profile.grossAnnualSalary || 0;
+      ? (profile.partnerGrossAnnualSalary ?? 0)
+      : (profile.grossAnnualSalary ?? 0);
     const newCurrentAge = person === 'partner'
       ? profile.partnerCurrentAge || 40
       : profile.currentAge || 40;
@@ -105,17 +116,17 @@ export const SalarySacrificeOptimizerCard: React.FC<SalarySacrificeOptimizerCard
       ? profile.partnerTargetRetirementAge || 60
       : profile.targetRetirementAge || 60;
 
-    const chosenSalary = newSalary || 75000;
+    const chosenSalary = newSalary;
     setSalary(chosenSalary);
 
     // Calculate sacrifice amount directly by looking at that person's contributions in the plan
     const personPlan = getPlanContributionsInfo(profile, pots, person);
     if (personPlan.hasWorkplaceContributions) {
-      setSacrificeAmount(personPlan.employeeWorkplaceAnnual);
+      setSacrificeAmount(Math.min(chosenSalary, personPlan.employeeWorkplaceAnnual));
     } else if (personPlan.sippAnnual > 0) {
-      setSacrificeAmount(personPlan.sippAnnual);
+      setSacrificeAmount(Math.min(chosenSalary, personPlan.sippAnnual));
     } else {
-      setSacrificeAmount(Math.min(chosenSalary, Math.round(chosenSalary * 0.05) || 3000));
+      setSacrificeAmount(Math.min(chosenSalary, Math.round(chosenSalary * 0.05)));
     }
 
     setYearsToRetirement(Math.max(1, newRetAge - newCurrentAge));
@@ -322,6 +333,16 @@ export const SalarySacrificeOptimizerCard: React.FC<SalarySacrificeOptimizerCard
           </div>
         )}
 
+        {/* Zero Salary Notice */}
+        {salary === 0 && (
+          <div className="p-4 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 flex items-start gap-3 text-slate-700 dark:text-slate-300 text-xs sm:text-sm">
+            <Info className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
+            <span>
+              <strong>{personName}</strong> currently has an annual employment salary of £0. Salary sacrifice (SMART pensions) requires employment earnings paid via PAYE. If you earn an employment income, you can enter it below to explore tax and National Insurance savings.
+            </span>
+          </div>
+        )}
+
         {/* Plan Contributions Detected Banner */}
         <div className="p-4 sm:p-5 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/60 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-start gap-3.5">
@@ -497,7 +518,7 @@ export const SalarySacrificeOptimizerCard: React.FC<SalarySacrificeOptimizerCard
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-5 rounded-2xl bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800">
           {/* 1. Annual Gross Salary */}
           <div className="space-y-2">
-            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+            <label htmlFor="salary-gross-input" className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
               <span>Annual Gross Salary</span>
               <span className="text-[11px] text-slate-500 dark:text-slate-400 font-normal">
                 Contractual earnings
@@ -506,6 +527,7 @@ export const SalarySacrificeOptimizerCard: React.FC<SalarySacrificeOptimizerCard
             <div className="relative">
               <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">£</span>
               <input
+                id="salary-gross-input"
                 type="number"
                 min="0"
                 step="1000"
