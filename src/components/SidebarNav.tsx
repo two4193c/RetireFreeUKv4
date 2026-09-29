@@ -114,6 +114,7 @@ export const NAV_STRUCTURE: TabGroup[] = [
       { id: 'card-swr-matrix', label: 'Safe Withdrawal Rate (SWR) Heatmap Matrix' },
       { id: 'card-guardrail-gauge', label: 'Dynamic Guardrail Threshold Gauge' },
       { id: 'card-essential-floor-split', label: 'Essential Floor vs Discretionary Split' },
+      { id: 'card-tranche-visualisation', label: 'Phased Crystallisation Tranches Breakdown' },
       { id: 'card-swr-trajectory-chart', label: 'Effective Withdrawal Rate Trajectory Chart' },
       { id: 'card-swr-uk-us-benchmark', label: 'Bengen (US) vs UK Return Benchmark' },
       { id: 'card-ai-advisor', label: 'AI Tax & Pension Advisor' },

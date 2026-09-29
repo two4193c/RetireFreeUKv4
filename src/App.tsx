@@ -92,6 +92,7 @@ import { SidebarNav } from './components/SidebarNav';
 import { AppearanceModal, ColorTheme, UiScale } from './components/AppearanceModal';
 import { PlanErrorBoundary } from './components/PlanErrorBoundary';
 import { DynamicOptimiserCard } from './components/DynamicOptimiserCard';
+import { TrancheCrystallisationVisualiserCard } from './components/TrancheCrystallisationVisualiserCard';
 import { DocumentationModal, DocSubTabType } from './components/DocumentationModal';
 import { MortgageDebtModal } from './components/MortgageDebtModal';
 import { SummaryModal, SummaryModalSubTab } from './components/SummaryModal';
@@ -1225,6 +1226,14 @@ function App() {
                     <div id="card-essential-floor-split" className="scroll-mt-24 transition-all duration-300">
                       <EssentialFloorSplitCard profile={profile} pots={pots} />
                     </div>
+                    <div id="card-tranche-visualisation" className="scroll-mt-24 transition-all duration-300">
+                      <TrancheCrystallisationVisualiserCard
+                        profile={profile}
+                        pots={pots}
+                        projections={projections}
+                        onChange={handleProfileChange}
+                      />
+                    </div>
                     <div id="card-swr-uk-us-benchmark" className="scroll-mt-24 transition-all duration-300">
                       <SwrUkUsBenchmarkCard />
                     </div>
@@ -1468,6 +1477,14 @@ function App() {
                 </div>
                 <div id="card-essential-floor-split" className="scroll-mt-24 transition-all duration-300">
                   <EssentialFloorSplitCard profile={profile} pots={pots} />
+                </div>
+                <div id="card-tranche-visualisation" className="scroll-mt-24 transition-all duration-300">
+                  <TrancheCrystallisationVisualiserCard
+                    profile={profile}
+                    pots={pots}
+                    projections={projections}
+                    onChange={handleProfileChange}
+                  />
                 </div>
                 <div id="card-swr-trajectory-chart" className="scroll-mt-24 transition-all duration-300">
                   <SwrTrajectoryChart projections={projections} profile={profile} />
