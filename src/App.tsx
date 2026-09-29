@@ -22,6 +22,7 @@ import { FixedIncomeManager } from './components/FixedIncomeManager';
 import { PotTransferManager } from './components/PotTransferManager';
 import { OneOffContributionManager } from './components/OneOffContributionManager';
 import { TaxOptimizerCard } from './components/TaxOptimizerCard';
+import { SalarySacrificeOptimizerCard } from './components/SalarySacrificeOptimizerCard';
 import { MonthlySavingsRateCard } from './components/MonthlySavingsRateCard';
 import { SpendingPhasesCard } from './components/SpendingPhasesCard';
 import { ProjectionChart } from './components/ProjectionChart';
@@ -1273,6 +1274,14 @@ function App() {
                         onOptimizeTaxTrap={handleOptimizeTaxTrap}
                       />
                     </div>
+                    {/* Pre-Retirement Salary Sacrifice & Employer NI Pass-Through Optimizer */}
+                    <div id="card-accum-salary-sacrifice" className="scroll-mt-24 transition-all duration-300">
+                      <SalarySacrificeOptimizerCard
+                        profile={profile}
+                        pots={pots}
+                        onChange={handleProfileChange}
+                      />
+                    </div>
                     {/* Asset Location Treemap & Tax-Drag Ring */}
                     <div id="card-accum-asset-location" className="scroll-mt-24 transition-all duration-300">
                       <AssetLocationTaxDragCard
@@ -1408,6 +1417,13 @@ function App() {
                     profile={profile}
                     pots={pots}
                     onOptimizeTaxTrap={handleOptimizeTaxTrap}
+                  />
+                </div>
+                <div id="card-accum-salary-sacrifice" className="scroll-mt-24 transition-all duration-300">
+                  <SalarySacrificeOptimizerCard
+                    profile={profile}
+                    pots={pots}
+                    onChange={handleProfileChange}
                   />
                 </div>
                 <div id="card-accum-asset-location" className="scroll-mt-24 transition-all duration-300">
