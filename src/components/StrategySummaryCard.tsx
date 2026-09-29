@@ -180,19 +180,52 @@ export const StrategySummaryCard: React.FC<StrategySummaryCardProps> = ({
                 ))}
               </div>
             )}
-            <div className="flex justify-between">
-              <span className="text-slate-500 dark:text-slate-400">DC Pension PCLS (SIPP / Workplace):</span>
-              <span className="font-bold text-primary-700 dark:text-primary-400">
-                £{primaryPclsInfo.taxFreeCashTaken.toLocaleString()} ({primaryPclsInfo.pclsPercent}% at age {primaryPclsInfo.takeAge})
-              </span>
-            </div>
-            {primaryPclsInfo.dbLumpSum > 0 && (
-              <div className="flex justify-between">
-                <span className="text-slate-500 dark:text-slate-400">Total Tax-Free Cash (DC + DB):</span>
-                <span className="font-bold text-amber-700 dark:text-amber-400">
-                  £{primaryPclsInfo.totalTaxFreeCash.toLocaleString()} / £{primaryPclsInfo.lsaLimit.toLocaleString()} LSA
-                </span>
-              </div>
+            {profile.crystallisationMode === 'phased_tranches' ? (
+              <>
+                {(() => {
+                  const priTranches = (profile.crystallisationTranches || []).filter(t => t.enabled && (t.owner || 'primary') !== 'partner');
+                  const priTranchesPcls = priTranches.reduce((sum, t) => {
+                    const mult = t.frequency === 'recurring' ? Math.max(1, (t.endAge || t.age) - t.age + 1) : 1;
+                    return sum + Math.round((t.amount || 0) * ((t.pclsPercent ?? 25) / 100)) * mult;
+                  }, 0);
+                  const priTotalTaxFreeWithDb = Math.min(priTranchesPcls + primaryPclsInfo.dbLumpSum, primaryPclsInfo.lsaLimit);
+                  return (
+                    <>
+                      <div className="flex justify-between">
+                        <span className="text-slate-500 dark:text-slate-400">Phased Tranches PCLS:</span>
+                        <span className="font-bold text-primary-700 dark:text-primary-400">
+                          £{priTranchesPcls.toLocaleString()} ({priTranches.length} active tranches)
+                        </span>
+                      </div>
+                      {primaryPclsInfo.dbLumpSum > 0 && (
+                        <div className="flex justify-between">
+                          <span className="text-slate-500 dark:text-slate-400">Total Tax-Free Cash (Tranches + DB):</span>
+                          <span className="font-bold text-amber-700 dark:text-amber-400">
+                            £{priTotalTaxFreeWithDb.toLocaleString()} / £{primaryPclsInfo.lsaLimit.toLocaleString()} LSA
+                          </span>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
+              </>
+            ) : (
+              <>
+                <div className="flex justify-between">
+                  <span className="text-slate-500 dark:text-slate-400">DC Pension PCLS (SIPP / Workplace):</span>
+                  <span className="font-bold text-primary-700 dark:text-primary-400">
+                    £{primaryPclsInfo.taxFreeCashTaken.toLocaleString()} ({primaryPclsInfo.pclsPercent}% at age {primaryPclsInfo.takeAge})
+                  </span>
+                </div>
+                {primaryPclsInfo.dbLumpSum > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-500 dark:text-slate-400">Total Tax-Free Cash (DC + DB):</span>
+                    <span className="font-bold text-amber-700 dark:text-amber-400">
+                      £{primaryPclsInfo.totalTaxFreeCash.toLocaleString()} / £{primaryPclsInfo.lsaLimit.toLocaleString()} LSA
+                    </span>
+                  </div>
+                )}
+              </>
             )}
             <div className="flex justify-between">
               <span className="text-slate-500 dark:text-slate-400">DC Pension Access Age (NMPA):</span>
@@ -268,19 +301,52 @@ export const StrategySummaryCard: React.FC<StrategySummaryCardProps> = ({
                   ))}
                 </div>
               )}
-              <div className="flex justify-between">
-                <span className="text-slate-500 dark:text-slate-400">DC Pension PCLS (SIPP / Workplace):</span>
-                <span className="font-bold text-indigo-700 dark:text-indigo-300">
-                  £{partnerPclsInfo.taxFreeCashTaken.toLocaleString()} ({partnerPclsInfo.pclsPercent}% at age {partnerPclsInfo.takeAge})
-                </span>
-              </div>
-              {partnerPclsInfo.dbLumpSum > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-slate-500 dark:text-slate-400">Total Tax-Free Cash (DC + DB):</span>
-                  <span className="font-bold text-amber-700 dark:text-amber-400">
-                    £{partnerPclsInfo.totalTaxFreeCash.toLocaleString()} / £{partnerPclsInfo.lsaLimit.toLocaleString()} LSA
-                  </span>
-                </div>
+              {profile.partnerCrystallisationMode === 'phased_tranches' ? (
+                <>
+                  {(() => {
+                    const partTranches = (profile.partnerCrystallisationTranches || profile.crystallisationTranches || []).filter(t => t.enabled && t.owner === 'partner');
+                    const partTranchesPcls = partTranches.reduce((sum, t) => {
+                      const mult = t.frequency === 'recurring' ? Math.max(1, (t.endAge || t.age) - t.age + 1) : 1;
+                      return sum + Math.round((t.amount || 0) * ((t.pclsPercent ?? 25) / 100)) * mult;
+                    }, 0);
+                    const partTotalTaxFreeWithDb = Math.min(partTranchesPcls + partnerPclsInfo.dbLumpSum, partnerPclsInfo.lsaLimit);
+                    return (
+                      <>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500 dark:text-slate-400">Partner Phased Tranches PCLS:</span>
+                          <span className="font-bold text-indigo-700 dark:text-indigo-300">
+                            £{partTranchesPcls.toLocaleString()} ({partTranches.length} active tranches)
+                          </span>
+                        </div>
+                        {partnerPclsInfo.dbLumpSum > 0 && (
+                          <div className="flex justify-between">
+                            <span className="text-slate-500 dark:text-slate-400">Total Tax-Free Cash (Tranches + DB):</span>
+                            <span className="font-bold text-amber-700 dark:text-amber-400">
+                              £{partTotalTaxFreeWithDb.toLocaleString()} / £{partnerPclsInfo.lsaLimit.toLocaleString()} LSA
+                            </span>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
+                </>
+              ) : (
+                <>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500 dark:text-slate-400">DC Pension PCLS (SIPP / Workplace):</span>
+                    <span className="font-bold text-indigo-700 dark:text-indigo-300">
+                      £{partnerPclsInfo.taxFreeCashTaken.toLocaleString()} ({partnerPclsInfo.pclsPercent}% at age {partnerPclsInfo.takeAge})
+                    </span>
+                  </div>
+                  {partnerPclsInfo.dbLumpSum > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-slate-500 dark:text-slate-400">Total Tax-Free Cash (DC + DB):</span>
+                      <span className="font-bold text-amber-700 dark:text-amber-400">
+                        £{partnerPclsInfo.totalTaxFreeCash.toLocaleString()} / £{partnerPclsInfo.lsaLimit.toLocaleString()} LSA
+                      </span>
+                    </div>
+                  )}
+                </>
               )}
               <div className="flex justify-between">
                 <span className="text-slate-500 dark:text-slate-400">DC Pension Access Age (NMPA):</span>

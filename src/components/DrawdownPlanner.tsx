@@ -1123,6 +1123,7 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
                 projectedPotAtAccess={primaryProjectedPot || 0}
                 currentPotToday={primaryCurrentPot || 0}
                 lsaLimit={primaryLsaLimit}
+                dbLumpSum={primaryDbLumpSum}
                 mode={profile.crystallisationMode || (profile.takeLumpSumAtStart ? 'upfront' : 'ufpls')}
                 tranches={profile.crystallisationTranches || []}
                 onModeChange={(newMode) => {
@@ -1257,7 +1258,7 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
                   </span>
                 ) : profile.crystallisationMode === 'phased_tranches' ? (
                   <span>
-                    <strong>Phased Crystallisation ({profile.name || 'Primary'}):</strong> Pension pot is split into <em>Uncrystallised</em> (retains 25% tax-free growth potential) and <em>Crystallised Drawdown</em> sub-pots.
+                    <strong>Phased Crystallisation ({profile.name || 'Primary'}):</strong> Pension pot is split into <em>Uncrystallised</em> (retains 25% tax-free growth potential) and <em>Crystallised Drawdown</em> sub-pots. {primaryDbLumpSum > 0 ? `Your £${primaryDbLumpSum.toLocaleString()} Defined Benefit pension lump sum counts towards your £${(primaryLsaLimit || 0).toLocaleString()} LSA limit, leaving £${Math.max(0, primaryLsaLimit - primaryDbLumpSum).toLocaleString()} available for phased crystallisation tranches.` : ''}
                   </span>
                 ) : (
                   <span>
@@ -1380,6 +1381,7 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
                 projectedPotAtAccess={partnerProjectedPot || 0}
                 currentPotToday={partnerCurrentPot || 0}
                 lsaLimit={partnerLsaLimit}
+                dbLumpSum={partnerDbLumpSum}
                 mode={profile.partnerCrystallisationMode || (profile.partnerTakeLumpSumAtStart ? 'upfront' : 'ufpls')}
                 tranches={(profile.partnerCrystallisationTranches || profile.crystallisationTranches || []).filter((t) => t.owner === 'partner')}
                 onModeChange={(newMode) => {
@@ -1509,7 +1511,7 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
                   </span>
                 ) : profile.partnerCrystallisationMode === 'phased_tranches' ? (
                   <span>
-                    <strong>Partner Phased Crystallisation ({profile.partnerName || 'Partner'}):</strong> Pension pot is split into <em>Uncrystallised</em> (retains 25% tax-free growth potential) and <em>Crystallised Drawdown</em> sub-pots.
+                    <strong>Partner Phased Crystallisation ({profile.partnerName || 'Partner'}):</strong> Pension pot is split into <em>Uncrystallised</em> (retains 25% tax-free growth potential) and <em>Crystallised Drawdown</em> sub-pots. {partnerDbLumpSum > 0 ? `Partner's £${partnerDbLumpSum.toLocaleString()} Defined Benefit pension lump sum counts towards their £${(partnerLsaLimit || 0).toLocaleString()} LSA limit, leaving £${Math.max(0, partnerLsaLimit - partnerDbLumpSum).toLocaleString()} available for partner phased crystallisation tranches.` : ''}
                   </span>
                 ) : (
                   <span>

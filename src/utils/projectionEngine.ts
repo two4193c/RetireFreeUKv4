@@ -252,9 +252,17 @@ export function generateProjections(
   let partnerPclsTaken = false;
   let cumulativeExcessIncome = 0;
 
+  // Sum DB lump sums already taken prior to projection start (where db.startAge < profile.currentAge)
+  const priorPrimaryDbLumpSum = (profile.dbPensions || [])
+    .filter((p) => p.enabled && (p.owner || 'primary') !== 'partner' && (p.startAge || 65) < profile.currentAge)
+    .reduce((sum, p) => sum + (p.taxFreeLumpSum || 0), 0);
+  const priorPartnerDbLumpSum = (profile.dbPensions || [])
+    .filter((p) => p.enabled && p.owner === 'partner' && (p.startAge || 65) < (profile.partnerCurrentAge || profile.currentAge))
+    .reduce((sum, p) => sum + (p.taxFreeLumpSum || 0), 0);
+
   // Dual individual LSA tracking for primary and partner
-  let primaryCumulativeTaxFreeDrawn = 0;
-  let partnerCumulativeTaxFreeDrawn = 0;
+  let primaryCumulativeTaxFreeDrawn = priorPrimaryDbLumpSum;
+  let partnerCumulativeTaxFreeDrawn = priorPartnerDbLumpSum;
 
   // Property Downsizing Tracker
   let currentPropertyValue = profile.propertyDownsizePlan?.enabled ? profile.propertyDownsizePlan.currentPropertyValue : 0;
@@ -440,189 +448,7 @@ function parseAnnuityTypeConfig(type?: string) {
     const isUpfrontPrimary = (profile.crystallisationMode === 'upfront') || (!profile.crystallisationMode && profile.takeLumpSumAtStart);
     const isUpfrontPartner = (profile.partnerCrystallisationMode === 'upfront') || (!profile.partnerCrystallisationMode && (profile.partnerTakeLumpSumAtStart ?? profile.takeLumpSumAtStart));
 
-    // 1. Phased Crystallisation Tranches - Primary
-    const primaryActiveTranches = isPhasedPrimary
-      ? (profile.crystallisationTranches || []).filter(
-          (t) => t.enabled && (t.owner || 'primary') !== 'partner' && (
-            t.frequency === 'recurring'
-              ? (age >= t.age && (!t.endAge || age <= t.endAge))
-              : (t.age === age)
-          )
-        )
-      : [];
-    if (primaryUncrystallisedPot > 0 && primaryActiveTranches.length > 0) {
-      for (const tranche of primaryActiveTranches) {
-        if (primaryUncrystallisedPot <= 0) break;
-        const requestedGross = tranche.amount;
-        const pclsPct = Math.min(25, Math.max(0, tranche.pclsPercent ?? 25)) / 100;
-        const remainingLsa = Math.max(0, primaryMaxLsa - primaryCumulativeTaxFreeDrawn);
-        const grossCrystallised = Math.min(primaryUncrystallisedPot, requestedGross);
-        if (grossCrystallised <= 0) continue;
-
-        const pclsAmount = Math.min(grossCrystallised * pclsPct, remainingLsa);
-        const crystallisedDrawdownRemaining = Math.max(0, grossCrystallised - pclsAmount);
-
-        primaryCrystallisedPot += crystallisedDrawdownRemaining;
-        primaryUncrystallisedPot -= grossCrystallised;
-        primaryCumulativeTaxFreeDrawn += pclsAmount;
-        primaryCrystallisedThisYear += grossCrystallised;
-        primaryPclsDrawnThisYear += pclsAmount;
-
-        primaryPensionPot = primaryUncrystallisedPot + primaryCrystallisedPot;
-
-        // Route PCLS cash into chosen target pot / splits
-        if (pclsAmount > 0) {
-          const alloc = allocateLumpSumToPots(pclsAmount, tranche.targetPot || profile.lumpSumTargetPot, tranche.splits || profile.lumpSumSplits);
-          primaryIsaPot += alloc.toIsa;
-          primarySsIsaPot += alloc.toSsIsa;
-          primaryCashIsaPot += alloc.toCashIsa;
-          primaryGiaPot += alloc.toGia;
-          primaryCashSavingsPot += alloc.toCashSavings;
-          primaryCashGiaPot = primaryGiaPot + primaryCashSavingsPot;
-          primaryPclsSpentOrDebt += alloc.spentOrDebt;
-        }
-      }
-      pensionPot = primaryPensionPot + partnerPensionPot;
-      isaPot = primaryIsaPot + partnerIsaPot;
-      giaPot = primaryGiaPot + partnerGiaPot;
-      cashSavingsPot = primaryCashSavingsPot + partnerCashSavingsPot;
-      cashGiaPot = giaPot + cashSavingsPot;
-    }
-
-    // 2. Phased Crystallisation Tranches - Partner
-    const partnerActiveTranches = isPhasedPartner
-      ? (profile.partnerCrystallisationTranches || profile.crystallisationTranches || []).filter(
-          (t) => t.enabled && t.owner === 'partner' && (
-            t.frequency === 'recurring'
-              ? (partnerAge >= t.age && (!t.endAge || partnerAge <= t.endAge))
-              : (t.age === partnerAge)
-          )
-        )
-      : [];
-    if (profile.isCouplePlanning && !partnerDead && partnerUncrystallisedPot > 0 && partnerActiveTranches.length > 0) {
-      for (const tranche of partnerActiveTranches) {
-        if (partnerUncrystallisedPot <= 0) break;
-        const requestedGross = tranche.amount;
-        const pclsPct = Math.min(25, Math.max(0, tranche.pclsPercent ?? 25)) / 100;
-        const remainingLsa = Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn);
-        const grossCrystallised = Math.min(partnerUncrystallisedPot, requestedGross);
-        if (grossCrystallised <= 0) continue;
-
-        const pclsAmount = Math.min(grossCrystallised * pclsPct, remainingLsa);
-        const crystallisedDrawdownRemaining = Math.max(0, grossCrystallised - pclsAmount);
-
-        partnerCrystallisedPot += crystallisedDrawdownRemaining;
-        partnerUncrystallisedPot -= grossCrystallised;
-        partnerCumulativeTaxFreeDrawn += pclsAmount;
-        partnerCrystallisedThisYear += grossCrystallised;
-        partnerPclsDrawnThisYear += pclsAmount;
-
-        partnerPensionPot = partnerUncrystallisedPot + partnerCrystallisedPot;
-
-        if (pclsAmount > 0) {
-          const alloc = allocateLumpSumToPots(pclsAmount, tranche.targetPot || profile.partnerLumpSumTargetPot, tranche.splits || profile.partnerLumpSumSplits);
-          partnerIsaPot += alloc.toIsa;
-          partnerSsIsaPot += alloc.toSsIsa;
-          partnerCashIsaPot += alloc.toCashIsa;
-          partnerGiaPot += alloc.toGia;
-          partnerCashSavingsPot += alloc.toCashSavings;
-          partnerCashGiaPot = partnerGiaPot + partnerCashSavingsPot;
-          partnerPclsSpentOrDebt += alloc.spentOrDebt;
-        }
-      }
-      pensionPot = primaryPensionPot + partnerPensionPot;
-      isaPot = primaryIsaPot + partnerIsaPot;
-      giaPot = primaryGiaPot + partnerGiaPot;
-      cashSavingsPot = primaryCashSavingsPot + partnerCashSavingsPot;
-      cashGiaPot = giaPot + cashSavingsPot;
-    }
-
-    // 3. Upfront Tax-Free Lump Sum (PCLS) extraction for Primary
-    if (
-      isUpfrontPrimary &&
-      !pclsTaken &&
-      age >= lumpSumTakeAge &&
-      canAccessPension &&
-      primaryPensionPot > 0 &&
-      !annuityPurchasedPrimary &&
-      (profile.pclsLumpSumPercent ?? 25) > 0
-    ) {
-      const lumpSumPercent = Math.min(25, profile.pclsLumpSumPercent ?? 25) / 100;
-      const pclsAmount = Math.min(primaryPensionPot * lumpSumPercent, Math.max(0, primaryMaxLsa - primaryCumulativeTaxFreeDrawn));
-      
-      const crystallisedTotal = Math.min(primaryPensionPot, pclsAmount * 4);
-      const crystallisedDrawdownRemaining = Math.max(0, crystallisedTotal - pclsAmount);
-
-      primaryCrystallisedPot += crystallisedDrawdownRemaining;
-      primaryUncrystallisedPot = Math.max(0, primaryPensionPot - crystallisedTotal);
-      primaryCumulativeTaxFreeDrawn += pclsAmount;
-      primaryCrystallisedThisYear += crystallisedTotal;
-      primaryPclsDrawnThisYear += pclsAmount;
-
-      primaryPensionPot -= pclsAmount;
-
-      // Add PCLS into Primary's chosen target pots / splits
-      const primaryAlloc = allocateLumpSumToPots(pclsAmount, profile.lumpSumTargetPot, profile.lumpSumSplits);
-      primaryIsaPot += primaryAlloc.toIsa;
-      primarySsIsaPot += primaryAlloc.toSsIsa;
-      primaryCashIsaPot += primaryAlloc.toCashIsa;
-      primaryGiaPot += primaryAlloc.toGia;
-      primaryCashSavingsPot += primaryAlloc.toCashSavings;
-      primaryCashGiaPot = primaryGiaPot + primaryCashSavingsPot;
-      primaryPclsSpentOrDebt += primaryAlloc.spentOrDebt;
-
-      pensionPot = primaryPensionPot + partnerPensionPot;
-      isaPot = primaryIsaPot + partnerIsaPot;
-      giaPot = primaryGiaPot + partnerGiaPot;
-      cashSavingsPot = primaryCashSavingsPot + partnerCashSavingsPot;
-      cashGiaPot = giaPot + cashSavingsPot;
-      pclsTaken = true;
-    }
-
-    // 4. Upfront Tax-Free Lump Sum (PCLS) extraction for Partner
-    if (
-      profile.isCouplePlanning &&
-      isUpfrontPartner &&
-      !partnerPclsTaken &&
-      partnerAge >= partnerLumpSumTakeAge &&
-      partnerCanAccessPension &&
-      partnerPensionPot > 0 &&
-      !annuityPurchasedPartner &&
-      (profile.partnerPclsLumpSumPercent ?? 25) > 0
-    ) {
-      const partnerLumpSumPercent = Math.min(25, profile.partnerPclsLumpSumPercent ?? 25) / 100;
-      const partnerPclsAmount = Math.min(partnerPensionPot * partnerLumpSumPercent, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn));
-      
-      const crystallisedTotal = Math.min(partnerPensionPot, partnerPclsAmount * 4);
-      const crystallisedDrawdownRemaining = Math.max(0, crystallisedTotal - partnerPclsAmount);
-
-      partnerCrystallisedPot += crystallisedDrawdownRemaining;
-      partnerUncrystallisedPot = Math.max(0, partnerPensionPot - crystallisedTotal);
-      partnerCumulativeTaxFreeDrawn += partnerPclsAmount;
-      partnerCrystallisedThisYear += crystallisedTotal;
-      partnerPclsDrawnThisYear += partnerPclsAmount;
-
-      partnerPensionPot -= partnerPclsAmount;
-
-      // Add Partner PCLS into Partner's chosen target pots / splits
-      const partnerAlloc = allocateLumpSumToPots(partnerPclsAmount, profile.partnerLumpSumTargetPot, profile.partnerLumpSumSplits);
-      partnerIsaPot += partnerAlloc.toIsa;
-      partnerSsIsaPot += partnerAlloc.toSsIsa;
-      partnerCashIsaPot += partnerAlloc.toCashIsa;
-      partnerGiaPot += partnerAlloc.toGia;
-      partnerCashSavingsPot += partnerAlloc.toCashSavings;
-      partnerCashGiaPot = partnerGiaPot + partnerCashSavingsPot;
-      partnerPclsSpentOrDebt += partnerAlloc.spentOrDebt;
-
-      pensionPot = primaryPensionPot + partnerPensionPot;
-      isaPot = primaryIsaPot + partnerIsaPot;
-      giaPot = primaryGiaPot + partnerGiaPot;
-      cashSavingsPot = primaryCashSavingsPot + partnerCashSavingsPot;
-      cashGiaPot = giaPot + cashSavingsPot;
-      partnerPclsTaken = true;
-    }
-
-    // Defined Benefit (DB) pensions processing
+    // Defined Benefit (DB) pensions processing - evaluated before DC crystallisation so contractual DB lump sums take precedence & reserve LSA
     const activeDbPensions = (profile.dbPensions || []).filter((p) => p.enabled);
     let primaryDbPensionReceived = 0;
     let partnerDbPensionReceived = 0;
@@ -701,6 +527,204 @@ function parseAnnuityTypeConfig(type?: string) {
     });
 
     const dbPensionIncomeReceived = primaryDbPensionReceived + partnerDbPensionReceived;
+
+    // 1. Phased Crystallisation Tranches - Primary
+    const primaryActiveTranches = isPhasedPrimary
+      ? (profile.crystallisationTranches || []).filter(
+          (t) => t.enabled && (t.owner || 'primary') !== 'partner' && (
+            t.frequency === 'recurring'
+              ? (age >= t.age && (!t.endAge || age <= t.endAge))
+              : (t.age === age)
+          )
+        )
+      : [];
+    if (primaryUncrystallisedPot > 0 && primaryActiveTranches.length > 0) {
+      for (const tranche of primaryActiveTranches) {
+        if (primaryUncrystallisedPot <= 0) break;
+        const requestedGross = tranche.amount;
+        const pclsPct = Math.min(25, Math.max(0, tranche.pclsPercent ?? 25)) / 100;
+        const pendingPrimaryDbLumpSum = activeDbPensions
+          .filter((db) => (db.owner || 'primary') !== 'partner' && (db.startAge || 65) > age && db.taxFreeLumpSum > 0)
+          .reduce((sum, db) => sum + db.taxFreeLumpSum, 0);
+        const remainingLsa = Math.max(0, primaryMaxLsa - primaryCumulativeTaxFreeDrawn - pendingPrimaryDbLumpSum);
+        const grossCrystallised = Math.min(primaryUncrystallisedPot, requestedGross);
+        if (grossCrystallised <= 0) continue;
+
+        const pclsAmount = Math.min(grossCrystallised * pclsPct, remainingLsa);
+        const crystallisedDrawdownRemaining = Math.max(0, grossCrystallised - pclsAmount);
+
+        primaryCrystallisedPot += crystallisedDrawdownRemaining;
+        primaryUncrystallisedPot -= grossCrystallised;
+        primaryCumulativeTaxFreeDrawn += pclsAmount;
+        primaryCrystallisedThisYear += grossCrystallised;
+        primaryPclsDrawnThisYear += pclsAmount;
+
+        primaryPensionPot = primaryUncrystallisedPot + primaryCrystallisedPot;
+
+        // Route PCLS cash into chosen target pot / splits
+        if (pclsAmount > 0) {
+          const alloc = allocateLumpSumToPots(pclsAmount, tranche.targetPot || profile.lumpSumTargetPot, tranche.splits || profile.lumpSumSplits);
+          primaryIsaPot += alloc.toIsa;
+          primarySsIsaPot += alloc.toSsIsa;
+          primaryCashIsaPot += alloc.toCashIsa;
+          primaryGiaPot += alloc.toGia;
+          primaryCashSavingsPot += alloc.toCashSavings;
+          primaryCashGiaPot = primaryGiaPot + primaryCashSavingsPot;
+          primaryPclsSpentOrDebt += alloc.spentOrDebt;
+        }
+      }
+      pensionPot = primaryPensionPot + partnerPensionPot;
+      isaPot = primaryIsaPot + partnerIsaPot;
+      giaPot = primaryGiaPot + partnerGiaPot;
+      cashSavingsPot = primaryCashSavingsPot + partnerCashSavingsPot;
+      cashGiaPot = giaPot + cashSavingsPot;
+    }
+
+    // 2. Phased Crystallisation Tranches - Partner
+    const partnerActiveTranches = isPhasedPartner
+      ? (profile.partnerCrystallisationTranches || profile.crystallisationTranches || []).filter(
+          (t) => t.enabled && t.owner === 'partner' && (
+            t.frequency === 'recurring'
+              ? (partnerAge >= t.age && (!t.endAge || partnerAge <= t.endAge))
+              : (t.age === partnerAge)
+          )
+        )
+      : [];
+    if (profile.isCouplePlanning && !partnerDead && partnerUncrystallisedPot > 0 && partnerActiveTranches.length > 0) {
+      for (const tranche of partnerActiveTranches) {
+        if (partnerUncrystallisedPot <= 0) break;
+        const requestedGross = tranche.amount;
+        const pclsPct = Math.min(25, Math.max(0, tranche.pclsPercent ?? 25)) / 100;
+        const partnerEvalAge = age + ((profile.partnerCurrentAge ?? profile.currentAge) - profile.currentAge);
+        const pendingPartnerDbLumpSum = activeDbPensions
+          .filter((db) => db.owner === 'partner' && (db.startAge || 65) > partnerEvalAge && db.taxFreeLumpSum > 0)
+          .reduce((sum, db) => sum + db.taxFreeLumpSum, 0);
+        const remainingLsa = Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn - pendingPartnerDbLumpSum);
+        const grossCrystallised = Math.min(partnerUncrystallisedPot, requestedGross);
+        if (grossCrystallised <= 0) continue;
+
+        const pclsAmount = Math.min(grossCrystallised * pclsPct, remainingLsa);
+        const crystallisedDrawdownRemaining = Math.max(0, grossCrystallised - pclsAmount);
+
+        partnerCrystallisedPot += crystallisedDrawdownRemaining;
+        partnerUncrystallisedPot -= grossCrystallised;
+        partnerCumulativeTaxFreeDrawn += pclsAmount;
+        partnerCrystallisedThisYear += grossCrystallised;
+        partnerPclsDrawnThisYear += pclsAmount;
+
+        partnerPensionPot = partnerUncrystallisedPot + partnerCrystallisedPot;
+
+        if (pclsAmount > 0) {
+          const alloc = allocateLumpSumToPots(pclsAmount, tranche.targetPot || profile.partnerLumpSumTargetPot, tranche.splits || profile.partnerLumpSumSplits);
+          partnerIsaPot += alloc.toIsa;
+          partnerSsIsaPot += alloc.toSsIsa;
+          partnerCashIsaPot += alloc.toCashIsa;
+          partnerGiaPot += alloc.toGia;
+          partnerCashSavingsPot += alloc.toCashSavings;
+          partnerCashGiaPot = partnerGiaPot + partnerCashSavingsPot;
+          partnerPclsSpentOrDebt += alloc.spentOrDebt;
+        }
+      }
+      pensionPot = primaryPensionPot + partnerPensionPot;
+      isaPot = primaryIsaPot + partnerIsaPot;
+      giaPot = primaryGiaPot + partnerGiaPot;
+      cashSavingsPot = primaryCashSavingsPot + partnerCashSavingsPot;
+      cashGiaPot = giaPot + cashSavingsPot;
+    }
+
+    // 3. Upfront Tax-Free Lump Sum (PCLS) extraction for Primary
+    if (
+      isUpfrontPrimary &&
+      !pclsTaken &&
+      age >= lumpSumTakeAge &&
+      canAccessPension &&
+      primaryPensionPot > 0 &&
+      !annuityPurchasedPrimary &&
+      (profile.pclsLumpSumPercent ?? 25) > 0
+    ) {
+      const lumpSumPercent = Math.min(25, profile.pclsLumpSumPercent ?? 25) / 100;
+      const pendingPrimaryDbLumpSum = activeDbPensions
+        .filter((db) => (db.owner || 'primary') !== 'partner' && (db.startAge || 65) > age && db.taxFreeLumpSum > 0)
+        .reduce((sum, db) => sum + db.taxFreeLumpSum, 0);
+      const remainingLsa = Math.max(0, primaryMaxLsa - primaryCumulativeTaxFreeDrawn - pendingPrimaryDbLumpSum);
+      const pclsAmount = Math.min(primaryPensionPot * lumpSumPercent, remainingLsa);
+      
+      const crystallisedTotal = Math.min(primaryPensionPot, pclsAmount * 4);
+      const crystallisedDrawdownRemaining = Math.max(0, crystallisedTotal - pclsAmount);
+
+      primaryCrystallisedPot += crystallisedDrawdownRemaining;
+      primaryUncrystallisedPot = Math.max(0, primaryPensionPot - crystallisedTotal);
+      primaryCumulativeTaxFreeDrawn += pclsAmount;
+      primaryCrystallisedThisYear += crystallisedTotal;
+      primaryPclsDrawnThisYear += pclsAmount;
+
+      primaryPensionPot -= pclsAmount;
+
+      // Add PCLS into Primary's chosen target pots / splits
+      const primaryAlloc = allocateLumpSumToPots(pclsAmount, profile.lumpSumTargetPot, profile.lumpSumSplits);
+      primaryIsaPot += primaryAlloc.toIsa;
+      primarySsIsaPot += primaryAlloc.toSsIsa;
+      primaryCashIsaPot += primaryAlloc.toCashIsa;
+      primaryGiaPot += primaryAlloc.toGia;
+      primaryCashSavingsPot += primaryAlloc.toCashSavings;
+      primaryCashGiaPot = primaryGiaPot + primaryCashSavingsPot;
+      primaryPclsSpentOrDebt += primaryAlloc.spentOrDebt;
+
+      pensionPot = primaryPensionPot + partnerPensionPot;
+      isaPot = primaryIsaPot + partnerIsaPot;
+      giaPot = primaryGiaPot + partnerGiaPot;
+      cashSavingsPot = primaryCashSavingsPot + partnerCashSavingsPot;
+      cashGiaPot = giaPot + cashSavingsPot;
+      pclsTaken = true;
+    }
+
+    // 4. Upfront Tax-Free Lump Sum (PCLS) extraction for Partner
+    if (
+      profile.isCouplePlanning &&
+      isUpfrontPartner &&
+      !partnerPclsTaken &&
+      partnerAge >= partnerLumpSumTakeAge &&
+      partnerCanAccessPension &&
+      partnerPensionPot > 0 &&
+      !annuityPurchasedPartner &&
+      (profile.partnerPclsLumpSumPercent ?? 25) > 0
+    ) {
+      const partnerLumpSumPercent = Math.min(25, profile.partnerPclsLumpSumPercent ?? 25) / 100;
+      const partnerEvalAge = age + ((profile.partnerCurrentAge ?? profile.currentAge) - profile.currentAge);
+      const pendingPartnerDbLumpSum = activeDbPensions
+        .filter((db) => db.owner === 'partner' && (db.startAge || 65) > partnerEvalAge && db.taxFreeLumpSum > 0)
+        .reduce((sum, db) => sum + db.taxFreeLumpSum, 0);
+      const remainingLsa = Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn - pendingPartnerDbLumpSum);
+      const partnerPclsAmount = Math.min(partnerPensionPot * partnerLumpSumPercent, remainingLsa);
+      
+      const crystallisedTotal = Math.min(partnerPensionPot, partnerPclsAmount * 4);
+      const crystallisedDrawdownRemaining = Math.max(0, crystallisedTotal - partnerPclsAmount);
+
+      partnerCrystallisedPot += crystallisedDrawdownRemaining;
+      partnerUncrystallisedPot = Math.max(0, partnerPensionPot - crystallisedTotal);
+      partnerCumulativeTaxFreeDrawn += partnerPclsAmount;
+      partnerCrystallisedThisYear += crystallisedTotal;
+      partnerPclsDrawnThisYear += partnerPclsAmount;
+
+      partnerPensionPot -= partnerPclsAmount;
+
+      // Add Partner PCLS into Partner's chosen target pots / splits
+      const partnerAlloc = allocateLumpSumToPots(partnerPclsAmount, profile.partnerLumpSumTargetPot, profile.partnerLumpSumSplits);
+      partnerIsaPot += partnerAlloc.toIsa;
+      partnerSsIsaPot += partnerAlloc.toSsIsa;
+      partnerCashIsaPot += partnerAlloc.toCashIsa;
+      partnerGiaPot += partnerAlloc.toGia;
+      partnerCashSavingsPot += partnerAlloc.toCashSavings;
+      partnerCashGiaPot = partnerGiaPot + partnerCashSavingsPot;
+      partnerPclsSpentOrDebt += partnerAlloc.spentOrDebt;
+
+      pensionPot = primaryPensionPot + partnerPensionPot;
+      isaPot = primaryIsaPot + partnerIsaPot;
+      giaPot = primaryGiaPot + partnerGiaPot;
+      cashSavingsPot = primaryCashSavingsPot + partnerCashSavingsPot;
+      cashGiaPot = giaPot + cashSavingsPot;
+      partnerPclsTaken = true;
+    }
 
     // Add annual regular monthly contributions for current year into pots prior to custom lump sums and transfers
     const primaryTaxThisYr = calculateUKTax(profile, cleanPots, false, age);

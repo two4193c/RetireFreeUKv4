@@ -17,7 +17,8 @@ import {
   PieChart,
   TrendingUp,
   Wallet,
-  Scale
+  Scale,
+  Building2
 } from 'lucide-react';
 import {
   CrystallisationMode,
@@ -34,6 +35,7 @@ interface CrystallisationTrancheManagerProps {
   projectedPotAtAccess: number;
   currentPotToday: number;
   lsaLimit: number;
+  dbLumpSum?: number;
   mode: CrystallisationMode;
   tranches: CrystallisationTranche[];
   onModeChange: (mode: CrystallisationMode) => void;
@@ -57,6 +59,7 @@ export const CrystallisationTrancheManager: React.FC<CrystallisationTrancheManag
   projectedPotAtAccess,
   currentPotToday,
   lsaLimit,
+  dbLumpSum = 0,
   mode,
   tranches = [],
   onModeChange,
@@ -64,6 +67,9 @@ export const CrystallisationTrancheManager: React.FC<CrystallisationTrancheManag
   accentColor = 'emerald',
 }) => {
   const [expandedTrancheId, setExpandedTrancheId] = useState<string | null>(null);
+
+  const dbLumpSumAmount = Math.max(0, dbLumpSum);
+  const effectiveLsaLimitForDc = Math.max(0, lsaLimit - dbLumpSumAmount);
 
   const isRose = accentColor === 'rose';
   const borderActive = isRose
@@ -82,7 +88,7 @@ export const CrystallisationTrancheManager: React.FC<CrystallisationTrancheManag
     const currentTotalPcls = tranches
       .filter((t) => t.enabled)
       .reduce((sum, t) => sum + Math.round((t.amount || 0) * ((t.pclsPercent ?? 25) / 100)), 0);
-    const availableLsa = Math.max(0, lsaLimit - currentTotalPcls);
+    const availableLsa = Math.max(0, effectiveLsaLimitForDc - currentTotalPcls);
     const maxGrossForLsa = Math.floor(availableLsa * 4); // for 25% standard PCLS
     const defaultAmount = Math.min(100000, maxGrossForLsa);
 
@@ -108,14 +114,21 @@ export const CrystallisationTrancheManager: React.FC<CrystallisationTrancheManag
       ? Math.max(...tranches.map((t) => t.age)) + 1
       : Math.max(pensionAccessAge, 58);
 
+    const currentTotalPcls = tranches
+      .filter((t) => t.enabled)
+      .reduce((sum, t) => sum + Math.round((t.amount || 0) * ((t.pclsPercent ?? 25) / 100)), 0);
+    const availableLsa = Math.max(0, effectiveLsaLimitForDc - currentTotalPcls);
+    const maxGrossForLsa = Math.floor(availableLsa * 4);
+    const safeAnnual = Math.min(annualAmount, Math.max(10000, maxGrossForLsa > 0 ? Math.min(annualAmount, maxGrossForLsa) : annualAmount));
+
     const newTranche: CrystallisationTranche = {
       id: `tranche-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
-      name: `Annual Crystallisation (£${Math.round(annualAmount / 1000)}k/yr)`,
+      name: `Annual Crystallisation (£${Math.round(safeAnnual / 1000)}k/yr)`,
       owner,
       age: nextAge,
       endAge: Math.min(85, nextAge + 4),
       frequency: 'recurring',
-      amount: annualAmount,
+      amount: safeAnnual,
       pclsPercent: 25,
       targetPot: 'stocks_and_shares_isa',
       enabled: true,
@@ -151,10 +164,11 @@ export const CrystallisationTrancheManager: React.FC<CrystallisationTrancheManag
     .filter((t) => t.enabled)
     .reduce((sum, t) => sum + Math.round((t.amount || 0) * ((t.pclsPercent ?? 25) / 100)) * getTrancheMultiplier(t), 0);
   const totalDrawdownFromTranches = totalCrystallised - totalPclsFromTranches;
+  const totalPclsAllSources = totalPclsFromTranches + dbLumpSumAmount;
 
   // Compute Uncrystallised balance and remaining LSA
   const referencePensionPot = projectedPotAtAccess > 0 ? projectedPotAtAccess : currentPotToday;
-  const isLsaExceeded = totalPclsFromTranches > lsaLimit;
+  const isLsaExceeded = totalPclsAllSources > lsaLimit;
   const isPotExceeded = totalCrystallised > referencePensionPot && referencePensionPot > 0;
 
   return (
@@ -232,12 +246,30 @@ export const CrystallisationTrancheManager: React.FC<CrystallisationTrancheManag
       {/* Phased Tranches Dashboard & Sub-Pot Tracker */}
       {mode === 'phased_tranches' && (
         <div className="space-y-4 pt-1">
+          {/* Defined Benefit Scheme Offset Banner */}
+          {dbLumpSumAmount > 0 && (
+            <div className="p-3 bg-amber-50 dark:bg-amber-950/40 rounded-xl border border-amber-200 dark:border-amber-800/60 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-2.5 shadow-xs">
+              <Building2 className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+              <div className="space-y-0.5 flex-1">
+                <div className="font-extrabold flex items-center justify-between flex-wrap gap-1">
+                  <span>Defined Benefit Lump Sum Allowance (LSA) Offset</span>
+                  <span className="bg-amber-200/80 dark:bg-amber-900 text-amber-950 dark:text-amber-100 px-2 py-0.5 rounded text-[10px] font-black">
+                    DB Scheme Lump Sum: £{dbLumpSumAmount.toLocaleString()}
+                  </span>
+                </div>
+                <p className="text-[11px] text-amber-800 dark:text-amber-300 leading-relaxed">
+                  Your Defined Benefit pension scheme provides <strong>£{dbLumpSumAmount.toLocaleString()}</strong> in tax-free cash. Under HMRC rules, this counts towards your single <strong>£{lsaLimit.toLocaleString()}</strong> lifetime Lump Sum Allowance (LSA), leaving <strong>£{effectiveLsaLimitForDc.toLocaleString()}</strong> available for your DC phased crystallisation tranches.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Warnings if Over Pot or Over LSA */}
           {isLsaExceeded && (
-            <div className="p-3 bg-rose-50 dark:bg-rose-950/60 rounded-xl border border-rose-300 dark:border-rose-800 text-xs text-rose-900 dark:text-rose-200 flex items-start gap-2">
+            <div className="p-3 bg-rose-50 dark:bg-rose-950/60 rounded-xl border border-rose-300 dark:border-rose-800 text-xs text-rose-900 dark:text-rose-200 flex items-start gap-2 shadow-xs">
               <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
               <div>
-                <strong>Lump Sum Allowance Capped:</strong> Your scheduled tranches extract £{totalPclsFromTranches.toLocaleString()} in tax-free cash, exceeding your £{lsaLimit.toLocaleString()} LSA limit by £{(totalPclsFromTranches - lsaLimit).toLocaleString()}. Under HMRC rules, any excess lump sum will be taxed at your marginal income tax rate.
+                <strong>Lump Sum Allowance Capped:</strong> Your scheduled tranches extract £{totalPclsFromTranches.toLocaleString()} in tax-free cash{dbLumpSumAmount > 0 ? ` plus £${dbLumpSumAmount.toLocaleString()} from your Defined Benefit pension lump sum (total £${totalPclsAllSources.toLocaleString()})` : ''}, exceeding your £{lsaLimit.toLocaleString()} LSA limit by £{(totalPclsAllSources - lsaLimit).toLocaleString()}. Under HMRC rules, any excess lump sum will be taxed at your marginal income tax rate.
               </div>
             </div>
           )}
@@ -258,10 +290,19 @@ export const CrystallisationTrancheManager: React.FC<CrystallisationTrancheManag
                 <Coins className={`w-4 h-4 ${textAccent}`} />
                 <span>Scheduled Crystallisation Tranches ({personName})</span>
               </span>
-              <div className="flex items-center gap-3 text-[11px]">
+              <div className="flex items-center gap-2.5 text-[11px] flex-wrap">
                 <span>Total Gross: <strong>£{totalCrystallised.toLocaleString()}</strong></span>
-                <span className={textAccent}>PCLS Tax-Free: <strong>£{totalPclsFromTranches.toLocaleString()}</strong></span>
+                <span className={textAccent}>Tranches PCLS: <strong>£{totalPclsFromTranches.toLocaleString()}</strong></span>
                 <span className="text-indigo-600 dark:text-indigo-400">Flexi-Access Pot: <strong>£{totalDrawdownFromTranches.toLocaleString()}</strong></span>
+                {dbLumpSumAmount > 0 ? (
+                  <span className="text-amber-800 dark:text-amber-300 bg-amber-100/90 dark:bg-amber-950/80 px-2 py-0.5 rounded-md font-bold">
+                    Total Tax-Free (DC+DB): £{totalPclsAllSources.toLocaleString()} / £{lsaLimit.toLocaleString()} LSA
+                  </span>
+                ) : (
+                  <span className="text-slate-500 dark:text-slate-400">
+                    LSA Used: <strong>£{totalPclsFromTranches.toLocaleString()} / £{lsaLimit.toLocaleString()}</strong>
+                  </span>
+                )}
               </div>
             </div>
 
@@ -320,11 +361,11 @@ export const CrystallisationTrancheManager: React.FC<CrystallisationTrancheManag
                   const pclsAmount = Math.round((tranche.amount || 0) * ((tranche.pclsPercent ?? 25) / 100));
                   const designatedDrawdown = (tranche.amount || 0) - pclsAmount;
 
-                  // Compute LSA limit available specifically to this tranche (accounting for other enabled tranches)
+                  // Compute LSA limit available specifically to this tranche (accounting for DB lump sum & other enabled tranches)
                   const otherTranchesPcls = tranches
                     .filter((t, i) => i !== idx && t.enabled)
                     .reduce((sum, t) => sum + Math.round((t.amount || 0) * ((t.pclsPercent ?? 25) / 100)), 0);
-                  const availableLsaForThisTranche = Math.max(0, lsaLimit - otherTranchesPcls);
+                  const availableLsaForThisTranche = Math.max(0, effectiveLsaLimitForDc - otherTranchesPcls);
                   const pclsRate = Math.max(0.01, (tranche.pclsPercent ?? 25) / 100);
                   const maxGrossForLsa = Math.floor(availableLsaForThisTranche / pclsRate);
 
@@ -338,7 +379,8 @@ export const CrystallisationTrancheManager: React.FC<CrystallisationTrancheManag
                     .slice(0, idx + 1)
                     .filter((t) => t.enabled)
                     .reduce((sum, t) => sum + Math.round((t.amount || 0) * ((t.pclsPercent ?? 25) / 100)), 0);
-                  const remainingLsaAfterThis = Math.max(0, lsaLimit - cumulativePclsUpToThis);
+                  const remainingLsaAfterThis = Math.max(0, effectiveLsaLimitForDc - cumulativePclsUpToThis);
+                  const totalRemainingLsaAfterThis = Math.max(0, lsaLimit - dbLumpSumAmount - cumulativePclsUpToThis);
 
                   return (
                     <div
@@ -547,7 +589,7 @@ export const CrystallisationTrancheManager: React.FC<CrystallisationTrancheManag
                               onClick={() => handleUpdateTranche(tranche.id, { amount: maxGrossForLsa })}
                               className="px-2 py-0.5 rounded-md border border-primary-300 dark:border-primary-700 bg-primary-50 dark:bg-primary-950/60 text-primary-800 dark:text-primary-300 font-bold cursor-pointer hover:bg-primary-100 dark:hover:bg-primary-900 transition-colors"
                             >
-                              Max LSA (£{Math.round(maxGrossForLsa / 1000)}k)
+                              {dbLumpSumAmount > 0 ? `Max DC LSA (£${Math.round(maxGrossForLsa / 1000)}k)` : `Max LSA (£${Math.round(maxGrossForLsa / 1000)}k)`}
                             </button>
                           </div>
 
@@ -598,8 +640,15 @@ export const CrystallisationTrancheManager: React.FC<CrystallisationTrancheManag
                                 <span className="font-bold block text-xs">£{Math.round(cumulativeCrystallisedUpToThis - cumulativePclsUpToThis).toLocaleString()}</span>
                               </div>
                               <div className="p-1.5 bg-primary-50 dark:bg-primary-950/50 rounded-lg text-primary-900 dark:text-primary-200">
-                                <span>LSA Limit Remaining:</span>
-                                <span className="font-bold block text-xs">£{Math.round(remainingLsaAfterThis).toLocaleString()}</span>
+                                <span>{dbLumpSumAmount > 0 ? 'DC LSA Remaining:' : 'LSA Limit Remaining:'}</span>
+                                <span className="font-bold block text-xs">
+                                  £{Math.round(remainingLsaAfterThis).toLocaleString()}
+                                  {dbLumpSumAmount > 0 && (
+                                    <span className="text-[10px] font-normal block text-primary-700/80 dark:text-primary-300/80">
+                                      (Total: £{Math.round(totalRemainingLsaAfterThis).toLocaleString()})
+                                    </span>
+                                  )}
+                                </span>
                               </div>
                             </div>
                           </div>

@@ -163,8 +163,15 @@ export function runHistoricModelingSimulation(
     };
     let pclsTaken = false;
     let partnerPclsTaken = false;
-    let primaryCumulativeTaxFreeDrawn = 0;
-    let partnerCumulativeTaxFreeDrawn = 0;
+    const priorPrimaryDbLumpSum = (profile.dbPensions || [])
+      .filter((p) => p.enabled && (p.owner || 'primary') !== 'partner' && (p.startAge || 65) < profile.currentAge)
+      .reduce((sum, p) => sum + (p.taxFreeLumpSum || 0), 0);
+    const priorPartnerDbLumpSum = (profile.dbPensions || [])
+      .filter((p) => p.enabled && p.owner === 'partner' && (p.startAge || 65) < (profile.partnerCurrentAge || profile.currentAge))
+      .reduce((sum, p) => sum + (p.taxFreeLumpSum || 0), 0);
+
+    let primaryCumulativeTaxFreeDrawn = priorPrimaryDbLumpSum;
+    let partnerCumulativeTaxFreeDrawn = priorPartnerDbLumpSum;
     let depletedAtAge: number | null = null;
     let partnerDead = false;
     let minPotBalance = pensionPot + isaPot + cashGiaPot;
@@ -340,6 +347,35 @@ export function runHistoricModelingSimulation(
       const isUpfrontPrimary = (profile.crystallisationMode === 'upfront') || (!profile.crystallisationMode && profile.takeLumpSumAtStart);
       const isUpfrontPartner = (profile.partnerCrystallisationMode === 'upfront') || (!profile.partnerCrystallisationMode && (profile.partnerTakeLumpSumAtStart ?? profile.takeLumpSumAtStart));
 
+      // Defined Benefit Pensions - evaluated before DC crystallisation so DB lump sum takes precedence & reserves LSA
+      let dbIncomeThisYr = 0;
+      const activeDbPensions = (profile.dbPensions || []).filter((p) => p.enabled);
+      activeDbPensions.forEach((db) => {
+        const isPartner = db.owner === 'partner';
+        if (isPartner && (!profile.isCouplePlanning || partnerDead)) return;
+        const evalAge = isPartner ? partnerAge : age;
+        const dbStartAge = db.startAge || 65;
+        if (evalAge >= dbStartAge) {
+          if (dbStartInflation[db.id] === undefined) {
+            dbStartInflation[db.id] = cumulativeInflationFactor;
+          }
+          const startInflation = dbStartInflation[db.id] || 1;
+          const dbInc = db.inflationLinked
+            ? db.annualIncome * (cumulativeInflationFactor / startInflation)
+            : db.annualIncome;
+          dbIncomeThisYr += dbInc;
+        }
+        if (evalAge === dbStartAge && db.taxFreeLumpSum > 0) {
+          const lump = db.taxFreeLumpSum;
+          if (isPartner) partnerCumulativeTaxFreeDrawn += lump;
+          else primaryCumulativeTaxFreeDrawn += lump;
+          if (db.targetPot !== 'spend_clear_debt') {
+            if (db.targetPot === 'stocks_and_shares_isa' || db.targetPot === 'cash_isa' || db.targetPot === 'lisa') addProRata("isa", lump, false);
+            else addProRata("cashGia", lump, false);
+          }
+        }
+      });
+
       // Phased Crystallisation Tranches - Primary
       const primaryActiveTranches = isPhasedPrimary
         ? (profile.crystallisationTranches || []).filter(
@@ -354,7 +390,10 @@ export function runHistoricModelingSimulation(
         for (const tranche of primaryActiveTranches) {
           if (primaryPensionPot <= 0) break;
           const pclsPct = Math.min(25, Math.max(0, tranche.pclsPercent ?? 25)) / 100;
-          const remainingLsa = Math.max(0, maxLsa - primaryCumulativeTaxFreeDrawn);
+          const pendingPrimaryDbLumpSum = activeDbPensions
+            .filter((db) => (db.owner || 'primary') !== 'partner' && (db.startAge || 65) > age && db.taxFreeLumpSum > 0)
+            .reduce((sum, db) => sum + db.taxFreeLumpSum, 0);
+          const remainingLsa = Math.max(0, maxLsa - primaryCumulativeTaxFreeDrawn - pendingPrimaryDbLumpSum);
           const maxGrossForLsa = pclsPct > 0 ? Math.floor(remainingLsa / pclsPct) : primaryUncrystallisedPot;
           const grossCrystallised = Math.min(primaryUncrystallisedPot, tranche.amount, maxGrossForLsa);
           if (grossCrystallised <= 0) continue;
@@ -389,7 +428,10 @@ export function runHistoricModelingSimulation(
         for (const tranche of partnerActiveTranches) {
           if (partnerPensionPot <= 0) break;
           const pclsPct = Math.min(25, Math.max(0, tranche.pclsPercent ?? 25)) / 100;
-          const remainingLsa = Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn);
+          const pendingPartnerDbLumpSum = activeDbPensions
+            .filter((db) => db.owner === 'partner' && (db.startAge || 65) > partnerAge && db.taxFreeLumpSum > 0)
+            .reduce((sum, db) => sum + db.taxFreeLumpSum, 0);
+          const remainingLsa = Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn - pendingPartnerDbLumpSum);
           const maxGrossForLsa = pclsPct > 0 ? Math.floor(remainingLsa / pclsPct) : partnerUncrystallisedPot;
           const grossCrystallised = Math.min(partnerUncrystallisedPot, tranche.amount, maxGrossForLsa);
           if (grossCrystallised <= 0) continue;
@@ -421,7 +463,11 @@ export function runHistoricModelingSimulation(
         (profile.pclsLumpSumPercent ?? 25) > 0
       ) {
         const lumpSumPercent = Math.min(25, profile.pclsLumpSumPercent ?? 25) / 100;
-        const pclsAmount = Math.min(primaryUncrystallisedPot * lumpSumPercent, Math.max(0, maxLsa - primaryCumulativeTaxFreeDrawn));
+        const pendingPrimaryDbLumpSum = activeDbPensions
+          .filter((db) => (db.owner || 'primary') !== 'partner' && (db.startAge || 65) > age && db.taxFreeLumpSum > 0)
+          .reduce((sum, db) => sum + db.taxFreeLumpSum, 0);
+        const remainingLsa = Math.max(0, maxLsa - primaryCumulativeTaxFreeDrawn - pendingPrimaryDbLumpSum);
+        const pclsAmount = Math.min(primaryUncrystallisedPot * lumpSumPercent, remainingLsa);
         
         primaryCrystallisedPot += (primaryUncrystallisedPot - pclsAmount);
         primaryUncrystallisedPot = 0;
@@ -449,7 +495,11 @@ export function runHistoricModelingSimulation(
         (profile.partnerPclsLumpSumPercent ?? 25) > 0
       ) {
         const lumpSumPercent = Math.min(25, profile.partnerPclsLumpSumPercent ?? 25) / 100;
-        const partnerPclsAmount = Math.min(partnerUncrystallisedPot * lumpSumPercent, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn));
+        const pendingPartnerDbLumpSum = activeDbPensions
+          .filter((db) => db.owner === 'partner' && (db.startAge || 65) > partnerAge && db.taxFreeLumpSum > 0)
+          .reduce((sum, db) => sum + db.taxFreeLumpSum, 0);
+        const remainingLsa = Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn - pendingPartnerDbLumpSum);
+        const partnerPclsAmount = Math.min(partnerUncrystallisedPot * lumpSumPercent, remainingLsa);
         
         partnerCrystallisedPot += (partnerUncrystallisedPot - partnerPclsAmount);
         partnerUncrystallisedPot = 0;
@@ -464,36 +514,6 @@ export function runHistoricModelingSimulation(
         partnerPclsTaken = true;
         partnerCumulativeTaxFreeDrawn += partnerPclsAmount;
       }
-
-
-
-      // Defined Benefit Pensions
-      let dbIncomeThisYr = 0;
-      (profile.dbPensions || []).filter((p) => p.enabled).forEach((db) => {
-        const isPartner = db.owner === 'partner';
-        if (isPartner && (!profile.isCouplePlanning || partnerDead)) return;
-        const evalAge = isPartner ? partnerAge : age;
-        const dbStartAge = db.startAge || 65;
-        if (evalAge >= dbStartAge) {
-          if (dbStartInflation[db.id] === undefined) {
-            dbStartInflation[db.id] = cumulativeInflationFactor;
-          }
-          const startInflation = dbStartInflation[db.id] || 1;
-          const dbInc = db.inflationLinked
-            ? db.annualIncome * (cumulativeInflationFactor / startInflation)
-            : db.annualIncome;
-          dbIncomeThisYr += dbInc;
-        }
-        if (evalAge === dbStartAge && db.taxFreeLumpSum > 0) {
-          const lump = db.taxFreeLumpSum;
-          if (isPartner) partnerCumulativeTaxFreeDrawn += lump;
-          else primaryCumulativeTaxFreeDrawn += lump;
-          if (db.targetPot !== 'spend_clear_debt') {
-            if (db.targetPot === 'stocks_and_shares_isa' || db.targetPot === 'cash_isa' || db.targetPot === 'lisa') addProRata("isa", lump, false);
-            else addProRata("cashGia", lump, false);
-          }
-        }
-      });
 
       // One-off lump sum contributions
       (profile.oneOffContributions || []).filter((c) => c.enabled && c.frequency !== 'regular_monthly').forEach((contrib) => {

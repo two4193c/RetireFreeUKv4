@@ -1214,6 +1214,10 @@ export async function generateFormulaExcelWorkbook(
   let primaryEstGross = 0;
   let primaryAlloc = { toIsa: 0, toGia: 0, toCashSavings: 0, toCashGia: 0, spentOrDebt: 0 };
 
+  const primaryDbLumpSumTotal = (profile.dbPensions || [])
+    .filter((db) => db.enabled !== false && (db.owner || 'primary') !== 'partner')
+    .reduce((sum, db) => sum + (db.taxFreeLumpSum || 0), 0);
+
   // 1. Phased Crystallisation Tranches (Split Pot Tracking)
   const activeTranchesPrimary = isPhasedPrimary
     ? (profile.crystallisationTranches || []).filter(t => t.enabled !== false && t.owner !== 'partner')
@@ -1248,7 +1252,9 @@ export async function generateFormulaExcelWorkbook(
       tAlloc.toIsa,
       tAlloc.toCashGia,
       tAlloc.spentOrDebt,
-      `Split Pot: £${tPcls.toLocaleString()} PCLS + £${tCrystDrawdown.toLocaleString()} Crystallised Pot`,
+      primaryDbLumpSumTotal > 0
+        ? `Split Pot: £${tPcls.toLocaleString()} PCLS + £${tCrystDrawdown.toLocaleString()} Crystallised Pot (LSA offset by £${primaryDbLumpSumTotal.toLocaleString()} DB Lump Sum)`
+        : `Split Pot: £${tPcls.toLocaleString()} PCLS + £${tCrystDrawdown.toLocaleString()} Crystallised Pot`,
     ]);
   });
 
@@ -1303,6 +1309,9 @@ export async function generateFormulaExcelWorkbook(
     const partnerCurrentAge = profile.partnerCurrentAge || profile.currentAge || 50;
     const partnerAgeOffset = partnerCurrentAge - (profile.currentAge || 50);
     const isPhasedPartner = profile.partnerCrystallisationMode === 'phased_tranches';
+    const partnerDbLumpSumTotal = (profile.dbPensions || [])
+      .filter((db) => db.enabled !== false && db.owner === 'partner')
+      .reduce((sum, db) => sum + (db.taxFreeLumpSum || 0), 0);
     const partnerActiveTranches = isPhasedPartner
       ? (profile.partnerCrystallisationTranches || profile.crystallisationTranches || []).filter(t => t.enabled !== false && t.owner === 'partner')
       : [];
@@ -1337,7 +1346,9 @@ export async function generateFormulaExcelWorkbook(
         tAlloc.toIsa,
         tAlloc.toCashGia,
         tAlloc.spentOrDebt,
-        `Split Pot: £${tPcls.toLocaleString()} PCLS + £${tCrystDrawdown.toLocaleString()} Crystallised Pot`,
+        partnerDbLumpSumTotal > 0
+          ? `Split Pot: £${tPcls.toLocaleString()} PCLS + £${tCrystDrawdown.toLocaleString()} Crystallised Pot (LSA offset by £${partnerDbLumpSumTotal.toLocaleString()} DB Lump Sum)`
+          : `Split Pot: £${tPcls.toLocaleString()} PCLS + £${tCrystDrawdown.toLocaleString()} Crystallised Pot`,
       ]);
     });
 
