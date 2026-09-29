@@ -1,5 +1,19 @@
 import { computeIncomeTaxOnAmount, calculateStandardNI } from './ukTaxEngine';
 import { EMPLOYER_NI_RATE, PENSION_ANNUAL_ALLOWANCE } from '../config/ukTaxRates';
+import { UserProfile, InvestmentPots } from '../types';
+
+export interface PlanContributionsInfo {
+  employeeWorkplaceAnnual: number;
+  employerWorkplaceAnnual: number;
+  employeeWorkplaceMonthly: number;
+  employerWorkplaceMonthly: number;
+  employeePercentOfSalary: number;
+  employerPercentOfSalary: number;
+  sippAnnual: number;
+  totalPensionAnnual: number;
+  hasWorkplaceContributions: boolean;
+  sourceDescription: string;
+}
 
 export interface SalarySacrificeInput {
   salary: number;
@@ -11,6 +25,7 @@ export interface SalarySacrificeInput {
   childBenefitChildren?: number;
   yearsToRetirement?: number;
   expectedReturn?: number; // percentage, e.g. 6.5
+  currentPlanSacrifice?: number; // detected from user plan contributions
 }
 
 export interface ChildBenefitDetails {
@@ -36,7 +51,7 @@ export interface ScenarioBreakdown {
 }
 
 export interface TrapOptimization {
-  id: 'pa_taper' | 'child_benefit' | 'higher_rate' | 'annual_allowance';
+  id: 'pa_taper' | 'child_benefit' | 'higher_rate' | 'annual_allowance' | 'current_plan';
   title: string;
   badge: string;
   description: string;
@@ -356,7 +371,8 @@ export function calculateSalarySacrificeComparison(input: SalarySacrificeInput):
     salary,
     claimChildBenefit,
     childrenCount,
-    isScottish
+    isScottish,
+    input.currentPlanSacrifice
   );
 
   // Compound multi-year projection
@@ -405,9 +421,27 @@ export function calculateTrapOptimizations(
   salary: number,
   claimChildBenefit: boolean,
   childrenCount: number,
-  isScottish: boolean
+  isScottish: boolean,
+  currentPlanSacrifice?: number
 ): TrapOptimization[] {
   const traps: TrapOptimization[] = [];
+
+  // 0. Current Plan Contribution (if configured and > 0)
+  if (currentPlanSacrifice !== undefined && currentPlanSacrifice > 0) {
+    const isHr = salary > 50270;
+    const planMarginalSaved = isHr ? (isScottish ? 44 : 42) : 28;
+    traps.push({
+      id: 'current_plan',
+      title: 'Current Plan Contribution',
+      badge: 'Current Plan',
+      description: `Sacrifice your current configured workplace pension contribution (£${Math.round(currentPlanSacrifice).toLocaleString()}/yr) via SMART pensions.`,
+      recommendedSacrifice: Math.min(salary, currentPlanSacrifice),
+      targetSalary: Math.max(0, salary - currentPlanSacrifice),
+      marginalRateSavedPercent: planMarginalSaved,
+      annualNetSaving: Math.round(currentPlanSacrifice * (planMarginalSaved / 100)),
+      isApplicable: true,
+    });
+  }
 
   // 1. Personal Allowance Trap (60% / 62% marginal tax)
   const isEligiblePa = salary > 100000;
@@ -538,5 +572,108 @@ function calculateCompoundProjection(
     totalEmployeeNiSaved: Math.round(cumNi),
     totalEmployerBonusInvested: Math.round(cumEmployerBonus),
     yearlyBreakdown,
+  };
+}
+
+/**
+ * Derives workplace pension and SIPP contributions currently configured in the user's plan.
+ * Checks active regular monthly items in profile.oneOffContributions, falling back to pots.
+ */
+export function getPlanContributionsInfo(
+  profile: UserProfile,
+  pots: InvestmentPots,
+  owner: 'primary' | 'partner' = 'primary'
+): PlanContributionsInfo {
+  const isPartner = owner === 'partner';
+  const salary = Math.max(
+    0,
+    isPartner
+      ? (profile.partnerGrossAnnualSalary || 0)
+      : (profile.grossAnnualSalary || 0)
+  );
+  const targetPots = isPartner ? (profile.partnerPots || pots) : pots;
+
+  const activeContribs = (profile.oneOffContributions || []).filter(
+    (c) => c.enabled !== false && (c.owner || 'primary') === owner
+  );
+
+  const workplaceRegular = activeContribs.filter(
+    (c) => c.frequency === 'regular_monthly' && c.targetPot === 'workplace_pension'
+  );
+
+  let employeeWorkplaceAnnual = 0;
+  let employerWorkplaceAnnual = 0;
+  let sourceDescription = '';
+
+  if (workplaceRegular.length > 0) {
+    workplaceRegular.forEach((c) => {
+      if (c.workplaceContributionType === 'fixed') {
+        const empMonthly = c.employeeMonthlyAmount ?? c.grossAmount ?? 0;
+        const emprMonthly = c.employerMonthlyAmount ?? 0;
+        employeeWorkplaceAnnual += empMonthly * 12;
+        employerWorkplaceAnnual += emprMonthly * 12;
+        sourceDescription = sourceDescription
+          ? `${sourceDescription} + ${c.name || 'Workplace Pension'} (£${Math.round(empMonthly)}/mo)`
+          : `${c.name || 'Workplace Pension'} (£${Math.round(empMonthly)}/mo fixed)`;
+      } else {
+        const empPct = c.employeePercent ?? 5;
+        const emprPct = c.employerPercent ?? 3;
+        const empMonthly = (salary * (empPct / 100)) / 12;
+        const emprMonthly = (salary * (emprPct / 100)) / 12;
+        employeeWorkplaceAnnual += empMonthly * 12;
+        employerWorkplaceAnnual += emprMonthly * 12;
+        sourceDescription = sourceDescription
+          ? `${sourceDescription} + ${c.name || 'Workplace Pension'} (${empPct}%)`
+          : `${c.name || 'Workplace Pension'} (${empPct}% employee / ${emprPct}% employer)`;
+      }
+    });
+  } else if (targetPots) {
+    if (targetPots.workplacePensionMonthlyEmployeeType === 'percent') {
+      const empPct = targetPots.workplacePensionMonthlyEmployee || 0;
+      employeeWorkplaceAnnual = salary * (empPct / 100);
+      sourceDescription = `Workplace Pension in Pots (${empPct}% employee)`;
+    } else {
+      const empMonthly = targetPots.workplacePensionMonthlyEmployee || 0;
+      employeeWorkplaceAnnual = empMonthly * 12;
+      sourceDescription = empMonthly > 0 ? `Workplace Pension in Pots (£${Math.round(empMonthly)}/mo)` : 'No active workplace contribution';
+    }
+    const emprPct = targetPots.employerMatchPercentage || 0;
+    employerWorkplaceAnnual = salary * (emprPct / 100);
+  }
+
+  // Also calculate regular SIPP contributions for visibility
+  let sippAnnual = 0;
+  const sippRegular = activeContribs.filter(
+    (c) => c.frequency === 'regular_monthly' && c.targetPot === 'sipp'
+  );
+  if (sippRegular.length > 0) {
+    sippRegular.forEach((c) => {
+      const raw = (c.grossAmount || 0) * 12;
+      sippAnnual += c.sippContributionType === 'gross' ? raw : raw * 1.25;
+    });
+  } else if (targetPots && targetPots.sippMonthlyContribution) {
+    sippAnnual = (targetPots.sippMonthlyContribution || 0) * 12 * 1.25;
+  }
+
+  employeeWorkplaceAnnual = Math.round(employeeWorkplaceAnnual);
+  employerWorkplaceAnnual = Math.round(employerWorkplaceAnnual);
+  sippAnnual = Math.round(sippAnnual);
+
+  const employeePercentOfSalary =
+    salary > 0 ? Math.round(((employeeWorkplaceAnnual / salary) * 100) * 10) / 10 : 0;
+  const employerPercentOfSalary =
+    salary > 0 ? Math.round(((employerWorkplaceAnnual / salary) * 100) * 10) / 10 : 0;
+
+  return {
+    employeeWorkplaceAnnual,
+    employerWorkplaceAnnual,
+    employeeWorkplaceMonthly: Math.round(employeeWorkplaceAnnual / 12),
+    employerWorkplaceMonthly: Math.round(employerWorkplaceAnnual / 12),
+    employeePercentOfSalary,
+    employerPercentOfSalary,
+    sippAnnual,
+    totalPensionAnnual: employeeWorkplaceAnnual + employerWorkplaceAnnual + sippAnnual,
+    hasWorkplaceContributions: employeeWorkplaceAnnual > 0,
+    sourceDescription: sourceDescription || 'No workplace contributions configured',
   };
 }

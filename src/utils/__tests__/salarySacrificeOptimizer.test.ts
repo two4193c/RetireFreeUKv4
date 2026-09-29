@@ -4,6 +4,7 @@ import {
   calculateMarginalRates,
   calculateSalarySacrificeComparison,
   calculateTrapOptimizations,
+  getPlanContributionsInfo,
   CB_FIRST_CHILD_ANNUAL,
   CB_ADDITIONAL_CHILD_ANNUAL,
   HICBC_LOWER_THRESHOLD,
@@ -186,6 +187,90 @@ describe('salarySacrificeOptimizer', () => {
       expect(cbTrap?.isApplicable).toBe(true);
       expect(cbTrap?.recommendedSacrifice).toBe(12000);
       expect(cbTrap?.targetSalary).toBe(60000);
+    });
+
+    it('includes current plan contribution preset when provided', () => {
+      const traps = calculateTrapOptimizations(85000, false, 0, false, 7500);
+      const planTrap = traps.find((t) => t.id === 'current_plan');
+      expect(planTrap).toBeDefined();
+      expect(planTrap?.recommendedSacrifice).toBe(7500);
+      expect(planTrap?.targetSalary).toBe(77500);
+    });
+  });
+
+  describe('getPlanContributionsInfo', () => {
+    it('derives percentage-based workplace pension contributions from profile.oneOffContributions', () => {
+      const profile: any = {
+        grossAnnualSalary: 60000,
+        oneOffContributions: [
+          {
+            id: 'wp1',
+            name: 'Workplace Pension',
+            owner: 'primary',
+            targetPot: 'workplace_pension',
+            frequency: 'regular_monthly',
+            workplaceContributionType: 'percent',
+            employeePercent: 6,
+            employerPercent: 4,
+            enabled: true,
+          },
+        ],
+      };
+      const pots: any = {};
+
+      const info = getPlanContributionsInfo(profile, pots, 'primary');
+      expect(info.hasWorkplaceContributions).toBe(true);
+      // 60,000 * 6% = £3,600
+      expect(info.employeeWorkplaceAnnual).toBe(3600);
+      expect(info.employeeWorkplaceMonthly).toBe(300);
+      // 60,000 * 4% = £2,400
+      expect(info.employerWorkplaceAnnual).toBe(2400);
+      expect(info.employerWorkplaceMonthly).toBe(200);
+      expect(info.employeePercentOfSalary).toBe(6);
+    });
+
+    it('derives fixed-amount workplace pension contributions from profile.oneOffContributions', () => {
+      const profile: any = {
+        grossAnnualSalary: 80000,
+        oneOffContributions: [
+          {
+            id: 'wp1',
+            name: 'Company Scheme',
+            owner: 'primary',
+            targetPot: 'workplace_pension',
+            frequency: 'regular_monthly',
+            workplaceContributionType: 'fixed',
+            employeeMonthlyAmount: 500,
+            employerMonthlyAmount: 300,
+            enabled: true,
+          },
+        ],
+      };
+      const pots: any = {};
+
+      const info = getPlanContributionsInfo(profile, pots, 'primary');
+      expect(info.hasWorkplaceContributions).toBe(true);
+      expect(info.employeeWorkplaceAnnual).toBe(6000);
+      expect(info.employerWorkplaceAnnual).toBe(3600);
+    });
+
+    it('falls back to pots configuration when no regular workplace contribution is in oneOffContributions', () => {
+      const profile: any = {
+        grossAnnualSalary: 50000,
+        oneOffContributions: [],
+      };
+      const pots: any = {
+        workplacePensionMonthlyEmployeeType: 'percent',
+        workplacePensionMonthlyEmployee: 5,
+        employerMatchPercentage: 3,
+      };
+
+      const info = getPlanContributionsInfo(profile, pots, 'primary');
+      expect(info.hasWorkplaceContributions).toBe(true);
+      // 50,000 * 5% = 2,500
+      expect(info.employeeWorkplaceAnnual).toBe(2500);
+      // 50,000 * 3% = 1,500
+      expect(info.employerWorkplaceAnnual).toBe(1500);
     });
   });
 });

@@ -141,4 +141,40 @@ describe('SalarySacrificeOptimizerCard', () => {
 
     expect(screen.getByText(/effective marginal loss per extra £1 earned \(Dana\)/i)).toBeInTheDocument();
   });
+
+  it('calculates annual salary sacrificed by looking at workplace contributions in user profile', () => {
+    const profile = {
+      ...DEFAULT_PROFILE,
+      grossAnnualSalary: 80000,
+      oneOffContributions: [
+        {
+          id: 'wp1',
+          name: 'Tech Corp Pension',
+          owner: 'primary',
+          targetPot: 'workplace_pension' as const,
+          frequency: 'regular_monthly' as const,
+          workplaceContributionType: 'percent' as const,
+          employeePercent: 7,
+          employerPercent: 5,
+          enabled: true,
+        },
+      ],
+    };
+
+    render(
+      <SalarySacrificeOptimizerCard
+        profile={profile}
+        pots={ZERO_POTS}
+      />
+    );
+
+    // 80,000 * 7% = £5,600
+    // Check that the plan contribution detection banner displays £5,600/yr and synced badge
+    expect(screen.getByText(/Tech Corp Pension \(7% employee \/ 5% employer\)/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/£5,600\/yr/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText(/Synced to Plan Contributions/i)).toBeInTheDocument();
+
+    // Check that the annual salary sacrificed state was initialized to £5,600 (7.0%)
+    expect(screen.getByText(/£5,600 \(7.0%\)/i)).toBeInTheDocument();
+  });
 });

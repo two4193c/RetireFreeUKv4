@@ -3,6 +3,7 @@ import { UserProfile, InvestmentPots } from '../types';
 import {
   calculateSalarySacrificeComparison,
   calculateMarginalRates,
+  getPlanContributionsInfo,
   CB_FIRST_CHILD_ANNUAL,
   CB_ADDITIONAL_CHILD_ANNUAL,
   HICBC_LOWER_THRESHOLD,
@@ -25,6 +26,8 @@ import {
   Percent,
   ChevronDown,
   ChevronUp,
+  Briefcase,
+  RefreshCw,
 } from 'lucide-react';
 
 interface SalarySacrificeOptimizerCardProps {
@@ -61,11 +64,23 @@ export const SalarySacrificeOptimizerCard: React.FC<SalarySacrificeOptimizerCard
 
   const defaultYearsToRetirement = Math.max(1, retAge - currentAge);
 
-  // Component state
+  // Derive plan contributions for the active person
+  const planContributions = useMemo(() => {
+    return getPlanContributionsInfo(profile, pots, activePerson);
+  }, [profile, pots, activePerson]);
+
+  // Component state - initialized by looking at actual plan contributions
   const [salary, setSalary] = useState<number>(defaultSalary || 75000);
   const [sacrificeAmount, setSacrificeAmount] = useState<number>(() => {
-    // Sensible default: 10% of salary or £6,000
-    return Math.min(salary, Math.round(salary * 0.1) || 6000);
+    const initialPlan = getPlanContributionsInfo(profile, pots, 'primary');
+    if (initialPlan.hasWorkplaceContributions) {
+      return initialPlan.employeeWorkplaceAnnual;
+    }
+    if (initialPlan.sippAnnual > 0) {
+      return initialPlan.sippAnnual;
+    }
+    const sal = profile.grossAnnualSalary || 75000;
+    return Math.min(sal, Math.round(sal * 0.05) || 3000);
   });
   const [employerNiRate, setEmployerNiRate] = useState<number>(0.138); // 13.8% or 0.150 (15.0%)
   const [employerPassThroughPercent, setEmployerPassThroughPercent] = useState<number>(100); // 0%, 50%, 100%
@@ -77,7 +92,7 @@ export const SalarySacrificeOptimizerCard: React.FC<SalarySacrificeOptimizerCard
   const [showProjectionTable, setShowProjectionTable] = useState<boolean>(false);
   const [appliedSuccessMessage, setAppliedSuccessMessage] = useState<string | null>(null);
 
-  // Sync salary when switching person
+  // Sync salary and contributions when switching person
   const handlePersonSwitch = (person: 'primary' | 'partner') => {
     setActivePerson(person);
     const newSalary = person === 'partner'
@@ -92,7 +107,17 @@ export const SalarySacrificeOptimizerCard: React.FC<SalarySacrificeOptimizerCard
 
     const chosenSalary = newSalary || 75000;
     setSalary(chosenSalary);
-    setSacrificeAmount(Math.min(chosenSalary, Math.round(chosenSalary * 0.1) || 6000));
+
+    // Calculate sacrifice amount directly by looking at that person's contributions in the plan
+    const personPlan = getPlanContributionsInfo(profile, pots, person);
+    if (personPlan.hasWorkplaceContributions) {
+      setSacrificeAmount(personPlan.employeeWorkplaceAnnual);
+    } else if (personPlan.sippAnnual > 0) {
+      setSacrificeAmount(personPlan.sippAnnual);
+    } else {
+      setSacrificeAmount(Math.min(chosenSalary, Math.round(chosenSalary * 0.05) || 3000));
+    }
+
     setYearsToRetirement(Math.max(1, newRetAge - newCurrentAge));
     setAppliedSuccessMessage(null);
   };
@@ -109,6 +134,7 @@ export const SalarySacrificeOptimizerCard: React.FC<SalarySacrificeOptimizerCard
       childBenefitChildren,
       yearsToRetirement,
       expectedReturn,
+      currentPlanSacrifice: planContributions.employeeWorkplaceAnnual,
     });
   }, [
     salary,
@@ -120,6 +146,7 @@ export const SalarySacrificeOptimizerCard: React.FC<SalarySacrificeOptimizerCard
     childBenefitChildren,
     yearsToRetirement,
     expectedReturn,
+    planContributions.employeeWorkplaceAnnual,
   ]);
 
   const {
@@ -145,9 +172,58 @@ export const SalarySacrificeOptimizerCard: React.FC<SalarySacrificeOptimizerCard
   const handleApplyToProfile = () => {
     if (!onChange) return;
     const isPartnerActive = isCouple && activePerson === 'partner';
+    const targetOwner = isPartnerActive ? 'partner' : 'primary';
+
+    // Synchronize workplace pension contribution in oneOffContributions if changed
+    let updatedOneOffs = [...(profile.oneOffContributions || [])];
+    const existingWorkplaceIdx = updatedOneOffs.findIndex(
+      (c) =>
+        c.enabled !== false &&
+        (c.owner || 'primary') === targetOwner &&
+        c.frequency === 'regular_monthly' &&
+        c.targetPot === 'workplace_pension'
+    );
+
+    if (existingWorkplaceIdx >= 0) {
+      const item = updatedOneOffs[existingWorkplaceIdx];
+      const monthly = Math.round(sacrificeAmount / 12);
+      if (item.workplaceContributionType === 'percent' && salary > 0) {
+        const newPct = Math.round(((sacrificeAmount / salary) * 100) * 10) / 10;
+        updatedOneOffs[existingWorkplaceIdx] = {
+          ...item,
+          employeePercent: newPct,
+        };
+      } else {
+        updatedOneOffs[existingWorkplaceIdx] = {
+          ...item,
+          employeeMonthlyAmount: monthly,
+          grossAmount: monthly,
+        };
+      }
+    } else if (sacrificeAmount > 0) {
+      // Add a regular workplace contribution entry
+      const monthly = Math.round(sacrificeAmount / 12);
+      const newPct = salary > 0 ? Math.round(((sacrificeAmount / salary) * 100) * 10) / 10 : 5;
+      updatedOneOffs.push({
+        id: `contrib_${Date.now()}`,
+        name: 'Workplace Pension Monthly Contribution',
+        owner: targetOwner,
+        targetPot: 'workplace_pension',
+        frequency: 'regular_monthly',
+        grossAmount: monthly,
+        startAge: currentAge,
+        endAge: retAge,
+        workplaceContributionType: 'percent',
+        employeePercent: newPct,
+        employerPercent: 3,
+        enabled: true,
+        description: 'Monthly salary sacrifice / auto-enrolment pension',
+      });
+    }
 
     const updatedProfile: UserProfile = {
       ...profile,
+      oneOffContributions: updatedOneOffs,
       ...(isPartnerActive
         ? {
             partnerPensionContributionMethod: 'salary_sacrifice',
@@ -159,7 +235,7 @@ export const SalarySacrificeOptimizerCard: React.FC<SalarySacrificeOptimizerCard
 
     onChange(updatedProfile);
     setAppliedSuccessMessage(
-      `Success! Updated ${personName}'s pension contribution method to Salary Sacrifice (SMART Pensions).`
+      `Success! Updated ${personName}'s plan to Salary Sacrifice (SMART Pensions) with £${sacrificeAmount.toLocaleString()}/yr (£${Math.round(sacrificeAmount / 12).toLocaleString()}/mo) contribution.`
     );
     setTimeout(() => setAppliedSuccessMessage(null), 6000);
   };
@@ -245,6 +321,66 @@ export const SalarySacrificeOptimizerCard: React.FC<SalarySacrificeOptimizerCard
             ))}
           </div>
         )}
+
+        {/* Plan Contributions Detected Banner */}
+        <div className="p-4 sm:p-5 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/60 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-start gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-indigo-600/10 dark:bg-indigo-500/20 border border-indigo-300 dark:border-indigo-700 flex items-center justify-center shrink-0">
+              <Briefcase className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-bold text-indigo-950 dark:text-indigo-200">
+                  {personName}'s Current Plan Contributions
+                </span>
+                {planContributions.hasWorkplaceContributions ? (
+                  <span className="bg-indigo-200/70 dark:bg-indigo-900 text-indigo-900 dark:text-indigo-200 text-[10px] font-extrabold px-2 py-0.5 rounded-md">
+                    {planContributions.sourceDescription}
+                  </span>
+                ) : (
+                  <span className="bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 text-[10px] font-semibold px-2 py-0.5 rounded-md">
+                    No active workplace pension in plan
+                  </span>
+                )}
+                {sacrificeAmount === planContributions.employeeWorkplaceAnnual && planContributions.hasWorkplaceContributions && (
+                  <span className="bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Synced to Plan Contributions
+                  </span>
+                )}
+              </div>
+              <div className="flex items-baseline gap-3 mt-1 flex-wrap">
+                <span className="text-xs sm:text-sm text-slate-700 dark:text-slate-300">
+                  Workplace Employee Contribution:{' '}
+                  <strong className="text-indigo-950 dark:text-white font-extrabold">
+                    £{planContributions.employeeWorkplaceAnnual.toLocaleString()}/yr
+                  </strong>{' '}
+                  <span className="text-xs text-slate-500 font-medium">
+                    (£{planContributions.employeeWorkplaceMonthly.toLocaleString()}/mo • {planContributions.employeePercentOfSalary}%)
+                  </span>
+                </span>
+                {planContributions.employerWorkplaceAnnual > 0 && (
+                  <span className="text-xs text-slate-600 dark:text-slate-400">
+                    Employer Match: <strong className="text-slate-800 dark:text-slate-200 font-bold">£{planContributions.employerWorkplaceAnnual.toLocaleString()}/yr</strong> ({planContributions.employerPercentOfSalary}%)
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {planContributions.hasWorkplaceContributions && sacrificeAmount !== planContributions.employeeWorkplaceAnnual && (
+            <button
+              type="button"
+              onClick={() => {
+                setSacrificeAmount(planContributions.employeeWorkplaceAnnual);
+                setAppliedSuccessMessage(null);
+              }}
+              className="px-3.5 py-2 rounded-xl bg-white dark:bg-slate-900 border border-indigo-300 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-slate-800 text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer shrink-0 self-start md:self-auto"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>Reset to Plan (£{planContributions.employeeWorkplaceAnnual.toLocaleString()}/yr)</span>
+            </button>
+          )}
+        </div>
 
         {/* Marginal Rate & Trap Detection Banner */}
         <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80">
@@ -437,7 +573,21 @@ export const SalarySacrificeOptimizerCard: React.FC<SalarySacrificeOptimizerCard
               className="w-full accent-emerald-600 cursor-pointer h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg"
             />
             {/* Quick Percent Chips */}
-            <div className="flex gap-1.5 flex-wrap">
+            <div className="flex gap-1.5 flex-wrap items-center">
+              {planContributions.hasWorkplaceContributions && (
+                <button
+                  type="button"
+                  onClick={() => setSacrificeAmount(planContributions.employeeWorkplaceAnnual)}
+                  className={`text-[10px] font-bold px-2 py-0.5 rounded-md border cursor-pointer flex items-center gap-1 ${
+                    sacrificeAmount === planContributions.employeeWorkplaceAnnual
+                      ? 'bg-indigo-600 text-white border-indigo-600'
+                      : 'bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100'
+                  }`}
+                >
+                  <Briefcase className="w-2.5 h-2.5" />
+                  <span>From Plan (£{planContributions.employeeWorkplaceAnnual.toLocaleString()})</span>
+                </button>
+              )}
               {[5, 10, 15, 20, 25, 30].map((pct) => {
                 const target = Math.min(salary, Math.round((salary * pct) / 100));
                 return (
