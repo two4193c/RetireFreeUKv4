@@ -655,7 +655,10 @@ function parseAnnuityTypeConfig(type?: string) {
         else primaryDbPensionReceived += dbIncome;
       }
       if (evalAge === dbStartAge && db.taxFreeLumpSum > 0) {
-        const lumpSumReceived = db.taxFreeLumpSum;
+        const maxLsa = profile.isCouplePlanning && isPartner ? partnerMaxLsa : primaryMaxLsa;
+        const cumTaxFree = profile.isCouplePlanning && isPartner ? partnerCumulativeTaxFreeDrawn : primaryCumulativeTaxFreeDrawn;
+        const remLsa = Math.max(0, maxLsa - cumTaxFree);
+        const lumpSumReceived = Math.min(db.taxFreeLumpSum, remLsa);
         dbTaxFreeLumpSumReceived += lumpSumReceived;
         if (profile.isCouplePlanning && isPartner) {
           partnerCumulativeTaxFreeDrawn += lumpSumReceived;

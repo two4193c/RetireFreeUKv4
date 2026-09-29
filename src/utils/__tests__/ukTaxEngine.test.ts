@@ -177,6 +177,62 @@ describe('ukTaxEngine - LSA and PCLS limits', () => {
     expect(pclsInfo.maxTaxFreeCash).toBe(200000);
     expect(pclsInfo.isCappedByLsa).toBe(false);
   });
+
+  it('incorporates Defined Benefit pension lump sum into total max tax-free cash and consumes LSA', () => {
+    const profile: any = {
+      ...DEFAULT_PROFILE,
+      lsaProtectionType: 'standard', // LSA = 268,275
+      dbPensions: [
+        {
+          id: 'db1',
+          name: 'Civil Service Classic',
+          owner: 'primary',
+          startAge: 60,
+          annualIncome: 10000,
+          taxFreeLumpSum: 30000,
+          enabled: true,
+        },
+      ],
+    };
+    // DC pot £800k -> 25% uncapped = £200,000
+    // DB lump sum = £30,000
+    // Total uncapped = £230,000 <= £268,275 LSA limit
+    const pclsInfo = calculateMaxPcls(800000, profile);
+
+    expect(pclsInfo.dbLumpSum).toBe(30000);
+    expect(pclsInfo.maxDcPcls).toBe(200000);
+    expect(pclsInfo.maxTaxFreeCash).toBe(230000); // 200,000 DC + 30,000 DB
+    expect(pclsInfo.remainingLsaForDc).toBe(268275 - 30000);
+    expect(pclsInfo.isCappedByLsa).toBe(false);
+  });
+
+  it('caps combined DC and DB tax-free cash at LSA limit when total exceeds LSA', () => {
+    const profile: any = {
+      ...DEFAULT_PROFILE,
+      lsaProtectionType: 'standard', // LSA = 268,275
+      dbPensions: [
+        {
+          id: 'db1',
+          name: 'Executive DB Scheme',
+          owner: 'primary',
+          startAge: 65,
+          annualIncome: 25000,
+          taxFreeLumpSum: 100000,
+          enabled: true,
+        },
+      ],
+    };
+    // DC pot £800k -> 25% uncapped = £200,000
+    // DB lump sum = £100,000
+    // Total uncapped = £300,000 > £268,275 -> capped at £268,275
+    const pclsInfo = calculateMaxPcls(800000, profile);
+
+    expect(pclsInfo.dbLumpSum).toBe(100000);
+    expect(pclsInfo.remainingLsaForDc).toBe(168275);
+    expect(pclsInfo.maxDcPcls).toBe(168275); // Capped by remaining LSA
+    expect(pclsInfo.maxTaxFreeCash).toBe(268275); // Total capped at 268,275
+    expect(pclsInfo.isCappedByLsa).toBe(true);
+  });
 });
 
 describe('ukTaxEngine - getPensionAccessAge', () => {

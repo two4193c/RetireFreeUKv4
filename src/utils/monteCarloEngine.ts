@@ -629,7 +629,10 @@ function parseAnnuityTypeConfig(type?: string) {
           }
         }
         if (evalAge === dbStartAge && db.taxFreeLumpSum > 0) {
-          const lumpSumReceived = db.taxFreeLumpSum;
+          const personMaxLsa = profile.isCouplePlanning && isPartner ? partnerMaxLsa : maxLsa;
+          const cumTaxFree = profile.isCouplePlanning && isPartner ? partnerCumulativeTaxFreeDrawn : primaryCumulativeTaxFreeDrawn;
+          const remLsa = Math.max(0, personMaxLsa - cumTaxFree);
+          const lumpSumReceived = Math.min(db.taxFreeLumpSum, remLsa);
           
           if (profile.isCouplePlanning && isPartner) {
             partnerCumulativeTaxFreeDrawn += lumpSumReceived;

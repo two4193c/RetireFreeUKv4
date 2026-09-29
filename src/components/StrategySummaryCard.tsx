@@ -56,11 +56,13 @@ export const StrategySummaryCard: React.FC<StrategySummaryCardProps> = ({
     if (projectedPensionAtTake === undefined) {
       projectedPensionAtTake = getProjectedPensionAtTakeAge(profile, pots, takeAge, false);
     }
-    const { maxTaxFreeCash, lsaLimit, pclsPercent } = calculateMaxPcls(projectedPensionAtTake, profile);
+    const { maxTaxFreeCash, maxDcPcls, dbLumpSum, lsaLimit, pclsPercent } = calculateMaxPcls(projectedPensionAtTake, profile);
     return {
       takeAge,
       projectedPensionAtTake,
-      taxFreeCashTaken: Math.round(maxTaxFreeCash),
+      taxFreeCashTaken: Math.round(maxDcPcls ?? maxTaxFreeCash),
+      totalTaxFreeCash: Math.round(maxTaxFreeCash),
+      dbLumpSum: Math.round(dbLumpSum ?? 0),
       lsaLimit,
       pclsPercent,
     };
@@ -74,11 +76,13 @@ export const StrategySummaryCard: React.FC<StrategySummaryCardProps> = ({
     if (projectedPensionAtTake === undefined) {
       projectedPensionAtTake = getProjectedPensionAtTakeAge(profile, pots, takeAge, true);
     }
-    const { maxTaxFreeCash, lsaLimit, pclsPercent } = calculatePartnerMaxPcls(projectedPensionAtTake, profile);
+    const { maxTaxFreeCash, maxDcPcls, dbLumpSum, lsaLimit, pclsPercent } = calculatePartnerMaxPcls(projectedPensionAtTake, profile);
     return {
       takeAge,
       projectedPensionAtTake,
-      taxFreeCashTaken: Math.round(maxTaxFreeCash),
+      taxFreeCashTaken: Math.round(maxDcPcls ?? maxTaxFreeCash),
+      totalTaxFreeCash: Math.round(maxTaxFreeCash),
+      dbLumpSum: Math.round(dbLumpSum ?? 0),
       lsaLimit,
       pclsPercent,
     };
@@ -182,6 +186,14 @@ export const StrategySummaryCard: React.FC<StrategySummaryCardProps> = ({
                 £{primaryPclsInfo.taxFreeCashTaken.toLocaleString()} ({primaryPclsInfo.pclsPercent}% at age {primaryPclsInfo.takeAge})
               </span>
             </div>
+            {primaryPclsInfo.dbLumpSum > 0 && (
+              <div className="flex justify-between">
+                <span className="text-slate-500 dark:text-slate-400">Total Tax-Free Cash (DC + DB):</span>
+                <span className="font-bold text-amber-700 dark:text-amber-400">
+                  £{primaryPclsInfo.totalTaxFreeCash.toLocaleString()} / £{primaryPclsInfo.lsaLimit.toLocaleString()} LSA
+                </span>
+              </div>
+            )}
             <div className="flex justify-between">
               <span className="text-slate-500 dark:text-slate-400">DC Pension Access Age (NMPA):</span>
               <span className="font-bold text-slate-900 dark:text-white font-mono">Age {primaryPclsInfo.takeAge}</span>
@@ -262,6 +274,14 @@ export const StrategySummaryCard: React.FC<StrategySummaryCardProps> = ({
                   £{partnerPclsInfo.taxFreeCashTaken.toLocaleString()} ({partnerPclsInfo.pclsPercent}% at age {partnerPclsInfo.takeAge})
                 </span>
               </div>
+              {partnerPclsInfo.dbLumpSum > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-slate-500 dark:text-slate-400">Total Tax-Free Cash (DC + DB):</span>
+                  <span className="font-bold text-amber-700 dark:text-amber-400">
+                    £{partnerPclsInfo.totalTaxFreeCash.toLocaleString()} / £{partnerPclsInfo.lsaLimit.toLocaleString()} LSA
+                  </span>
+                </div>
+              )}
               <div className="flex justify-between">
                 <span className="text-slate-500 dark:text-slate-400">DC Pension Access Age (NMPA):</span>
                 <span className="font-bold text-slate-900 dark:text-white font-mono">Age {partnerPclsInfo.takeAge}</span>

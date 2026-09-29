@@ -287,12 +287,19 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
   const primaryCurrentPot = primaryPotsObj.workplacePensionBalance + primaryPotsObj.sippBalance;
   const primaryProjectedPot = getPensionPotForAge(primaryLumpSumTakeAge, false);
 
+  const primaryDbLumpSum = (profile.dbPensions || [])
+    .filter((p) => p.enabled && (p.owner || 'primary') === 'primary')
+    .reduce((acc, p) => acc + (p.taxFreeLumpSum || 0), 0);
+
   const primaryPclsPct = profile.pclsLumpSumPercent ?? 25;
   const primaryRawLumpSum = primaryProjectedPot * (primaryPclsPct / 100);
-  const primaryActualLumpSum = Math.min(primaryRawLumpSum, primaryLsaLimit);
+  const primaryRemainingLsa = Math.max(0, primaryLsaLimit - primaryDbLumpSum);
+  const primaryActualDcPcls = Math.min(primaryRawLumpSum, primaryRemainingLsa);
+  const primaryActualLumpSum = Math.min(primaryRawLumpSum + primaryDbLumpSum, primaryLsaLimit);
 
   const primaryCurrentRawLumpSum = primaryCurrentPot * (primaryPclsPct / 100);
-  const primaryCurrentActualLumpSum = Math.min(primaryCurrentRawLumpSum, primaryLsaLimit);
+  const primaryCurrentActualDcPcls = Math.min(primaryCurrentRawLumpSum, primaryRemainingLsa);
+  const primaryCurrentActualLumpSum = Math.min(primaryCurrentRawLumpSum + primaryDbLumpSum, primaryLsaLimit);
 
   // Partner calculations
   const partnerFallback = profile.isCouplePlanning ? DEFAULT_PARTNER_POTS : ZERO_POTS;
@@ -311,12 +318,19 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
   const partnerCurrentPot = partnerPotsObj.workplacePensionBalance + partnerPotsObj.sippBalance;
   const partnerProjectedPot = getPensionPotForAge(partnerLumpSumTakeAge, true);
 
+  const partnerDbLumpSum = (profile.dbPensions || [])
+    .filter((p) => p.enabled && p.owner === 'partner')
+    .reduce((acc, p) => acc + (p.taxFreeLumpSum || 0), 0);
+
   const partnerPclsPct = profile.partnerPclsLumpSumPercent ?? 25;
   const partnerRawLumpSum = partnerProjectedPot * (partnerPclsPct / 100);
-  const partnerActualLumpSum = Math.min(partnerRawLumpSum, partnerLsaLimit);
+  const partnerRemainingLsa = Math.max(0, partnerLsaLimit - partnerDbLumpSum);
+  const partnerActualDcPcls = Math.min(partnerRawLumpSum, partnerRemainingLsa);
+  const partnerActualLumpSum = Math.min(partnerRawLumpSum + partnerDbLumpSum, partnerLsaLimit);
 
   const partnerCurrentRawLumpSum = partnerCurrentPot * (partnerPclsPct / 100);
-  const partnerCurrentActualLumpSum = Math.min(partnerCurrentRawLumpSum, partnerLsaLimit);
+  const partnerCurrentActualDcPcls = Math.min(partnerCurrentRawLumpSum, partnerRemainingLsa);
+  const partnerCurrentActualLumpSum = Math.min(partnerCurrentRawLumpSum + partnerDbLumpSum, partnerLsaLimit);
 
   // Active Income Person Options & Helper getters/setters
   const activeIncomeOption: IncomeProductOption = activeIncomePerson === 'partner'
@@ -1005,10 +1019,11 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
                     <span className="font-black text-xs text-primary-950 dark:text-primary-200 block uppercase tracking-wider">
-                      {profile.name || 'Primary'} Max Tax-Free Lump Sum (PCLS)
+                      {profile.name || 'Primary'} Total Max Tax-Free Lump Sum {primaryDbLumpSum > 0 ? '(DC + DB)' : '(PCLS)'}
                     </span>
                     <span className="text-[11px] text-primary-700 dark:text-primary-400 font-semibold leading-tight block">
-                      At Access Age {primaryLumpSumTakeAge}: Projected Pension Pot £{Math.round(primaryProjectedPot || 0).toLocaleString()}
+                      At Access Age {primaryLumpSumTakeAge}: Projected DC Pot £{Math.round(primaryProjectedPot || 0).toLocaleString()}
+                      {primaryDbLumpSum > 0 && ` + DB Scheme Lump Sum £${primaryDbLumpSum.toLocaleString()}`}
                     </span>
                   </div>
                   <div className="text-left sm:text-right">
@@ -1016,18 +1031,26 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
                       £{Math.round(primaryActualLumpSum || 0).toLocaleString()}
                     </span>
                     <span className="text-[10px] text-primary-600 dark:text-primary-400 font-extrabold">
-                      {primaryPclsPct}% of Projected Pension Pot
+                      {primaryDbLumpSum > 0
+                        ? `£${Math.round(primaryActualDcPcls).toLocaleString()} DC PCLS (${primaryPclsPct}%) + £${primaryDbLumpSum.toLocaleString()} DB Lump Sum`
+                        : `${primaryPclsPct}% of Projected DC Pension Pot`}
                     </span>
                   </div>
                 </div>
 
                 <div className="pt-2 border-t border-primary-200/60 dark:border-primary-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px] text-primary-800 dark:text-primary-300 font-medium">
-                  <span>Based on Current Pension Pot Today (£{(primaryCurrentPot || 0).toLocaleString()}): <strong>£{Math.round(primaryCurrentActualLumpSum || 0).toLocaleString()}</strong></span>
+                  <span>Based on Current Pension Pot Today (£{(primaryCurrentPot || 0).toLocaleString()}{primaryDbLumpSum > 0 ? ` DC + £${primaryDbLumpSum.toLocaleString()} DB` : ''}): <strong>£{Math.round(primaryCurrentActualLumpSum || 0).toLocaleString()}</strong></span>
                   <span className="text-[10px] font-extrabold bg-primary-200/70 dark:bg-primary-900 px-2 py-0.5 rounded-md self-start sm:self-auto">LSA Limit: £{(primaryLsaLimit || 0).toLocaleString()}</span>
                 </div>
-                <p className="text-[10px] text-primary-700/80 dark:text-primary-400/80 italic">
-                  *Calculated strictly on Pension Pot value (Workplace Pension + SIPP) — excludes ISAs, LISA, GIA & Cash Savings.
-                </p>
+                {primaryDbLumpSum > 0 ? (
+                  <p className="text-[10px] text-primary-700/80 dark:text-primary-400/80 italic">
+                    *Includes £{Math.round(primaryActualDcPcls).toLocaleString()} from DC Pots (Workplace + SIPP) and £{primaryDbLumpSum.toLocaleString()} from Defined Benefit scheme commutation. Both count towards your single £{(primaryLsaLimit || 0).toLocaleString()} HMRC Lump Sum Allowance (LSA).
+                  </p>
+                ) : (
+                  <p className="text-[10px] text-primary-700/80 dark:text-primary-400/80 italic">
+                    *Calculated strictly on Pension Pot value (Workplace Pension + SIPP) — excludes ISAs, LISA, GIA &amp; Cash Savings.
+                  </p>
+                )}
               </div>
 
               {/* LSA Protection Selector and Editable Cap Input */}
@@ -1253,10 +1276,11 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
                     <span className="font-black text-xs text-rose-950 dark:text-rose-200 block uppercase tracking-wider">
-                      {profile.partnerName || 'Partner'} Max Tax-Free Lump Sum (PCLS)
+                      {profile.partnerName || 'Partner'} Total Max Tax-Free Lump Sum {partnerDbLumpSum > 0 ? '(DC + DB)' : '(PCLS)'}
                     </span>
                     <span className="text-[11px] text-rose-700 dark:text-rose-400 font-semibold leading-tight block">
-                      At Partner Access Age {partnerLumpSumTakeAge}: Projected Pension Pot £{Math.round(partnerProjectedPot || 0).toLocaleString()}
+                      At Partner Access Age {partnerLumpSumTakeAge}: Projected DC Pot £{Math.round(partnerProjectedPot || 0).toLocaleString()}
+                      {partnerDbLumpSum > 0 && ` + DB Scheme Lump Sum £${partnerDbLumpSum.toLocaleString()}`}
                     </span>
                   </div>
                   <div className="text-left sm:text-right">
@@ -1264,18 +1288,26 @@ export const DrawdownPlanner: React.FC<DrawdownPlannerProps> = ({
                       £{Math.round(partnerActualLumpSum || 0).toLocaleString()}
                     </span>
                     <span className="text-[10px] text-rose-600 dark:text-rose-400 font-extrabold">
-                      {partnerPclsPct}% of Projected Pension Pot
+                      {partnerDbLumpSum > 0
+                        ? `£${Math.round(partnerActualDcPcls).toLocaleString()} DC PCLS (${partnerPclsPct}%) + £${partnerDbLumpSum.toLocaleString()} DB Lump Sum`
+                        : `${partnerPclsPct}% of Projected DC Pension Pot`}
                     </span>
                   </div>
                 </div>
 
                 <div className="pt-2 border-t border-rose-200/60 dark:border-rose-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px] text-rose-800 dark:text-rose-300 font-medium">
-                  <span>Based on Current Pension Pot Today (£{(partnerCurrentPot || 0).toLocaleString()}): <strong>£{Math.round(partnerCurrentActualLumpSum || 0).toLocaleString()}</strong></span>
+                  <span>Based on Current Pension Pot Today (£{(partnerCurrentPot || 0).toLocaleString()}{partnerDbLumpSum > 0 ? ` DC + £${partnerDbLumpSum.toLocaleString()} DB` : ''}): <strong>£{Math.round(partnerCurrentActualLumpSum || 0).toLocaleString()}</strong></span>
                   <span className="text-[10px] font-extrabold bg-rose-200/70 dark:bg-rose-900 px-2 py-0.5 rounded-md self-start sm:self-auto">LSA Limit: £{(partnerLsaLimit || 0).toLocaleString()}</span>
                 </div>
-                <p className="text-[10px] text-rose-700/80 dark:text-rose-400/80 italic">
-                  *Calculated strictly on Partner Pension Pot value (Workplace Pension + SIPP) — excludes ISAs, LISA, GIA & Cash Savings.
-                </p>
+                {partnerDbLumpSum > 0 ? (
+                  <p className="text-[10px] text-rose-700/80 dark:text-rose-400/80 italic">
+                    *Includes £{Math.round(partnerActualDcPcls).toLocaleString()} from Partner DC Pots (Workplace + SIPP) and £{partnerDbLumpSum.toLocaleString()} from Partner Defined Benefit scheme commutation. Both count towards partner's single £{(partnerLsaLimit || 0).toLocaleString()} HMRC Lump Sum Allowance (LSA).
+                  </p>
+                ) : (
+                  <p className="text-[10px] text-rose-700/80 dark:text-rose-400/80 italic">
+                    *Calculated strictly on Partner Pension Pot value (Workplace Pension + SIPP) — excludes ISAs, LISA, GIA &amp; Cash Savings.
+                  </p>
+                )}
               </div>
 
               {/* LSA Protection Selector and Editable Cap Input */}

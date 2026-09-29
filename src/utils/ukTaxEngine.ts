@@ -288,11 +288,26 @@ export function calculateMaxPcls(pensionBalance: number, profile: UserProfile) {
   const lsaLimit = getLsaLimit(profile);
   const pclsPercent = profile.pclsLumpSumPercent || 25;
   const uncappedPcls = pensionBalance * (pclsPercent / 100);
-  const maxTaxFreeCash = Math.min(uncappedPcls, lsaLimit);
-  const isCappedByLsa = uncappedPcls > lsaLimit;
+
+  // Sum active DB scheme tax-free lump sums for primary
+  const dbLumpSum = (profile.dbPensions || [])
+    .filter((p) => p.enabled && (p.owner || 'primary') === 'primary')
+    .reduce((acc, p) => acc + (p.taxFreeLumpSum || 0), 0);
+
+  // Remaining LSA available for DC PCLS after DB lump sum usage
+  const remainingLsaForDc = Math.max(0, lsaLimit - dbLumpSum);
+  const maxDcPcls = Math.min(uncappedPcls, remainingLsaForDc);
+
+  // Total Max Tax-Free Cash across both DC and DB schemes capped at LSA
+  const totalMaxTaxFreeCash = Math.min(uncappedPcls + dbLumpSum, lsaLimit);
+  const isCappedByLsa = (uncappedPcls + dbLumpSum) > lsaLimit;
+
   return {
-    maxTaxFreeCash,
+    maxTaxFreeCash: totalMaxTaxFreeCash,
+    maxDcPcls,
+    dbLumpSum,
     lsaLimit,
+    remainingLsaForDc,
     pclsPercent,
     isCappedByLsa,
   };
@@ -347,11 +362,24 @@ export function calculatePartnerMaxPcls(pensionBalance: number, profile: UserPro
   const lsaLimit = getPartnerLsaLimit(profile);
   const pclsPercent = profile.partnerPclsLumpSumPercent || 25;
   const uncappedPcls = pensionBalance * (pclsPercent / 100);
-  const maxTaxFreeCash = Math.min(uncappedPcls, lsaLimit);
-  const isCappedByLsa = uncappedPcls > lsaLimit;
+
+  // Sum active DB scheme tax-free lump sums for partner
+  const dbLumpSum = (profile.dbPensions || [])
+    .filter((p) => p.enabled && p.owner === 'partner')
+    .reduce((acc, p) => acc + (p.taxFreeLumpSum || 0), 0);
+
+  const remainingLsaForDc = Math.max(0, lsaLimit - dbLumpSum);
+  const maxDcPcls = Math.min(uncappedPcls, remainingLsaForDc);
+
+  const totalMaxTaxFreeCash = Math.min(uncappedPcls + dbLumpSum, lsaLimit);
+  const isCappedByLsa = (uncappedPcls + dbLumpSum) > lsaLimit;
+
   return {
-    maxTaxFreeCash,
+    maxTaxFreeCash: totalMaxTaxFreeCash,
+    maxDcPcls,
+    dbLumpSum,
     lsaLimit,
+    remainingLsaForDc,
     pclsPercent,
     isCappedByLsa,
   };
