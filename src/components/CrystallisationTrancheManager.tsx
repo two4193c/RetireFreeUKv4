@@ -442,6 +442,14 @@ export const CrystallisationTrancheManager: React.FC<CrystallisationTrancheManag
                                 Drawdown Pot: <strong>£{designatedDrawdown.toLocaleString()}{tranche.frequency === 'recurring' ? '/yr' : ''}</strong>
                               </span>
                               <span>&bull;</span>
+                              <span className="text-indigo-700 dark:text-indigo-300">
+                                Crystallised Pot: <strong>£{Math.round(cumulativeDrawdownAfterThis).toLocaleString()}</strong>
+                              </span>
+                              <span>&bull;</span>
+                              <span className="text-purple-600 dark:text-purple-400">
+                                Uncrystallised: <strong>£{Math.round(remainingUncrystAfterThis).toLocaleString()}</strong>
+                              </span>
+                              <span>&bull;</span>
                               <span className="text-slate-400 dark:text-slate-500 text-[10px]">
                                 Target: {TARGET_POT_LABELS[tranche.targetPot || 'stocks_and_shares_isa'].split(' ')[0]}
                               </span>

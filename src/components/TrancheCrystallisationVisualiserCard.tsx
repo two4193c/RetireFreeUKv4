@@ -249,10 +249,20 @@ export const TrancheCrystallisationVisualiserCard: React.FC<TrancheCrystallisati
 
       const trancheCalendarYear = currentYear + Math.max(0, Number(t.age) - currentAge);
 
+      const primaryLookupAge = isPartner ? targetAge - partnerAgeOffset : targetAge;
+      const projYear = projections?.find((p) => p.age === primaryLookupAge);
+
+      const engineUncryst = isPartner ? projYear?.partnerUncrystallisedPot : projYear?.primaryUncrystallisedPot;
+      const engineCryst = isPartner ? projYear?.partnerCrystallisedPot : projYear?.primaryCrystallisedPot;
+
       // Chronological Pot Tracker
       // User requirement: "Uncrystallised Pot Remaining is incorrect", "Each tranche should include the crysaliised pot balance"
-      const runningUncrystallisedPot = Math.max(0, referenceStartingPot - runningCumulativeGross);
-      const runningCrystallisedPot = runningCumulativeDrawdown;
+      const runningUncrystallisedPot = (mode === 'phased_tranches' && engineUncryst !== undefined && (engineUncryst > 0 || projYear?.potDepleted))
+        ? engineUncryst
+        : Math.max(0, referenceStartingPot - runningCumulativeGross);
+      const runningCrystallisedPot = (mode === 'phased_tranches' && engineCryst !== undefined)
+        ? engineCryst
+        : runningCumulativeDrawdown;
 
       return {
         tranche: t,
@@ -284,7 +294,19 @@ export const TrancheCrystallisationVisualiserCard: React.FC<TrancheCrystallisati
         runningCrystallisedPot,
       };
     });
-  }, [allScheduledTranches, ownerDbPensions, priorDbLumpSum, lsaLimit, currentYear, currentAge, referenceStartingPot]);
+  }, [
+    allScheduledTranches,
+    ownerDbPensions,
+    priorDbLumpSum,
+    lsaLimit,
+    currentYear,
+    currentAge,
+    referenceStartingPot,
+    mode,
+    projections,
+    partnerAgeOffset,
+    isPartner,
+  ]);
 
   // Aggregate totals
   const totalGrossCrystallised = trancheDetails.reduce((sum, d) => sum + d.totalTrancheGross, 0);
@@ -540,7 +562,7 @@ export const TrancheCrystallisationVisualiserCard: React.FC<TrancheCrystallisati
           <div>
             <strong className="block text-rose-950 dark:text-rose-100">Lump Sum Allowance (LSA) Capped:</strong>
             <span>
-              Total tax-free cash across tranches (£{totalTfcFromTranches.toLocaleString()}) and DB lump sum (£{dbLumpSum.toLocaleString()}) reaches <strong>£{totalAllTfc.toLocaleString()}</strong>, exceeding the £{lsaLimit.toLocaleString()} limit by £{(totalAllTfc - lsaLimit).toLocaleString()}. Under HMRC rules, any excess lump sum is subject to income tax at your marginal rate.
+              Total tax-free cash across tranches (£{totalTfcFromTranches.toLocaleString()}) exceeds your full £{lsaLimit.toLocaleString()} allowance by £{(totalTfcFromTranches - lsaLimit).toLocaleString()}. Under HMRC rules, any excess lump sum is subject to income tax at your marginal rate.
             </span>
           </div>
         </div>
@@ -836,7 +858,7 @@ export const TrancheCrystallisationVisualiserCard: React.FC<TrancheCrystallisati
                       <div className="flex justify-between items-center text-slate-600 dark:text-slate-400 text-[10px]">
                         <span>Tax-Free Cash (Full Allowance):</span>
                         <span className="font-mono font-bold text-emerald-700 dark:text-emerald-300">
-                          £{item.annualTfc.toLocaleString()} ({item.tfcPercentage}%)
+                          £{item.annualTfc.toLocaleString()} ({item.tfcPercentage}%){item.isRecurring ? '/yr' : ''}
                         </span>
                       </div>
                     )}
