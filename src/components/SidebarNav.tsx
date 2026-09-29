@@ -78,6 +78,7 @@ export const NAV_STRUCTURE: TabGroup[] = [
       { id: 'card-accum-savings', label: 'Monthly Savings & Capacity' },
       { id: 'card-accum-efficiency', label: 'ISA vs Pension Tax Efficiency' },
       { id: 'card-accum-tax', label: '60% Tax Trap Optimizer' },
+      { id: 'card-accum-asset-location', label: 'Asset Location Treemap & Tax-Drag' },
       { id: 'card-accum-ledger', label: 'Accumulation Ledger' },
     ],
   },
@@ -87,7 +88,6 @@ export const NAV_STRUCTURE: TabGroup[] = [
     icon: Percent,
     description: 'Drawdown sequencing, tax brackets, and spending phases',
     cards: [
-      { id: 'card-strat-asset-location', label: 'Asset Location Treemap & Tax-Drag' },
       { id: 'card-strat-planner', label: 'Drawdown Strategy Planner' },
       { id: 'card-strat-phases', label: 'Retirement Income Requirement' },
       { id: 'card-dynamic-optimiser', label: 'Dynamic Optimiser' },
