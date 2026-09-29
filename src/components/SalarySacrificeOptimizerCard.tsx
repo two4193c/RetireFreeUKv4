@@ -81,8 +81,15 @@ export const SalarySacrificeOptimizerCard: React.FC<SalarySacrificeOptimizerCard
     }
     return Math.min(defaultSalary, Math.round(defaultSalary * 0.05));
   });
-  const [employerNiRate, setEmployerNiRate] = useState<number>(0.138); // 13.8% or 0.150 (15.0%)
-  const [employerPassThroughPercent, setEmployerPassThroughPercent] = useState<number>(100); // 0%, 50%, 100%
+  const defaultPassThrough = isPartner
+    ? (profile.partnerEmployerNiPassThroughPercent ?? 0)
+    : (profile.employerNiPassThroughPercent ?? 0);
+  const defaultNiRate = isPartner
+    ? (profile.partnerEmployerNiRate ?? 0.138)
+    : (profile.employerNiRate ?? 0.138);
+
+  const [employerNiRate, setEmployerNiRate] = useState<number>(defaultNiRate); // 13.8% or 0.150 (15.0%)
+  const [employerPassThroughPercent, setEmployerPassThroughPercent] = useState<number>(defaultPassThrough); // 0%, 50%, 100% (default 0%)
   const [claimChildBenefit, setClaimChildBenefit] = useState<boolean>(false);
   const [childBenefitChildren, setChildBenefitChildren] = useState<number>(2);
   const [isScottish, setIsScottish] = useState<boolean>(profile.taxRegion === 'scotland');
@@ -91,7 +98,7 @@ export const SalarySacrificeOptimizerCard: React.FC<SalarySacrificeOptimizerCard
   const [showProjectionTable, setShowProjectionTable] = useState<boolean>(false);
   const [appliedSuccessMessage, setAppliedSuccessMessage] = useState<string | null>(null);
 
-  // Keep salary and sacrifice in sync when profile inputs change (e.g. from Capital Assets & Investments or ProfileInputs)
+  // Sync state when profile inputs change (e.g. from Capital Assets & Investments or ProfileInputs)
   React.useEffect(() => {
     setSalary(defaultSalary);
     if (planContributions.hasWorkplaceContributions) {
@@ -101,9 +108,53 @@ export const SalarySacrificeOptimizerCard: React.FC<SalarySacrificeOptimizerCard
     } else {
       setSacrificeAmount(Math.min(defaultSalary, Math.round(defaultSalary * 0.05)));
     }
-  }, [defaultSalary, activePerson]);
 
-  // Sync salary and contributions when switching person
+    const currentPassThrough = isPartner
+      ? (profile.partnerEmployerNiPassThroughPercent ?? 0)
+      : (profile.employerNiPassThroughPercent ?? 0);
+    setEmployerPassThroughPercent(currentPassThrough);
+
+    const currentNiRate = isPartner
+      ? (profile.partnerEmployerNiRate ?? 0.138)
+      : (profile.employerNiRate ?? 0.138);
+    setEmployerNiRate(currentNiRate);
+  }, [
+    defaultSalary,
+    activePerson,
+    isPartner,
+    profile.employerNiPassThroughPercent,
+    profile.partnerEmployerNiPassThroughPercent,
+    profile.employerNiRate,
+    profile.partnerEmployerNiRate,
+  ]);
+
+  const handlePassThroughChange = (newPercent: number) => {
+    setEmployerPassThroughPercent(newPercent);
+    if (onChange) {
+      const isPartnerActive = isCouple && activePerson === 'partner';
+      onChange({
+        ...profile,
+        ...(isPartnerActive
+          ? { partnerEmployerNiPassThroughPercent: newPercent }
+          : { employerNiPassThroughPercent: newPercent }),
+      });
+    }
+  };
+
+  const handleEmployerNiRateChange = (newRate: number) => {
+    setEmployerNiRate(newRate);
+    if (onChange) {
+      const isPartnerActive = isCouple && activePerson === 'partner';
+      onChange({
+        ...profile,
+        ...(isPartnerActive
+          ? { partnerEmployerNiRate: newRate }
+          : { employerNiRate: newRate }),
+      });
+    }
+  };
+
+  // Sync salary, contributions, and employer rebate settings when switching person
   const handlePersonSwitch = (person: 'primary' | 'partner') => {
     setActivePerson(person);
     const newSalary = person === 'partner'
@@ -128,6 +179,16 @@ export const SalarySacrificeOptimizerCard: React.FC<SalarySacrificeOptimizerCard
     } else {
       setSacrificeAmount(Math.min(chosenSalary, Math.round(chosenSalary * 0.05)));
     }
+
+    const personPassThrough = person === 'partner'
+      ? (profile.partnerEmployerNiPassThroughPercent ?? 0)
+      : (profile.employerNiPassThroughPercent ?? 0);
+    setEmployerPassThroughPercent(personPassThrough);
+
+    const personRate = person === 'partner'
+      ? (profile.partnerEmployerNiRate ?? 0.138)
+      : (profile.employerNiRate ?? 0.138);
+    setEmployerNiRate(personRate);
 
     setYearsToRetirement(Math.max(1, newRetAge - newCurrentAge));
     setAppliedSuccessMessage(null);
@@ -238,9 +299,13 @@ export const SalarySacrificeOptimizerCard: React.FC<SalarySacrificeOptimizerCard
       ...(isPartnerActive
         ? {
             partnerPensionContributionMethod: 'salary_sacrifice',
+            partnerEmployerNiPassThroughPercent: employerPassThroughPercent,
+            partnerEmployerNiRate: employerNiRate,
           }
         : {
             pensionContributionMethod: 'salary_sacrifice',
+            employerNiPassThroughPercent: employerPassThroughPercent,
+            employerNiRate: employerNiRate,
           }),
     };
 
@@ -642,7 +707,7 @@ export const SalarySacrificeOptimizerCard: React.FC<SalarySacrificeOptimizerCard
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
-                  onClick={() => setEmployerNiRate(0.138)}
+                  onClick={() => handleEmployerNiRateChange(0.138)}
                   className={`py-1.5 px-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer text-center ${
                     employerNiRate === 0.138
                       ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
@@ -653,7 +718,7 @@ export const SalarySacrificeOptimizerCard: React.FC<SalarySacrificeOptimizerCard
                 </button>
                 <button
                   type="button"
-                  onClick={() => setEmployerNiRate(0.150)}
+                  onClick={() => handleEmployerNiRateChange(0.150)}
                   className={`py-1.5 px-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer text-center ${
                     employerNiRate === 0.150
                       ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
@@ -679,7 +744,7 @@ export const SalarySacrificeOptimizerCard: React.FC<SalarySacrificeOptimizerCard
                 max="100"
                 step="5"
                 value={employerPassThroughPercent}
-                onChange={(e) => setEmployerPassThroughPercent(Number(e.target.value))}
+                onChange={(e) => handlePassThroughChange(Number(e.target.value))}
                 className="w-full accent-teal-600 cursor-pointer h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg"
               />
               <div className="flex items-center justify-between gap-1">
@@ -687,7 +752,7 @@ export const SalarySacrificeOptimizerCard: React.FC<SalarySacrificeOptimizerCard
                   <button
                     key={presetPct}
                     type="button"
-                    onClick={() => setEmployerPassThroughPercent(presetPct)}
+                    onClick={() => handlePassThroughChange(presetPct)}
                     className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border cursor-pointer ${
                       employerPassThroughPercent === presetPct
                         ? 'bg-teal-600 text-white border-teal-600'

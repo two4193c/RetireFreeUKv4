@@ -98,6 +98,18 @@ describe('salarySacrificeOptimizer', () => {
       expect(res.advantagesOverRas.totalAnnualAdvantage).toBeCloseTo(1596.20, 1);
     });
 
+    it('defaults employerPassThroughPercent to 0% when not provided', () => {
+      const res = calculateSalarySacrificeComparison({
+        salary: 60000,
+        sacrificeAmount: 10000,
+      });
+
+      // Default should be 0% pass-through (employer keeps rebate)
+      expect(res.salarySacrifice.employerRebateAdded).toBe(0);
+      expect(res.salarySacrifice.totalPensionAdded).toBe(10000);
+      expect(res.advantagesOverRas.employerBonusAnnual).toBe(0);
+    });
+
     it('supports 15.0% Employer NI rate (from April 2025) and partial pass-through (50%)', () => {
       const res = calculateSalarySacrificeComparison({
         salary: 100000,

@@ -66,10 +66,78 @@ describe('SalarySacrificeOptimizerCard', () => {
     expect(screen.getByText(/£15,000 \(13.0%\)/i)).toBeInTheDocument();
   });
 
-  it('toggles Employer NI rate between 13.8% and 15.0%', () => {
+  it('toggles Employer NI rate between 13.8% and 15.0% and calls onChange', () => {
     const profile = {
       ...DEFAULT_PROFILE,
       grossAnnualSalary: 80000,
+    };
+    const handleChange = vi.fn();
+
+    render(
+      <SalarySacrificeOptimizerCard
+        profile={profile}
+        pots={ZERO_POTS}
+        onChange={handleChange}
+      />
+    );
+
+    const aprilBtn = screen.getByRole('button', { name: /15.0% \(April 2025\+\)/i });
+    fireEvent.click(aprilBtn);
+
+    // Metric display should reflect 15.0%
+    expect(screen.getByText('15.0%')).toBeInTheDocument();
+    expect(handleChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        employerNiRate: 0.150,
+      })
+    );
+  });
+
+  it('defaults Employer Rebate Pass-Through to 0% and saves changes with plan via onChange', () => {
+    const profile = {
+      ...DEFAULT_PROFILE,
+      grossAnnualSalary: 80000,
+    };
+    const handleChange = vi.fn();
+
+    render(
+      <SalarySacrificeOptimizerCard
+        profile={profile}
+        pots={ZERO_POTS}
+        onChange={handleChange}
+      />
+    );
+
+    // Initial pass-through should be 0%
+    expect(screen.getByText('0%')).toBeInTheDocument();
+
+    // Click 50% pass-through preset button
+    const fiftyPercentBtn = screen.getByRole('button', { name: /50% \(Shared\)/i });
+    fireEvent.click(fiftyPercentBtn);
+
+    expect(handleChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        employerNiPassThroughPercent: 50,
+      })
+    );
+
+    // Click 100% pass-through preset button
+    const hundredPercentBtn = screen.getByRole('button', { name: /100% \(Full Pass-Through\)/i });
+    fireEvent.click(hundredPercentBtn);
+
+    expect(handleChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        employerNiPassThroughPercent: 100,
+      })
+    );
+  });
+
+  it('initializes Employer Rebate Pass-Through from saved plan profile', () => {
+    const profile = {
+      ...DEFAULT_PROFILE,
+      grossAnnualSalary: 80000,
+      employerNiPassThroughPercent: 50,
+      employerNiRate: 0.150,
     };
 
     render(
@@ -79,18 +147,17 @@ describe('SalarySacrificeOptimizerCard', () => {
       />
     );
 
-    const aprilBtn = screen.getByRole('button', { name: /15.0% \(April 2025\+\)/i });
-    fireEvent.click(aprilBtn);
-
-    // Metric display should reflect 15.0%
+    expect(screen.getByText('50%')).toBeInTheDocument();
     expect(screen.getByText('15.0%')).toBeInTheDocument();
   });
 
-  it('calls onChange with salary_sacrifice when Apply to Profile is clicked', () => {
+  it('calls onChange with salary_sacrifice, employer rebate pass-through and rate when Apply to Profile is clicked', () => {
     const profile = {
       ...DEFAULT_PROFILE,
       grossAnnualSalary: 90000,
       pensionContributionMethod: 'relief_at_source' as const,
+      employerNiPassThroughPercent: 50,
+      employerNiRate: 0.150,
     };
 
     const handleChange = vi.fn();
@@ -109,6 +176,8 @@ describe('SalarySacrificeOptimizerCard', () => {
     expect(handleChange).toHaveBeenCalledWith(
       expect.objectContaining({
         pensionContributionMethod: 'salary_sacrifice',
+        employerNiPassThroughPercent: 50,
+        employerNiRate: 0.150,
       })
     );
 

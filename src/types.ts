@@ -415,6 +415,10 @@ export interface UserProfile {
   taxRegion: UKTaxRegion;
   customTaxBands?: CustomTaxBandOverrides;
   pensionContributionMethod: ContributionMethod;
+  employerNiPassThroughPercent?: number; // Employer NI savings rebate percentage paid into pension (0 to 100, default 0)
+  employerNiRate?: number; // Employer NI rate (e.g. 0.138 or 0.150, default 0.138)
+  partnerEmployerNiPassThroughPercent?: number;
+  partnerEmployerNiRate?: number;
   targetRetirementIncomeAnnual: number; // in today's money
   actualSpendingTargetAnnual?: number; // Actual spending requirement when max drawdown is enabled
   reinvestExcessDrawdown?: boolean; // Option to max drawdown while keeping actual spending requirement lower

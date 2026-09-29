@@ -235,7 +235,7 @@ export function calculateSalarySacrificeComparison(input: SalarySacrificeInput):
   const sacrificeAmount = Math.min(salary, Math.max(0, input.sacrificeAmount || 0));
   const isScottish = Boolean(input.isScottish);
   const employerNiRate = input.employerNiRate ?? EMPLOYER_NI_RATE; // e.g. 0.138 or 0.150
-  const passThroughPercent = Math.min(100, Math.max(0, input.employerPassThroughPercent ?? 100));
+  const passThroughPercent = Math.min(100, Math.max(0, input.employerPassThroughPercent ?? 0));
   const claimChildBenefit = Boolean(input.claimChildBenefit);
   const childrenCount = claimChildBenefit ? Math.max(0, input.childBenefitChildren ?? 0) : 0;
   const yearsToRetirement = Math.max(1, Math.min(50, input.yearsToRetirement ?? 10));

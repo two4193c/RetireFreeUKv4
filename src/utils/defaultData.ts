@@ -162,6 +162,8 @@ export const DEFAULT_PROFILE: UserProfile = {
   taxRegion: 'england_ni_wales',
   customTaxBands: DEFAULT_CUSTOM_TAX_BANDS,
   pensionContributionMethod: 'salary_sacrifice',
+  employerNiPassThroughPercent: 0,
+  employerNiRate: 0.138,
   targetRetirementIncomeAnnual: 32000, // in today's money
   spendingPhases: {
     enabled: false,
