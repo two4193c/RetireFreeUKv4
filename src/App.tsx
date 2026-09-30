@@ -379,26 +379,28 @@ function App() {
   const pots = useMemo(() => sanitizePots(activeScenario?.pots, activeScenario?.pots ? ZERO_POTS : DEFAULT_POTS), [activeScenario?.pots]);
 
   // Update profile for active scenario
-  const handleProfileChange = (updatedProfile: UserProfile) => {
-    const sanitized = sanitizeProfile(updatedProfile);
+  const handleProfileChange = (updatedProfile: UserProfile | Partial<UserProfile>) => {
     setScenarios((prev) =>
-      prev.map((s) =>
-        s.id === activeScenarioId
-          ? { ...s, profile: sanitized, updatedAt: new Date().toISOString() }
-          : s
-      )
+      prev.map((s) => {
+        if (s.id !== activeScenarioId) return s;
+        const currentProfile = s.profile || DEFAULT_PROFILE;
+        const merged = { ...currentProfile, ...updatedProfile };
+        const sanitized = sanitizeProfile(merged);
+        return { ...s, profile: sanitized, updatedAt: new Date().toISOString() };
+      })
     );
   };
 
   // Update pots for active scenario
-  const handlePotsChange = (updatedPots: InvestmentPots) => {
-    const sanitized = sanitizePots(updatedPots, ZERO_POTS);
+  const handlePotsChange = (updatedPots: InvestmentPots | Partial<InvestmentPots>) => {
     setScenarios((prev) =>
-      prev.map((s) =>
-        s.id === activeScenarioId
-          ? { ...s, pots: sanitized, updatedAt: new Date().toISOString() }
-          : s
-      )
+      prev.map((s) => {
+        if (s.id !== activeScenarioId) return s;
+        const currentPots = s.pots || ZERO_POTS;
+        const merged = { ...currentPots, ...updatedPots };
+        const sanitized = sanitizePots(merged, ZERO_POTS);
+        return { ...s, pots: sanitized, updatedAt: new Date().toISOString() };
+      })
     );
   };
 

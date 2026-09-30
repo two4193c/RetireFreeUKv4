@@ -147,7 +147,7 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
     const next = !localAdjustInflation;
     setLocalAdjustInflation(next);
     if (onChange) {
-      onChange({ adjustForInflation: next });
+      onChange({ ...profile, adjustForInflation: next });
     }
   };
 

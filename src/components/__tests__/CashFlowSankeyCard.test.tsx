@@ -144,7 +144,7 @@ describe('CashFlowSankeyCard', () => {
     const toggleBtn = screen.getAllByText(/Nominal Terms \(Future £\)/i)[0].closest('button')!;
     fireEvent.click(toggleBtn);
 
-    expect(mockOnChange).toHaveBeenCalledWith({ adjustForInflation: true });
+    expect(mockOnChange).toHaveBeenCalledWith(expect.objectContaining({ adjustForInflation: true }));
     expect(screen.getAllByText(/Real Terms \(Today's £\)/i).length).toBeGreaterThan(0);
   });
 });
