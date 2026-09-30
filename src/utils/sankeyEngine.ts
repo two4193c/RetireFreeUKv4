@@ -844,10 +844,13 @@ export function computeCashFlowSankeyData(
         });
       }
       if (priPensionDrawdownTotal > 0) {
+        const isTaxFreeFill = profile.drawdownStrategy === 'tax_free_bracket';
         nodes.push({
           id: 'pri_pension_dd',
           label: `${primaryName} Pension Drawdown`,
-          sublabel: `Taxable: ${formatGBP(priPensionDrawdownTaxable)} | Free: ${formatGBP(priPensionDrawdownTaxFree)}`,
+          sublabel: isTaxFreeFill
+            ? `0% Tax Fill: ${formatGBP(priPensionDrawdownTaxable)} PA + ${formatGBP(priPensionDrawdownTaxFree)} PCLS (0% Tax)`
+            : `Taxable: ${formatGBP(priPensionDrawdownTaxFree)} | Free: ${formatGBP(priPensionDrawdownTaxFree)}`,
           amount: priPensionDrawdownTotal,
           color: '#10b981',
           category: 'source',
@@ -956,10 +959,13 @@ export function computeCashFlowSankeyData(
         });
       }
       if (partPensionDrawdownTotal > 0) {
+        const isTaxFreeFill = (profile.partnerDrawdownStrategy || profile.drawdownStrategy) === 'tax_free_bracket';
         nodes.push({
           id: 'part_pension_dd',
           label: `${partnerName} Pension Drawdown`,
-          sublabel: `Taxable: ${formatGBP(partPensionDrawdownTaxable)} | Free: ${formatGBP(partPensionDrawdownTaxFree)}`,
+          sublabel: isTaxFreeFill
+            ? `0% Tax Fill: ${formatGBP(partPensionDrawdownTaxable)} PA + ${formatGBP(partPensionDrawdownTaxFree)} PCLS (0% Tax)`
+            : `Taxable: ${formatGBP(partPensionDrawdownTaxable)} | Free: ${formatGBP(partPensionDrawdownTaxFree)}`,
           amount: partPensionDrawdownTotal,
           color: '#34d399',
           category: 'source',
@@ -1351,10 +1357,13 @@ export function computeCashFlowSankeyData(
       });
     }
     if (pensionDrawdownTotal > 0) {
+      const isTaxFreeFill = profile.drawdownStrategy === 'tax_free_bracket';
       nodes.push({
         id: 'pension_drawdown',
         label: activeViewMode !== 'combined' ? `${currentPersonName} Pension Drawdown` : 'Private Pension / SIPP Drawdown',
-        sublabel: `Taxable: ${formatGBP(pensionDrawdownTaxable)} | Tax-Free: ${formatGBP(pensionDrawdownTaxFree)}`,
+        sublabel: isTaxFreeFill
+          ? `0% Tax Fill: ${formatGBP(pensionDrawdownTaxable)} PA + ${formatGBP(pensionDrawdownTaxFree)} PCLS (0% Tax)`
+          : `Taxable: ${formatGBP(pensionDrawdownTaxable)} | Tax-Free: ${formatGBP(pensionDrawdownTaxFree)}`,
         amount: pensionDrawdownTotal,
         color: '#10b981',
         category: 'source',

@@ -1,11 +1,12 @@
 import React from 'react';
 import { Shield, AlertTriangle, CheckCircle2, Info } from 'lucide-react';
-import { UserProfile, InvestmentPots } from '../types';
+import { UserProfile, InvestmentPots, YearProjection } from '../types';
 import { getActualSpendingTargetForAge } from '../utils/projectionEngine';
 
 interface WithdrawalGuardrailGaugeCardProps {
   profile: UserProfile;
   pots: InvestmentPots;
+  projections?: YearProjection[];
   horizonYears?: number;
   equityPct?: number;
 }
@@ -13,13 +14,19 @@ interface WithdrawalGuardrailGaugeCardProps {
 export const WithdrawalGuardrailGaugeCard: React.FC<WithdrawalGuardrailGaugeCardProps> = ({
   profile,
   pots,
+  projections,
   horizonYears = 30,
   equityPct = 60,
 }) => {
-  const targetIncome = getActualSpendingTargetForAge(profile, profile.targetRetirementAge);
+  const retAge = profile.targetRetirementAge || 60;
+  const currentAge = profile.currentAge;
+  const adjustInflation = profile.adjustForInflation ?? false;
+  const inflRate = profile.expectedInflationRate ?? 2.5;
 
-  // --- Correct InvestmentPots field names per types.ts ---
-  let totalAssets =
+  let targetIncome = getActualSpendingTargetForAge(profile, retAge);
+
+  // --- Total Invested Assets Today ---
+  let todayAssets =
     (pots.workplacePensionBalance || 0) +
     (pots.sippBalance || 0) +
     (pots.stocksAndSharesIsaBalance || 0) +
@@ -29,7 +36,7 @@ export const WithdrawalGuardrailGaugeCard: React.FC<WithdrawalGuardrailGaugeCard
     (pots.cashSavingsBalance || 0);
 
   if (profile.isCouplePlanning && profile.partnerPots) {
-    totalAssets +=
+    todayAssets +=
       (profile.partnerPots.workplacePensionBalance || 0) +
       (profile.partnerPots.sippBalance || 0) +
       (profile.partnerPots.stocksAndSharesIsaBalance || 0) +
@@ -39,7 +46,24 @@ export const WithdrawalGuardrailGaugeCard: React.FC<WithdrawalGuardrailGaugeCard
       (profile.partnerPots.cashSavingsBalance || 0);
   }
 
-  const retAge = profile.targetRetirementAge || 60;
+  // If pre-retirement and projections exist, evaluate guardrails against projected retirement capital
+  let totalAssets = todayAssets;
+  const retRow = projections?.find((p) => p.age === retAge);
+
+  if (currentAge < retAge && retRow) {
+    const rawStartingRetirementCapital = retRow.isRetired
+      ? (retRow.totalPot || 0) + (retRow.totalWithdrawalAmount || 0)
+      : (retRow.totalPot || 0);
+
+    const yearOffset = Math.max(0, retAge - currentAge);
+    const inflFactor = Math.pow(1 + inflRate / 100, yearOffset);
+    const scale = adjustInflation && inflFactor > 0 ? 1 / inflFactor : 1;
+
+    totalAssets = Math.round(rawStartingRetirementCapital * scale);
+    if (!adjustInflation && retRow.targetRetirementIncome > 0) {
+      targetIncome = retRow.targetRetirementIncome;
+    }
+  }
   
   let guaranteedIncomeAtRetirement = 0;
   

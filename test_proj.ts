@@ -1,1 +1,0 @@
-import { generateProjections } from './src/utils/projectionEngine'; import * as fs from 'fs'; const data = JSON.parse(fs.readFileSync('user_data.json', 'utf8')); const scen = data.scenarios.find((s:any)=>s.id==='scenario_1786652231691'); const proj = generateProjections(scen.profile, scen.pots); console.log(Array.isArray(proj), typeof proj, proj.length);  

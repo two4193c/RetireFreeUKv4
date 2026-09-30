@@ -94,4 +94,57 @@ describe('CashFlowSankeyCard', () => {
     
     expect(screen.getByText('John')).toBeInTheDocument();
   });
+
+  it('renders Real vs Nominal inflation toggle and fires onChange', () => {
+    const mockOnChange = vi.fn();
+    const retiredProjections: YearProjection[] = [
+      {
+        age: 60,
+        isRetired: true,
+        primaryPensionDrawdown: 31072,
+        primaryPensionDrawdownTaxable: 23304,
+        primaryPensionDrawdownTaxFree: 7768,
+        pensionDrawdown: 31072,
+        pensionDrawdownTaxable: 23304,
+        pensionDrawdownTaxFree: 7768,
+        isaDrawdown: 28254,
+        primaryIsaDrawdown: 28254,
+        cashDrawdown: 0,
+        primaryCashDrawdown: 0,
+        totalTaxPaid: 0,
+        taxOnWithdrawal: 0,
+        primaryStatePensionReceived: 0,
+        partnerStatePensionReceived: 0,
+        statePensionReceived: 0,
+        dbPensionIncomeReceived: 0,
+        annuityIncomeReceived: 0,
+        year: 2051,
+      } as unknown as YearProjection,
+    ];
+
+    const retiredProfile: UserProfile = {
+      ...mockProfile,
+      currentAge: 35,
+      targetRetirementAge: 60,
+      drawdownStrategy: 'tax_free_bracket',
+      adjustForInflation: false,
+    };
+
+    render(
+      <CashFlowSankeyCard
+        projections={retiredProjections}
+        profile={retiredProfile}
+        onChange={mockOnChange}
+      />
+    );
+
+    expect(screen.getByText(/0% Tax-Free Allowance Fill Strategy Active/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Nominal Terms \(Future £\)/i).length).toBeGreaterThan(0);
+
+    const toggleBtn = screen.getAllByText(/Nominal Terms \(Future £\)/i)[0].closest('button')!;
+    fireEvent.click(toggleBtn);
+
+    expect(mockOnChange).toHaveBeenCalledWith({ adjustForInflation: true });
+    expect(screen.getAllByText(/Real Terms \(Today's £\)/i).length).toBeGreaterThan(0);
+  });
 });

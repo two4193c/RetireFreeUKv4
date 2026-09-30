@@ -1479,13 +1479,24 @@ function parseAnnuityTypeConfig(type?: string) {
             }
           } else if (activeStrategy === 'tax_optimizer' || activeStrategy === 'tax_free_bracket' || activeStrategy === 'basic_rate_bracket' || activeStrategy === 'higher_rate_bracket' || activeStrategy === 'tax_free_then_cash') {
             const isScot = isPrimary ? profile.taxRegion === 'scotland' : (profile.partnerTaxRegion || profile.taxRegion) === 'scotland';
-            const inflMult = inflationFactor;
+            const indexTaxBands = profile.indexTaxBands ?? true;
+            const inflMult = indexTaxBands ? inflationFactor : 1;
 
-            let thresholdGross = 12570 * inflMult;
+            const cb = profile.customTaxBands;
+            const cEnabled = cb?.enabled;
+            const paBase = cEnabled ? (cb.personalAllowance ?? 12570) : 12570;
+            const singlePersonalAllowance = paBase * inflMult;
+
+            const rukBasicThresh = cEnabled && cb.basicRateThreshold != null ? cb.basicRateThreshold : RUK_BASIC_THRESHOLD;
+            const rukAddThresh = cEnabled && cb.higherRateThreshold != null ? cb.higherRateThreshold : RUK_ADDITIONAL_THRESHOLD;
+            const scotIntThresh = cEnabled && cb.scotIntermediateThreshold != null ? cb.scotIntermediateThreshold : SCOT_INTERMEDIATE_THRESHOLD;
+            const scotHigherThresh = cEnabled && cb.scotHigherThreshold != null ? cb.scotHigherThreshold : SCOT_HIGHER_THRESHOLD;
+
+            let thresholdGross = singlePersonalAllowance;
             if (activeStrategy === 'tax_optimizer' || activeStrategy === 'basic_rate_bracket') {
-              thresholdGross = (12570 + (isScot ? SCOT_INTERMEDIATE_THRESHOLD : RUK_BASIC_THRESHOLD)) * inflMult;
+              thresholdGross = singlePersonalAllowance + ((isScot ? scotIntThresh : rukBasicThresh) * inflMult);
             } else if (activeStrategy === 'higher_rate_bracket') {
-              thresholdGross = (isScot ? (12570 + SCOT_HIGHER_THRESHOLD) : RUK_ADDITIONAL_THRESHOLD) * inflMult;
+              thresholdGross = (isScot ? (singlePersonalAllowance + (scotHigherThresh * inflMult)) : (rukAddThresh * inflMult));
             }
 
             const incomeAlready = isPrimary ? primaryTaxableGuaranteed : partnerTaxableGuaranteed;

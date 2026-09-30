@@ -12,12 +12,15 @@ interface PwrMetricBannerCardProps {
 export const PwrMetricBannerCard: React.FC<PwrMetricBannerCardProps> = ({ profile, pots, projections }) => {
   const [basis, setBasis] = useState<'retirement_start' | 'today' | 'private_pension_start' | 'state_pension_start'>('retirement_start');
 
+  const adjustInflation = profile.adjustForInflation ?? false;
+  const expectedInflationRate = profile.expectedInflationRate ?? 2.5;
+
   const baseTargetIncome = getActualSpendingTargetForAge(profile, profile.targetRetirementAge);
   
   const pensionAccessAge = getPensionAccessAge(profile);
   const statePensionAge = (profile.statePensionAge || 67) + (profile.statePensionDeferralYears || 0);
 
-  // --- Correct InvestmentPots field names per types.ts ---
+  // --- Total Invested Assets Today ---
   let todayAssets =
     (pots.workplacePensionBalance || 0) +
     (pots.sippBalance || 0) +
@@ -38,62 +41,164 @@ export const PwrMetricBannerCard: React.FC<PwrMetricBannerCardProps> = ({ profil
       (profile.partnerPots.cashSavingsBalance || 0);
   }
 
-  // Projected portfolios at various milestones (end of year prior)
-  const preRetirementYearRow = projections?.find((p) => p.age === (profile.targetRetirementAge - 1));
-  const prePrivatePensionYearRow = projections?.find((p) => p.age === (pensionAccessAge - 1));
-  const preStatePensionYearRow = projections?.find((p) => p.age === (statePensionAge - 1));
+  // Guaranteed income streams currently active today (if currentAge >= SPA or DB start)
+  const currentAge = profile.currentAge;
+  let todayGuaranteedIncome = 0;
+  if (profile.includeStatePension && currentAge >= statePensionAge) {
+    todayGuaranteedIncome += profile.statePensionAmountAnnual || 0;
+  }
+  if (profile.isCouplePlanning && profile.partnerIncludeStatePension) {
+    const partSpa = (profile.partnerStatePensionAge || 67) + (profile.partnerStatePensionDeferralYears || 0);
+    const partAge = profile.partnerCurrentAge || currentAge;
+    if (partAge >= partSpa) {
+      todayGuaranteedIncome += profile.partnerStatePensionAmountAnnual || 0;
+    }
+  }
+  (profile.dbPensions || []).filter((p) => p.enabled && (profile.isCouplePlanning || p.owner !== 'partner')).forEach((p) => {
+    const evalAge = p.owner === 'partner' ? (profile.partnerCurrentAge || currentAge) : currentAge;
+    if (evalAge >= p.startAge) todayGuaranteedIncome += p.annualIncome || 0;
+  });
 
-  const retirementStartAssets = preRetirementYearRow?.totalPot ?? todayAssets;
-  const privatePensionStartAssets = prePrivatePensionYearRow?.totalPot ?? todayAssets;
-  const statePensionStartAssets = preStatePensionYearRow?.totalPot ?? todayAssets;
+  // Helper to compute milestone capital and income metrics
+  const getMilestoneData = (targetAge: number, isTodayBasis: boolean = false) => {
+    const yearOffset = Math.max(0, targetAge - currentAge);
+    const inflFactor = Math.pow(1 + expectedInflationRate / 100, yearOffset);
+    const scale = adjustInflation && inflFactor > 0 ? 1 / inflFactor : 1;
 
-  let totalInvestedAssets = todayAssets;
-  let calculationAge = profile.currentAge;
-  let calculationYearRow: YearProjection | undefined = undefined;
+    if (isTodayBasis || targetAge === currentAge) {
+      const targetInc = baseTargetIncome;
+      const guaranteed = todayGuaranteedIncome;
+      const netDrawdown = Math.max(0, targetInc - guaranteed);
+      const startingCapital = todayAssets;
+      const endCapital = todayAssets;
+      const pwr = startingCapital > 0 ? (netDrawdown / startingCapital) * 100 : 0;
+      return {
+        age: currentAge,
+        startingCapital,
+        endCapital,
+        displayStartingCapital: Math.round(startingCapital),
+        displayEndCapital: Math.round(endCapital),
+        displayTargetIncome: Math.round(targetInc),
+        displayGuaranteedIncome: Math.round(guaranteed),
+        displayNetDrawdown: Math.round(netDrawdown),
+        pwrPct: pwr,
+        calculationRow: undefined,
+      };
+    }
 
-  if (basis === 'retirement_start') {
-    totalInvestedAssets = retirementStartAssets;
-    calculationAge = profile.targetRetirementAge;
-    calculationYearRow = projections?.find((p) => p.age === profile.targetRetirementAge);
-  } else if (basis === 'private_pension_start') {
-    totalInvestedAssets = privatePensionStartAssets;
-    calculationAge = pensionAccessAge;
-    calculationYearRow = projections?.find((p) => p.age === pensionAccessAge);
-  } else if (basis === 'state_pension_start') {
-    totalInvestedAssets = statePensionStartAssets;
+    const row = projections?.find((p) => p.age === targetAge);
+    let nominalStartingCapital = todayAssets;
+    let nominalEndCapital = todayAssets;
+    let nominalTargetIncome = baseTargetIncome * (adjustInflation ? 1 : inflFactor);
+    let nominalGuaranteed = 0;
+    let nominalNetDrawdown = 0;
+
+    if (row) {
+      nominalEndCapital = row.totalPot || 0;
+      nominalStartingCapital = row.isRetired
+        ? (row.totalPot || 0) + (row.totalWithdrawalAmount || 0)
+        : (row.totalPot || 0);
+
+      nominalTargetIncome = row.targetRetirementIncome > 0
+        ? row.targetRetirementIncome
+        : (getActualSpendingTargetForAge(profile, targetAge) * inflFactor);
+
+      nominalGuaranteed =
+        (row.statePensionReceived || 0) +
+        (row.dbPensionIncomeReceived || 0) +
+        (row.annuityIncomeReceived || 0);
+
+      if (row.isRetired && (row.totalWithdrawalAmount || 0) > 0) {
+        nominalNetDrawdown = row.totalWithdrawalAmount;
+      } else {
+        nominalNetDrawdown = Math.max(0, nominalTargetIncome - nominalGuaranteed);
+      }
+    } else {
+      nominalNetDrawdown = Math.max(0, nominalTargetIncome - nominalGuaranteed);
+    }
+
+    const displayStartingCapital = Math.round(nominalStartingCapital * scale);
+    const displayEndCapital = Math.round(nominalEndCapital * scale);
+    const displayTargetIncome = Math.round(nominalTargetIncome * scale);
+    const displayGuaranteedIncome = Math.round(nominalGuaranteed * scale);
+    const displayNetDrawdown = Math.round(nominalNetDrawdown * scale);
+    const pwr = displayStartingCapital > 0 ? (displayNetDrawdown / displayStartingCapital) * 100 : 0;
+
+    return {
+      age: targetAge,
+      startingCapital: nominalStartingCapital,
+      endCapital: nominalEndCapital,
+      displayStartingCapital,
+      displayEndCapital,
+      displayTargetIncome,
+      displayGuaranteedIncome,
+      displayNetDrawdown,
+      pwrPct: pwr,
+      calculationRow: row,
+    };
+  };
+
+  const retirementStartData = getMilestoneData(profile.targetRetirementAge);
+  const statePensionData = getMilestoneData(statePensionAge);
+  const privatePensionData = getMilestoneData(pensionAccessAge);
+  const todayData = getMilestoneData(currentAge, true);
+
+  // Active basis selection
+  let activeData = retirementStartData;
+  let calculationAge = profile.targetRetirementAge;
+
+  if (basis === 'state_pension_start') {
+    activeData = statePensionData;
     calculationAge = statePensionAge;
-    calculationYearRow = projections?.find((p) => p.age === statePensionAge);
+  } else if (basis === 'private_pension_start') {
+    activeData = privatePensionData;
+    calculationAge = pensionAccessAge;
+  } else if (basis === 'today') {
+    activeData = todayData;
+    calculationAge = currentAge;
   }
 
-  const targetIncome = basis !== 'today' && calculationYearRow && calculationYearRow.targetRetirementIncome > 0 
-    ? calculationYearRow.targetRetirementIncome 
-    : baseTargetIncome;
+  const {
+    displayStartingCapital,
+    displayEndCapital,
+    displayTargetIncome,
+    displayGuaranteedIncome,
+    displayNetDrawdown,
+    pwrPct,
+  } = activeData;
 
-  // --- Theoretical vs Actual Drawdown ---
-  const staticStatePension = profile.includeStatePension ? (profile.statePensionAmountAnnual || 0) : 0;
-  const staticPartnerStatePension =
-    profile.isCouplePlanning && profile.partnerIncludeStatePension
-      ? (profile.partnerStatePensionAmountAnnual || 0)
-      : 0;
-  const staticDbPension =
-    profile.dbPensions
-      ?.filter((p) => p.enabled && (profile.isCouplePlanning || p.owner !== 'partner'))
-      .reduce((sum, p) => sum + (p.annualIncome || 0), 0) ?? 0;
-
-  const staticGuaranteedIncome = staticStatePension + staticPartnerStatePension + staticDbPension;
-
-  const yearGuaranteedIncome = calculationYearRow
-    ? (calculationYearRow.statePensionReceived + (calculationYearRow.dbPensionIncomeReceived || 0) + (calculationYearRow.annuityIncomeReceived || 0))
-    : staticGuaranteedIncome;
-
-  const guaranteedIncome = basis !== 'today' ? yearGuaranteedIncome : staticGuaranteedIncome;
-
-  const netDrawdownNeeded = basis !== 'today' && calculationYearRow
-    ? calculationYearRow.totalWithdrawalAmount
-    : Math.max(0, targetIncome - guaranteedIncome);
-
-  // PWR — guard against zero capital
-  const pwrPct = totalInvestedAssets > 0 ? (netDrawdownNeeded / totalInvestedAssets) * 100 : 0;
+  // Available milestone tabs (filter out past milestones)
+  const availableMilestones: Array<{
+    id: 'retirement_start' | 'private_pension_start' | 'state_pension_start' | 'today';
+    label: string;
+    capital: number;
+    show: boolean;
+  }> = [
+    {
+      id: 'retirement_start',
+      label: `Retirement Start (Age ${profile.targetRetirementAge})`,
+      capital: retirementStartData.displayStartingCapital,
+      show: true,
+    },
+    {
+      id: 'state_pension_start',
+      label: `State Pension (Age ${statePensionAge})`,
+      capital: statePensionData.displayStartingCapital,
+      show: statePensionAge >= currentAge && statePensionAge !== profile.targetRetirementAge,
+    },
+    {
+      id: 'private_pension_start',
+      label: `Private Pension (Age ${pensionAccessAge})`,
+      capital: privatePensionData.displayStartingCapital,
+      show: pensionAccessAge >= currentAge && pensionAccessAge !== profile.targetRetirementAge,
+    },
+    {
+      id: 'today',
+      label: `Today's Pots (Age ${currentAge})`,
+      capital: todayData.displayStartingCapital,
+      show: true,
+    },
+  ];
 
   // UK-aligned risk categorization (3.2-3.5% standard, not US 4%)
   let badgeColor = 'bg-primary-100 text-primary-800 dark:bg-primary-950 dark:text-primary-300 border-primary-300';
@@ -143,55 +248,30 @@ export const PwrMetricBannerCard: React.FC<PwrMetricBannerCardProps> = ({ profil
 
       {/* Basis Selector */}
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60 text-xs">
-        <span className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2 whitespace-nowrap">
-          <Calendar className="w-4 h-4 text-primary-500" />
-          <span>Capital Basis:</span>
-        </span>
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2 whitespace-nowrap">
+            <Calendar className="w-4 h-4 text-primary-500" />
+            <span>Capital Basis:</span>
+          </span>
+          <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300/60 dark:border-slate-600">
+            {adjustInflation ? "Real Terms (Today's £)" : "Nominal £"}
+          </span>
+        </div>
         <div className="flex flex-wrap rounded-xl bg-slate-200 dark:bg-slate-700 p-1 gap-1">
-          <button
-            type="button"
-            onClick={() => setBasis('retirement_start')}
-            className={`px-3 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
-              basis === 'retirement_start'
-                ? 'bg-primary-600 text-white shadow-xs'
-                : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-            }`}
-          >
-            Retirement Start (Age {profile.targetRetirementAge}) — £{Math.round(retirementStartAssets).toLocaleString()}
-          </button>
-          <button
-            type="button"
-            onClick={() => setBasis('private_pension_start')}
-            className={`px-3 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
-              basis === 'private_pension_start'
-                ? 'bg-primary-600 text-white shadow-xs'
-                : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-            }`}
-          >
-            Private Pension (Age {pensionAccessAge}) — £{Math.round(privatePensionStartAssets).toLocaleString()}
-          </button>
-          <button
-            type="button"
-            onClick={() => setBasis('state_pension_start')}
-            className={`px-3 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
-              basis === 'state_pension_start'
-                ? 'bg-primary-600 text-white shadow-xs'
-                : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-            }`}
-          >
-            State Pension (Age {statePensionAge}) — £{Math.round(statePensionStartAssets).toLocaleString()}
-          </button>
-          <button
-            type="button"
-            onClick={() => setBasis('today')}
-            className={`px-3 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
-              basis === 'today'
-                ? 'bg-primary-600 text-white shadow-xs'
-                : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-            }`}
-          >
-            Today's Pots — £{Math.round(todayAssets).toLocaleString()}
-          </button>
+          {availableMilestones.filter((m) => m.show).map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              onClick={() => setBasis(m.id)}
+              className={`px-3 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                basis === m.id
+                  ? 'bg-primary-600 text-white shadow-xs'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              {m.label} — £{m.capital.toLocaleString()}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -200,14 +280,14 @@ export const PwrMetricBannerCard: React.FC<PwrMetricBannerCardProps> = ({ profil
         <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60 space-y-1">
           <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Total Target Spending</span>
           <div className="text-2xl font-black text-slate-900 dark:text-white">
-            £{targetIncome.toLocaleString()} <span className="text-xs font-normal text-slate-400">/ yr</span>
+            £{displayTargetIncome.toLocaleString()} <span className="text-xs font-normal text-slate-400">/ yr</span>
           </div>
         </div>
 
         <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60 space-y-1">
-          <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Guaranteed Income (SP + DB)</span>
+          <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Guaranteed Income (SP + DB + Annuity)</span>
           <div className="text-2xl font-black text-primary-600 dark:text-primary-400">
-            £{Math.round(guaranteedIncome).toLocaleString()} <span className="text-xs font-normal text-slate-400">/ yr</span>
+            £{displayGuaranteedIncome.toLocaleString()} <span className="text-xs font-normal text-slate-400">/ yr</span>
           </div>
         </div>
 
@@ -228,7 +308,12 @@ export const PwrMetricBannerCard: React.FC<PwrMetricBannerCardProps> = ({ profil
           <span>PWR Formula & UK Benchmark Context:</span>
         </div>
         <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
-          Your PWR = <strong>(Net Drawdown Needed £{Math.round(netDrawdownNeeded).toLocaleString()}) ÷ (Portfolio Capital £{Math.round(totalInvestedAssets).toLocaleString()}) = {pwrPct.toFixed(2)}%</strong>.
+          Your PWR = <strong>(Net Drawdown Needed £{displayNetDrawdown.toLocaleString()}) ÷ (Portfolio Capital £{displayStartingCapital.toLocaleString()}) = {pwrPct.toFixed(2)}%</strong>.
+          {displayEndCapital !== displayStartingCapital && (
+            <span className="text-slate-500 dark:text-slate-400 block mt-1">
+              Starting portfolio capital is £{displayStartingCapital.toLocaleString()} at the beginning of Age {calculationAge}; after the £{displayNetDrawdown.toLocaleString()} drawdown, remaining portfolio balance is projected at £{displayEndCapital.toLocaleString()}.
+            </span>
+          )}
           UK Safe Withdrawal benchmarks: <strong>FIRE 40+ yrs: 2.8%–3.2%</strong> · <strong>Standard 30 yr: 3.2%–3.5%</strong> · <strong>Guardrail Dynamic: 3.5%–4.5%</strong>. The US Trinity Study 4% rule is not directly applicable due to UK fee drag (0.5%–0.75%), higher inflation volatility, and income tax on pension drawdown.
         </p>
       </div>

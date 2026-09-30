@@ -1193,6 +1193,7 @@ function App() {
                         pots={pots}
                         taxResult={taxResult}
                         appMode={appMode}
+                        onChange={handleProfileChange}
                       />
                     </div>
                     <div id="card-risk-monte" className="scroll-mt-24 transition-all duration-300">
@@ -1221,6 +1222,7 @@ function App() {
                       <WithdrawalGuardrailGaugeCard
                         profile={profile}
                         pots={pots}
+                        projections={projections}
                         horizonYears={swrHorizonYears}
                         equityPct={swrEquityPct}
                       />
@@ -1519,6 +1521,7 @@ function App() {
                   <WithdrawalGuardrailGaugeCard
                     profile={profile}
                     pots={pots}
+                    projections={projections}
                     horizonYears={swrHorizonYears}
                     equityPct={swrEquityPct}
                   />
@@ -1597,6 +1600,7 @@ function App() {
                         pots={pots}
                         taxResult={taxResult}
                         appMode={appMode}
+                        onChange={handleProfileChange}
                       />
                     </div>
                     <div id="card-proj-macro" className="scroll-mt-24 transition-all duration-300">

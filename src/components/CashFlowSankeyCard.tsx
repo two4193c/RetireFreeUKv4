@@ -51,6 +51,7 @@ interface CashFlowSankeyCardProps {
   taxResult?: TaxCalculationResult;
   appMode?: AppMode;
   initialViewMode?: CashFlowViewMode;
+  onChange?: (updated: Partial<UserProfile>) => void;
 }
 
 interface FlowNode {
@@ -79,6 +80,7 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
   taxResult,
   appMode = 'basic',
   initialViewMode = 'combined',
+  onChange,
 }) => {
   const isStudioMode = appMode === 'studio';
   // Select initial age (default to target retirement age or current age)
@@ -133,7 +135,21 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
   }, [projections, selectedAge]);
 
   const isRetired = selectedProjection ? selectedProjection.isRetired : false;
-  const adjustInflation = profile.adjustForInflation ?? false;
+  const [localAdjustInflation, setLocalAdjustInflation] = useState<boolean>(profile.adjustForInflation ?? false);
+
+  useEffect(() => {
+    setLocalAdjustInflation(profile.adjustForInflation ?? false);
+  }, [profile.adjustForInflation]);
+
+  const adjustInflation = localAdjustInflation;
+
+  const toggleInflation = () => {
+    const next = !localAdjustInflation;
+    setLocalAdjustInflation(next);
+    if (onChange) {
+      onChange({ adjustForInflation: next });
+    }
+  };
 
   // Format currency helper
   const formatGBP = (val: number) => `£${Math.round(val).toLocaleString()}`;
@@ -1028,10 +1044,13 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
           });
         }
         if (priPensionDrawdownTotal > 0) {
+          const isTaxFreeFill = profile.drawdownStrategy === 'tax_free_bracket';
           nodes.push({
             id: 'pri_pension_dd',
             label: `${primaryName} Pension Drawdown`,
-            sublabel: `Taxable: ${formatGBP(priPensionDrawdownTaxable)} | Free: ${formatGBP(priPensionDrawdownTaxFree)}`,
+            sublabel: isTaxFreeFill
+              ? `0% Tax Fill: ${formatGBP(priPensionDrawdownTaxable)} PA + ${formatGBP(priPensionDrawdownTaxFree)} PCLS (0% Tax)`
+              : `Taxable: ${formatGBP(priPensionDrawdownTaxable)} | Free: ${formatGBP(priPensionDrawdownTaxFree)}`,
             amount: priPensionDrawdownTotal,
             color: '#10b981',
             category: 'source',
@@ -1138,10 +1157,13 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
           });
         }
         if (partPensionDrawdownTotal > 0) {
+          const isTaxFreeFill = (profile.partnerDrawdownStrategy || profile.drawdownStrategy) === 'tax_free_bracket';
           nodes.push({
             id: 'part_pension_dd',
             label: `${partnerName} Pension Drawdown`,
-            sublabel: `Taxable: ${formatGBP(partPensionDrawdownTaxable)} | Free: ${formatGBP(partPensionDrawdownTaxFree)}`,
+            sublabel: isTaxFreeFill
+              ? `0% Tax Fill: ${formatGBP(partPensionDrawdownTaxable)} PA + ${formatGBP(partPensionDrawdownTaxFree)} PCLS (0% Tax)`
+              : `Taxable: ${formatGBP(partPensionDrawdownTaxable)} | Free: ${formatGBP(partPensionDrawdownTaxFree)}`,
             amount: partPensionDrawdownTotal,
             color: '#34d399',
             category: 'source',
@@ -1545,10 +1567,13 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
       }
 
       if (pensionDrawdownTotal > 0) {
+        const isTaxFreeFill = profile.drawdownStrategy === 'tax_free_bracket';
         nodes.push({
           id: 'pension_drawdown',
           label: activeViewMode !== 'combined' ? `${currentPersonName} Pension Drawdown` : 'Private Pension / SIPP Drawdown',
-          sublabel: `Taxable: ${formatGBP(pensionDrawdownTaxable)} | Tax-Free: ${formatGBP(pensionDrawdownTaxFree)}`,
+          sublabel: isTaxFreeFill
+            ? `0% Tax Fill: ${formatGBP(pensionDrawdownTaxable)} PA + ${formatGBP(pensionDrawdownTaxFree)} PCLS (0% Tax)`
+            : `Taxable: ${formatGBP(pensionDrawdownTaxable)} | Tax-Free: ${formatGBP(pensionDrawdownTaxFree)}`,
           amount: pensionDrawdownTotal,
           color: '#10b981', // primary-500
           category: 'source',
@@ -1950,59 +1975,72 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
           </div>
         </div>
 
-        {/* View Mode Toggle for Couples */}
-        {isCouple && (
-          <div className="bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl flex items-center text-xs font-bold border border-slate-200 dark:border-slate-700 shadow-2xs shrink-0 self-start sm:self-center">
-            <button
-              type="button"
-              onClick={() => setViewMode('combined')}
-              className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
-                activeViewMode === 'combined'
-                  ? 'bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-400 shadow-xs font-black'
-                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              <Users className="w-3.5 h-3.5" />
-              <span>Household</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('split')}
-              className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
-                activeViewMode === 'split'
-                  ? 'bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-400 shadow-xs font-black'
-                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              <Split className="w-3.5 h-3.5" />
-              <span>Split</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('primary')}
-              className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
-                activeViewMode === 'primary'
-                  ? 'bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-400 shadow-xs font-black'
-                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              <User className="w-3.5 h-3.5" />
-              <span>{primaryName}</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('partner')}
-              className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
-                activeViewMode === 'partner'
-                  ? 'bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-400 shadow-xs font-black'
-                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              <User className="w-3.5 h-3.5" />
-              <span>{partnerName}</span>
-            </button>
-          </div>
-        )}
+        <div className="flex items-center gap-2.5 flex-wrap self-start sm:self-center">
+          {/* View Mode Toggle for Couples */}
+          {isCouple && (
+            <div className="bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl flex items-center text-xs font-bold border border-slate-200 dark:border-slate-700 shadow-2xs shrink-0">
+              <button
+                type="button"
+                onClick={() => setViewMode('combined')}
+                className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
+                  activeViewMode === 'combined'
+                    ? 'bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-400 shadow-xs font-black'
+                    : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <Users className="w-3.5 h-3.5" />
+                <span>Household</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('split')}
+                className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
+                  activeViewMode === 'split'
+                    ? 'bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-400 shadow-xs font-black'
+                    : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <Split className="w-3.5 h-3.5" />
+                <span>Split</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('primary')}
+                className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
+                  activeViewMode === 'primary'
+                    ? 'bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-400 shadow-xs font-black'
+                    : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <User className="w-3.5 h-3.5" />
+                <span>{primaryName}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('partner')}
+                className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
+                  activeViewMode === 'partner'
+                    ? 'bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-400 shadow-xs font-black'
+                    : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <User className="w-3.5 h-3.5" />
+                <span>{partnerName}</span>
+              </button>
+            </div>
+          )}
+
+          {/* Real vs Nominal Inflation Toggle */}
+          <button
+            type="button"
+            onClick={toggleInflation}
+            className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-2xl border transition-all cursor-pointer bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 hover:border-sky-400 text-slate-700 dark:text-slate-200 shadow-2xs"
+            title="Toggle between Real Terms (Today's £) and Nominal Terms"
+          >
+            <span className={`w-2 h-2 rounded-full ${adjustInflation ? 'bg-emerald-500' : 'bg-sky-500'}`} />
+            <span>{adjustInflation ? "Real Terms (Today's £)" : "Nominal Terms (Future £)"}</span>
+          </button>
+        </div>
       </div>
 
       {/* TOP KPI WATERFALL SUMMARY STRIP */}
@@ -2077,6 +2115,56 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
               {flowData.isRetired ? 'Unspent drawdown surplus' : `${flowData.metrics.savingsRate.toFixed(0)}% savings rate`}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* 0% TAX-FREE ALLOWANCE & DRAWDOWN STRATEGY CONTEXT BANNER */}
+      {flowData?.isRetired && (
+        <div className="p-3.5 sm:p-4 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+          <div className="flex items-start gap-2.5">
+            <div className="p-2 rounded-xl bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 shrink-0 mt-0.5 sm:mt-0">
+              <ShieldCheck className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="font-extrabold text-emerald-900 dark:text-emerald-100 flex items-center gap-2 flex-wrap">
+                <span>
+                  {profile.drawdownStrategy === 'tax_free_bracket'
+                    ? '0% Tax-Free Allowance Fill Strategy Active'
+                    : profile.drawdownStrategy === 'basic_rate_bracket'
+                    ? '20% Basic Rate Band Fill Strategy Active'
+                    : profile.drawdownStrategy === 'higher_rate_bracket'
+                    ? 'Higher Rate Band Fill Strategy Active'
+                    : 'Active Drawdown Strategy'}
+                </span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-200/60 dark:bg-emerald-800/60 text-emerald-800 dark:text-emerald-200">
+                  {adjustInflation ? "Real Terms (Today's £)" : 'Nominal Inflated Terms'}
+                </span>
+              </div>
+              <p className="text-emerald-800/90 dark:text-emerald-300/90 mt-1 leading-relaxed">
+                {profile.drawdownStrategy === 'tax_free_bracket' ? (
+                  adjustInflation ? (
+                    <>
+                      Drawing up to your <strong>£12,570 Personal Allowance</strong> at <strong>0% tax</strong>. Because withdrawals are taken from uncrystallised pension funds (UFPLS), 25% is tax-free cash (<strong>{formatGBP(flowData.nodes.find(n => n.id === 'pension_drawdown' || n.id === 'pri_pension_dd')?.amount ? (flowData.nodes.find(n => n.id === 'pension_drawdown' || n.id === 'pri_pension_dd')!.amount * 0.25) : 4190)}</strong>) and 75% fills the Personal Allowance (<strong>{formatGBP(flowData.nodes.find(n => n.id === 'pension_drawdown' || n.id === 'pri_pension_dd')?.amount ? (flowData.nodes.find(n => n.id === 'pension_drawdown' || n.id === 'pri_pension_dd')!.amount * 0.75) : 12570)}</strong>), yielding <strong>£0 income tax</strong>. Remaining spending is funded from tax-free ISAs.
+                    </>
+                  ) : (
+                    <>
+                      Drawing up to your inflation-indexed <strong>{formatGBP(flowData.nodes.find(n => n.id === 'pension_drawdown' || n.id === 'pri_pension_dd')?.amount ? (flowData.nodes.find(n => n.id === 'pension_drawdown' || n.id === 'pri_pension_dd')!.amount * 0.75) : 23304)} Personal Allowance</strong> at <strong>0% tax</strong>. With UFPLS (25% tax-free lump sum of <strong>{formatGBP(flowData.nodes.find(n => n.id === 'pension_drawdown' || n.id === 'pri_pension_dd')?.amount ? (flowData.nodes.find(n => n.id === 'pension_drawdown' || n.id === 'pri_pension_dd')!.amount * 0.25) : 7768)}</strong>), total gross pension drawn is <strong>{formatGBP(flowData.nodes.find(n => n.id === 'pension_drawdown' || n.id === 'pri_pension_dd')?.amount || 31072)}</strong> with <strong>£0 tax</strong>. Click the toggle to view in Today's £ without inflation compounding.
+                    </>
+                  )
+                ) : (
+                  'Pension drawdown is calibrated to fill targeted tax thresholds without spilling into higher tax bands, with remaining lifestyle needs covered from ISAs and cash.'
+                )}
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={toggleInflation}
+            className="px-3 py-1.5 rounded-xl font-bold bg-white dark:bg-emerald-900/80 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-900 cursor-pointer shadow-2xs shrink-0 self-start sm:self-center transition-colors"
+          >
+            {adjustInflation ? 'View Nominal (Future £)' : "View Real (Today's £)"}
+          </button>
         </div>
       )}
 
@@ -2278,9 +2366,15 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
             </span>
           </div>
 
-          <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-            {adjustInflation ? "Real Terms (Today's £)" : 'Nominal Inflated Terms'}
-          </div>
+          <button
+            type="button"
+            onClick={toggleInflation}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-[11px] font-bold text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:border-sky-500 cursor-pointer transition-all"
+            title="Toggle between Real Terms (Today's £) and Nominal Inflated Terms"
+          >
+            <span className={`w-2 h-2 rounded-full ${adjustInflation ? 'bg-emerald-500' : 'bg-sky-500'}`} />
+            <span>{adjustInflation ? "Viewing in Real Terms (Today's £) — Click for Nominal" : "Viewing in Nominal Terms (Future £) — Click for Real"}</span>
+          </button>
         </div>
       </div>
 
