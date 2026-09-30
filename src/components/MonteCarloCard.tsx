@@ -21,7 +21,7 @@ interface MonteCarloCardProps {
   profile: UserProfile;
   pots: InvestmentPots;
   taxResult: TaxCalculationResult;
-  onChange?: (updatedProfile: UserProfile) => void;
+  onChange?: (updatedProfile: UserProfile | Partial<UserProfile>) => void;
   showAllScenarios?: boolean;
   appMode?: AppMode;
 }
@@ -936,7 +936,7 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
             <input
               type="checkbox"
               checked={adjustInflation}
-              onChange={(e) => onChange?.({ ...profile, adjustForInflation: e.target.checked })}
+              onChange={(e) => onChange?.({ adjustForInflation: e.target.checked })}
               className="w-4 h-4 text-indigo-600 rounded border-slate-300 dark:border-slate-700 focus:ring-indigo-500 cursor-pointer accent-indigo-600"
             />
             <span>Today's £ (Real Terms)</span>
@@ -948,7 +948,7 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
             <input
               type="checkbox"
               checked={adjustInflation}
-              onChange={(e) => onChange?.({ ...profile, adjustForInflation: e.target.checked })}
+              onChange={(e) => onChange?.({ adjustForInflation: e.target.checked })}
               className="w-4 h-4 text-indigo-600 rounded border-slate-300 dark:border-slate-700 focus:ring-indigo-500 cursor-pointer accent-indigo-600"
             />
             <span>Today's £ (Real Terms)</span>

@@ -26,7 +26,7 @@ interface AnnualBreakdownTableProps {
   projections: YearProjection[];
   profile: UserProfile;
   taxResult: TaxCalculationResult;
-  onChange?: (updatedProfile: UserProfile) => void;
+  onChange?: (updatedProfile: UserProfile | Partial<UserProfile>) => void;
 }
 
 export const AnnualBreakdownTable: React.FC<AnnualBreakdownTableProps> = ({
@@ -226,7 +226,7 @@ export const AnnualBreakdownTable: React.FC<AnnualBreakdownTableProps> = ({
             <input
               type="checkbox"
               checked={adjustInflation}
-              onChange={(e) => onChange?.({ ...profile, adjustForInflation: e.target.checked })}
+              onChange={(e) => onChange?.({ adjustForInflation: e.target.checked })}
               className="w-4 h-4 text-primary-600 rounded border-slate-300 dark:border-slate-700 focus:ring-primary-500 cursor-pointer accent-primary-600"
             />
             <span>Today's £ (Real Terms)</span>

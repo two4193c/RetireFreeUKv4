@@ -147,7 +147,7 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
     const next = !localAdjustInflation;
     setLocalAdjustInflation(next);
     if (onChange) {
-      onChange({ ...profile, adjustForInflation: next });
+      onChange({ adjustForInflation: next });
     }
   };
 
@@ -1387,23 +1387,23 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
       }
 
       // Default: Combined / Primary / Partner
-      let statePension = (p.statePensionReceived || 0);
-      let dbPension = (p.dbPensionIncomeReceived || 0);
-      let annuity = (p.annuityIncomeReceived || 0);
-      let giltIncome = activeViewMode === 'partner' ? 0 : (p.giltLadderIncomeReceived || 0);
-      let giltCapital = activeViewMode === 'partner' ? 0 : (p.giltLadderCapitalAllocated || 0);
-      let taxableFixed = (p.taxableFixedIncomeReceived || 0);
-      let taxFreeFixed = (p.taxFreeFixedIncomeReceived || 0);
-      let lifeEventsInc = (p.lifeEventsIncome || 0);
-      let downsizeInc = (p.propertyDownsizeEquityReleased || 0);
+      let statePension = (p.statePensionReceived || 0) * scale;
+      let dbPension = (p.dbPensionIncomeReceived || 0) * scale;
+      let annuity = (p.annuityIncomeReceived || 0) * scale;
+      let giltIncome = activeViewMode === 'partner' ? 0 : ((p.giltLadderIncomeReceived || 0) * scale);
+      let giltCapital = activeViewMode === 'partner' ? 0 : ((p.giltLadderCapitalAllocated || 0) * scale);
+      let taxableFixed = (p.taxableFixedIncomeReceived || 0) * scale;
+      let taxFreeFixed = (p.taxFreeFixedIncomeReceived || 0) * scale;
+      let lifeEventsInc = (p.lifeEventsIncome || 0) * scale;
+      let downsizeInc = (p.propertyDownsizeEquityReleased || 0) * scale;
 
-      let pensionDrawdownTaxable = (p.pensionDrawdownTaxable || 0);
-      let pensionDrawdownTaxFree = (p.pensionDrawdownTaxFree || 0);
-      let pensionDrawdownTotal = (p.pensionDrawdown ?? (pensionDrawdownTaxable + pensionDrawdownTaxFree));
+      let pensionDrawdownTaxable = (p.pensionDrawdownTaxable || 0) * scale;
+      let pensionDrawdownTaxFree = (p.pensionDrawdownTaxFree || 0) * scale;
+      let pensionDrawdownTotal = (p.pensionDrawdown ?? (pensionDrawdownTaxable + pensionDrawdownTaxFree)) * scale;
 
-      let isaDrawdown = (p.isaDrawdown || 0);
-      let cashDrawdown = (p.cashDrawdown || 0);
-      let totalTaxPaid = (p.totalTaxPaid || p.taxOnWithdrawal || 0);
+      let isaDrawdown = (p.isaDrawdown || 0) * scale;
+      let cashDrawdown = (p.cashDrawdown || 0) * scale;
+      let totalTaxPaid = (p.totalTaxPaid || p.taxOnWithdrawal || 0) * scale;
       let curMortgageShare = scaledMortgageAnnual;
 
       if (activeViewMode === 'primary') {
@@ -1459,12 +1459,12 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
       const netRetirementIncome = Math.max(0, totalGrossRetirementInflows - totalTaxPaid);
 
       // Allocation of net retirement cash
-      const annualExcess = activeViewMode === 'combined'
+      const annualExcess = (activeViewMode === 'combined'
         ? ((p.annualIncomeExcess || 0) + (p.propertyDownsizeEquityReleased || 0))
-        : (isCouple ? (((p.annualIncomeExcess || 0) + (p.propertyDownsizeEquityReleased || 0)) * 0.5) : ((p.annualIncomeExcess || 0) + (p.propertyDownsizeEquityReleased || 0)));
-      const shortfall = activeViewMode === 'combined'
+        : (isCouple ? (((p.annualIncomeExcess || 0) + (p.propertyDownsizeEquityReleased || 0)) * 0.5) : ((p.annualIncomeExcess || 0) + (p.propertyDownsizeEquityReleased || 0)))) * scale;
+      const shortfall = (activeViewMode === 'combined'
         ? (p.incomeShortfall || 0)
-        : (isCouple ? ((p.incomeShortfall || 0) * 0.5) : (p.incomeShortfall || 0));
+        : (isCouple ? ((p.incomeShortfall || 0) * 0.5) : (p.incomeShortfall || 0))) * scale;
 
       // Deduct mortgage if still active in retirement
       const mortgageAlloc = Math.min(netRetirementIncome, curMortgageShare);

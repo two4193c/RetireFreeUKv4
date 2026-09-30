@@ -18,7 +18,7 @@ import { MacroSettingsCard } from './MacroSettingsCard';
 
 interface AdvancedSettingsCardProps {
   profile: UserProfile;
-  onChange: (updatedProfile: UserProfile) => void;
+  onChange: (updatedProfile: UserProfile | Partial<UserProfile>) => void;
   onOpenAiAdvisor?: () => void;
 }
 
@@ -145,7 +145,7 @@ export const AdvancedSettingsCard: React.FC<AdvancedSettingsCardProps> = ({ prof
               <div className="flex items-center gap-2 bg-white dark:bg-slate-900 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 shrink-0 self-start sm:self-auto">
                 <button
                   type="button"
-                  onClick={() => onChange({ ...profile, indexTaxBands: true })}
+                  onClick={() => onChange({ indexTaxBands: true })}
                   className={`px-3.5 py-2 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
                     (profile.indexTaxBands ?? true)
                       ? 'bg-primary-600 text-white shadow-xs'
@@ -156,7 +156,7 @@ export const AdvancedSettingsCard: React.FC<AdvancedSettingsCardProps> = ({ prof
                 </button>
                 <button
                   type="button"
-                  onClick={() => onChange({ ...profile, indexTaxBands: false })}
+                  onClick={() => onChange({ indexTaxBands: false })}
                   className={`px-3.5 py-2 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
                     !(profile.indexTaxBands ?? true)
                       ? 'bg-amber-600 text-white shadow-xs'

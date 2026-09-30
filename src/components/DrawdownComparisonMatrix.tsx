@@ -18,7 +18,7 @@ interface DrawdownComparisonMatrixProps {
   profile: UserProfile;
   pots: InvestmentPots;
   projections?: YearProjection[];
-  onChange: (updatedProfile: UserProfile) => void;
+  onChange: (updatedProfile: UserProfile | Partial<UserProfile>) => void;
 }
 
 export const DrawdownComparisonMatrix: React.FC<DrawdownComparisonMatrixProps> = ({
@@ -51,12 +51,10 @@ export const DrawdownComparisonMatrix: React.FC<DrawdownComparisonMatrixProps> =
   const handleSelectStrategy = (strat: DrawdownStrategy) => {
     if (selectedPerson === 'partner') {
       onChange({
-        ...profile,
         partnerDrawdownStrategy: strat,
       });
     } else {
       onChange({
-        ...profile,
         drawdownStrategy: strat,
       });
     }

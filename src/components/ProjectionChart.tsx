@@ -24,7 +24,7 @@ interface ProjectionChartProps {
   projections: YearProjection[];
   profile: UserProfile;
   pots?: InvestmentPots;
-  onChange?: (updatedProfile: UserProfile) => void;
+  onChange?: (updatedProfile: UserProfile | Partial<UserProfile>) => void;
   onOpenMaximizedSpendModal?: () => void;
   showAllCharts?: boolean;
   appMode?: AppMode;
@@ -2279,7 +2279,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
             <input
               type="checkbox"
               checked={adjustInflation}
-              onChange={(e) => onChange?.({ ...profile, adjustForInflation: e.target.checked })}
+              onChange={(e) => onChange?.({ adjustForInflation: e.target.checked })}
               className="w-4 h-4 text-primary-600 rounded border-slate-300 dark:border-slate-700 focus:ring-primary-500 cursor-pointer accent-primary-600"
             />
             <span>Today's £ (Real Terms)</span>
@@ -2291,7 +2291,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
             <input
               type="checkbox"
               checked={adjustInflation}
-              onChange={(e) => onChange?.({ ...profile, adjustForInflation: e.target.checked })}
+              onChange={(e) => onChange?.({ adjustForInflation: e.target.checked })}
               className="w-4 h-4 text-primary-600 rounded border-slate-300 dark:border-slate-700 focus:ring-primary-500 cursor-pointer accent-primary-600"
             />
             <span>Today's £ (Real Terms)</span>

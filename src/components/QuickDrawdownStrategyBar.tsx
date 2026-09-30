@@ -382,8 +382,13 @@ export const QuickDrawdownStrategyBar: React.FC<QuickDrawdownStrategyBarProps> =
       onSelectPerson(person);
     }
 
-    let incomeOpt = profile.incomeProductOption;
-    let partnerIncomeOpt = profile.partnerIncomeProductOption;
+    let baseProf = profile;
+    if (baseProf.maximizedSpendConfig?.enabled) {
+      baseProf = disableMaximizedSpend(baseProf);
+    }
+
+    let incomeOpt = baseProf.incomeProductOption;
+    let partnerIncomeOpt = baseProf.partnerIncomeProductOption;
 
     if (strat === 'annuity') {
       if (person === 'partner') partnerIncomeOpt = 'annuity';
@@ -398,13 +403,13 @@ export const QuickDrawdownStrategyBar: React.FC<QuickDrawdownStrategyBarProps> =
 
     if (person === 'partner') {
       onChangeProfile({
-        ...profile,
+        ...baseProf,
         partnerDrawdownStrategy: strat,
         partnerIncomeProductOption: partnerIncomeOpt,
       });
     } else {
       onChangeProfile({
-        ...profile,
+        ...baseProf,
         drawdownStrategy: strat,
         incomeProductOption: incomeOpt,
       });

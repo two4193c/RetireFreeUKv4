@@ -850,7 +850,7 @@ export function computeCashFlowSankeyData(
           label: `${primaryName} Pension Drawdown`,
           sublabel: isTaxFreeFill
             ? `0% Tax Fill: ${formatGBP(priPensionDrawdownTaxable)} PA + ${formatGBP(priPensionDrawdownTaxFree)} PCLS (0% Tax)`
-            : `Taxable: ${formatGBP(priPensionDrawdownTaxFree)} | Free: ${formatGBP(priPensionDrawdownTaxFree)}`,
+            : `Taxable: ${formatGBP(priPensionDrawdownTaxable)} | Free: ${formatGBP(priPensionDrawdownTaxFree)}`,
           amount: priPensionDrawdownTotal,
           color: '#10b981',
           category: 'source',
