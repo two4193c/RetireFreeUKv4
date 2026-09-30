@@ -147,4 +147,39 @@ describe('CashFlowSankeyCard', () => {
     expect(mockOnChange).toHaveBeenCalledWith(expect.objectContaining({ adjustForInflation: true }));
     expect(screen.getAllByText(/Real Terms \(Today's £\)/i).length).toBeGreaterThan(0);
   });
+
+  it('renders distinct taxable and tax-free pension drawdown labels in decumulation', () => {
+    const retiredProjections: YearProjection[] = [
+      {
+        age: 65,
+        isRetired: true,
+        pensionDrawdown: 20000,
+        pensionDrawdownTaxable: 15000,
+        pensionDrawdownTaxFree: 5000,
+        primaryPensionDrawdown: 20000,
+        primaryPensionDrawdownTaxable: 15000,
+        primaryPensionDrawdownTaxFree: 5000,
+        isaDrawdown: 10000,
+        cashDrawdown: 0,
+        totalTaxPaid: 486,
+        year: 2030,
+      } as unknown as YearProjection,
+    ];
+
+    const retiredProfile: UserProfile = {
+      ...mockProfile,
+      currentAge: 65,
+      targetRetirementAge: 65,
+    };
+
+    render(
+      <CashFlowSankeyCard
+        projections={retiredProjections}
+        profile={retiredProfile}
+      />
+    );
+
+    expect(screen.getAllByText('Taxable Pension / SIPP Drawdown').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Tax-Free Pension Drawdown (PCLS / UFPLS)').length).toBeGreaterThan(0);
+  });
 });

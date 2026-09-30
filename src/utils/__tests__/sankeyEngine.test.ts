@@ -116,7 +116,7 @@ describe('sankeyEngine - computeCashFlowSankeyData', () => {
     expect(data!.nodes.length).toBeGreaterThan(0);
     
     const nodeIds = data!.nodes.map(n => n.id);
-    expect(nodeIds).toContain('part_pension_dd');
+    expect(nodeIds.some(id => id.startsWith('part_pension_dd'))).toBe(true);
     expect(nodeIds).toContain('pri_retire_hub');
     expect(nodeIds).toContain('essential_retirement_spend');
   });
@@ -425,5 +425,55 @@ describe('sankeyEngine - additional view modes and edge cases', () => {
       .filter((l) => l.sourceId === 'gross_hub')
       .reduce((sum, l) => sum + l.amount, 0);
     expect(Math.abs(incomingReal - outgoingReal)).toBeLessThan(1);
+  });
+
+  it('separates private pension / SIPP drawdown into taxable and tax-free nodes in combined and split views', () => {
+    const profile: UserProfile = {
+      ...DEFAULT_PROFILE,
+      isCouplePlanning: true,
+      partnerGrossAnnualSalary: 40000,
+      targetRetirementAge: 60,
+      partnerTargetRetirementAge: 60,
+      drawdownStrategy: 'tax_free_bracket',
+    };
+    const pots = {
+      ...DEFAULT_POTS,
+      partnerWorkplacePensionBalance: 100000,
+    };
+    const projections = generateProjections(profile, pots);
+
+    // 1. Combined view in decumulation
+    const combinedData = computeCashFlowSankeyData(profile, pots, projections, 65, 'combined');
+    expect(combinedData).toBeDefined();
+
+    const combinedNodeIds = combinedData!.nodes.map((n) => n.id);
+    expect(combinedNodeIds).toContain('pension_drawdown_taxable');
+    expect(combinedNodeIds).toContain('pension_drawdown_taxfree');
+
+    const taxableNode = combinedData!.nodes.find((n) => n.id === 'pension_drawdown_taxable')!;
+    const taxFreeNode = combinedData!.nodes.find((n) => n.id === 'pension_drawdown_taxfree')!;
+    expect(taxableNode.label).toContain('Taxable Pension');
+    expect(taxFreeNode.label).toContain('Tax-Free Pension');
+    expect(taxableNode.amount).toBeGreaterThan(0);
+    expect(taxFreeNode.amount).toBeGreaterThan(0);
+
+    // Links to gross_retire_hub
+    const taxableLink = combinedData!.links.find((l) => l.sourceId === 'pension_drawdown_taxable');
+    const taxFreeLink = combinedData!.links.find((l) => l.sourceId === 'pension_drawdown_taxfree');
+    expect(taxableLink?.targetId).toBe('gross_retire_hub');
+    expect(taxFreeLink?.targetId).toBe('gross_retire_hub');
+
+    // 2. Split view in decumulation
+    const splitData = computeCashFlowSankeyData(profile, pots, projections, 65, 'split');
+    expect(splitData).toBeDefined();
+
+    const splitNodeIds = splitData!.nodes.map((n) => n.id);
+    expect(splitNodeIds).toContain('pri_pension_dd_taxable');
+    expect(splitNodeIds).toContain('pri_pension_dd_taxfree');
+
+    const priTaxableNode = splitData!.nodes.find((n) => n.id === 'pri_pension_dd_taxable')!;
+    const priTaxFreeNode = splitData!.nodes.find((n) => n.id === 'pri_pension_dd_taxfree')!;
+    expect(priTaxableNode.amount).toBeGreaterThan(0);
+    expect(priTaxFreeNode.amount).toBeGreaterThan(0);
   });
 });

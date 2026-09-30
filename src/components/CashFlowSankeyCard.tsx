@@ -881,6 +881,12 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
       const priPensionDrawdownTaxable = (p.primaryPensionDrawdownTaxable ?? (isCouple ? ((p.pensionDrawdownTaxable || 0) * 0.5) : (p.pensionDrawdownTaxable || 0))) * scale;
       const priPensionDrawdownTaxFree = (p.primaryPensionDrawdownTaxFree ?? (isCouple ? ((p.pensionDrawdownTaxFree || 0) * 0.5) : (p.pensionDrawdownTaxFree || 0))) * scale;
       const priPensionDrawdownTotal = (p.primaryPensionDrawdown ?? (priPensionDrawdownTaxable + priPensionDrawdownTaxFree)) * scale;
+      let priTaxableDrawdown = priPensionDrawdownTaxable;
+      let priTaxFreeDrawdown = priPensionDrawdownTaxFree;
+      if (priTaxableDrawdown === 0 && priTaxFreeDrawdown === 0 && priPensionDrawdownTotal > 0) {
+        priTaxFreeDrawdown = Math.round(priPensionDrawdownTotal * 0.25);
+        priTaxableDrawdown = priPensionDrawdownTotal - priTaxFreeDrawdown;
+      }
       const priIsaDrawdown = (p.primaryIsaDrawdown ?? (isCouple ? ((p.isaDrawdown || 0) * 0.5) : (p.isaDrawdown || 0))) * scale;
       const priCashDrawdown = (p.primaryCashDrawdown ?? (isCouple ? ((p.cashDrawdown || 0) * 0.5) : (p.cashDrawdown || 0))) * scale;
       const priLifeEventsInc = (p.lifeEventsIncome || 0) * scale;
@@ -913,6 +919,12 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
       const partPensionDrawdownTaxable = isCouple ? ((p.partnerPensionDrawdownTaxable || 0) * scale) : 0;
       const partPensionDrawdownTaxFree = isCouple ? ((p.partnerPensionDrawdownTaxFree || 0) * scale) : 0;
       const partPensionDrawdownTotal = isCouple ? ((p.partnerPensionDrawdown ?? (partPensionDrawdownTaxable + partPensionDrawdownTaxFree)) * scale) : 0;
+      let partTaxableDrawdown = partPensionDrawdownTaxable;
+      let partTaxFreeDrawdown = partPensionDrawdownTaxFree;
+      if (partTaxableDrawdown === 0 && partTaxFreeDrawdown === 0 && partPensionDrawdownTotal > 0) {
+        partTaxFreeDrawdown = Math.round(partPensionDrawdownTotal * 0.25);
+        partTaxableDrawdown = partPensionDrawdownTotal - partTaxFreeDrawdown;
+      }
       const partIsaDrawdown = isCouple ? ((p.partnerIsaDrawdown || 0) * scale) : 0;
       const partCashDrawdown = isCouple ? ((p.partnerCashDrawdown || 0) * scale) : 0;
       const partLifeEventsInc = 0;
@@ -1044,19 +1056,28 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
             icon: Coins,
           });
         }
-        if (priPensionDrawdownTotal > 0) {
-          const isTaxFreeFill = profile.drawdownStrategy === 'tax_free_bracket';
+        if (priTaxableDrawdown > 0) {
           nodes.push({
-            id: 'pri_pension_dd',
-            label: `${primaryName} Pension Drawdown`,
-            sublabel: isTaxFreeFill
-              ? `0% Tax Fill: ${formatGBP(priPensionDrawdownTaxable)} PA + ${formatGBP(priPensionDrawdownTaxFree)} PCLS (0% Tax)`
-              : `Taxable: ${formatGBP(priPensionDrawdownTaxable)} | Free: ${formatGBP(priPensionDrawdownTaxFree)}`,
-            amount: priPensionDrawdownTotal,
+            id: 'pri_pension_dd_taxable',
+            label: `${primaryName} Taxable Pension`,
+            sublabel: 'Subject to UK Income Tax Bands',
+            amount: priTaxableDrawdown,
             color: '#10b981',
             category: 'source',
             column: 0,
             icon: PiggyBank,
+          });
+        }
+        if (priTaxFreeDrawdown > 0) {
+          nodes.push({
+            id: 'pri_pension_dd_taxfree',
+            label: `${primaryName} Tax-Free Pension (PCLS)`,
+            sublabel: '25% Tax-Free Lump Sum (0% Tax)',
+            amount: priTaxFreeDrawdown,
+            color: '#34d399',
+            category: 'source',
+            column: 0,
+            icon: ShieldCheck,
           });
         }
         if (priIsaDrawdown > 0) {
@@ -1157,19 +1178,28 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
             icon: Coins,
           });
         }
-        if (partPensionDrawdownTotal > 0) {
-          const isTaxFreeFill = (profile.partnerDrawdownStrategy || profile.drawdownStrategy) === 'tax_free_bracket';
+        if (partTaxableDrawdown > 0) {
           nodes.push({
-            id: 'part_pension_dd',
-            label: `${partnerName} Pension Drawdown`,
-            sublabel: isTaxFreeFill
-              ? `0% Tax Fill: ${formatGBP(partPensionDrawdownTaxable)} PA + ${formatGBP(partPensionDrawdownTaxFree)} PCLS (0% Tax)`
-              : `Taxable: ${formatGBP(partPensionDrawdownTaxable)} | Free: ${formatGBP(partPensionDrawdownTaxFree)}`,
-            amount: partPensionDrawdownTotal,
-            color: '#34d399',
+            id: 'part_pension_dd_taxable',
+            label: `${partnerName} Taxable Pension`,
+            sublabel: 'Subject to UK Income Tax Bands',
+            amount: partTaxableDrawdown,
+            color: '#059669',
             category: 'source',
             column: 0,
             icon: PiggyBank,
+          });
+        }
+        if (partTaxFreeDrawdown > 0) {
+          nodes.push({
+            id: 'part_pension_dd_taxfree',
+            label: `${partnerName} Tax-Free Pension (PCLS)`,
+            sublabel: '25% Tax-Free Lump Sum (0% Tax)',
+            amount: partTaxFreeDrawdown,
+            color: '#6ee7b7',
+            category: 'source',
+            column: 0,
+            icon: ShieldCheck,
           });
         }
         if (partIsaDrawdown > 0) {
@@ -1214,7 +1244,8 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
         if (priGiltIncome > 0) links.push({ sourceId: 'pri_gilt_ladder_income', targetId: 'pri_retire_hub', amount: priGiltIncome, color: '#10b981' });
         if (priGiltCapital > 0) links.push({ sourceId: 'pri_gilt_capital_src', targetId: 'pri_retire_hub', amount: priGiltCapital, color: '#0d9488' });
         if (priTaxableFixed + priTaxFreeFixed > 0) links.push({ sourceId: 'pri_fixed', targetId: 'pri_retire_hub', amount: priTaxableFixed + priTaxFreeFixed, color: '#0d9488' });
-        if (priPensionDrawdownTotal > 0) links.push({ sourceId: 'pri_pension_dd', targetId: 'pri_retire_hub', amount: priPensionDrawdownTotal, color: '#10b981' });
+        if (priTaxableDrawdown > 0) links.push({ sourceId: 'pri_pension_dd_taxable', targetId: 'pri_retire_hub', amount: priTaxableDrawdown, color: '#10b981' });
+        if (priTaxFreeDrawdown > 0) links.push({ sourceId: 'pri_pension_dd_taxfree', targetId: 'pri_retire_hub', amount: priTaxFreeDrawdown, color: '#34d399' });
         if (priIsaDrawdown > 0) links.push({ sourceId: 'pri_isa_dd', targetId: 'pri_retire_hub', amount: priIsaDrawdown, color: '#6366f1' });
         if (priCashDrawdown > 0) links.push({ sourceId: 'pri_cash_dd', targetId: 'pri_retire_hub', amount: priCashDrawdown, color: '#f59e0b' });
         if (priLifeEventsInc > 0) links.push({ sourceId: 'pri_life_event', targetId: 'pri_retire_hub', amount: priLifeEventsInc, color: '#06b6d4' });
@@ -1234,7 +1265,8 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
         if (partDbPension > 0) links.push({ sourceId: 'part_db_pension', targetId: 'part_retire_hub', amount: partDbPension, color: '#38bdf8' });
         if (partAnnuity > 0) links.push({ sourceId: 'part_annuity', targetId: 'part_retire_hub', amount: partAnnuity, color: '#f472b6' });
         if (partTaxableFixed + partTaxFreeFixed > 0) links.push({ sourceId: 'part_fixed', targetId: 'part_retire_hub', amount: partTaxableFixed + partTaxFreeFixed, color: '#2dd4bf' });
-        if (partPensionDrawdownTotal > 0) links.push({ sourceId: 'part_pension_dd', targetId: 'part_retire_hub', amount: partPensionDrawdownTotal, color: '#34d399' });
+        if (partTaxableDrawdown > 0) links.push({ sourceId: 'part_pension_dd_taxable', targetId: 'part_retire_hub', amount: partTaxableDrawdown, color: '#059669' });
+        if (partTaxFreeDrawdown > 0) links.push({ sourceId: 'part_pension_dd_taxfree', targetId: 'part_retire_hub', amount: partTaxFreeDrawdown, color: '#6ee7b7' });
         if (partIsaDrawdown > 0) links.push({ sourceId: 'part_isa_dd', targetId: 'part_retire_hub', amount: partIsaDrawdown, color: '#818cf8' });
         if (partCashDrawdown > 0) links.push({ sourceId: 'part_cash_dd', targetId: 'part_retire_hub', amount: partCashDrawdown, color: '#fbbf24' });
 
@@ -1415,8 +1447,8 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
         giltCapital = priGiltCapital;
         taxableFixed = priTaxableFixed;
         taxFreeFixed = priTaxFreeFixed;
-        pensionDrawdownTaxable = priPensionDrawdownTaxable;
-        pensionDrawdownTaxFree = priPensionDrawdownTaxFree;
+        pensionDrawdownTaxable = priTaxableDrawdown;
+        pensionDrawdownTaxFree = priTaxFreeDrawdown;
         pensionDrawdownTotal = priPensionDrawdownTotal;
         isaDrawdown = priIsaDrawdown;
         cashDrawdown = priCashDrawdown;
@@ -1432,8 +1464,8 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
         giltCapital = 0;
         taxableFixed = partTaxableFixed;
         taxFreeFixed = partTaxFreeFixed;
-        pensionDrawdownTaxable = partPensionDrawdownTaxable;
-        pensionDrawdownTaxFree = partPensionDrawdownTaxFree;
+        pensionDrawdownTaxable = partTaxableDrawdown;
+        pensionDrawdownTaxFree = partTaxFreeDrawdown;
         pensionDrawdownTotal = partPensionDrawdownTotal;
         isaDrawdown = partIsaDrawdown;
         cashDrawdown = partCashDrawdown;
@@ -1567,19 +1599,36 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
         });
       }
 
-      if (pensionDrawdownTotal > 0) {
-        const isTaxFreeFill = profile.drawdownStrategy === 'tax_free_bracket';
+      let taxableDrawdown = pensionDrawdownTaxable;
+      let taxFreeDrawdown = pensionDrawdownTaxFree;
+      if (taxableDrawdown === 0 && taxFreeDrawdown === 0 && pensionDrawdownTotal > 0) {
+        taxFreeDrawdown = Math.round(pensionDrawdownTotal * 0.25);
+        taxableDrawdown = pensionDrawdownTotal - taxFreeDrawdown;
+      }
+
+      if (taxableDrawdown > 0) {
         nodes.push({
-          id: 'pension_drawdown',
-          label: activeViewMode !== 'combined' ? `${currentPersonName} Pension Drawdown` : 'Private Pension / SIPP Drawdown',
-          sublabel: isTaxFreeFill
-            ? `0% Tax Fill: ${formatGBP(pensionDrawdownTaxable)} PA + ${formatGBP(pensionDrawdownTaxFree)} PCLS (0% Tax)`
-            : `Taxable: ${formatGBP(pensionDrawdownTaxable)} | Tax-Free: ${formatGBP(pensionDrawdownTaxFree)}`,
-          amount: pensionDrawdownTotal,
-          color: '#10b981', // primary-500
+          id: 'pension_drawdown_taxable',
+          label: activeViewMode !== 'combined' ? `${currentPersonName} Taxable Pension` : 'Taxable Pension / SIPP Drawdown',
+          sublabel: 'Subject to UK Income Tax Bands',
+          amount: taxableDrawdown,
+          color: '#10b981', // emerald-500
           category: 'source',
           column: 0,
           icon: PiggyBank,
+        });
+      }
+
+      if (taxFreeDrawdown > 0) {
+        nodes.push({
+          id: 'pension_drawdown_taxfree',
+          label: activeViewMode !== 'combined' ? `${currentPersonName} Tax-Free Pension (PCLS)` : 'Tax-Free Pension Drawdown (PCLS / UFPLS)',
+          sublabel: '25% Tax-Free Lump Sum (0% Tax)',
+          amount: taxFreeDrawdown,
+          color: '#34d399', // emerald-400
+          category: 'source',
+          column: 0,
+          icon: ShieldCheck,
         });
       }
 
@@ -1658,7 +1707,8 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
       if (giltIncome > 0) links.push({ sourceId: 'gilt_ladder_income', targetId: 'gross_retirement_hub', amount: giltIncome, color: '#10b981' });
       if (giltCapital > 0) links.push({ sourceId: 'gilt_ladder_capital_src', targetId: 'gross_retirement_hub', amount: giltCapital, color: '#0d9488' });
       if (taxableFixed + taxFreeFixed > 0) links.push({ sourceId: 'fixed_other_income', targetId: 'gross_retirement_hub', amount: taxableFixed + taxFreeFixed, color: '#0d9488' });
-      if (pensionDrawdownTotal > 0) links.push({ sourceId: 'pension_drawdown', targetId: 'gross_retirement_hub', amount: pensionDrawdownTotal, color: '#10b981' });
+      if (taxableDrawdown > 0) links.push({ sourceId: 'pension_drawdown_taxable', targetId: 'gross_retirement_hub', amount: taxableDrawdown, color: '#10b981' });
+      if (taxFreeDrawdown > 0) links.push({ sourceId: 'pension_drawdown_taxfree', targetId: 'gross_retirement_hub', amount: taxFreeDrawdown, color: '#34d399' });
       if (isaDrawdown > 0) links.push({ sourceId: 'isa_drawdown', targetId: 'gross_retirement_hub', amount: isaDrawdown, color: '#6366f1' });
       if (cashDrawdown > 0) links.push({ sourceId: 'cash_drawdown', targetId: 'gross_retirement_hub', amount: cashDrawdown, color: '#f59e0b' });
       if (lifeEventsInc > 0) links.push({ sourceId: 'life_events_inflow', targetId: 'gross_retirement_hub', amount: lifeEventsInc, color: '#06b6d4' });
@@ -2145,11 +2195,11 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
                 {profile.drawdownStrategy === 'tax_free_bracket' ? (
                   adjustInflation ? (
                     <>
-                      Drawing up to your <strong>£12,570 Personal Allowance</strong> at <strong>0% tax</strong>. Because withdrawals are taken from uncrystallised pension funds (UFPLS), 25% is tax-free cash (<strong>{formatGBP(flowData.nodes.find(n => n.id === 'pension_drawdown' || n.id === 'pri_pension_dd')?.amount ? (flowData.nodes.find(n => n.id === 'pension_drawdown' || n.id === 'pri_pension_dd')!.amount * 0.25) : 4190)}</strong>) and 75% fills the Personal Allowance (<strong>{formatGBP(flowData.nodes.find(n => n.id === 'pension_drawdown' || n.id === 'pri_pension_dd')?.amount ? (flowData.nodes.find(n => n.id === 'pension_drawdown' || n.id === 'pri_pension_dd')!.amount * 0.75) : 12570)}</strong>), yielding <strong>£0 income tax</strong>. Remaining spending is funded from tax-free ISAs.
+                      Drawing up to your <strong>£12,570 Personal Allowance</strong> at <strong>0% tax</strong>. Because withdrawals are taken from uncrystallised pension funds (UFPLS), 25% is tax-free cash (<strong>{formatGBP(flowData.nodes.find(n => n.id === 'pension_drawdown_taxfree' || n.id === 'pri_pension_dd_taxfree')?.amount ?? 4190)}</strong>) and 75% fills the Personal Allowance (<strong>{formatGBP(flowData.nodes.find(n => n.id === 'pension_drawdown_taxable' || n.id === 'pri_pension_dd_taxable')?.amount ?? 12570)}</strong>), yielding <strong>£0 income tax</strong>. Remaining spending is funded from tax-free ISAs.
                     </>
                   ) : (
                     <>
-                      Drawing up to your inflation-indexed <strong>{formatGBP(flowData.nodes.find(n => n.id === 'pension_drawdown' || n.id === 'pri_pension_dd')?.amount ? (flowData.nodes.find(n => n.id === 'pension_drawdown' || n.id === 'pri_pension_dd')!.amount * 0.75) : 23304)} Personal Allowance</strong> at <strong>0% tax</strong>. With UFPLS (25% tax-free lump sum of <strong>{formatGBP(flowData.nodes.find(n => n.id === 'pension_drawdown' || n.id === 'pri_pension_dd')?.amount ? (flowData.nodes.find(n => n.id === 'pension_drawdown' || n.id === 'pri_pension_dd')!.amount * 0.25) : 7768)}</strong>), total gross pension drawn is <strong>{formatGBP(flowData.nodes.find(n => n.id === 'pension_drawdown' || n.id === 'pri_pension_dd')?.amount || 31072)}</strong> with <strong>£0 tax</strong>. Click the toggle to view in Today's £ without inflation compounding.
+                      Drawing up to your inflation-indexed <strong>{formatGBP(flowData.nodes.find(n => n.id === 'pension_drawdown_taxable' || n.id === 'pri_pension_dd_taxable')?.amount ?? 23304)} Personal Allowance</strong> at <strong>0% tax</strong>. With UFPLS (25% tax-free lump sum of <strong>{formatGBP(flowData.nodes.find(n => n.id === 'pension_drawdown_taxfree' || n.id === 'pri_pension_dd_taxfree')?.amount ?? 7768)}</strong>), total gross pension drawn is <strong>{formatGBP(((flowData.nodes.find(n => n.id === 'pension_drawdown_taxable' || n.id === 'pri_pension_dd_taxable')?.amount ?? 0) + (flowData.nodes.find(n => n.id === 'pension_drawdown_taxfree' || n.id === 'pri_pension_dd_taxfree')?.amount ?? 0)) || 31072)}</strong> with <strong>£0 tax</strong>. Click the toggle to view in Today's £ without inflation compounding.
                     </>
                   )
                 ) : (
