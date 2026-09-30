@@ -388,4 +388,42 @@ describe('sankeyEngine - additional view modes and edge cases', () => {
     expect(data!.metrics.portfolioDrawdown).toBe(0);
     expect(data!.metrics.shortfall).toBe(20000);
   });
+
+  it('balances accumulation flows between inflows, intermediate hubs, and allocations in both nominal and real terms', () => {
+    const profile = {
+      ...DEFAULT_PROFILE,
+      currentAge: 35,
+      targetRetirementAge: 60,
+      grossAnnualSalary: 60000,
+      expectedInflationRate: 3.0,
+      adjustForInflation: false, // Nominal mode
+    };
+    const projections = generateProjections(profile, DEFAULT_POTS);
+
+    // Evaluate future accumulation year: age 45 (10 years of compounding inflation)
+    const nominalData = computeCashFlowSankeyData(profile, DEFAULT_POTS, projections, 45, 'combined');
+    expect(nominalData).toBeDefined();
+
+    // Check gross_hub balance in nominal mode
+    const incomingToGrossHub = nominalData!.links
+      .filter((l) => l.targetId === 'gross_hub')
+      .reduce((sum, l) => sum + l.amount, 0);
+    const outgoingFromGrossHub = nominalData!.links
+      .filter((l) => l.sourceId === 'gross_hub')
+      .reduce((sum, l) => sum + l.amount, 0);
+    expect(Math.abs(incomingToGrossHub - outgoingFromGrossHub)).toBeLessThan(1);
+
+    // Evaluate in real mode (adjustForInflation: true)
+    const realProfile = { ...profile, adjustForInflation: true };
+    const realData = computeCashFlowSankeyData(realProfile, DEFAULT_POTS, projections, 45, 'combined');
+    expect(realData).toBeDefined();
+
+    const incomingReal = realData!.links
+      .filter((l) => l.targetId === 'gross_hub')
+      .reduce((sum, l) => sum + l.amount, 0);
+    const outgoingReal = realData!.links
+      .filter((l) => l.sourceId === 'gross_hub')
+      .reduce((sum, l) => sum + l.amount, 0);
+    expect(Math.abs(incomingReal - outgoingReal)).toBeLessThan(1);
+  });
 });

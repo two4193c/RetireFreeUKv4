@@ -201,31 +201,32 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
       // ==========================================
       // ACCUMULATION PHASE CASH FLOW (SALARY & ACCUMULATION)
       // ==========================================
-      const priSalary = (profile.grossAnnualSalary || 0) * (adjustInflation ? 1 : inflationFactor);
-      const partSalary = isCouple ? (profile.partnerGrossAnnualSalary || 0) * (adjustInflation ? 1 : inflationFactor) : 0;
+      const accumScale = adjustInflation ? 1 : inflationFactor;
+      const priSalary = (profile.grossAnnualSalary || 0) * accumScale;
+      const partSalary = isCouple ? (profile.partnerGrossAnnualSalary || 0) * accumScale : 0;
       const totalSalary = priSalary + partSalary;
 
       // Calculate annual tax and deductions for this year
       const priTax = calculateUKTax(profile, pots || DEFAULT_POTS, false, p.age);
       const partTax = isCouple ? calculatePartnerUKTax(profile, profile.partnerPots || DEFAULT_PARTNER_POTS) : null;
 
-      const priEmpPension = (priTax.employeePensionContributionsAnnual || 0);
-      const priEmprPension = (priTax.employerPensionContributionsAnnual || 0);
+      const priEmpPension = (priTax.employeePensionContributionsAnnual || 0) * accumScale;
+      const priEmprPension = (priTax.employerPensionContributionsAnnual || 0) * accumScale;
       const priPensionTotal = priEmpPension + priEmprPension;
-      const priIsaContribs = (priTax.totalIsaContributionsAnnual || 0);
-      const priCashGiaContribs = (priTax.totalCashGiaContributionsAnnual || 0);
-      const priIncomeTax = priTax.totalIncomeTax;
-      const priNI = priTax.totalNationalInsurance;
-      const priNetTakeHome = Math.max(0, priTax.netTakeHomePay - priIsaContribs - priCashGiaContribs);
+      const priIsaContribs = (priTax.totalIsaContributionsAnnual || 0) * accumScale;
+      const priCashGiaContribs = (priTax.totalCashGiaContributionsAnnual || 0) * accumScale;
+      const priIncomeTax = (priTax.totalIncomeTax || 0) * accumScale;
+      const priNI = (priTax.totalNationalInsurance || 0) * accumScale;
+      const priNetTakeHome = Math.max(0, ((priTax.netTakeHomePay || 0) - (priTax.totalIsaContributionsAnnual || 0) - (priTax.totalCashGiaContributionsAnnual || 0))) * accumScale;
 
-      const partEmpPension = (partTax?.employeePensionContributionsAnnual || 0);
-      const partEmprPension = (partTax?.employerPensionContributionsAnnual || 0);
+      const partEmpPension = (partTax?.employeePensionContributionsAnnual || 0) * accumScale;
+      const partEmprPension = (partTax?.employerPensionContributionsAnnual || 0) * accumScale;
       const partPensionTotal = partEmpPension + partEmprPension;
-      const partIsaContribs = (partTax?.totalIsaContributionsAnnual || 0);
-      const partCashGiaContribs = (partTax?.totalCashGiaContributionsAnnual || 0);
-      const partIncomeTax = partTax ? partTax.totalIncomeTax : 0;
-      const partNI = partTax ? partTax.totalNationalInsurance : 0;
-      const partNetTakeHome = Math.max(0, (partTax?.netTakeHomePay || 0) - partIsaContribs - partCashGiaContribs);
+      const partIsaContribs = (partTax?.totalIsaContributionsAnnual || 0) * accumScale;
+      const partCashGiaContribs = (partTax?.totalCashGiaContributionsAnnual || 0) * accumScale;
+      const partIncomeTax = (partTax ? partTax.totalIncomeTax : 0) * accumScale;
+      const partNI = (partTax ? partTax.totalNationalInsurance : 0) * accumScale;
+      const partNetTakeHome = Math.max(0, ((partTax?.netTakeHomePay || 0) - (partTax?.totalIsaContributionsAnnual || 0) - (partTax?.totalCashGiaContributionsAnnual || 0))) * accumScale;
 
       const isIndividualShare = isCouple && (activeViewMode === 'primary' || activeViewMode === 'partner');
       const effectiveEssentialFloor = isIndividualShare ? combinedEssentialFloor / 2 : combinedEssentialFloor;
@@ -590,8 +591,8 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
         curCashGiaContribs = priCashGiaContribs;
         curNetTakeHome = priNetTakeHome;
         curMortgageShare = isCouple && totalSalary > 0
-          ? (priSalary / totalSalary) * mortgagePaymentAnnual
-          : mortgagePaymentAnnual;
+          ? (priSalary / totalSalary) * scaledMortgageAnnual
+          : scaledMortgageAnnual;
       } else if (activeViewMode === 'partner') {
         curSalary = partSalary;
         curEmprPension = partEmprPension;
@@ -602,8 +603,8 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
         curCashGiaContribs = partCashGiaContribs;
         curNetTakeHome = partNetTakeHome;
         curMortgageShare = totalSalary > 0
-          ? (partSalary / totalSalary) * mortgagePaymentAnnual
-          : (mortgagePaymentAnnual * 0.5);
+          ? (partSalary / totalSalary) * scaledMortgageAnnual
+          : (scaledMortgageAnnual * 0.5);
       }
 
       const totalGrossIncome = curSalary + curEmprPension;

@@ -50,6 +50,9 @@ export const WithdrawalGuardrailGaugeCard: React.FC<WithdrawalGuardrailGaugeCard
   let totalAssets = todayAssets;
   const retRow = projections?.find((p) => p.age === retAge);
 
+  let guaranteedIncomeAtRetirement = 0;
+  let withdrawalNeeded = 0;
+
   if (currentAge < retAge && retRow) {
     const rawStartingRetirementCapital = retRow.isRetired
       ? (retRow.totalPot || 0) + (retRow.totalWithdrawalAmount || 0)
@@ -62,47 +65,61 @@ export const WithdrawalGuardrailGaugeCard: React.FC<WithdrawalGuardrailGaugeCard
     totalAssets = Math.round(rawStartingRetirementCapital * scale);
     if (!adjustInflation && retRow.targetRetirementIncome > 0) {
       targetIncome = retRow.targetRetirementIncome;
+    } else {
+      targetIncome = getActualSpendingTargetForAge(profile, retAge);
     }
-  }
-  
-  let guaranteedIncomeAtRetirement = 0;
-  
-  // State Pension
-  const priDefYears = profile.statePensionDeferralYears || 0;
-  const priDefBoost = 1 + (0.058 * priDefYears);
-  if ((profile.includeStatePension ?? true) && retAge >= ((profile.statePensionAge || 67) + priDefYears)) {
-    const yrs = Math.min(35, profile.qualifyingYears ?? 35);
-    if (yrs >= 10) {
-      const baseSp = profile.statePensionAmountAnnual ?? (Math.round((yrs / 35) * (profile.fullStatePensionAmount ?? 12547.6) * 100) / 100);
-      guaranteedIncomeAtRetirement += baseSp * priDefBoost;
+
+    const nominalGuaranteed =
+      (retRow.statePensionReceived || 0) +
+      (retRow.dbPensionIncomeReceived || 0) +
+      (retRow.annuityIncomeReceived || 0) +
+      (retRow.taxableFixedIncomeReceived || 0) +
+      (retRow.taxFreeFixedIncomeReceived || 0);
+    guaranteedIncomeAtRetirement = Math.round(nominalGuaranteed * scale);
+
+    if (retRow.isRetired && (retRow.totalWithdrawalAmount || 0) > 0) {
+      withdrawalNeeded = Math.round(retRow.totalWithdrawalAmount * scale);
+    } else {
+      withdrawalNeeded = Math.max(0, targetIncome - guaranteedIncomeAtRetirement);
     }
-  }
-  if (profile.isCouplePlanning && (profile.partnerIncludeStatePension ?? true)) {
-    const pRetAge = profile.partnerTargetRetirementAge || retAge;
-    const partDefYears = profile.partnerStatePensionDeferralYears || 0;
-    const partDefBoost = 1 + (0.058 * partDefYears);
-    if (pRetAge >= ((profile.partnerStatePensionAge || 67) + partDefYears)) {
-      const yrs = Math.min(35, profile.partnerQualifyingYears ?? 35);
+  } else {
+    // State Pension
+    const priDefYears = profile.statePensionDeferralYears || 0;
+    const priDefBoost = 1 + (0.058 * priDefYears);
+    if ((profile.includeStatePension ?? true) && retAge >= ((profile.statePensionAge || 67) + priDefYears)) {
+      const yrs = Math.min(35, profile.qualifyingYears ?? 35);
       if (yrs >= 10) {
-        const baseSp = profile.partnerStatePensionAmountAnnual ?? (Math.round((yrs / 35) * (profile.partnerFullStatePensionAmount ?? 12547.6) * 100) / 100);
-        guaranteedIncomeAtRetirement += baseSp * partDefBoost;
+        const baseSp = profile.statePensionAmountAnnual ?? (Math.round((yrs / 35) * (profile.fullStatePensionAmount ?? 12547.6) * 100) / 100);
+        guaranteedIncomeAtRetirement += baseSp * priDefBoost;
       }
     }
+    if (profile.isCouplePlanning && (profile.partnerIncludeStatePension ?? true)) {
+      const pRetAge = profile.partnerTargetRetirementAge || retAge;
+      const partDefYears = profile.partnerStatePensionDeferralYears || 0;
+      const partDefBoost = 1 + (0.058 * partDefYears);
+      if (pRetAge >= ((profile.partnerStatePensionAge || 67) + partDefYears)) {
+        const yrs = Math.min(35, profile.partnerQualifyingYears ?? 35);
+        if (yrs >= 10) {
+          const baseSp = profile.partnerStatePensionAmountAnnual ?? (Math.round((yrs / 35) * (profile.partnerFullStatePensionAmount ?? 12547.6) * 100) / 100);
+          guaranteedIncomeAtRetirement += baseSp * partDefBoost;
+        }
+      }
+    }
+
+    // DB Pensions
+    (profile.dbPensions || []).filter(p => p.enabled && (profile.isCouplePlanning || p.owner !== 'partner')).forEach(p => {
+      const evalAge = p.owner === 'partner' ? (profile.partnerTargetRetirementAge || retAge) : retAge;
+      if (evalAge >= p.startAge) guaranteedIncomeAtRetirement += p.annualIncome;
+    });
+
+    // Fixed Income
+    (profile.fixedIncomeStreams || []).filter(s => s.enabled && (profile.isCouplePlanning || s.owner !== 'partner')).forEach(s => {
+      const evalAge = s.owner === 'partner' ? (profile.partnerTargetRetirementAge || retAge) : retAge;
+      if (evalAge >= s.startAge && (!s.endAge || evalAge <= s.endAge)) guaranteedIncomeAtRetirement += s.annualAmount;
+    });
+
+    withdrawalNeeded = Math.max(0, targetIncome - guaranteedIncomeAtRetirement);
   }
-
-  // DB Pensions
-  (profile.dbPensions || []).filter(p => p.enabled && (profile.isCouplePlanning || p.owner !== 'partner')).forEach(p => {
-    const evalAge = p.owner === 'partner' ? (profile.partnerTargetRetirementAge || retAge) : retAge;
-    if (evalAge >= p.startAge) guaranteedIncomeAtRetirement += p.annualIncome;
-  });
-
-  // Fixed Income
-  (profile.fixedIncomeStreams || []).filter(s => s.enabled && (profile.isCouplePlanning || s.owner !== 'partner')).forEach(s => {
-    const evalAge = s.owner === 'partner' ? (profile.partnerTargetRetirementAge || retAge) : retAge;
-    if (evalAge >= s.startAge && (!s.endAge || evalAge <= s.endAge)) guaranteedIncomeAtRetirement += s.annualAmount;
-  });
-
-  const withdrawalNeeded = Math.max(0, targetIncome - guaranteedIncomeAtRetirement);
   
   // Initial SWR — guard against zero
   const initialSwr = totalAssets > 0 ? (withdrawalNeeded / totalAssets) * 100 : 3.5;

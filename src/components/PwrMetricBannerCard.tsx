@@ -89,7 +89,7 @@ export const PwrMetricBannerCard: React.FC<PwrMetricBannerCardProps> = ({ profil
     const row = projections?.find((p) => p.age === targetAge);
     let nominalStartingCapital = todayAssets;
     let nominalEndCapital = todayAssets;
-    let nominalTargetIncome = baseTargetIncome * (adjustInflation ? 1 : inflFactor);
+    let nominalTargetIncome = baseTargetIncome * inflFactor;
     let nominalGuaranteed = 0;
     let nominalNetDrawdown = 0;
 

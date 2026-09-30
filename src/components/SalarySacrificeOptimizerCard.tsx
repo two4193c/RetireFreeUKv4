@@ -33,7 +33,7 @@ import {
 interface SalarySacrificeOptimizerCardProps {
   profile: UserProfile;
   pots: InvestmentPots;
-  onChange?: (updatedProfile: UserProfile) => void;
+  onChange?: (updatedProfile: UserProfile | Partial<UserProfile>) => void;
 }
 
 export const SalarySacrificeOptimizerCard: React.FC<SalarySacrificeOptimizerCardProps> = ({
