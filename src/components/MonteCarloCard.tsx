@@ -61,7 +61,7 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
   }, [localParams]);
 
   const [activeTab, setActiveTab] = useState<'fan' | 'breakdown' | 'survival'>('fan');
-  const adjustInflation = profile.adjustForInflation ?? false;
+  const adjustInflation = profile.adjustForInflation !== false;
 
   const isCouple = Boolean(profile.isCouplePlanning);
   const primarySpEnabled = profile.includeStatePension ?? true;

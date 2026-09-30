@@ -1739,7 +1739,7 @@ function parseAnnuityTypeConfig(type?: string) {
               const eventAmount = inflLinked ? rawAmount * inflationFactor : rawAmount;
               const isIncome = event.type === 'income';
               const potTarget = (event.targetPot || 'cash_savings') as string;
-              const adjustInflationPref = Boolean(profile.adjustForInflation);
+              const adjustInflationPref = profile.adjustForInflation !== false;
 
               if (isIncome) {
                 if (isPartnerEvent) {

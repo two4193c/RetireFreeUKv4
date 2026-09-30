@@ -174,7 +174,7 @@ export const DEFAULT_PROFILE: UserProfile = {
     noGoIncomeAnnual: 22000,
   },
   expectedInflationRate: 2.5,
-  adjustForInflation: false,
+  adjustForInflation: true,
   indexTaxBands: true,
   expectedInvestmentReturn: 6.5,
   postRetirementReturn: 4.5,

@@ -37,7 +37,7 @@ export const AnnualBreakdownTable: React.FC<AnnualBreakdownTableProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [phaseFilter, setPhaseFilter] = useState<'all' | 'accumulation' | 'retirement' | 'failure'>('all');
-  const adjustInflation = profile.adjustForInflation ?? false;
+  const adjustInflation = profile.adjustForInflation !== false;
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState<number>(15); // 15 or 0 for All
   const [showTaxBreakdownModal, setShowTaxBreakdownModal] = useState<YearProjection | null>(null);

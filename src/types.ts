@@ -425,7 +425,7 @@ export interface UserProfile {
   spendingPhases?: SpendingPhasesConfig; // Go-Go, Slow-Go, No-Go age-based spending requirements
   maximizedSpendConfig?: MaximizedSpendConfig; // Separate income requirement configuration calculated by Max Spend Solver
   expectedInflationRate: number; // percentage e.g. 2.5
-  adjustForInflation?: boolean; // Global Real Terms (Today's £) vs Nominal Terms toggle
+  adjustForInflation?: boolean; // Global Real Terms (Today's £) vs Nominal Terms toggle (default true)
   incomeIncreaseMode?: 'inflation' | 'custom'; // Mode for retirement income increase
   customIncomeIncreasePercent?: number; // Custom percentage (e.g. 0, 1) when mode is custom
   indexTaxBands?: boolean; // Index Income Tax bands & Personal Allowance with CPI inflation (default true)

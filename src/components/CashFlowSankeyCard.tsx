@@ -135,10 +135,10 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
   }, [projections, selectedAge]);
 
   const isRetired = selectedProjection ? selectedProjection.isRetired : false;
-  const [localAdjustInflation, setLocalAdjustInflation] = useState<boolean>(profile.adjustForInflation ?? false);
+  const [localAdjustInflation, setLocalAdjustInflation] = useState<boolean>(profile.adjustForInflation !== false);
 
   useEffect(() => {
-    setLocalAdjustInflation(profile.adjustForInflation ?? false);
+    setLocalAdjustInflation(profile.adjustForInflation !== false);
   }, [profile.adjustForInflation]);
 
   const adjustInflation = localAdjustInflation;

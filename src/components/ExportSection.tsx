@@ -897,7 +897,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       doc.text(`£${Math.round(totalCurrentPrimary + totalCurrentPartner).toLocaleString()}`, 22, covY + 21.5);
 
       // KPI 2 (First milestone age)
-      const isAdjusted = Boolean(profile.adjustForInflation);
+      const isAdjusted = profile.adjustForInflation !== false;
       const getScaledPot = (snap: any) => {
         const ageVal = snap?.age || profile.targetRetirementAge;
         const off = Math.max(0, ageVal - profile.currentAge);
@@ -1816,7 +1816,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
           tableY = 24;
         }
 
-        const isAdjusted = Boolean(profile.adjustForInflation);
+        const isAdjusted = profile.adjustForInflation !== false;
         const snapAge = snapshot?.age || profile.targetRetirementAge;
         const snapOffset = Math.max(0, snapAge - profile.currentAge);
         const snapInflFact = Math.pow(1 + (profile.expectedInflationRate || 2.5) / 100, snapOffset);
@@ -4351,7 +4351,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(10);
 
-      const isAdjustedDiagram = Boolean(profile.adjustForInflation);
+      const isAdjustedDiagram = profile.adjustForInflation !== false;
       const retOffset = Math.max(0, targetAge - currentAge);
       const retInflFact = Math.pow(1 + (profile.expectedInflationRate || 2.5) / 100, retOffset);
       const retScale = (isAdjustedDiagram && retInflFact > 0) ? (1 / retInflFact) : 1;

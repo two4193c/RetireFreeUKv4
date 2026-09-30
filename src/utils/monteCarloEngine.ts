@@ -1652,7 +1652,7 @@ function parseAnnuityTypeConfig(type?: string) {
         partnerCashGiaPot = 0;
       }
 
-      const deflator = profile.adjustForInflation ? inflationFactor : 1.0;
+      const deflator = (profile.adjustForInflation !== false) ? inflationFactor : 1.0;
       const totalPot = Math.max(0, pensionPot + isaPot + cashGiaPot);
       simPensionPots[sim][yr] = Math.round(pensionPot / deflator);
       simIsaPots[sim][yr] = Math.round(isaPot / deflator);

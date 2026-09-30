@@ -12,7 +12,7 @@ interface PwrMetricBannerCardProps {
 export const PwrMetricBannerCard: React.FC<PwrMetricBannerCardProps> = ({ profile, pots, projections }) => {
   const [basis, setBasis] = useState<'retirement_start' | 'today' | 'private_pension_start' | 'state_pension_start'>('retirement_start');
 
-  const adjustInflation = profile.adjustForInflation ?? false;
+  const adjustInflation = profile.adjustForInflation !== false;
   const expectedInflationRate = profile.expectedInflationRate ?? 2.5;
 
   const baseTargetIncome = getActualSpendingTargetForAge(profile, profile.targetRetirementAge);

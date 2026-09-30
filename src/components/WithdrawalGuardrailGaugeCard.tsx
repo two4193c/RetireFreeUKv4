@@ -20,7 +20,7 @@ export const WithdrawalGuardrailGaugeCard: React.FC<WithdrawalGuardrailGaugeCard
 }) => {
   const retAge = profile.targetRetirementAge || 60;
   const currentAge = profile.currentAge;
-  const adjustInflation = profile.adjustForInflation ?? false;
+  const adjustInflation = profile.adjustForInflation !== false;
   const inflRate = profile.expectedInflationRate ?? 2.5;
 
   let targetIncome = getActualSpendingTargetForAge(profile, retAge);

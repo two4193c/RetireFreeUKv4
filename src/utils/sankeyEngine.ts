@@ -129,7 +129,7 @@ export function computeCashFlowSankeyData(
   const partnerAgeDiff = (profile.partnerCurrentAge ?? profile.currentAge) - profile.currentAge;
   const partnerAge = p.age + partnerAgeDiff;
 
-  const adjustInflation = profile.adjustForInflation ?? false;
+  const adjustInflation = profile.adjustForInflation !== false;
   const formatGBP = (val: number) => `£${Math.round(val).toLocaleString()}`;
   const scale = adjustInflation ? 1 / inflationFactor : 1;
   const mortgagePaymentAnnual = calculateMortgagePaymentForAge(profile, p.age) * scale;

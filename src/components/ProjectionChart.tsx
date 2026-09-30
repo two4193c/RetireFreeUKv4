@@ -35,7 +35,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
   const [chartMode, setChartMode] = useState<'pots' | 'income' | 'shortfall'>('pots');
   const [potChartType, setPotChartType] = useState<'area' | 'line'>('area');
   const [portfolioViewMode, setPortfolioViewMode] = useState<'combined' | 'primary' | 'partner'>('combined');
-  const adjustInflation = profile.adjustForInflation ?? false;
+  const adjustInflation = profile.adjustForInflation !== false;
 
   const potKeys = {
     pension: 'pensionPot',
