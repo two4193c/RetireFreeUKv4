@@ -346,19 +346,20 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
   const handleApplyContribution = (solution: ContributionSolution) => {
     if (onPotsChange && pots) {
       if (solution.potType === 'sipp') {
+        // sippMonthlyContribution is a NET (out-of-pocket) field — use monthlyPotFieldValue (gross/1.25)
         onPotsChange({
           ...pots,
-          sippMonthlyContribution: (pots.sippMonthlyContribution || 0) + solution.monthlyGross,
+          sippMonthlyContribution: (pots.sippMonthlyContribution || 0) + solution.monthlyPotFieldValue,
         });
       } else if (solution.potType === 'isa') {
         onPotsChange({
           ...pots,
-          stocksAndSharesIsaMonthlyContribution: (pots.stocksAndSharesIsaMonthlyContribution || 0) + solution.monthlyGross,
+          stocksAndSharesIsaMonthlyContribution: (pots.stocksAndSharesIsaMonthlyContribution || 0) + solution.monthlyPotFieldValue,
         });
       } else if (solution.potType === 'workplace') {
         onPotsChange({
           ...pots,
-          workplacePensionMonthlyEmployee: (pots.workplacePensionMonthlyEmployee || 0) + solution.monthlyGross,
+          workplacePensionMonthlyEmployee: (pots.workplacePensionMonthlyEmployee || 0) + solution.monthlyPotFieldValue,
           workplacePensionMonthlyEmployeeType: 'fixed',
         });
       }
@@ -1110,7 +1111,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                                 <div className="flex items-center justify-between">
                                   <span className="font-extrabold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
                                     <TrendingUp className="w-3.5 h-3.5 text-primary-600" />
-                                    <span>Workplace Pension</span>
+                                    <span>{contributionAnalysis.workplaceSolution.potLabel}</span>
                                   </span>
                                   <span className="bg-primary-100 dark:bg-primary-950 text-primary-700 dark:text-primary-300 text-[9px] font-black px-1.5 py-0.5 rounded-md">
                                     Tax + NI

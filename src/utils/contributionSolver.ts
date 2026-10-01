@@ -11,6 +11,8 @@ export interface ContributionSolution {
   annualNetCost: number;
   taxReliefRate: number; // e.g. 0.20 or 0.40
   monthlyTaxRelief: number; // e.g. monthlyGross * taxReliefRate
+  /** The net equivalent to store in pots (for SIPP: gross/1.25, i.e. what the pot field expects) */
+  monthlyPotFieldValue: number;
   workingYearsRemaining: number;
   isSuccessful: boolean;
   projectedRetirementPot: number;
@@ -19,6 +21,8 @@ export interface ContributionSolution {
 
 export interface ContributionAnalysisResult {
   canContribute: boolean;
+  /** True only when at least one bisection found a feasible solution within the £25k/mo ceiling */
+  hasSolution: boolean;
   workingYearsRemaining: number;
   sippSolution: ContributionSolution | null;
   isaSolution: ContributionSolution | null;
@@ -43,6 +47,7 @@ export function solveContributionIncrease(
   if (workingYearsRemaining <= 0) {
     return {
       canContribute: false,
+      hasSolution: false,
       workingYearsRemaining: 0,
       sippSolution: null,
       isaSolution: null,
@@ -53,10 +58,13 @@ export function solveContributionIncrease(
 
   // Calculate user's upfront tax relief rates
   const baseTax = calculateUKTax(profile, activePots);
-  const marginalTaxRate = (baseTax.marginalTaxRate || 20) / 100;
+  const marginalTaxRate = (baseTax.marginalTaxRate ?? 20) / 100;
   const isSalarySacrifice = profile.pensionContributionMethod === 'salary_sacrifice';
-  const niSavingsRate = marginalTaxRate >= 0.40 ? 0.02 : 0.08;
+  // NI savings rate: 0 if no income, 2% above higher-rate threshold, 8% basic rate band
+  const niSavingsRate = marginalTaxRate <= 0 ? 0 : marginalTaxRate >= 0.40 ? 0.02 : 0.08;
   const salarySacrificeReliefRate = marginalTaxRate + niSavingsRate;
+  // Whether the user has a salary / employer to contribute to workplace pension
+  const hasWorkplaceSalary = (profile.grossAnnualSalary || 0) > 0;
 
   function runBisection(potType: 'sipp' | 'isa' | 'workplace'): ContributionSolution | null {
     let low = 0;
@@ -67,9 +75,14 @@ export function solveContributionIncrease(
     // 18 binary search iterations provides < £0.10 precision
     for (let iter = 0; iter < 18; iter++) {
       const mid = (low + high) / 2;
+      // IMPORTANT: pots.sippMonthlyContribution is treated as NET (out-of-pocket) by the tax engine,
+      // which multiplies by 1.25 to get the gross going into the SIPP (relief at source).
+      // The bisection `mid` represents a GROSS monthly contribution, so we convert to net (÷1.25)
+      // before storing in the pot field so the engine produces the correct gross in projection.
+      const sippNetDelta = potType === 'sipp' ? mid / 1.25 : 0;
       const testPots: InvestmentPots = {
         ...activePots,
-        sippMonthlyContribution: potType === 'sipp' ? (activePots.sippMonthlyContribution || 0) + mid : activePots.sippMonthlyContribution,
+        sippMonthlyContribution: potType === 'sipp' ? (activePots.sippMonthlyContribution || 0) + sippNetDelta : activePots.sippMonthlyContribution,
         stocksAndSharesIsaMonthlyContribution: potType === 'isa' ? (activePots.stocksAndSharesIsaMonthlyContribution || 0) + mid : activePots.stocksAndSharesIsaMonthlyContribution,
         workplacePensionMonthlyEmployee: potType === 'workplace' ? (activePots.workplacePensionMonthlyEmployee || 0) + mid : activePots.workplacePensionMonthlyEmployee,
         workplacePensionMonthlyEmployeeType: potType === 'workplace' ? 'fixed' : activePots.workplacePensionMonthlyEmployeeType,
@@ -103,22 +116,35 @@ export function solveContributionIncrease(
     const annualNetCost = monthlyNetCost * 12;
     const monthlyTaxRelief = monthlyGross - monthlyNetCost;
 
+    // monthlyPotFieldValue: the value to WRITE into the pots field to produce this gross.
+    // For SIPP: the pot field is net (out-of-pocket); engine multiplies by 1.25 → gross/1.25 = net.
+    // For ISA and Workplace: the pot field IS the gross amount.
+    const monthlyPotFieldValue = potType === 'sipp'
+      ? Math.round(monthlyGross / 1.25)
+      : monthlyGross;
+
     // Projected retirement pot at target retirement age
     const retObj = bestProjections?.find((p) => p.age === retAge);
     const offset = retAge - currentAge;
-    const inflFactor = Math.pow(1 + (profile.expectedInflationRate || 2.5) / 100, offset);
+    // Use ?? not || so that 0% inflation is respected
+    const inflFactor = Math.pow(1 + (profile.expectedInflationRate ?? 2.5) / 100, offset);
     const scale = adjustInflation ? 1 / inflFactor : 1;
     const retirementPot = Math.round((retObj?.totalPot || 0) * scale);
+
+    const workplaceLabel = isSalarySacrifice
+      ? 'Workplace Pension (Salary Sacrifice)'
+      : 'Workplace Pension';
 
     return {
       potType,
       potLabel: potType === 'sipp'
         ? 'SIPP / Personal Pension'
         : potType === 'workplace'
-        ? 'Workplace Pension (Salary Sacrifice)'
+        ? workplaceLabel
         : 'Stocks & Shares ISA',
       monthlyGross,
       monthlyNetCost,
+      monthlyPotFieldValue,
       annualGross,
       annualNetCost,
       taxReliefRate: effectiveReliefRate,
@@ -132,13 +158,20 @@ export function solveContributionIncrease(
 
   const sippSolution = runBisection('sipp');
   const isaSolution = runBisection('isa');
-  const workplaceSolution = runBisection('workplace');
+  // Only run workplace bisection if user has a salary / employer relationship
+  const workplaceSolution = hasWorkplaceSalary ? runBisection('workplace') : null;
 
-  // Select best solution: prefer workplace or sipp if available due to tax relief, or isa
-  const bestSolution = workplaceSolution || sippSolution || isaSolution;
+  // Select best solution: pick the option with the lowest net monthly cost to the user
+  const options = [workplaceSolution, sippSolution, isaSolution].filter(Boolean) as ContributionSolution[];
+  const bestSolution = options.length > 0
+    ? options.reduce((a, b) => a.monthlyNetCost <= b.monthlyNetCost ? a : b)
+    : null;
+
+  const hasSolution = bestSolution !== null;
 
   return {
     canContribute: true,
+    hasSolution,
     workingYearsRemaining,
     sippSolution,
     isaSolution,
