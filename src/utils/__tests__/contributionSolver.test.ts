@@ -351,4 +351,52 @@ describe('solveContributionIncrease', () => {
     const shortfalls = retiredYears.filter((p) => (p.incomeShortfall || 0) > 25);
     expect(shortfalls.length).toBe(0);
   });
+
+  it('solves SIPP and workplace pension when state pension is removed in tax_free_bracket strategy', () => {
+    const profile: UserProfile = {
+      ...DEFAULT_PROFILE,
+      dateOfBirth: '1993-06-15',
+      currentAge: 33,
+      targetRetirementAge: 60,
+      lifeExpectancyAge: 90,
+      statePensionAge: 67,
+      includeStatePension: false,
+      statePensionAmountAnnual: 0,
+      grossAnnualSalary: 40000,
+      targetRetirementIncomeAnnual: 40000,
+      drawdownStrategy: 'tax_free_bracket',
+      indexTaxBands: false,
+      potTransfers: [
+        {
+          id: 'transfer_1',
+          name: 'ISA to SIPP Pension Top-Up',
+          owner: 'primary',
+          sourcePot: 'stocks_and_shares_isa',
+          destinationOwner: 'primary',
+          destinationPot: 'sipp',
+          amount: 20000,
+          transferDate: '2027-03-06',
+          enabled: true,
+        },
+      ],
+    };
+    const pots: InvestmentPots = {
+      ...DEFAULT_POTS,
+      workplacePensionBalance: 0,
+      cashIsaBalance: 0,
+      lisaBalance: 0,
+      giaBalance: 0,
+      cashSavingsBalance: 0,
+      sippBalance: 9100,
+      stocksAndSharesIsaBalance: 160900,
+    };
+
+    const res = solveContributionIncrease(profile, pots, true);
+    expect(res.hasSolution).toBe(true);
+    expect(res.sippSolution).not.toBeNull();
+    expect(res.sippSolution?.isSuccessful).toBe(true);
+    expect(res.workplaceSolution).not.toBeNull();
+    expect(res.workplaceSolution?.isSuccessful).toBe(true);
+    expect(res.isaSolution).not.toBeNull();
+  });
 });

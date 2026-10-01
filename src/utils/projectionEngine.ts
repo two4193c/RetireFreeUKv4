@@ -2510,6 +2510,8 @@ function parseAnnuityTypeConfig(type?: string) {
 
         let primaryTaxableDrawnThisYear = 0;
         let partnerTaxableDrawnThisYear = 0;
+        let primaryDrawTaxFreeThisYear = 0;
+        let partnerDrawTaxFreeThisYear = 0;
 
         const approximateNetFromGrossForOwner = (grossDraw: number, owner: 'primary' | 'partner'): number => {
           let taxFree = 0;
@@ -2550,6 +2552,34 @@ function parseAnnuityTypeConfig(type?: string) {
           return Math.min(potAvailable, Math.ceil(exactGross));
         };
 
+        const executePensionDeduct = (grossDrawNeeded: number, owner: 'primary' | 'partner'): number => {
+          const isPrimary = owner === 'primary';
+          const pPot = isPrimary ? primaryPensionPot : partnerPensionPot;
+          const draw = Math.min(pPot, grossDrawNeeded);
+          if (draw <= 0) return 0;
+          const netDraw = approximateNetFromGrossForOwner(draw, owner);
+
+          const uncrystDrawn = isPrimary 
+            ? Math.min(primaryUncrystallisedPot, Math.max(0, draw - primaryCrystallisedPot)) 
+            : Math.min(partnerUncrystallisedPot, Math.max(0, draw - partnerCrystallisedPot));
+          const taxFreeThisDraw = isPrimary
+            ? Math.min(uncrystDrawn * 0.25, Math.max(0, primaryMaxLsa - primaryCumulativeTaxFreeDrawn))
+            : Math.min(uncrystDrawn * 0.25, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn));
+
+          if (isPrimary) {
+            primaryTaxableDrawnThisYear += (draw - taxFreeThisDraw);
+            primaryCumulativeTaxFreeDrawn += taxFreeThisDraw;
+            primaryDrawTaxFreeThisYear += taxFreeThisDraw;
+          } else {
+            partnerTaxableDrawnThisYear += (draw - taxFreeThisDraw);
+            partnerCumulativeTaxFreeDrawn += taxFreeThisDraw;
+            partnerDrawTaxFreeThisYear += taxFreeThisDraw;
+          }
+
+          executeDeduct('pension', draw, owner);
+          return netDraw;
+        };
+
         const executeStrategyForOwner = (strategy: string, owner: 'primary' | 'partner', targetNetNeeded: number): number => {
           const isFixedBracketFill = strategy === 'basic_rate_bracket' || strategy === 'tax_free_bracket' || strategy === 'higher_rate_bracket' || strategy === 'tax_optimizer';
           if (targetNetNeeded <= 0 && !isFixedBracketFill) return 0;
@@ -2563,20 +2593,8 @@ function parseAnnuityTypeConfig(type?: string) {
           let remaining = targetNetNeeded;
           let netAchieved = 0;
 
-          const executePensionDeduct = (grossDrawNeeded: number) => {
-             const draw = Math.min(pPot, grossDrawNeeded);
-             const netDraw = approximateNetFromGrossForOwner(draw, owner);
-             
-             const uncrystDrawn = isPrimary 
-               ? Math.min(primaryUncrystallisedPot, Math.max(0, draw - primaryCrystallisedPot)) 
-               : Math.min(partnerUncrystallisedPot, Math.max(0, draw - partnerCrystallisedPot));
-             const taxFreeThisDraw = isPrimary
-               ? Math.min(uncrystDrawn * 0.25, Math.max(0, primaryMaxLsa - primaryCumulativeTaxFreeDrawn))
-               : Math.min(uncrystDrawn * 0.25, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn));
-             if (isPrimary) primaryTaxableDrawnThisYear += (draw - taxFreeThisDraw);
-             else partnerTaxableDrawnThisYear += (draw - taxFreeThisDraw);
-
-             executeDeduct('pension', draw, owner);
+          const executePensionDeductInStrategy = (grossDrawNeeded: number) => {
+             const netDraw = executePensionDeduct(grossDrawNeeded, owner);
              remaining = Math.max(0, remaining - netDraw);
              netAchieved += netDraw;
           };
@@ -2602,7 +2620,7 @@ function parseAnnuityTypeConfig(type?: string) {
                 netAchieved += draw;
               } else if (potType === 'pension' && hasAccess && pPot > 0) {
                 const grossDrawNeeded = getGrossPensionNeededForNetForOwner(remaining, pPot, owner);
-                executePensionDeduct(grossDrawNeeded);
+                executePensionDeductInStrategy(grossDrawNeeded);
               }
             }
           } else if (strategy === 'tax_optimizer' || strategy === 'tax_free_bracket' || strategy === 'basic_rate_bracket' || strategy === 'higher_rate_bracket') {
@@ -2649,7 +2667,7 @@ function parseAnnuityTypeConfig(type?: string) {
             if (targetGross > 0) {
                const maxNet = approximateNetFromGrossForOwner(targetGross, owner);
                if (!isFixedBracketFill && maxNet > remaining) targetGross = getGrossPensionNeededForNetForOwner(remaining, pPot, owner);
-               executePensionDeduct(targetGross);
+               executePensionDeductInStrategy(targetGross);
             }
             if (iPot > 0 && remaining > 0) {
               const draw = Math.min(iPot, remaining);
@@ -2670,7 +2688,7 @@ function parseAnnuityTypeConfig(type?: string) {
                 const portion = pPot / totalAccessible;
                 const netToDraw = remaining * portion;
                 const grossDrawNeeded = getGrossPensionNeededForNetForOwner(netToDraw, pPot, owner);
-                executePensionDeduct(grossDrawNeeded);
+                executePensionDeductInStrategy(grossDrawNeeded);
               }
               if (iPot > 0 && remaining > 0) {
                 const portion = iPot / totalAccessible;
@@ -2754,11 +2772,14 @@ function parseAnnuityTypeConfig(type?: string) {
             fallbackRemaining -= draw;
           }
           if (hasPriAcc && primaryPensionPot > 0 && fallbackRemaining > 0) {
-            executeDeduct('pension', Math.min(primaryPensionPot, getGrossPensionNeededForNetForOwner(fallbackRemaining, primaryPensionPot, 'primary')), 'primary');
-            fallbackRemaining = 0; // pension draw handled net→gross internally
+            const grossNeeded = getGrossPensionNeededForNetForOwner(fallbackRemaining, primaryPensionPot, 'primary');
+            const netDrawn = executePensionDeduct(grossNeeded, 'primary');
+            fallbackRemaining = Math.max(0, fallbackRemaining - netDrawn);
           }
           if (hasPartAcc && partnerPensionPot > 0 && fallbackRemaining > 0) {
-            executeDeduct('pension', Math.min(partnerPensionPot, getGrossPensionNeededForNetForOwner(fallbackRemaining, partnerPensionPot, 'partner')), 'partner');
+            const grossNeeded = getGrossPensionNeededForNetForOwner(fallbackRemaining, partnerPensionPot, 'partner');
+            const netDrawn = executePensionDeduct(grossNeeded, 'partner');
+            fallbackRemaining = Math.max(0, fallbackRemaining - netDrawn);
           }
         }
 
@@ -2767,16 +2788,11 @@ function parseAnnuityTypeConfig(type?: string) {
       const priDrawGross = priActualDraw;
       const partDrawGross = partActualDraw;
 
-      const priUncrystDrawn = priActualUncrystDrawn;
-      const priDrawTaxFree = Math.min(priUncrystDrawn * 0.25, Math.max(0, primaryMaxLsa - primaryCumulativeTaxFreeDrawn));
+      const priDrawTaxFree = primaryDrawTaxFreeThisYear;
       const priDrawTaxable = priDrawGross - priDrawTaxFree;
 
-      const partUncrystDrawn = partActualUncrystDrawn;
-      const partDrawTaxFree = Math.min(partUncrystDrawn * 0.25, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn));
+      const partDrawTaxFree = partnerDrawTaxFreeThisYear;
       const partDrawTaxable = partDrawGross - partDrawTaxFree;
-
-      if (priDrawTaxFree > 0) primaryCumulativeTaxFreeDrawn += priDrawTaxFree;
-      if (partDrawTaxFree > 0) partnerCumulativeTaxFreeDrawn += partDrawTaxFree;
 
       // Include phased crystallisation PCLS into pension tax-free drawdown
       const priPensionDrawdownTaxFree = primaryPclsDrawnThisYear + priDrawTaxFree;
