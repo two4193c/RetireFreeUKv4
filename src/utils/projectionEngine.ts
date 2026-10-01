@@ -422,10 +422,15 @@ function parseAnnuityTypeConfig(type?: string) {
       partnerUncrystallisedPot = 0;
       partnerCrystallisedPot = 0;
 
+      // Transfer ALL ISA sub-pots to primary and zero them out to prevent ghost growth in later years.
       primaryIsaPot += partnerIsaPot;
       primarySsIsaPot += partnerSsIsaPot;
+      primaryCashIsaPot += partnerCashIsaPot;
+      primaryLisaPot += partnerLisaPot;
       partnerIsaPot = 0;
       partnerSsIsaPot = 0;
+      partnerCashIsaPot = 0;
+      partnerLisaPot = 0;
 
       primaryCashGiaPot += partnerCashGiaPot;
       primaryGiaPot += partnerGiaPot;
@@ -762,7 +767,7 @@ function parseAnnuityTypeConfig(type?: string) {
 
     const partnerRetireAge = profile.partnerTargetRetirementAge ?? 60;
     if (profile.isCouplePlanning && partnerTaxThisYr && partnerAgeForYr !== undefined) {
-      const partnerRetireAge = profile.partnerTargetRetirementAge ?? 60;
+      // partnerRetireAge is already defined in the outer scope — no re-declaration needed
       if (partnerAgeForYr < partnerRetireAge) {
         partnerPContribThisYr = partnerTaxThisYr.regularPensionContributionsAnnual ?? partnerTaxThisYr.totalPensionContributionsAnnual;
         const partnerTotalIsaContribs = partnerTaxThisYr.totalIsaContributionsAnnual || 0;
@@ -1503,8 +1508,14 @@ function parseAnnuityTypeConfig(type?: string) {
             }
 
             if (upfrontCost > 0) {
+              // Deduct proportionally from all ISA sub-pots, not just S&S ISA
               const drawPriIsa = Math.min(primaryIsaPot, upfrontCost);
-              primarySsIsaPot = Math.max(0, primarySsIsaPot - drawPriIsa);
+              if (drawPriIsa > 0 && primaryIsaPot > 0) {
+                const ratio = drawPriIsa / primaryIsaPot;
+                primarySsIsaPot = Math.max(0, primarySsIsaPot - primarySsIsaPot * ratio);
+                primaryCashIsaPot = Math.max(0, primaryCashIsaPot - primaryCashIsaPot * ratio);
+                primaryLisaPot = Math.max(0, primaryLisaPot - primaryLisaPot * ratio);
+              }
               upfrontCost -= drawPriIsa;
             }
 
@@ -1627,8 +1638,14 @@ function parseAnnuityTypeConfig(type?: string) {
             }
 
             if (upfrontCost > 0) {
+              // Deduct proportionally from all partner ISA sub-pots
               const drawPartIsa = Math.min(partnerIsaPot, upfrontCost);
-              partnerSsIsaPot = Math.max(0, partnerSsIsaPot - drawPartIsa);
+              if (drawPartIsa > 0 && partnerIsaPot > 0) {
+                const ratio = drawPartIsa / partnerIsaPot;
+                partnerSsIsaPot = Math.max(0, partnerSsIsaPot - partnerSsIsaPot * ratio);
+                partnerCashIsaPot = Math.max(0, partnerCashIsaPot - partnerCashIsaPot * ratio);
+                partnerLisaPot = Math.max(0, partnerLisaPot - partnerLisaPot * ratio);
+              }
               upfrontCost -= drawPartIsa;
             }
 
@@ -1643,8 +1660,14 @@ function parseAnnuityTypeConfig(type?: string) {
               upfrontCost -= drawPriCash;
             }
             if (upfrontCost > 0) {
+              // Deduct proportionally from all primary ISA sub-pots
               const drawPriIsa = Math.min(primaryIsaPot, upfrontCost);
-              primarySsIsaPot = Math.max(0, primarySsIsaPot - drawPriIsa);
+              if (drawPriIsa > 0 && primaryIsaPot > 0) {
+                const ratio = drawPriIsa / primaryIsaPot;
+                primarySsIsaPot = Math.max(0, primarySsIsaPot - primarySsIsaPot * ratio);
+                primaryCashIsaPot = Math.max(0, primaryCashIsaPot - primaryCashIsaPot * ratio);
+                primaryLisaPot = Math.max(0, primaryLisaPot - primaryLisaPot * ratio);
+              }
               upfrontCost -= drawPriIsa;
             }
           }
@@ -2309,7 +2332,6 @@ function parseAnnuityTypeConfig(type?: string) {
       giaPot = primaryGiaPot + partnerGiaPot;
       cashSavingsPot = primaryCashSavingsPot + partnerCashSavingsPot;
       cashGiaPot = giaPot + cashSavingsPot;
-      cashGiaPot = giaPot + cashSavingsPot;
 
       processLifeEventsThisYear();
 
@@ -2707,13 +2729,37 @@ function parseAnnuityTypeConfig(type?: string) {
         
         remainingIncomeNeeded = Math.max(0, drawdownNetTarget - netInitialIncomeSecured - priAchieved - partAchieved);
 
+        // Fallback: if the strategy loop didn't fully meet the income need, try remaining pots in order.
+        // IMPORTANT: track `fallbackRemaining` as we go to avoid deducting the same amount from every pot.
         if (remainingIncomeNeeded > 0) {
-          if (primaryIsaPot > 0) executeDeduct('isa', Math.min(primaryIsaPot, remainingIncomeNeeded), 'primary');
-          if (partnerIsaPot > 0) executeDeduct('isa', Math.min(partnerIsaPot, remainingIncomeNeeded), 'partner');
-          if (primaryCashGiaPot > 0) executeDeduct('cashGia', Math.min(primaryCashGiaPot, remainingIncomeNeeded), 'primary');
-          if (partnerCashGiaPot > 0) executeDeduct('cashGia', Math.min(partnerCashGiaPot, remainingIncomeNeeded), 'partner');
-          if (hasPriAcc && primaryPensionPot > 0) executeDeduct('pension', Math.min(primaryPensionPot, getGrossPensionNeededForNetForOwner(remainingIncomeNeeded, primaryPensionPot, 'primary')), 'primary');
-          if (hasPartAcc && partnerPensionPot > 0) executeDeduct('pension', Math.min(partnerPensionPot, getGrossPensionNeededForNetForOwner(remainingIncomeNeeded, partnerPensionPot, 'partner')), 'partner');
+          let fallbackRemaining = remainingIncomeNeeded;
+          if (primaryIsaPot > 0 && fallbackRemaining > 0) {
+            const draw = Math.min(primaryIsaPot, fallbackRemaining);
+            executeDeduct('isa', draw, 'primary');
+            fallbackRemaining -= draw;
+          }
+          if (partnerIsaPot > 0 && fallbackRemaining > 0) {
+            const draw = Math.min(partnerIsaPot, fallbackRemaining);
+            executeDeduct('isa', draw, 'partner');
+            fallbackRemaining -= draw;
+          }
+          if (primaryCashGiaPot > 0 && fallbackRemaining > 0) {
+            const draw = Math.min(primaryCashGiaPot, fallbackRemaining);
+            executeDeduct('cashGia', draw, 'primary');
+            fallbackRemaining -= draw;
+          }
+          if (partnerCashGiaPot > 0 && fallbackRemaining > 0) {
+            const draw = Math.min(partnerCashGiaPot, fallbackRemaining);
+            executeDeduct('cashGia', draw, 'partner');
+            fallbackRemaining -= draw;
+          }
+          if (hasPriAcc && primaryPensionPot > 0 && fallbackRemaining > 0) {
+            executeDeduct('pension', Math.min(primaryPensionPot, getGrossPensionNeededForNetForOwner(fallbackRemaining, primaryPensionPot, 'primary')), 'primary');
+            fallbackRemaining = 0; // pension draw handled net→gross internally
+          }
+          if (hasPartAcc && partnerPensionPot > 0 && fallbackRemaining > 0) {
+            executeDeduct('pension', Math.min(partnerPensionPot, getGrossPensionNeededForNetForOwner(fallbackRemaining, partnerPensionPot, 'partner')), 'partner');
+          }
         }
 
 
@@ -2764,7 +2810,8 @@ function parseAnnuityTypeConfig(type?: string) {
         const partPA = getPA(partTaxableIncReal);
 
         const psaP1 = calculatePSAAndSavingsTax(priTaxableIncReal, priCashIntReal, profile.taxRegion === 'scotland', priTaxableIncReal, priPA);
-        const psaP2 = calculatePSAAndSavingsTax(partTaxableIncReal, partCashIntReal, profile.taxRegion === 'scotland', partTaxableIncReal, partPA);
+        // Use partner's own tax region for PSA calculation, not primary's
+        const psaP2 = calculatePSAAndSavingsTax(partTaxableIncReal, partCashIntReal, isPartnerScottishTax, partTaxableIncReal, partPA);
 
         priSavingsTaxNominal = psaP1.savingsInterestTax * inflationFactor;
         partSavingsTaxNominal = psaP2.savingsInterestTax * inflationFactor;
