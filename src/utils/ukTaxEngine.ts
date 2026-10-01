@@ -901,29 +901,22 @@ export function calculateUKTax(
       workplaceEmployeeAnnual += (pots.workplacePensionMonthlyEmployee || 0) * 12;
     }
     employerMatchAnnual += grossSalary * ((pots.employerMatchPercentage || 0) / 100);
+  } else if (hasWorkplaceInActive && currentEvalAge < ownerRetireAge && pots.workplacePensionMonthlyEmployeeType === 'fixed' && (pots.workplacePensionMonthlyEmployee || 0) > 0) {
+    // If active workplace contribution exists in oneOffContributions, but pots also has a fixed employee contribution (e.g. from solver increase), include it
+    workplaceEmployeeAnnual += (pots.workplacePensionMonthlyEmployee || 0) * 12;
   }
 
-  // Include baseline pot monthly contributions if pre-retirement (and not already provided via active regular contribution)
+  // Include baseline pot monthly contributions if pre-retirement (and add to any active regular contributions)
   if (currentEvalAge < ownerRetireAge) {
-    if (!hasSippInActive) {
-      regularSippNetAnnual += (pots.sippMonthlyContribution || 0) * 12;
-      regularSippGrossAnnual += (pots.sippMonthlyContribution || 0) * 12 * 1.25;
-    }
-    if (!hasSsIsaInActive) {
-      regularSsIsaAnnual += (pots.stocksAndSharesIsaMonthlyContribution || 0) * 12;
-    }
-    if (!hasCashIsaInActive) {
-      regularCashIsaAnnual += (pots.cashIsaMonthlyContribution || 0) * 12;
-    }
-    if (!hasLisaInActive && currentEvalAge < 50) {
+    regularSippNetAnnual += (pots.sippMonthlyContribution || 0) * 12;
+    regularSippGrossAnnual += (pots.sippMonthlyContribution || 0) * 12 * 1.25;
+    regularSsIsaAnnual += (pots.stocksAndSharesIsaMonthlyContribution || 0) * 12;
+    regularCashIsaAnnual += (pots.cashIsaMonthlyContribution || 0) * 12;
+    if (currentEvalAge < 50) {
       regularLisaAnnual += (pots.lisaMonthlyContribution || 0) * 12;
     }
-    if (!hasGiaInActive) {
-      regularGiaAnnual += (pots.giaMonthlyContribution || 0) * 12;
-    }
-    if (!hasCashSavingsInActive) {
-      regularCashSavingsAnnual += (pots.cashSavingsMonthlyContribution || 0) * 12;
-    }
+    regularGiaAnnual += (pots.giaMonthlyContribution || 0) * 12;
+    regularCashSavingsAnnual += (pots.cashSavingsMonthlyContribution || 0) * 12;
   }
 
   const sippNetAnnual = regularSippNetAnnual + oneOffSippNet;
