@@ -18,23 +18,26 @@ import { YearProjection, UserProfile, InvestmentPots, AppMode } from '../types';
 import { getTargetIncomeForAge, generateProjections } from '../utils/projectionEngine';
 import { calculateUKTax, getPensionAccessAge, getPartnerPensionAccessAge } from '../utils/ukTaxEngine';
 import { DEFAULT_POTS, DEFAULT_PARTNER_POTS, ZERO_POTS } from '../utils/defaultData';
-import { AlertTriangle, CheckCircle2, ShieldAlert, Info, ArrowUpRight, Users, User, Heart, PieChart, Wallet, Calendar, Clock, Sparkles, ArrowRight, Check } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ShieldAlert, Info, ArrowUpRight, Users, User, Heart, PieChart, Wallet, Calendar, Clock, Sparkles, ArrowRight, Check, PiggyBank, Coins, TrendingUp, Plus } from 'lucide-react';
+import { solveContributionIncrease, ContributionAnalysisResult, ContributionSolution } from '../utils/contributionSolver';
 
 interface ProjectionChartProps {
   projections: YearProjection[];
   profile: UserProfile;
   pots?: InvestmentPots;
   onChange?: (updatedProfile: UserProfile | Partial<UserProfile>) => void;
+  onPotsChange?: (updatedPots: InvestmentPots | Partial<InvestmentPots>) => void;
   onOpenMaximizedSpendModal?: () => void;
   showAllCharts?: boolean;
   appMode?: AppMode;
 }
 
-export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, profile, pots, onChange, onOpenMaximizedSpendModal, showAllCharts = false, appMode = 'basic' }) => {
+export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, profile, pots, onChange, onPotsChange, onOpenMaximizedSpendModal, showAllCharts = false, appMode = 'basic' }) => {
   const isStudioMode = appMode === 'studio';
   const [chartMode, setChartMode] = useState<'pots' | 'income' | 'shortfall'>('pots');
   const [potChartType, setPotChartType] = useState<'area' | 'line'>('area');
   const [portfolioViewMode, setPortfolioViewMode] = useState<'combined' | 'primary' | 'partner'>('combined');
+  const [failureResolutionTab, setFailureResolutionTab] = useState<'contributions' | 'delay'>('contributions');
   const adjustInflation = profile.adjustForInflation !== false;
 
   const potKeys = {
@@ -333,6 +336,53 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
       maxTestAge,
     };
   }, [hasPlanFailure, profile, pots, adjustInflation]);
+
+  // Contribution Increase Feasibility Analysis Engine
+  const contributionAnalysis = useMemo(() => {
+    if (!hasPlanFailure) return null;
+    return solveContributionIncrease(profile, pots || ZERO_POTS, adjustInflation);
+  }, [hasPlanFailure, profile, pots, adjustInflation]);
+
+  const handleApplyContribution = (solution: ContributionSolution) => {
+    if (onPotsChange && pots) {
+      if (solution.potType === 'sipp') {
+        onPotsChange({
+          ...pots,
+          sippMonthlyContribution: (pots.sippMonthlyContribution || 0) + solution.monthlyGross,
+        });
+      } else if (solution.potType === 'isa') {
+        onPotsChange({
+          ...pots,
+          stocksAndSharesIsaMonthlyContribution: (pots.stocksAndSharesIsaMonthlyContribution || 0) + solution.monthlyGross,
+        });
+      } else if (solution.potType === 'workplace') {
+        onPotsChange({
+          ...pots,
+          workplacePensionMonthlyEmployee: (pots.workplacePensionMonthlyEmployee || 0) + solution.monthlyGross,
+          workplacePensionMonthlyEmployeeType: 'fixed',
+        });
+      }
+    } else if (onChange) {
+      const existingContribs = profile.oneOffContributions || [];
+      const targetPot = solution.potType === 'isa' ? 'stocks_and_shares_isa' : solution.potType === 'workplace' ? 'workplace_pension' : 'sipp';
+      const newContrib = {
+        id: `contrib_${Date.now()}`,
+        name: `Required ${solution.potLabel} Savings`,
+        owner: 'primary' as const,
+        targetPot: targetPot as any,
+        frequency: 'regular_monthly' as const,
+        grossAmount: solution.monthlyGross,
+        startAge: profile.currentAge,
+        endAge: profile.targetRetirementAge,
+        enabled: true,
+        description: `Plan success savings of £${solution.monthlyGross}/mo`,
+      };
+      onChange({
+        ...profile,
+        oneOffContributions: [...existingContribs, newContrib],
+      });
+    }
+  };
 
 
 
@@ -905,197 +955,433 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
             </div>
           </div>
 
-          {/* DELAYED RETIREMENT FEASIBILITY ANALYSIS */}
-          {delayedRetirementAnalysis && (
+          {/* PLAN FAILURE RESOLUTION SOLVER (CONTRIBUTIONS & DELAY PATHWAYS) */}
+          {(delayedRetirementAnalysis || contributionAnalysis) && (
             <div className="pt-3 border-t border-rose-200/80 dark:border-rose-800/60 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 flex items-center justify-center border border-amber-200 dark:border-amber-800 shrink-0">
-                    <Clock className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h4 className="font-extrabold text-xs text-rose-950 dark:text-rose-100 uppercase tracking-wide flex items-center gap-1.5">
-                      <span>Delayed Retirement Feasibility Solver</span>
-                      <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                    </h4>
-                    <p className="text-[11px] text-rose-800/90 dark:text-rose-200/80">
-                      Evaluates whether postponing retirement gives your pots more time to accumulate and compound to achieve 100% success.
-                    </p>
-                  </div>
+              {/* RESOLUTION PATHWAY SWITCHER TABS */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5 p-1 bg-rose-200/60 dark:bg-rose-900/40 rounded-xl border border-rose-300 dark:border-rose-800 w-full sm:w-auto">
+                  <button
+                    type="button"
+                    onClick={() => setFailureResolutionTab('contributions')}
+                    className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                      failureResolutionTab === 'contributions'
+                        ? 'bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-300 shadow-xs border border-emerald-300/80 dark:border-emerald-700/80'
+                        : 'text-rose-800 dark:text-rose-300 hover:text-rose-950 dark:hover:text-rose-100'
+                    }`}
+                  >
+                    <PiggyBank className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                    <span>Increase Monthly Savings</span>
+                    {contributionAnalysis?.bestSolution && (
+                      <span className="bg-emerald-600 text-white text-[9px] px-1.5 py-0.5 rounded-full font-black uppercase tracking-wider">
+                        Retire Age {profile.targetRetirementAge}
+                      </span>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFailureResolutionTab('delay')}
+                    className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                      failureResolutionTab === 'delay'
+                        ? 'bg-white dark:bg-slate-900 text-amber-700 dark:text-amber-300 shadow-xs border border-amber-300/80 dark:border-amber-700/80'
+                        : 'text-rose-800 dark:text-rose-300 hover:text-rose-950 dark:hover:text-rose-100'
+                    }`}
+                  >
+                    <Clock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                    <span>Delay Retirement Age</span>
+                    {delayedRetirementAnalysis?.firstSuccessful && (
+                      <span className="bg-amber-600 text-white text-[9px] px-1.5 py-0.5 rounded-full font-black uppercase tracking-wider">
+                        +{delayedRetirementAnalysis.firstSuccessful.delayYears}y (Age {delayedRetirementAnalysis.firstSuccessful.testAge})
+                      </span>
+                    )}
+                  </button>
                 </div>
               </div>
 
-              {/* RECOMMENDED DELAY RESOLUTION CALLOUT */}
-              {delayedRetirementAnalysis.firstSuccessful ? (
-                <div className="bg-primary-50 dark:bg-primary-950/80 border-2 border-primary-300 dark:border-primary-700/80 rounded-xl p-3.5 text-primary-950 dark:text-primary-100 space-y-3 shadow-xs">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="bg-primary-600 text-white font-black text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-md">
-                          Plan Success Solution Found
-                        </span>
-                        <span className="text-xs font-bold text-primary-800 dark:text-primary-300 flex items-center gap-1">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
-                          Delaying to Age {delayedRetirementAnalysis.firstSuccessful.testAge} eliminates 100% of shortfall
-                        </span>
-                      </div>
-                      <p className="text-xs text-primary-900 dark:text-primary-100 leading-relaxed">
-                        Retiring at <strong className="font-bold underline text-primary-700 dark:text-primary-300">Age {delayedRetirementAnalysis.firstSuccessful.testAge}</strong> (a delay of <strong>+{delayedRetirementAnalysis.firstSuccessful.delayYears} yr{delayedRetirementAnalysis.firstSuccessful.delayYears > 1 ? 's' : ''}</strong>) increases your projected retirement pot from <strong>£{displayedRetirementPot.toLocaleString()}</strong> to <strong>£{delayedRetirementAnalysis.firstSuccessful.retirementPot.toLocaleString()}</strong>, achieving <strong>100% plan success with £0 lifetime deficit</strong> through Age 100.
-                        {profile.isCouplePlanning && delayedRetirementAnalysis.firstSuccessful.partnerTestAge && (
-                          <span> (Partner retirement age shifts from Age {profile.partnerTargetRetirementAge || 60} to Age {delayedRetirementAnalysis.firstSuccessful.partnerTestAge}).</span>
-                        )}
+              {/* PATHWAY 1: CONTRIBUTION INCREASE FEASIBILITY SOLVER */}
+              {failureResolutionTab === 'contributions' && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 flex items-center justify-center border border-emerald-200 dark:border-emerald-800 shrink-0">
+                      <PiggyBank className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="font-extrabold text-xs text-rose-950 dark:text-rose-100 uppercase tracking-wide flex items-center gap-1.5">
+                        <span>Contribution Increase Feasibility Solver</span>
+                        <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
+                      </h4>
+                      <p className="text-[11px] text-rose-800/90 dark:text-rose-200/80">
+                        Calculates how much additional monthly savings are required while working to achieve 100% plan success without postponing retirement from Age {profile.targetRetirementAge}.
                       </p>
                     </div>
-
-                    {onChange && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const succ = delayedRetirementAnalysis.firstSuccessful;
-                          if (!succ) return;
-                          onChange({
-                            ...profile,
-                            targetRetirementAge: succ.testAge,
-                            partnerTargetRetirementAge: profile.isCouplePlanning && profile.partnerTargetRetirementAge
-                              ? profile.partnerTargetRetirementAge + succ.delayYears
-                              : profile.partnerTargetRetirementAge,
-                          });
-                        }}
-                        className="px-3.5 py-2 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white font-extrabold text-xs rounded-xl shadow-xs flex items-center justify-center gap-1.5 shrink-0 transition-all cursor-pointer border border-primary-500"
-                      >
-                        <Check className="w-4 h-4" />
-                        <span>Apply Age {delayedRetirementAnalysis.firstSuccessful.testAge} Plan</span>
-                      </button>
-                    )}
                   </div>
 
-                  {/* Quick metric breakdown pills */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-primary-200 dark:border-primary-800/80 text-[11px]">
-                    <div className="bg-white/80 dark:bg-slate-900/80 p-2 rounded-lg border border-primary-200 dark:border-primary-800">
-                      <div className="text-[10px] text-primary-600 dark:text-primary-400 font-bold uppercase">Original Target</div>
-                      <div className="font-extrabold text-slate-800 dark:text-slate-100 mt-0.5">
-                        Age {profile.targetRetirementAge} (Failed)
+                  {contributionAnalysis?.bestSolution ? (
+                    <div className="bg-emerald-50/90 dark:bg-emerald-950/80 border-2 border-emerald-300 dark:border-emerald-700/80 rounded-xl p-3.5 text-emerald-950 dark:text-emerald-100 space-y-3 shadow-xs">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="bg-emerald-600 text-white font-black text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-md">
+                            Plan Success Solution Found
+                          </span>
+                          <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                            Contributing an additional £{contributionAnalysis.bestSolution.monthlyGross}/mo eliminates 100% of shortfall
+                          </span>
+                        </div>
+                        <p className="text-xs text-emerald-900 dark:text-emerald-100 leading-relaxed">
+                          By increasing monthly savings by <strong className="font-bold underline text-emerald-700 dark:text-emerald-300">£{contributionAnalysis.bestSolution.monthlyGross}/mo gross</strong> (an actual net cost of only <strong>£{contributionAnalysis.bestSolution.monthlyNetCost}/mo</strong> from your take-home pay after {Math.round(contributionAnalysis.bestSolution.taxReliefRate * 100)}% tax relief) over your remaining <strong>{contributionAnalysis.workingYearsRemaining} working years</strong>, your projected retirement pot reaches <strong>£{contributionAnalysis.bestSolution.projectedRetirementPot.toLocaleString()}</strong> at <strong className="font-bold">Age {profile.targetRetirementAge}</strong>, achieving <strong className="font-bold text-emerald-700 dark:text-emerald-300">100% plan success with £0 lifetime deficit</strong> through life expectancy on schedule.
+                        </p>
                       </div>
-                    </div>
 
-                    <div className="bg-white/80 dark:bg-slate-900/80 p-2 rounded-lg border border-primary-200 dark:border-primary-800">
-                      <div className="text-[10px] text-primary-600 dark:text-primary-400 font-bold uppercase">Successful Target</div>
-                      <div className="font-extrabold text-primary-700 dark:text-primary-300 mt-0.5">
-                        Age {delayedRetirementAnalysis.firstSuccessful.testAge} (+{delayedRetirementAnalysis.firstSuccessful.delayYears}y)
-                      </div>
-                    </div>
+                      {/* Quick metric breakdown pills */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-emerald-200 dark:border-emerald-800/80 text-[11px]">
+                        <div className="bg-white/80 dark:bg-slate-900/80 p-2 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                          <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase">Monthly Net Cost</div>
+                          <div className="font-extrabold text-slate-800 dark:text-slate-100 mt-0.5">
+                            £{contributionAnalysis.bestSolution.monthlyNetCost}/mo (Out of Pocket)
+                          </div>
+                        </div>
 
-                    <div className="bg-white/80 dark:bg-slate-900/80 p-2 rounded-lg border border-primary-200 dark:border-primary-800">
-                      <div className="text-[10px] text-primary-600 dark:text-primary-400 font-bold uppercase">Pot at Retirement</div>
-                      <div className="font-extrabold text-primary-700 dark:text-primary-300 mt-0.5">
-                        £{delayedRetirementAnalysis.firstSuccessful.retirementPot.toLocaleString()}
-                      </div>
-                    </div>
+                        <div className="bg-white/80 dark:bg-slate-900/80 p-2 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                          <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase">HMRC Monthly Relief</div>
+                          <div className="font-extrabold text-emerald-700 dark:text-emerald-300 mt-0.5">
+                            +£{contributionAnalysis.bestSolution.monthlyTaxRelief}/mo ({Math.round(contributionAnalysis.bestSolution.taxReliefRate * 100)}% Bonus)
+                          </div>
+                        </div>
 
-                    <div className="bg-white/80 dark:bg-slate-900/80 p-2 rounded-lg border border-primary-200 dark:border-primary-800">
-                      <div className="text-[10px] text-primary-600 dark:text-primary-400 font-bold uppercase">Lifetime Deficit</div>
-                      <div className="font-extrabold text-primary-600 dark:text-primary-400 mt-0.5">
-                        £0 (100% On Track)
+                        <div className="bg-white/80 dark:bg-slate-900/80 p-2 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                          <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase">Pot at Retirement</div>
+                          <div className="font-extrabold text-emerald-700 dark:text-emerald-300 mt-0.5">
+                            £{contributionAnalysis.bestSolution.projectedRetirementPot.toLocaleString()}
+                          </div>
+                        </div>
+
+                        <div className="bg-white/80 dark:bg-slate-900/80 p-2 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                          <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase">Lifetime Deficit</div>
+                          <div className="font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                            £0 (100% On Track)
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* ACCOUNT OPTIONS WITH 1-CLICK APPLY */}
+                      <div className="pt-2 border-t border-emerald-200 dark:border-emerald-800/80 space-y-2">
+                        <div className="text-[11px] font-bold text-emerald-950 dark:text-emerald-100 flex items-center justify-between">
+                          <span>Select where to direct your additional monthly contributions:</span>
+                          <span className="text-[10px] text-emerald-700 dark:text-emerald-300">Click to apply directly to plan</span>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                          {/* SIPP Option */}
+                          {contributionAnalysis.sippSolution && (
+                            <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-emerald-200 dark:border-emerald-800 flex flex-col justify-between gap-2.5">
+                              <div className="space-y-1">
+                                <div className="flex items-center justify-between">
+                                  <span className="font-extrabold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                                    <Wallet className="w-3.5 h-3.5 text-emerald-600" />
+                                    <span>SIPP / Personal Pension</span>
+                                  </span>
+                                  <span className="bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-[9px] font-black px-1.5 py-0.5 rounded-md">
+                                    Tax Relief
+                                  </span>
+                                </div>
+                                <div className="text-lg font-black text-slate-900 dark:text-slate-100">
+                                  +£{contributionAnalysis.sippSolution.monthlyGross}<span className="text-xs font-normal text-slate-500">/mo gross</span>
+                                </div>
+                                <p className="text-[11px] text-slate-600 dark:text-slate-300">
+                                  Net Take-Home Cost: <strong>£{contributionAnalysis.sippSolution.monthlyNetCost}/mo</strong> (HMRC adds <strong>+£{contributionAnalysis.sippSolution.monthlyTaxRelief}/mo</strong> free tax relief).
+                                </p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleApplyContribution(contributionAnalysis.sippSolution!)}
+                                className="w-full py-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs rounded-lg shadow-2xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                              >
+                                <Check className="w-3.5 h-3.5" />
+                                <span>Apply to SIPP</span>
+                              </button>
+                            </div>
+                          )}
+
+                          {/* Workplace Pension Option (if Salary Sacrifice available) */}
+                          {contributionAnalysis.workplaceSolution && (
+                            <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-emerald-200 dark:border-emerald-800 flex flex-col justify-between gap-2.5">
+                              <div className="space-y-1">
+                                <div className="flex items-center justify-between">
+                                  <span className="font-extrabold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                                    <TrendingUp className="w-3.5 h-3.5 text-primary-600" />
+                                    <span>Workplace Pension</span>
+                                  </span>
+                                  <span className="bg-primary-100 dark:bg-primary-950 text-primary-700 dark:text-primary-300 text-[9px] font-black px-1.5 py-0.5 rounded-md">
+                                    Tax + NI
+                                  </span>
+                                </div>
+                                <div className="text-lg font-black text-slate-900 dark:text-slate-100">
+                                  +£{contributionAnalysis.workplaceSolution.monthlyGross}<span className="text-xs font-normal text-slate-500">/mo gross</span>
+                                </div>
+                                <p className="text-[11px] text-slate-600 dark:text-slate-300">
+                                  Net Cost: <strong>£{contributionAnalysis.workplaceSolution.monthlyNetCost}/mo</strong> ({Math.round(contributionAnalysis.workplaceSolution.taxReliefRate * 100)}% combined income tax & NI savings).
+                                </p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleApplyContribution(contributionAnalysis.workplaceSolution!)}
+                                className="w-full py-1.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white font-bold text-xs rounded-lg shadow-2xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                              >
+                                <Check className="w-3.5 h-3.5" />
+                                <span>Apply to Workplace</span>
+                              </button>
+                            </div>
+                          )}
+
+                          {/* ISA Option */}
+                          {contributionAnalysis.isaSolution && (
+                            <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-emerald-200 dark:border-emerald-800 flex flex-col justify-between gap-2.5">
+                              <div className="space-y-1">
+                                <div className="flex items-center justify-between">
+                                  <span className="font-extrabold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                                    <Coins className="w-3.5 h-3.5 text-indigo-600" />
+                                    <span>Stocks & Shares ISA</span>
+                                  </span>
+                                  <span className="bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 text-[9px] font-black px-1.5 py-0.5 rounded-md">
+                                    Tax-Free Exit
+                                  </span>
+                                </div>
+                                <div className="text-lg font-black text-slate-900 dark:text-slate-100">
+                                  +£{contributionAnalysis.isaSolution.monthlyGross}<span className="text-xs font-normal text-slate-500">/mo net</span>
+                                </div>
+                                <p className="text-[11px] text-slate-600 dark:text-slate-300">
+                                  Funded from take-home pay; provides 100% tax-free flexible withdrawals in retirement without age lock.
+                                </p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleApplyContribution(contributionAnalysis.isaSolution!)}
+                                className="w-full py-1.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold text-xs rounded-lg shadow-2xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                              >
+                                <Check className="w-3.5 h-3.5" />
+                                <span>Apply to ISA</span>
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="bg-amber-50 dark:bg-amber-950/80 border border-amber-300 dark:border-amber-800 rounded-xl p-3.5 text-amber-950 dark:text-amber-100 space-y-2">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="bg-amber-600 text-white font-black text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-md">
-                      Partial Improvement
-                    </span>
-                    <span className="text-xs font-bold text-amber-900 dark:text-amber-200">
-                      Delaying up to Age {delayedRetirementAnalysis.maxTestAge} reduces deficit by {Math.round((1 - (delayedRetirementAnalysis.bestPartial?.totalLifetimeShortfall || 0) / (totalLifetimeShortfall || 1)) * 100)}%
-                    </span>
-                  </div>
-                  <p className="text-xs text-amber-900 dark:text-amber-200/90 leading-relaxed">
-                    Delaying retirement alone to Age <strong>{delayedRetirementAnalysis.bestPartial?.testAge}</strong> lowers your total lifetime deficit from <strong>£{Math.round(totalLifetimeShortfall).toLocaleString()}</strong> down to <strong>£{Math.round(delayedRetirementAnalysis.bestPartial?.totalLifetimeShortfall || 0).toLocaleString()}</strong>.
-                    To fully resolve the remaining shortfall, consider combining a delayed retirement age with a modest increase in monthly savings or a lower target income.
-                  </p>
-                  {onChange && delayedRetirementAnalysis.bestPartial && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const best = delayedRetirementAnalysis.bestPartial;
-                        if (!best) return;
-                        onChange({
-                          ...profile,
-                          targetRetirementAge: best.testAge,
-                          partnerTargetRetirementAge: profile.isCouplePlanning && profile.partnerTargetRetirementAge
-                            ? profile.partnerTargetRetirementAge + best.delayYears
-                            : profile.partnerTargetRetirementAge,
-                        });
-                      }}
-                      className="mt-1 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl shadow-2xs inline-flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <span>Set Retirement Age to Age {delayedRetirementAnalysis.bestPartial.testAge}</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </button>
+                  ) : !contributionAnalysis?.canContribute ? (
+                    <div className="bg-amber-50 dark:bg-amber-950/80 border border-amber-300 dark:border-amber-800 rounded-xl p-3.5 text-amber-950 dark:text-amber-100 space-y-1.5 text-xs">
+                      <div className="font-bold flex items-center gap-1.5 text-amber-800 dark:text-amber-300">
+                        <AlertTriangle className="w-4 h-4" />
+                        <span>Retirement Age Already Reached</span>
+                      </div>
+                      <p className="text-amber-900/90 dark:text-amber-200/90">
+                        Your current age (Age {profile.currentAge}) is already at or past your target retirement age (Age {profile.targetRetirementAge}), so pre-retirement contributions can no longer be increased. Explore the <strong>Delay Retirement Age</strong> tab to see how postponing retirement solves the deficit.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="bg-amber-50 dark:bg-amber-950/80 border border-amber-300 dark:border-amber-800 rounded-xl p-3.5 text-amber-950 dark:text-amber-100 space-y-1.5 text-xs">
+                      <div className="font-bold flex items-center gap-1.5 text-amber-800 dark:text-amber-300">
+                        <AlertTriangle className="w-4 h-4" />
+                        <span>High Deficit Requires Combined Strategy</span>
+                      </div>
+                      <p className="text-amber-900/90 dark:text-amber-200/90">
+                        The projected deficit is too substantial to resolve with savings alone before retirement. We recommend combining a moderate contribution increase with delaying retirement by 1–3 years.
+                      </p>
+                    </div>
                   )}
                 </div>
               )}
 
-              {/* YEAR-BY-YEAR DELAY OPTION SIMULATOR GRID */}
-              <div className="space-y-1.5 pt-1">
-                <div className="text-[11px] font-bold text-rose-900 dark:text-rose-200 flex items-center justify-between">
-                  <span>Explore Candidate Retirement Delay Scenarios (+1 to +10 years):</span>
-                  <span className="text-[10px] text-rose-700 dark:text-rose-300">Click any age card to switch target age</span>
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
-                  {delayedRetirementAnalysis.candidates.slice(0, 10).map((cand) => {
-                    const isRec = cand.testAge === delayedRetirementAnalysis.firstSuccessful?.testAge;
-                    return (
-                      <button
-                        key={`delay-cand-${cand.testAge}`}
-                        type="button"
-                        onClick={() => {
-                          if (onChange) {
+              {/* PATHWAY 2: DELAYED RETIREMENT FEASIBILITY ANALYSIS */}
+              {failureResolutionTab === 'delay' && delayedRetirementAnalysis && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 flex items-center justify-center border border-amber-200 dark:border-amber-800 shrink-0">
+                      <Clock className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="font-extrabold text-xs text-rose-950 dark:text-rose-100 uppercase tracking-wide flex items-center gap-1.5">
+                        <span>Delayed Retirement Feasibility Solver</span>
+                        <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                      </h4>
+                      <p className="text-[11px] text-rose-800/90 dark:text-rose-200/80">
+                        Evaluates whether postponing retirement gives your pots more time to accumulate and compound to achieve 100% success.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* RECOMMENDED DELAY RESOLUTION CALLOUT */}
+                  {delayedRetirementAnalysis.firstSuccessful ? (
+                    <div className="bg-primary-50 dark:bg-primary-950/80 border-2 border-primary-300 dark:border-primary-700/80 rounded-xl p-3.5 text-primary-950 dark:text-primary-100 space-y-3 shadow-xs">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="bg-primary-600 text-white font-black text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-md">
+                              Plan Success Solution Found
+                            </span>
+                            <span className="text-xs font-bold text-primary-800 dark:text-primary-300 flex items-center gap-1">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
+                              Delaying to Age {delayedRetirementAnalysis.firstSuccessful.testAge} eliminates 100% of shortfall
+                            </span>
+                          </div>
+                          <p className="text-xs text-primary-900 dark:text-primary-100 leading-relaxed">
+                            Retiring at <strong className="font-bold underline text-primary-700 dark:text-primary-300">Age {delayedRetirementAnalysis.firstSuccessful.testAge}</strong> (a delay of <strong>+{delayedRetirementAnalysis.firstSuccessful.delayYears} yr{delayedRetirementAnalysis.firstSuccessful.delayYears > 1 ? 's' : ''}</strong>) increases your projected retirement pot from <strong>£{displayedRetirementPot.toLocaleString()}</strong> to <strong>£{delayedRetirementAnalysis.firstSuccessful.retirementPot.toLocaleString()}</strong>, achieving <strong>100% plan success with £0 lifetime deficit</strong> through Age 100.
+                            {profile.isCouplePlanning && delayedRetirementAnalysis.firstSuccessful.partnerTestAge && (
+                              <span> (Partner retirement age shifts from Age {profile.partnerTargetRetirementAge || 60} to Age {delayedRetirementAnalysis.firstSuccessful.partnerTestAge}).</span>
+                            )}
+                          </p>
+                        </div>
+
+                        {onChange && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const succ = delayedRetirementAnalysis.firstSuccessful;
+                              if (!succ) return;
+                              onChange({
+                                ...profile,
+                                targetRetirementAge: succ.testAge,
+                                partnerTargetRetirementAge: profile.isCouplePlanning && profile.partnerTargetRetirementAge
+                                  ? profile.partnerTargetRetirementAge + succ.delayYears
+                                  : profile.partnerTargetRetirementAge,
+                              });
+                            }}
+                            className="px-3.5 py-2 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white font-extrabold text-xs rounded-xl shadow-xs flex items-center justify-center gap-1.5 shrink-0 transition-all cursor-pointer border border-primary-500"
+                          >
+                            <Check className="w-4 h-4" />
+                            <span>Apply Age {delayedRetirementAnalysis.firstSuccessful.testAge} Plan</span>
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Quick metric breakdown pills */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-primary-200 dark:border-primary-800/80 text-[11px]">
+                        <div className="bg-white/80 dark:bg-slate-900/80 p-2 rounded-lg border border-primary-200 dark:border-primary-800">
+                          <div className="text-[10px] text-primary-600 dark:text-primary-400 font-bold uppercase">Original Target</div>
+                          <div className="font-extrabold text-slate-800 dark:text-slate-100 mt-0.5">
+                            Age {profile.targetRetirementAge} (Failed)
+                          </div>
+                        </div>
+
+                        <div className="bg-white/80 dark:bg-slate-900/80 p-2 rounded-lg border border-primary-200 dark:border-primary-800">
+                          <div className="text-[10px] text-primary-600 dark:text-primary-400 font-bold uppercase">Successful Target</div>
+                          <div className="font-extrabold text-primary-700 dark:text-primary-300 mt-0.5">
+                            Age {delayedRetirementAnalysis.firstSuccessful.testAge} (+{delayedRetirementAnalysis.firstSuccessful.delayYears}y)
+                          </div>
+                        </div>
+
+                        <div className="bg-white/80 dark:bg-slate-900/80 p-2 rounded-lg border border-primary-200 dark:border-primary-800">
+                          <div className="text-[10px] text-primary-600 dark:text-primary-400 font-bold uppercase">Pot at Retirement</div>
+                          <div className="font-extrabold text-primary-700 dark:text-primary-300 mt-0.5">
+                            £{delayedRetirementAnalysis.firstSuccessful.retirementPot.toLocaleString()}
+                          </div>
+                        </div>
+
+                        <div className="bg-white/80 dark:bg-slate-900/80 p-2 rounded-lg border border-primary-200 dark:border-primary-800">
+                          <div className="text-[10px] text-primary-600 dark:text-primary-400 font-bold uppercase">Lifetime Deficit</div>
+                          <div className="font-extrabold text-primary-600 dark:text-primary-400 mt-0.5">
+                            £0 (100% On Track)
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-amber-50 dark:bg-amber-950/80 border border-amber-300 dark:border-amber-800 rounded-xl p-3.5 text-amber-950 dark:text-amber-100 space-y-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="bg-amber-600 text-white font-black text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-md">
+                          Partial Improvement
+                        </span>
+                        <span className="text-xs font-bold text-amber-900 dark:text-amber-200">
+                          Delaying up to Age {delayedRetirementAnalysis.maxTestAge} reduces deficit by {Math.round((1 - (delayedRetirementAnalysis.bestPartial?.totalLifetimeShortfall || 0) / (totalLifetimeShortfall || 1)) * 100)}%
+                        </span>
+                      </div>
+                      <p className="text-xs text-amber-900 dark:text-amber-200/90 leading-relaxed">
+                        Delaying retirement alone to Age <strong>{delayedRetirementAnalysis.bestPartial?.testAge}</strong> lowers your total lifetime deficit from <strong>£{Math.round(totalLifetimeShortfall).toLocaleString()}</strong> down to <strong>£{Math.round(delayedRetirementAnalysis.bestPartial?.totalLifetimeShortfall || 0).toLocaleString()}</strong>.
+                        To fully resolve the remaining shortfall, consider combining a delayed retirement age with a modest increase in monthly savings or a lower target income.
+                      </p>
+                      {onChange && delayedRetirementAnalysis.bestPartial && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const best = delayedRetirementAnalysis.bestPartial;
+                            if (!best) return;
                             onChange({
                               ...profile,
-                              targetRetirementAge: cand.testAge,
+                              targetRetirementAge: best.testAge,
                               partnerTargetRetirementAge: profile.isCouplePlanning && profile.partnerTargetRetirementAge
-                                ? profile.partnerTargetRetirementAge + cand.delayYears
+                                ? profile.partnerTargetRetirementAge + best.delayYears
                                 : profile.partnerTargetRetirementAge,
                             });
-                          }
-                        }}
-                        className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer relative overflow-hidden ${
-                          isRec
-                            ? 'bg-primary-100/90 dark:bg-primary-950/90 border-primary-400 dark:border-primary-600 ring-2 ring-primary-500/30'
-                            : cand.isSuccessful
-                            ? 'bg-primary-50/70 dark:bg-primary-950/40 border-primary-200 dark:border-primary-800 hover:border-primary-400'
-                            : 'bg-white dark:bg-slate-900 border-rose-200 dark:border-rose-900/60 hover:border-amber-400'
-                        }`}
-                      >
-                        {isRec && (
-                          <div className="absolute top-0 right-0 bg-primary-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded-bl-lg uppercase">
-                            Optimal
-                          </div>
-                        )}
-                        <div className="font-extrabold text-slate-900 dark:text-slate-100 text-xs">
-                          Age {cand.testAge} <span className="text-[10px] text-slate-500 font-normal">(+{cand.delayYears}y)</span>
-                        </div>
-                        <div className="text-[10px] font-bold mt-0.5 text-slate-600 dark:text-slate-300">
-                          Pot: {formatCurrency(cand.retirementPot)}
-                        </div>
-                        <div className="mt-1">
-                          {cand.isSuccessful ? (
-                            <span className="inline-flex items-center gap-0.5 text-[9px] font-black text-primary-700 dark:text-primary-400 bg-primary-100 dark:bg-primary-900/60 px-1.5 py-0.5 rounded-md">
-                              <CheckCircle2 className="w-2.5 h-2.5" /> 100% On Track
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-rose-700 dark:text-rose-400 bg-rose-100 dark:bg-rose-900/60 px-1.5 py-0.5 rounded-md">
-                              -{formatCurrency(Math.round(cand.totalLifetimeShortfall))} deficit
-                            </span>
-                          )}
-                        </div>
-                      </button>
-                    );
-                  })}
+                          }}
+                          className="mt-1 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl shadow-2xs inline-flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <span>Set Retirement Age to Age {delayedRetirementAnalysis.bestPartial.testAge}</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {/* YEAR-BY-YEAR DELAY OPTION SIMULATOR GRID */}
+                  <div className="space-y-1.5 pt-1">
+                    <div className="text-[11px] font-bold text-rose-900 dark:text-rose-200 flex items-center justify-between">
+                      <span>Explore Candidate Retirement Delay Scenarios (+1 to +10 years):</span>
+                      <span className="text-[10px] text-rose-700 dark:text-rose-300">Click any age card to switch target age</span>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
+                      {delayedRetirementAnalysis.candidates.slice(0, 10).map((cand) => {
+                        const isRec = cand.testAge === delayedRetirementAnalysis.firstSuccessful?.testAge;
+                        return (
+                          <button
+                            key={`delay-cand-${cand.testAge}`}
+                            type="button"
+                            onClick={() => {
+                              if (onChange) {
+                                onChange({
+                                  ...profile,
+                                  targetRetirementAge: cand.testAge,
+                                  partnerTargetRetirementAge: profile.isCouplePlanning && profile.partnerTargetRetirementAge
+                                    ? profile.partnerTargetRetirementAge + cand.delayYears
+                                    : profile.partnerTargetRetirementAge,
+                                });
+                              }
+                            }}
+                            className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer relative overflow-hidden ${
+                              isRec
+                                ? 'bg-primary-100/90 dark:bg-primary-950/90 border-primary-400 dark:border-primary-600 ring-2 ring-primary-500/30'
+                                : cand.isSuccessful
+                                ? 'bg-primary-50/70 dark:bg-primary-950/40 border-primary-200 dark:border-primary-800 hover:border-primary-400'
+                                : 'bg-white dark:bg-slate-900 border-rose-200 dark:border-rose-900/60 hover:border-amber-400'
+                            }`}
+                          >
+                            {isRec && (
+                              <div className="absolute top-0 right-0 bg-primary-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded-bl-lg uppercase">
+                                Optimal
+                              </div>
+                            )}
+                            <div className="font-extrabold text-slate-900 dark:text-slate-100 text-xs">
+                              Age {cand.testAge} <span className="text-[10px] text-slate-500 font-normal">(+{cand.delayYears}y)</span>
+                            </div>
+                            <div className="text-[10px] font-bold mt-0.5 text-slate-600 dark:text-slate-300">
+                              Pot: {formatCurrency(cand.retirementPot)}
+                            </div>
+                            <div className="mt-1">
+                              {cand.isSuccessful ? (
+                                <span className="inline-flex items-center gap-0.5 text-[9px] font-black text-primary-700 dark:text-primary-400 bg-primary-100 dark:bg-primary-900/60 px-1.5 py-0.5 rounded-md">
+                                  <CheckCircle2 className="w-2.5 h-2.5" /> 100% On Track
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-rose-700 dark:text-rose-400 bg-rose-100 dark:bg-rose-900/60 px-1.5 py-0.5 rounded-md">
+                                  -{formatCurrency(Math.round(cand.totalLifetimeShortfall))} deficit
+                                </span>
+                              )}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           )}
         </motion.div>

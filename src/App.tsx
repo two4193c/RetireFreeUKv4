@@ -1170,6 +1170,7 @@ function App() {
                         profile={profile}
                         pots={pots}
                         onChange={handleProfileChange}
+                        onPotsChange={handlePotsChange}
                         onOpenMaximizedSpendModal={() => setIsMaximizedSpendModalOpen(true)}
                         appMode={appMode}
                       />
@@ -1589,6 +1590,7 @@ function App() {
                     profile={profile}
                     pots={pots}
                     onChange={handleProfileChange}
+                    onPotsChange={handlePotsChange}
                     onOpenMaximizedSpendModal={() => setIsMaximizedSpendModalOpen(true)}
                     appMode={appMode}
                   />
@@ -1666,7 +1668,7 @@ function App() {
                   />
                 </div>
                 <div id="card-summary-chart" className="scroll-mt-24 transition-all duration-300">
-                  <ProjectionChart projections={projections} profile={profile} pots={pots} onChange={handleProfileChange} showAllCharts={true} />
+                  <ProjectionChart projections={projections} profile={profile} pots={pots} onChange={handleProfileChange} onPotsChange={handlePotsChange} showAllCharts={true} />
                 </div>
                 <div id="card-summary-monte" className="scroll-mt-24 transition-all duration-300">
                   <MonteCarloCard profile={profile} pots={pots} taxResult={taxResult} onChange={handleProfileChange} showAllScenarios={true} appMode={appMode} />
