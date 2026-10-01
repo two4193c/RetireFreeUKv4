@@ -229,13 +229,13 @@ describe('solveContributionIncrease', () => {
     expect(res.sippSolution).not.toBeNull();
     expect(res.workplaceSolution).not.toBeNull();
 
-    // 1. Test ISA "Bridging the Gap" contribution
+    // 1. Test ISA "Bridging the Gap - Stocks & Shares ISA" contribution
     const isaProfile: UserProfile = {
       ...profile,
       oneOffContributions: [
         {
           id: 'contrib_gap_isa',
-          name: 'Bridging the Gap',
+          name: 'Bridging the Gap - Stocks & Shares ISA',
           owner: 'primary',
           targetPot: 'stocks_and_shares_isa',
           frequency: 'regular_monthly',
@@ -243,7 +243,7 @@ describe('solveContributionIncrease', () => {
           startAge: profile.currentAge,
           endAge: profile.targetRetirementAge,
           enabled: true,
-          description: `Monthly savings of £${res.isaSolution!.monthlyGross}/mo to eliminate retirement income deficit`,
+          description: `Monthly savings of £${res.isaSolution!.monthlyGross}/mo into Stocks & Shares ISA to eliminate retirement income deficit`,
         },
       ],
     };
@@ -252,13 +252,13 @@ describe('solveContributionIncrease', () => {
     const isaFailures = isaProj.filter((p) => p.isRetired && p.age <= 85 && (p.incomeShortfall || 0) > 25);
     expect(isaFailures.length).toBe(0);
 
-    // 2. Test SIPP "Bridging the Gap" contribution
+    // 2. Test SIPP "Bridging the Gap - SIPP" contribution
     const sippProfile: UserProfile = {
       ...profile,
       oneOffContributions: [
         {
           id: 'contrib_gap_sipp',
-          name: 'Bridging the Gap',
+          name: 'Bridging the Gap - SIPP',
           owner: 'primary',
           targetPot: 'sipp',
           frequency: 'regular_monthly',
@@ -267,7 +267,7 @@ describe('solveContributionIncrease', () => {
           startAge: profile.currentAge,
           endAge: profile.targetRetirementAge,
           enabled: true,
-          description: `Monthly savings of £${res.sippSolution!.monthlyGross}/mo to eliminate retirement income deficit`,
+          description: `Monthly savings of £${res.sippSolution!.monthlyGross}/mo into SIPP to eliminate retirement income deficit`,
         },
       ],
     };
@@ -275,6 +275,22 @@ describe('solveContributionIncrease', () => {
     const sippProj = generateProjections(sippProfile, pots, sippTax);
     const sippFailures = sippProj.filter((p) => p.isRetired && p.age <= 85 && (p.incomeShortfall || 0) > 25);
     expect(sippFailures.length).toBe(0);
+
+    // 3. Test applying more than one: combining both ISA and SIPP bridging contributions
+    const combinedProfile: UserProfile = {
+      ...profile,
+      oneOffContributions: [
+        ...isaProfile.oneOffContributions,
+        ...sippProfile.oneOffContributions,
+      ],
+    };
+    expect(combinedProfile.oneOffContributions.length).toBe(2);
+    expect(combinedProfile.oneOffContributions[0].name).toBe('Bridging the Gap - Stocks & Shares ISA');
+    expect(combinedProfile.oneOffContributions[1].name).toBe('Bridging the Gap - SIPP');
+    const combTax = calculateUKTax(combinedProfile, pots);
+    const combProj = generateProjections(combinedProfile, pots, combTax);
+    const combFailures = combProj.filter((p) => p.isRetired && p.age <= 85 && (p.incomeShortfall || 0) > 25);
+    expect(combFailures.length).toBe(0);
   });
 
   it('verifies data.json scenario with plan deficit has no spurious £1 solution after applying SIPP', async () => {

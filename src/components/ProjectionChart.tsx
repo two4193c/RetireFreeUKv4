@@ -349,18 +349,31 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
 
   const handleApplyContribution = (solution: ContributionSolution) => {
     if (onChange) {
-      const existingContribs = (profile.oneOffContributions || []).filter(
-        (c) => c.name !== 'Bridging the Gap'
-      );
+      const potLabel = solution.potType === 'isa'
+        ? 'Stocks & Shares ISA'
+        : solution.potType === 'workplace'
+        ? 'Workplace Pension'
+        : 'SIPP';
+      const title = `Bridging the Gap - ${potLabel}`;
+
       const targetPot: InvestmentPotType = solution.potType === 'isa'
         ? 'stocks_and_shares_isa'
         : solution.potType === 'workplace'
         ? 'workplace_pension'
         : 'sipp';
 
+      // Keep bridging contributions for other pots (allowing user to apply more than one,
+      // e.g. both ISA and SIPP), only replacing an existing bridging contribution for this specific pot.
+      const existingContribs = (profile.oneOffContributions || []).filter(
+        (c) =>
+          c.name !== title &&
+          c.id !== `contrib_gap_${solution.potType}` &&
+          !(c.name.startsWith('Bridging the Gap') && c.targetPot === targetPot)
+      );
+
       const newContrib: OneOffContribution = {
-        id: `contrib_gap_${Date.now()}`,
-        name: 'Bridging the Gap',
+        id: `contrib_gap_${solution.potType}`,
+        name: title,
         owner: 'primary',
         targetPot,
         frequency: 'regular_monthly',
@@ -368,7 +381,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
         startAge: profile.currentAge,
         endAge: profile.targetRetirementAge,
         enabled: true,
-        description: `Monthly savings of £${solution.monthlyGross}/mo to eliminate retirement income deficit`,
+        description: `Monthly savings of £${solution.monthlyGross}/mo into ${potLabel} to eliminate retirement income deficit`,
         ...(solution.potType === 'workplace' ? {
           workplaceContributionType: 'fixed' as const,
           employeeMonthlyAmount: solution.monthlyGross,
