@@ -86,7 +86,7 @@ describe('solveContributionIncrease', () => {
     expect(res.isaSolution).not.toBeNull();
   });
 
-  it('does not display ISA option when required contribution exceeds £20k annual limit', () => {
+  it('allows ISA option up to remaining ISA limit when deficit requires more than the limit', () => {
     const profile: UserProfile = {
       ...DEFAULT_PROFILE,
       currentAge: 50,
@@ -107,9 +107,11 @@ describe('solveContributionIncrease', () => {
     const res = solveContributionIncrease(profile, pots, true);
     expect(res.hasSolution).toBe(true);
     expect(res.sippSolution).not.toBeNull();
-    // ISA limit is £20,000/yr (£1,666/mo); with £500/mo already used, £1,166/mo cannot eliminate this large deficit
-    // Therefore, ISA option must NOT be displayed; only valid options (SIPP/workplace) remain
-    expect(res.isaSolution).toBeNull();
+    // ISA limit is £20,000/yr (£1,666/mo); with £500/mo already used, remaining headroom is £1,166/mo.
+    // ISA solution is offered up to the remaining ISA limit (£1,166/mo), with zero spillover to cash!
+    expect(res.isaSolution).not.toBeNull();
+    expect(res.isaSolution?.monthlyGross).toBe(1166);
+    expect(res.isaSolution?.isSuccessful).toBe(false); // only partially eliminates deficit
   });
 
   it('does not display ISA option once ISA annual limit is already reached via existing contributions', () => {
@@ -282,10 +284,23 @@ describe('solveContributionIncrease', () => {
     const profile = { ...scenario.profile, targetRetirementIncomeAnnual: 25000 };
     const pots = scenario.pots;
 
-    const res = solveContributionIncrease(profile, pots, profile.adjustForInflation);
+    // Remove all ISA contributions to test the user scenario where there are NO ISA contributions
+    const noIsaProfile = {
+      ...profile,
+      oneOffContributions: (profile.oneOffContributions || []).filter((c) => c.targetPot !== 'stocks_and_shares_isa' && c.targetPot !== 'cash_isa' && c.targetPot !== 'lisa'),
+    };
+    const noIsaPots = {
+      ...pots,
+      stocksAndSharesIsaMonthlyContribution: 0,
+      cashIsaMonthlyContribution: 0,
+      lisaMonthlyContribution: 0,
+    };
+    const res = solveContributionIncrease(noIsaProfile, noIsaPots, noIsaProfile.adjustForInflation);
     expect(res.hasSolution).toBe(true);
     expect(res.sippSolution).not.toBeNull();
-    expect(res.sippSolution!.monthlyGross).toBeGreaterThan(100);
+    // With no ISA contributions, ISA option IS displayed and solves up to the ISA limit!
+    expect(res.isaSolution).not.toBeNull();
+    expect(res.isaSolution?.monthlyGross).toBe(1191);
 
     // Apply SIPP "Bridging the Gap"
     const sippProfile = {

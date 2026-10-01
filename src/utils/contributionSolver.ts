@@ -103,7 +103,7 @@ export function solveContributionIncrease(
     }
 
     let low = 0;
-    let high = potType === 'isa' ? maxMonthlyIsaIncrease : 25000; // Cap ISA search strictly to remaining ISA allowance
+    let high = 25000; // Search ceiling up to £25k/month
     let bestMid: number | null = null;
     let bestProjections: YearProjection[] | null = null;
 
@@ -139,11 +139,38 @@ export function solveContributionIncrease(
       }
     }
 
-    if (bestMid === null || bestMid <= 0.01) return null;
+    let monthlyGross: number;
+    let isSuccessful = true;
+    let deficitEliminatedPct = 100;
 
-    let monthlyGross = Math.max(1, Math.ceil(bestMid));
     if (potType === 'isa') {
-      monthlyGross = Math.min(maxMonthlyIsaIncrease, monthlyGross);
+      if (bestMid !== null && bestMid <= maxMonthlyIsaIncrease && bestMid > 0.01) {
+        monthlyGross = Math.max(1, Math.ceil(bestMid));
+        isSuccessful = true;
+        deficitEliminatedPct = 100;
+      } else {
+        // Deficit requires more than remaining ISA allowance, so contribute up to the ISA limit
+        monthlyGross = maxMonthlyIsaIncrease;
+        const maxIsaPots: InvestmentPots = {
+          ...activePots,
+          stocksAndSharesIsaMonthlyContribution: (activePots.stocksAndSharesIsaMonthlyContribution || 0) + monthlyGross,
+        };
+        const maxIsaTax = calculateUKTax(profile, maxIsaPots);
+        bestProjections = generateProjections(profile, maxIsaPots, maxIsaTax);
+        const initDeficit = baseShortfalls.reduce((sum, p) => sum + (p.incomeShortfall || 0), 0);
+        const newDeficit = bestProjections
+          .filter((p) => p.isRetired && p.age <= maxPlanAge)
+          .reduce((sum, p) => sum + (p.incomeShortfall || 0), 0);
+        deficitEliminatedPct = initDeficit > 0
+          ? Math.max(1, Math.min(100, Math.round(((initDeficit - newDeficit) / initDeficit) * 100)))
+          : 100;
+        isSuccessful = deficitEliminatedPct >= 100;
+      }
+    } else {
+      if (bestMid === null || bestMid <= 0.01) return null;
+      monthlyGross = Math.max(1, Math.ceil(bestMid));
+      isSuccessful = true;
+      deficitEliminatedPct = 100;
     }
 
     const effectiveReliefRate = potType === 'isa'
@@ -189,9 +216,9 @@ export function solveContributionIncrease(
       taxReliefRate: effectiveReliefRate,
       monthlyTaxRelief,
       workingYearsRemaining,
-      isSuccessful: true,
+      isSuccessful,
       projectedRetirementPot: retirementPot,
-      deficitEliminatedPct: 100,
+      deficitEliminatedPct,
     };
   }
 
@@ -200,11 +227,12 @@ export function solveContributionIncrease(
   // Only run workplace bisection if user has a salary / employer relationship
   const workplaceSolution = hasWorkplaceSalary ? runBisection('workplace') : null;
 
-  // Select best solution: pick the option with the lowest net monthly cost to the user
+  // Select best solution: prioritize fully successful solutions (100% eliminated), picking lowest net cost
   const options = [workplaceSolution, sippSolution, isaSolution].filter(Boolean) as ContributionSolution[];
-  const bestSolution = options.length > 0
-    ? options.reduce((a, b) => a.monthlyNetCost <= b.monthlyNetCost ? a : b)
-    : null;
+  const fullySuccessfulOptions = options.filter((o) => o.isSuccessful);
+  const bestSolution = fullySuccessfulOptions.length > 0
+    ? fullySuccessfulOptions.reduce((a, b) => a.monthlyNetCost <= b.monthlyNetCost ? a : b)
+    : (options.length > 0 ? options[0] : null);
 
   const hasSolution = bestSolution !== null;
 

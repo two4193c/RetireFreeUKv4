@@ -1164,14 +1164,16 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                                     <span>Stocks & Shares ISA</span>
                                   </span>
                                   <span className="bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 text-[9px] font-black px-1.5 py-0.5 rounded-md">
-                                    Tax-Free Exit
+                                    {contributionAnalysis.isaSolution.isSuccessful ? 'Tax-Free Exit' : 'Max ISA Limit'}
                                   </span>
                                 </div>
                                 <div className="text-lg font-black text-slate-900 dark:text-slate-100">
                                   +£{contributionAnalysis.isaSolution.monthlyGross}<span className="text-xs font-normal text-slate-500">/mo net</span>
                                 </div>
                                 <p className="text-[11px] text-slate-600 dark:text-slate-300">
-                                  Funded from take-home pay; provides 100% tax-free flexible withdrawals in retirement without age lock.
+                                  {contributionAnalysis.isaSolution.isSuccessful
+                                    ? 'Funded from take-home pay; provides 100% tax-free flexible withdrawals in retirement without age lock.'
+                                    : `Contributes up to your remaining annual ISA limit (£20,000/yr), closing ${contributionAnalysis.isaSolution.deficitEliminatedPct}% of the deficit with 100% tax-free withdrawals.`}
                                 </p>
                               </div>
                               <button
