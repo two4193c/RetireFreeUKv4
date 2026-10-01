@@ -58,6 +58,29 @@ export function solveContributionIncrease(
 
   // Calculate user's upfront tax relief rates
   const baseTax = calculateUKTax(profile, activePots);
+  const baseProjections = generateProjections(profile, activePots, baseTax);
+
+  const primaryLe = profile.lifeExpectancyAge || 90;
+  const partnerAgeDiff = (profile.partnerCurrentAge ?? profile.currentAge) - profile.currentAge;
+  const partnerLePrimaryAge = (profile.partnerLifeExpectancyAge || 95) - partnerAgeDiff;
+  const maxPlanAge = profile.isCouplePlanning ? Math.max(primaryLe, partnerLePrimaryAge) : primaryLe;
+
+  const baseRetiredYears = baseProjections.filter((p) => p.isRetired && p.age <= maxPlanAge);
+  const baseShortfalls = baseRetiredYears.filter((p) => (p.incomeShortfall || 0) > 25);
+
+  // If there are no deficits within the client's lifetime, no contribution increase is needed
+  if (baseShortfalls.length === 0) {
+    return {
+      canContribute: true,
+      hasSolution: false,
+      workingYearsRemaining,
+      sippSolution: null,
+      isaSolution: null,
+      workplaceSolution: null,
+      bestSolution: null,
+    };
+  }
+
   const marginalTaxRate = (baseTax.marginalTaxRate ?? 20) / 100;
   const isSalarySacrifice = profile.pensionContributionMethod === 'salary_sacrifice';
   // NI savings rate: 0 if no income, 2% above higher-rate threshold, 8% basic rate band
@@ -66,9 +89,21 @@ export function solveContributionIncrease(
   // Whether the user has a salary / employer to contribute to workplace pension
   const hasWorkplaceSalary = (profile.grossAnnualSalary || 0) > 0;
 
+  // ISA limit headroom calculation:
+  // baseTax.isaAllowanceRemaining is the remaining ISA allowance for the current tax year.
+  // We only allow monthly contributions up to remaining ISA allowance / 12 so that contributions
+  // never exceed the ISA limit and never spill over into cash/GIA.
+  const remainingIsaAnnual = Math.max(0, baseTax.isaAllowanceRemaining ?? 0);
+  const maxMonthlyIsaIncrease = Math.floor(remainingIsaAnnual / 12);
+  const canContributeIsa = maxMonthlyIsaIncrease >= 1;
+
   function runBisection(potType: 'sipp' | 'isa' | 'workplace'): ContributionSolution | null {
+    if (potType === 'isa' && !canContributeIsa) {
+      return null;
+    }
+
     let low = 0;
-    let high = 25000; // Search ceiling up to £25k/month
+    let high = potType === 'isa' ? maxMonthlyIsaIncrease : 25000; // Cap ISA search strictly to remaining ISA allowance
     let bestMid: number | null = null;
     let bestProjections: YearProjection[] | null = null;
 
@@ -92,7 +127,7 @@ export function solveContributionIncrease(
       const candProjections = generateProjections(profile, testPots, candTax);
 
       // Check whether any retired year has an income shortfall > £25 (ignoring integer rounding noise)
-      const retiredYears = candProjections.filter((p) => p.isRetired && p.age <= (profile.lifeExpectancyAge || 90));
+      const retiredYears = candProjections.filter((p) => p.isRetired && p.age <= maxPlanAge);
       const shortfalls = retiredYears.filter((p) => (p.incomeShortfall || 0) > 25);
 
       if (shortfalls.length === 0) {
@@ -104,9 +139,13 @@ export function solveContributionIncrease(
       }
     }
 
-    if (bestMid === null) return null;
+    if (bestMid === null || bestMid <= 0.01) return null;
 
-    const monthlyGross = Math.max(1, Math.ceil(bestMid));
+    let monthlyGross = Math.max(1, Math.ceil(bestMid));
+    if (potType === 'isa') {
+      monthlyGross = Math.min(maxMonthlyIsaIncrease, monthlyGross);
+    }
+
     const effectiveReliefRate = potType === 'isa'
       ? 0
       : (potType === 'workplace' && isSalarySacrifice ? salarySacrificeReliefRate : marginalTaxRate);
@@ -157,7 +196,7 @@ export function solveContributionIncrease(
   }
 
   const sippSolution = runBisection('sipp');
-  const isaSolution = runBisection('isa');
+  const isaSolution = canContributeIsa ? runBisection('isa') : null;
   // Only run workplace bisection if user has a salary / employer relationship
   const workplaceSolution = hasWorkplaceSalary ? runBisection('workplace') : null;
 

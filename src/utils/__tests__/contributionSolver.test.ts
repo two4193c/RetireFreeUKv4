@@ -86,7 +86,7 @@ describe('solveContributionIncrease', () => {
     expect(res.isaSolution).not.toBeNull();
   });
 
-  it('tests what happens when deficit is large so ISA contribution exceeds £20k annual limit', () => {
+  it('does not display ISA option when required contribution exceeds £20k annual limit', () => {
     const profile: UserProfile = {
       ...DEFAULT_PROFILE,
       currentAge: 50,
@@ -106,7 +106,45 @@ describe('solveContributionIncrease', () => {
 
     const res = solveContributionIncrease(profile, pots, true);
     expect(res.hasSolution).toBe(true);
-    expect(res.isaSolution).not.toBeNull();
+    expect(res.sippSolution).not.toBeNull();
+    // ISA limit is £20,000/yr (£1,666/mo); with £500/mo already used, £1,166/mo cannot eliminate this large deficit
+    // Therefore, ISA option must NOT be displayed; only valid options (SIPP/workplace) remain
+    expect(res.isaSolution).toBeNull();
+  });
+
+  it('does not display ISA option once ISA annual limit is already reached via existing contributions', () => {
+    const profile: UserProfile = {
+      ...DEFAULT_PROFILE,
+      currentAge: 45,
+      targetRetirementAge: 58,
+      targetRetirementIncomeAnnual: 45000,
+      lifeExpectancyAge: 85,
+      grossAnnualSalary: 60000,
+      oneOffContributions: [
+        {
+          id: 'isa_full',
+          name: 'Max Monthly ISA',
+          owner: 'primary',
+          targetPot: 'stocks_and_shares_isa',
+          frequency: 'regular_monthly',
+          grossAmount: 1666.67, // Uses all £20k allowance
+          startAge: 45,
+          endAge: 60,
+          enabled: true,
+        },
+      ],
+    };
+    const pots: InvestmentPots = {
+      ...DEFAULT_POTS,
+      stocksAndSharesIsaBalance: 10000,
+      sippBalance: 10000,
+    };
+
+    const res = solveContributionIncrease(profile, pots, true);
+    // SIPP is still valid and can solve
+    expect(res.sippSolution).not.toBeNull();
+    // ISA limit is reached, so ISA option must NOT be displayed
+    expect(res.isaSolution).toBeNull();
   });
 
   it('solves for ISA increase when user already has monthly ISA contribution in profile.oneOffContributions', () => {
@@ -114,7 +152,7 @@ describe('solveContributionIncrease', () => {
       ...DEFAULT_PROFILE,
       currentAge: 40,
       targetRetirementAge: 60,
-      targetRetirementIncomeAnnual: 40000,
+      targetRetirementIncomeAnnual: 25000,
       lifeExpectancyAge: 85,
       expectedInflationRate: 2.5,
       expectedInvestmentReturn: 6.0,
@@ -162,7 +200,7 @@ describe('solveContributionIncrease', () => {
       ...DEFAULT_PROFILE,
       currentAge: 45,
       targetRetirementAge: 60,
-      targetRetirementIncomeAnnual: 35000,
+      targetRetirementIncomeAnnual: 25000,
       lifeExpectancyAge: 85,
       expectedInflationRate: 2.5,
       expectedInvestmentReturn: 6.0,
@@ -235,5 +273,51 @@ describe('solveContributionIncrease', () => {
     const sippProj = generateProjections(sippProfile, pots, sippTax);
     const sippFailures = sippProj.filter((p) => p.isRetired && p.age <= 85 && (p.incomeShortfall || 0) > 25);
     expect(sippFailures.length).toBe(0);
+  });
+
+  it('verifies data.json scenario with plan deficit has no spurious £1 solution after applying SIPP', async () => {
+    const fs = await import('fs');
+    const data = JSON.parse(fs.readFileSync('./data.json', 'utf8'));
+    const scenario = data.scenarios[0];
+    const profile = { ...scenario.profile, targetRetirementIncomeAnnual: 25000 };
+    const pots = scenario.pots;
+
+    const res = solveContributionIncrease(profile, pots, profile.adjustForInflation);
+    expect(res.hasSolution).toBe(true);
+    expect(res.sippSolution).not.toBeNull();
+    expect(res.sippSolution!.monthlyGross).toBeGreaterThan(100);
+
+    // Apply SIPP "Bridging the Gap"
+    const sippProfile = {
+      ...profile,
+      oneOffContributions: [
+        ...(profile.oneOffContributions || []),
+        {
+          id: 'contrib_bridging',
+          name: 'Bridging the Gap',
+          owner: 'primary',
+          targetPot: 'sipp',
+          frequency: 'regular_monthly',
+          grossAmount: res.sippSolution!.monthlyGross,
+          sippContributionType: 'gross',
+          startAge: profile.currentAge,
+          endAge: profile.targetRetirementAge,
+          enabled: true,
+        },
+      ],
+    };
+    const resAfterSipp = solveContributionIncrease(sippProfile, pots, profile.adjustForInflation);
+    // After applying SIPP solution, all shortfalls during lifetime are eliminated:
+    expect(resAfterSipp.hasSolution).toBe(false);
+    expect(resAfterSipp.sippSolution).toBeNull();
+    expect(resAfterSipp.isaSolution).toBeNull();
+    expect(resAfterSipp.workplaceSolution).toBeNull();
+
+    // In ProjectionChart, shortfallYears up to client life expectancy is 0
+    const candTax = calculateUKTax(sippProfile, pots);
+    const candProj = generateProjections(sippProfile, pots, candTax);
+    const retiredYears = candProj.filter((p) => p.isRetired && p.age <= profile.lifeExpectancyAge);
+    const shortfalls = retiredYears.filter((p) => (p.incomeShortfall || 0) > 25);
+    expect(shortfalls.length).toBe(0);
   });
 });

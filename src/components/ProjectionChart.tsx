@@ -94,8 +94,12 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
   const isSameAccessYear = isCouple && (primaryAccessAge === partnerAccessPrimaryAge);
 
   // Shortfall & Plan Failure analysis
-  const retirementProjections = projections.filter((p) => p.isRetired);
-  const shortfallYears = retirementProjections.filter((p) => (p.incomeShortfall || 0) > 0);
+  const primaryLe = profile.lifeExpectancyAge || 90;
+  const partnerLePrimaryAge = (profile.partnerLifeExpectancyAge || 95) - partnerAgeDiff;
+  const maxPlanAge = profile.isCouplePlanning ? Math.max(primaryLe, partnerLePrimaryAge) : primaryLe;
+
+  const retirementProjections = projections.filter((p) => p.isRetired && p.age <= maxPlanAge);
+  const shortfallYears = retirementProjections.filter((p) => (p.incomeShortfall || 0) > 25);
   const firstShortfallYear = shortfallYears[0];
   const hasPlanFailure = shortfallYears.length > 0;
 
@@ -300,8 +304,8 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
       const candTax = calculateUKTax(candidateProfile, activePots);
       const candProjections = generateProjections(candidateProfile, activePots, candTax);
 
-      const retiredYears = candProjections.filter((p) => p.isRetired);
-      const shortfalls = retiredYears.filter((p) => (p.incomeShortfall || 0) > 1);
+      const retiredYears = candProjections.filter((p) => p.isRetired && p.age <= maxPlanAge);
+      const shortfalls = retiredYears.filter((p) => (p.incomeShortfall || 0) > 25);
       const totShortfall = retiredYears.reduce((sum, p) => sum + (p.incomeShortfall || 0), 0);
       const maxShortfall = shortfalls.length > 0 ? Math.max(...shortfalls.map((p) => p.incomeShortfall || 0)) : 0;
       const firstShortfall = shortfalls[0]?.age;
