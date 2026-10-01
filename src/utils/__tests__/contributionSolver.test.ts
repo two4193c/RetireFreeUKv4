@@ -156,4 +156,84 @@ describe('solveContributionIncrease', () => {
     const shortfalls = retiredYears.filter((p) => (p.incomeShortfall || 0) > 25);
     expect(shortfalls.length).toBe(0);
   });
+
+  it('verifies that setting up a "Bridging the Gap" monthly contribution in profile.oneOffContributions eliminates retirement shortfall', () => {
+    const profile: UserProfile = {
+      ...DEFAULT_PROFILE,
+      currentAge: 45,
+      targetRetirementAge: 60,
+      targetRetirementIncomeAnnual: 35000,
+      lifeExpectancyAge: 85,
+      expectedInflationRate: 2.5,
+      expectedInvestmentReturn: 6.0,
+      postRetirementReturn: 4.5,
+      grossAnnualSalary: 55000,
+      oneOffContributions: [],
+    };
+    const pots: InvestmentPots = {
+      ...DEFAULT_POTS,
+      stocksAndSharesIsaBalance: 15000,
+      sippBalance: 20000,
+      workplacePensionBalance: 30000,
+    };
+
+    // Before solver: plan has failures
+    const initialTax = calculateUKTax(profile, pots);
+    const initialProj = generateProjections(profile, pots, initialTax);
+    const initialFailures = initialProj.filter((p) => p.isRetired && (p.incomeShortfall || 0) > 25);
+    expect(initialFailures.length).toBeGreaterThan(0);
+
+    // Solve for contribution
+    const res = solveContributionIncrease(profile, pots, true);
+    expect(res.isaSolution).not.toBeNull();
+    expect(res.sippSolution).not.toBeNull();
+    expect(res.workplaceSolution).not.toBeNull();
+
+    // 1. Test ISA "Bridging the Gap" contribution
+    const isaProfile: UserProfile = {
+      ...profile,
+      oneOffContributions: [
+        {
+          id: 'contrib_gap_isa',
+          name: 'Bridging the Gap',
+          owner: 'primary',
+          targetPot: 'stocks_and_shares_isa',
+          frequency: 'regular_monthly',
+          grossAmount: res.isaSolution!.monthlyGross,
+          startAge: profile.currentAge,
+          endAge: profile.targetRetirementAge,
+          enabled: true,
+          description: `Monthly savings of £${res.isaSolution!.monthlyGross}/mo to eliminate retirement income deficit`,
+        },
+      ],
+    };
+    const isaTax = calculateUKTax(isaProfile, pots);
+    const isaProj = generateProjections(isaProfile, pots, isaTax);
+    const isaFailures = isaProj.filter((p) => p.isRetired && p.age <= 85 && (p.incomeShortfall || 0) > 25);
+    expect(isaFailures.length).toBe(0);
+
+    // 2. Test SIPP "Bridging the Gap" contribution
+    const sippProfile: UserProfile = {
+      ...profile,
+      oneOffContributions: [
+        {
+          id: 'contrib_gap_sipp',
+          name: 'Bridging the Gap',
+          owner: 'primary',
+          targetPot: 'sipp',
+          frequency: 'regular_monthly',
+          grossAmount: res.sippSolution!.monthlyGross,
+          sippContributionType: 'gross',
+          startAge: profile.currentAge,
+          endAge: profile.targetRetirementAge,
+          enabled: true,
+          description: `Monthly savings of £${res.sippSolution!.monthlyGross}/mo to eliminate retirement income deficit`,
+        },
+      ],
+    };
+    const sippTax = calculateUKTax(sippProfile, pots);
+    const sippProj = generateProjections(sippProfile, pots, sippTax);
+    const sippFailures = sippProj.filter((p) => p.isRetired && p.age <= 85 && (p.incomeShortfall || 0) > 25);
+    expect(sippFailures.length).toBe(0);
+  });
 });

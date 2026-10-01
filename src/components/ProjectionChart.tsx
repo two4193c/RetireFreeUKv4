@@ -14,7 +14,7 @@ import {
   CartesianGrid,
   ReferenceLine,
 } from 'recharts';
-import { YearProjection, UserProfile, InvestmentPots, AppMode } from '../types';
+import { YearProjection, UserProfile, InvestmentPots, AppMode, OneOffContribution, InvestmentPotType } from '../types';
 import { getTargetIncomeForAge, generateProjections } from '../utils/projectionEngine';
 import { calculateUKTax, getPensionAccessAge, getPartnerPensionAccessAge } from '../utils/ukTaxEngine';
 import { DEFAULT_POTS, DEFAULT_PARTNER_POTS, ZERO_POTS } from '../utils/defaultData';
@@ -344,7 +344,41 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
   }, [hasPlanFailure, profile, pots, adjustInflation]);
 
   const handleApplyContribution = (solution: ContributionSolution) => {
-    if (onPotsChange && pots) {
+    if (onChange) {
+      const existingContribs = (profile.oneOffContributions || []).filter(
+        (c) => c.name !== 'Bridging the Gap'
+      );
+      const targetPot: InvestmentPotType = solution.potType === 'isa'
+        ? 'stocks_and_shares_isa'
+        : solution.potType === 'workplace'
+        ? 'workplace_pension'
+        : 'sipp';
+
+      const newContrib: OneOffContribution = {
+        id: `contrib_gap_${Date.now()}`,
+        name: 'Bridging the Gap',
+        owner: 'primary',
+        targetPot,
+        frequency: 'regular_monthly',
+        grossAmount: solution.monthlyGross,
+        startAge: profile.currentAge,
+        endAge: profile.targetRetirementAge,
+        enabled: true,
+        description: `Monthly savings of £${solution.monthlyGross}/mo to eliminate retirement income deficit`,
+        ...(solution.potType === 'workplace' ? {
+          workplaceContributionType: 'fixed' as const,
+          employeeMonthlyAmount: solution.monthlyGross,
+        } : {}),
+        ...(solution.potType === 'sipp' ? {
+          sippContributionType: 'gross' as const,
+        } : {}),
+      };
+
+      onChange({
+        ...profile,
+        oneOffContributions: [...existingContribs, newContrib],
+      });
+    } else if (onPotsChange && pots) {
       if (solution.potType === 'sipp') {
         // sippMonthlyContribution is a NET (out-of-pocket) field — use monthlyPotFieldValue (gross/1.25)
         onPotsChange({
@@ -363,25 +397,6 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
           workplacePensionMonthlyEmployeeType: 'fixed',
         });
       }
-    } else if (onChange) {
-      const existingContribs = profile.oneOffContributions || [];
-      const targetPot = solution.potType === 'isa' ? 'stocks_and_shares_isa' : solution.potType === 'workplace' ? 'workplace_pension' : 'sipp';
-      const newContrib = {
-        id: `contrib_${Date.now()}`,
-        name: `Required ${solution.potLabel} Savings`,
-        owner: 'primary' as const,
-        targetPot: targetPot as any,
-        frequency: 'regular_monthly' as const,
-        grossAmount: solution.monthlyGross,
-        startAge: profile.currentAge,
-        endAge: profile.targetRetirementAge,
-        enabled: true,
-        description: `Plan success savings of £${solution.monthlyGross}/mo`,
-      };
-      onChange({
-        ...profile,
-        oneOffContributions: [...existingContribs, newContrib],
-      });
     }
   };
 
