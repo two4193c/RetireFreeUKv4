@@ -95,7 +95,7 @@ export const NAV_STRUCTURE: TabGroup[] = [
   },
   {
     id: 'accumulation_review',
-    label: 'Accumulation Planning',
+    label: 'Accumulation Analysis',
     icon: TrendingUp,
     description: 'Savings rate, tax traps, and wealth accumulation',
     cards: [

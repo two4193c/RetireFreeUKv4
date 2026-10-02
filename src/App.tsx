@@ -1472,7 +1472,7 @@ function App() {
               </div>
             )}
 
-            {/* Tab 4: Accumulation Planning (Advanced Only) */}
+            {/* Tab 4: Accumulation Analysis (Advanced Only) */}
             {!studioMode && activeTab === 'accumulation_review' && appMode === 'advanced' && (
               <div className="space-y-6">
                 <div id="card-accum-savings" className="scroll-mt-24 transition-all duration-300">

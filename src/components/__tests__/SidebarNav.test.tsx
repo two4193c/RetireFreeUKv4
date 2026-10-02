@@ -14,7 +14,7 @@ describe('SidebarNav menu configuration', () => {
     expect(inputsTab?.label).toBe('Input & Accumulation');
     expect(strategyTab?.label).toBe('Drawdown Planning');
     expect(mortgageTab?.label).toBe('Property Planning');
-    expect(accumTab?.label).toBe('Accumulation Planning');
+    expect(accumTab?.label).toBe('Accumulation Analysis');
     expect(stratAnalysisTab?.label).toBe('Drawdown Analysis');
     expect(riskTab?.label).toBe('Risk Projection');
     expect(estateTab?.label).toBe('Estate Planning');
@@ -28,7 +28,7 @@ describe('SidebarNav menu configuration', () => {
     expect(strategyIndex).toBe(inputsIndex + 1);
     // Property Planning ('mortgage') is placed directly after Drawdown Planning ('strategy')
     expect(mortgageIndex).toBe(strategyIndex + 1);
-    // Property Planning ('mortgage') is placed above Accumulation Planning ('accumulation_review')
+    // Property Planning ('mortgage') is placed above Accumulation Analysis ('accumulation_review')
     expect(mortgageIndex).toBeLessThan(accumIndex);
     expect(accumIndex).toBe(mortgageIndex + 1);
   });
@@ -66,7 +66,7 @@ describe('SidebarNav menu configuration', () => {
     expect(advInputs?.label).toBe('Input & Accumulation');
     expect(advStrategy?.label).toBe('Drawdown Planning');
     expect(advMortgage?.label).toBe('Property Planning');
-    expect(advAccum?.label).toBe('Accumulation Planning');
+    expect(advAccum?.label).toBe('Accumulation Analysis');
     expect(advAnalysis?.label).toBe('Drawdown Analysis');
     expect(advRisk?.label).toBe('Risk Projection');
     expect(advEstate?.label).toBe('Estate Planning');
