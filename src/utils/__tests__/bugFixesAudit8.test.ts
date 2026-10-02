@@ -4,7 +4,7 @@ import { solveTaxOptimalAnnualDrawdown, PotState, TaxOptimizerAnnualInput } from
 import { computePlanInsights } from '../planInsightsEngine';
 import { calculateTaxEfficientSavingsCrossover } from '../taxEfficientSavingsEngine';
 import { generateProjections } from '../projectionEngine';
-import { DEFAULT_PROFILE, DEFAULT_POTS } from '../defaultData';
+import { DEFAULT_PROFILE, DEFAULT_POTS, DEFAULT_POT_RETURN_OVERRIDES } from '../defaultData';
 import { UserProfile, InvestmentPots, GiltLadderConfig } from '../../types';
 
 describe('Audit Round 8 Bug Fixes (BUG-50 to BUG-54)', () => {
@@ -191,6 +191,7 @@ describe('Audit Round 8 Bug Fixes (BUG-50 to BUG-54)', () => {
       expectedInvestmentReturn: 0, // Flat 0% return
       postRetirementReturn: 0,
       potReturnOverrides: {
+        ...DEFAULT_POT_RETURN_OVERRIDES,
         enabled: true,
         workplacePensionReturn: 0,
         stocksAndSharesIsaReturn: 0,

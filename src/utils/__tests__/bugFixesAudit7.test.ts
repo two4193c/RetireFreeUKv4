@@ -3,9 +3,10 @@ import { runMonteCarloSimulation } from '../monteCarloEngine';
 import { runHistoricModelingSimulation } from '../historicModelingEngine';
 import { UserProfile, InvestmentPots } from '../../types';
 import { calculateUKTax } from '../ukTaxEngine';
-import { ZERO_POTS } from '../defaultData';
+import { ZERO_POTS, DEFAULT_PROFILE } from '../defaultData';
 
 const BASE_PROFILE: UserProfile = {
+  ...DEFAULT_PROFILE,
   currentAge: 50,
   targetRetirementAge: 60,
   lifeExpectancyAge: 85,

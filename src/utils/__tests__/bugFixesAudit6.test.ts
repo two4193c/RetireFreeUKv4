@@ -4,11 +4,12 @@ import { generateProjections } from '../projectionEngine';
 import { getScopeEvaluationInputs } from '../maximizedSpendSolver';
 import { computeCashFlowSankeyData } from '../sankeyEngine';
 import { UserProfile, InvestmentPots } from '../../types';
-import { DEFAULT_POTS, DEFAULT_PARTNER_POTS } from '../defaultData';
+import { DEFAULT_POTS, DEFAULT_PARTNER_POTS, DEFAULT_PROFILE } from '../defaultData';
 import { calculateUKTax } from '../ukTaxEngine';
 
 describe('Round 6 Logic Bug Fixes Audit (BUG-39 to BUG-44)', () => {
   const baseProfile: UserProfile = {
+    ...DEFAULT_PROFILE,
     dateOfBirth: '1979-06-15',
     currentAge: 55,
     targetRetirementAge: 60,

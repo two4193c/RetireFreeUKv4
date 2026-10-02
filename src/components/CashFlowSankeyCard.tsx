@@ -12,6 +12,8 @@ import {
   calculatePartnerUKTax,
 } from '../utils/ukTaxEngine';
 import { DEFAULT_POTS, DEFAULT_PARTNER_POTS } from '../utils/defaultData';
+import { getTargetIncomeForAge } from '../utils/projectionEngine';
+import { STRATEGY_DEFINITIONS } from './QuickDrawdownStrategyBar';
 import {
   Waves,
   ArrowRight,
@@ -87,9 +89,9 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
   const defaultAge = profile.targetRetirementAge || (projections[0]?.age ?? 60);
   const [selectedAge, setSelectedAge] = useState<number>(defaultAge);
   const defaultCombinedEssentialFloor = useMemo(() => {
-    const target = profile.targetRetirementIncomeAnnual || 30000;
+    const target = getTargetIncomeForAge(profile, selectedAge) || profile.targetRetirementIncomeAnnual || 30000;
     return Math.round((target * 0.65) / 500) * 500;
-  }, [profile.targetRetirementIncomeAnnual]);
+  }, [profile, selectedAge]);
 
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const [hoveredLinkId, setHoveredLinkId] = useState<string | null>(null);
@@ -2181,13 +2183,19 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
             <div>
               <div className="font-extrabold text-emerald-900 dark:text-emerald-100 flex items-center gap-2 flex-wrap">
                 <span>
-                  {profile.drawdownStrategy === 'tax_free_bracket'
-                    ? '0% Tax-Free Allowance Fill Strategy Active'
-                    : profile.drawdownStrategy === 'basic_rate_bracket'
-                    ? '20% Basic Rate Band Fill Strategy Active'
-                    : profile.drawdownStrategy === 'higher_rate_bracket'
-                    ? 'Higher Rate Band Fill Strategy Active'
-                    : 'Active Drawdown Strategy'}
+                  {(() => {
+                    const activeStratDef = STRATEGY_DEFINITIONS.find((s) => s.id === profile.drawdownStrategy);
+                    if (profile.drawdownStrategy === 'tax_free_bracket') {
+                      return '0% Tax-Free Allowance Fill Strategy Active';
+                    }
+                    if (profile.drawdownStrategy === 'basic_rate_bracket') {
+                      return '20% Basic Rate Band Fill Strategy Active';
+                    }
+                    if (profile.drawdownStrategy === 'higher_rate_bracket') {
+                      return 'Higher Rate Band Fill Strategy Active';
+                    }
+                    return activeStratDef ? `${activeStratDef.title} Strategy Active` : 'Active Drawdown Strategy';
+                  })()}
                 </span>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-200/60 dark:bg-emerald-800/60 text-emerald-800 dark:text-emerald-200">
                   {adjustInflation ? "Real Terms (Today's £)" : 'Nominal Inflated Terms'}
@@ -2197,13 +2205,27 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
                 {profile.drawdownStrategy === 'tax_free_bracket' ? (
                   adjustInflation ? (
                     <>
-                      Drawing up to your <strong>£12,570 Personal Allowance</strong> at <strong>0% tax</strong>. Because withdrawals are taken from uncrystallised pension funds (UFPLS), 25% is tax-free cash (<strong>{formatGBP(flowData.nodes.find(n => n.id === 'pension_drawdown_taxfree' || n.id === 'pri_pension_dd_taxfree')?.amount ?? 4190)}</strong>) and 75% fills the Personal Allowance (<strong>{formatGBP(flowData.nodes.find(n => n.id === 'pension_drawdown_taxable' || n.id === 'pri_pension_dd_taxable')?.amount ?? 12570)}</strong>), yielding <strong>£0 income tax</strong>. Remaining spending is funded from tax-free ISAs.
+                      Drawing up to your <strong>£12,570 Personal Allowance</strong> at <strong>0% tax</strong>. Because withdrawals are taken from uncrystallised pension funds (UFPLS), 25% is tax-free cash (<strong>{formatGBP(flowData.nodes.find(n => n.id === 'pension_drawdown_taxfree' || n.id === 'pri_pension_dd_taxfree')?.amount ?? 4190)}</strong>) and 75% fills the Personal Allowance (<strong>{formatGBP(flowData.nodes.find(n => n.id === 'pension_drawdown_taxable' || n.id === 'pri_pension_dd_taxable')?.amount ?? 12570)}</strong>), yielding <strong>£0 income tax</strong>. Remaining spending is funded from tax-free ISAs or Cash.
                     </>
                   ) : (
                     <>
                       Drawing up to your inflation-indexed <strong>{formatGBP(flowData.nodes.find(n => n.id === 'pension_drawdown_taxable' || n.id === 'pri_pension_dd_taxable')?.amount ?? 23304)} Personal Allowance</strong> at <strong>0% tax</strong>. With UFPLS (25% tax-free lump sum of <strong>{formatGBP(flowData.nodes.find(n => n.id === 'pension_drawdown_taxfree' || n.id === 'pri_pension_dd_taxfree')?.amount ?? 7768)}</strong>), total gross pension drawn is <strong>{formatGBP(((flowData.nodes.find(n => n.id === 'pension_drawdown_taxable' || n.id === 'pri_pension_dd_taxable')?.amount ?? 0) + (flowData.nodes.find(n => n.id === 'pension_drawdown_taxfree' || n.id === 'pri_pension_dd_taxfree')?.amount ?? 0)) || 31072)}</strong> with <strong>£0 tax</strong>. Click the toggle to view in Today's £ without inflation compounding.
                     </>
                   )
+                ) : profile.drawdownStrategy === 'isa_first' ? (
+                  'Depletes ISAs and Cash savings first to provide 100% tax-free income and allow pension investments to compound sheltered from tax, before beginning pension withdrawals.'
+                ) : profile.drawdownStrategy === 'tax_optimizer' ? (
+                  'Dynamic multi-pot optimization automatically balances pension, ISA, and taxable withdrawals to fill standard tax allowances, minimise higher-rate tax spikes, and maximize portfolio longevity.'
+                ) : profile.drawdownStrategy === 'pension_first' ? (
+                  'Draws from pension pots first while leaving ISAs invested to grow tax-free, utilizing pension funds early in retirement.'
+                ) : profile.drawdownStrategy === 'cash_first' ? (
+                  'Consumes cash savings and emergency liquidity buffers first to eliminate cash drag and taxable interest before accessing invested pots.'
+                ) : profile.drawdownStrategy === 'pro_rata' ? (
+                  'Withdraws proportionately across Pension, ISA, and taxable pots according to their relative asset values.'
+                ) : profile.drawdownStrategy === 'annuity' ? (
+                  'Guarantees lifetime annual income via purchased annuities, securing an essential retirement income floor.'
+                ) : profile.drawdownStrategy === 'hybrid_annuity' ? (
+                  'Blends guaranteed lifetime annuity income for baseline security with flexible pot drawdowns for discretionary spending.'
                 ) : (
                   'Pension drawdown is calibrated to fill targeted tax thresholds without spilling into higher tax bands, with remaining lifestyle needs covered from ISAs and cash.'
                 )}

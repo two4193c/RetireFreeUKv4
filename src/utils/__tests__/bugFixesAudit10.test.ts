@@ -1,34 +1,46 @@
 import { describe, it, expect } from 'vitest';
 import { UserProfile, InvestmentPots } from '../../types';
+import { DEFAULT_PROFILE } from '../defaultData';
 import { runMonteCarloSimulation, calculateCashBufferRequiredDetails } from '../monteCarloEngine';
 import { runHistoricSimulation } from '../historicModelingEngine';
 import { calculateUKTax } from '../ukTaxEngine';
 
 describe('Round 10 Bug Fixes Audit', () => {
   const baseProfile: UserProfile = {
+    ...DEFAULT_PROFILE,
     currentAge: 60,
     targetRetirementAge: 60,
-    lifeExpectancy: 85,
+    lifeExpectancyAge: 85,
     statePensionAge: 67,
     expectedInvestmentReturn: 5,
     postRetirementReturn: 4,
     expectedInflationRate: 2.5,
-    annualRetirementIncomeTarget: 30000,
+    targetRetirementIncomeAnnual: 30000,
     drawdownStrategy: 'pro_rata',
-    taxRegion: 'england_wales',
+    taxRegion: 'england_ni_wales',
     takeLumpSumAtStart: false,
     includeStatePension: true,
-    fullStatePensionAmount: 11502,
+    statePensionAmountAnnual: 11502,
     grossAnnualSalary: 0,
   };
 
   const basePots: InvestmentPots = {
-    pensionPot: 400000,
-    isaPot: 100000,
-    cashGiaPot: 50000,
     workplacePensionBalance: 400000,
+    workplacePensionMonthlyEmployee: 0,
+    workplacePensionMonthlyEmployeeType: 'fixed',
+    employerMatchPercentage: 0,
+    sippBalance: 0,
+    sippMonthlyContribution: 0,
     stocksAndSharesIsaBalance: 100000,
+    stocksAndSharesIsaMonthlyContribution: 0,
+    cashIsaBalance: 0,
+    cashIsaMonthlyContribution: 0,
+    lisaBalance: 0,
+    lisaMonthlyContribution: 0,
+    giaBalance: 0,
+    giaMonthlyContribution: 0,
     cashSavingsBalance: 50000,
+    cashSavingsMonthlyContribution: 0,
   };
 
   describe('BUG-61: Monte Carlo simulation prevents double PCLS tax-free extraction', () => {
@@ -40,7 +52,7 @@ describe('Round 10 Bug Fixes Audit', () => {
         pclsLumpSumPercent: 25,
       };
 
-      const result = runMonteCarloSimulation(profileWithUpfrontPcls, basePots, {
+      const result = runMonteCarloSimulation(profileWithUpfrontPcls, basePots, calculateUKTax(profileWithUpfrontPcls, basePots), {
         numSimulations: 20,
         maxAge: 70,
         accumulationVolatility: 0,
@@ -61,6 +73,7 @@ describe('Round 10 Bug Fixes Audit', () => {
         oneOffContributions: [
           {
             id: 'cash_isa_1',
+            name: 'Cash ISA Contribution',
             enabled: true,
             targetPot: 'cash_isa',
             grossAmount: 20000,
@@ -72,12 +85,13 @@ describe('Round 10 Bug Fixes Audit', () => {
       };
 
       const pots: InvestmentPots = {
-        pensionPot: 100000,
-        isaPot: 10000,
-        cashGiaPot: 5000,
+        ...basePots,
+        workplacePensionBalance: 100000,
+        stocksAndSharesIsaBalance: 10000,
+        cashSavingsBalance: 5000,
       };
 
-      const result = runMonteCarloSimulation(profileWithCashIsaOneOff, pots, {
+      const result = runMonteCarloSimulation(profileWithCashIsaOneOff, pots, calculateUKTax(profileWithCashIsaOneOff, pots), {
         numSimulations: 5,
         maxAge: 56,
         accumulationVolatility: 0,
@@ -111,7 +125,7 @@ describe('Round 10 Bug Fixes Audit', () => {
         customIncomeIncreasePercent: 0, // Flat real target income
       };
 
-      const result = runMonteCarloSimulation(customIncProfile, basePots, {
+      const result = runMonteCarloSimulation(customIncProfile, basePots, calculateUKTax(customIncProfile, basePots), {
         numSimulations: 10,
         maxAge: 70,
         accumulationVolatility: 0,

@@ -188,6 +188,7 @@ describe('Round 4 Logic Bug Fixes Audit (BUG-25 through BUG-35)', () => {
       perPotAllocationsEnabled: true,
       accumulation: { equity: 80, bond: 15, cash: 5 },
       decumulation: { equity: 40, bond: 50, cash: 10 },
+      assetClassReturns: { equityReturn: 8.0, bondReturn: 4.0, cashReturn: 2.0 },
       primaryPots: {
         stocksAndSharesIsa: {
           accumulation: { equity: 90, bond: 10, cash: 0 },
@@ -234,7 +235,7 @@ describe('Round 4 Logic Bug Fixes Audit (BUG-25 through BUG-35)', () => {
 
     const giltConfig: GiltLadderConfig = {
       enabled: true,
-      fundingSource: 'taxable_gia',
+      fundingSource: 'gia',
       giltType: 'low_coupon',
       targetAnnualIncome: 10000,
       durationYears: 3,

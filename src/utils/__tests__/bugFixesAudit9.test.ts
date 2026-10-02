@@ -1,35 +1,48 @@
 import { describe, it, expect } from 'vitest';
 import ExcelJS from 'exceljs';
 import { UserProfile, InvestmentPots } from '../../types';
+import { DEFAULT_PROFILE } from '../defaultData';
 import { getPensionAccessAge, getPartnerPensionAccessAge } from '../ukTaxEngine';
 import { generateFormulaExcelWorkbook } from '../excelFormulaExporter';
 import { solveMaximizedSpend } from '../maximizedSpendSolver';
 
 describe('Round 9 Bug Fixes Audit', () => {
   const baseProfile: UserProfile = {
+    ...DEFAULT_PROFILE,
+    dateOfBirth: '1972-01-01',
     currentAge: 54, // Born in 1971/1972 (before 6 April 1973) => NMPA is 55, NOT 57!
     targetRetirementAge: 60,
-    lifeExpectancy: 85,
+    lifeExpectancyAge: 85,
     statePensionAge: 67,
     expectedInvestmentReturn: 5,
     postRetirementReturn: 4,
     expectedInflationRate: 2.5,
-    annualRetirementIncomeTarget: 30000,
+    targetRetirementIncomeAnnual: 30000,
     drawdownStrategy: 'pro_rata',
-    taxRegion: 'england_wales',
+    taxRegion: 'england_ni_wales',
     takeLumpSumAtStart: false,
     includeStatePension: true,
-    fullStatePensionAmount: 11502,
+    statePensionAmountAnnual: 11502,
     grossAnnualSalary: 45000,
   };
 
   const basePots: InvestmentPots = {
-    pensionPot: 300000,
-    isaPot: 50000,
-    cashGiaPot: 20000,
     workplacePensionBalance: 300000,
+    workplacePensionMonthlyEmployee: 0,
+    workplacePensionMonthlyEmployeeType: 'fixed',
+    employerMatchPercentage: 0,
+    sippBalance: 0,
+    sippMonthlyContribution: 0,
     stocksAndSharesIsaBalance: 50000,
+    stocksAndSharesIsaMonthlyContribution: 0,
+    cashIsaBalance: 0,
+    cashIsaMonthlyContribution: 0,
+    lisaBalance: 0,
+    lisaMonthlyContribution: 0,
+    giaBalance: 0,
+    giaMonthlyContribution: 0,
     cashSavingsBalance: 20000,
+    cashSavingsMonthlyContribution: 0,
   };
 
   describe('BUG-55: Statutory NMPA calculation in Solvers and Exporters', () => {
@@ -43,6 +56,7 @@ describe('Round 9 Bug Fixes Audit', () => {
       const coupleProfile: UserProfile = {
         ...baseProfile,
         isCouplePlanning: true,
+        partnerDateOfBirth: '1972-01-01',
         partnerCurrentAge: 54,
       };
       const partnerAccessAge = getPartnerPensionAccessAge(coupleProfile);
@@ -52,6 +66,7 @@ describe('Round 9 Bug Fixes Audit', () => {
     it('correctly calculates NMPA 57 for individuals born on or after 6 April 1973', () => {
       const youngProfile: UserProfile = {
         ...baseProfile,
+        dateOfBirth: '1986-01-01',
         currentAge: 40, // Born 1986
       };
       const accessAge = getPensionAccessAge(youngProfile);

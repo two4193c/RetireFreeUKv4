@@ -1,11 +1,12 @@
-﻿import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "vitest";
 import { runMonteCarloSimulation } from "../monteCarloEngine";
 import { UserProfile, InvestmentPots } from "../../types";
-import { DEFAULT_POTS } from "../defaultData";
+import { DEFAULT_POTS, DEFAULT_PROFILE } from "../defaultData";
 import { calculateUKTax } from "../ukTaxEngine";
 
 describe("Round 5 Logic Bug Fixes Audit (BUG-35, BUG-37, BUG-38)", () => {
   const baseProfile: UserProfile = {
+    ...DEFAULT_PROFILE,
     dateOfBirth: "1979-06-15",
     currentAge: 45,
     targetRetirementAge: 60,
@@ -40,7 +41,7 @@ describe("Round 5 Logic Bug Fixes Audit (BUG-35, BUG-37, BUG-38)", () => {
     sippMonthlyContribution: 0,
     stocksAndSharesIsaMonthlyContribution: 500,
     workplacePensionMonthlyEmployee: 1000,
-    workplacePensionMonthlyEmployer: 300,
+    employerMatchPercentage: 3,
     workplacePensionMonthlyEmployeeType: "fixed",
     giaMonthlyContribution: 0,
     cashSavingsMonthlyContribution: 0,
@@ -65,7 +66,7 @@ describe("Round 5 Logic Bug Fixes Audit (BUG-35, BUG-37, BUG-38)", () => {
     const profileWithEvent: UserProfile = {
       ...baseProfile,
       decumulationLifeEvents: [{
-        id: "evt1", label: "Inheritance", type: "income", age: 60,
+        id: "evt1", name: "Inheritance", type: "income", age: 60,
         amount: 500000, targetPot: "cash_savings", inflationLinked: false, enabled: true, owner: "primary",
       }],
     };
@@ -104,7 +105,7 @@ describe("Round 5 Logic Bug Fixes Audit (BUG-35, BUG-37, BUG-38)", () => {
     const profileWithExpense: UserProfile = {
       ...baseProfile,
       decumulationLifeEvents: [{
-        id: "evt2", label: "Renovation", type: "expense", age: 60,
+        id: "evt2", name: "Renovation", type: "expense", age: 60,
         amount: 100000, targetPot: "cash_savings", inflationLinked: false, enabled: true, owner: "primary",
       }],
     };

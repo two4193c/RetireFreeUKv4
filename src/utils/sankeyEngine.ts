@@ -124,7 +124,8 @@ export function computeCashFlowSankeyData(
   const primaryName = profile.name || 'Primary';
   const partnerName = profile.partnerName || 'Partner';
 
-  const defaultCombinedEssentialFloor = Math.round(((profile.targetRetirementIncomeAnnual || 30000) * 0.65) / 500) * 500;
+  const targetForThisAge = getTargetIncomeForAge(profile, p.age) || profile.targetRetirementIncomeAnnual || 30000;
+  const defaultCombinedEssentialFloor = Math.round((targetForThisAge * 0.65) / 500) * 500;
   const combinedEssentialFloor = customEssentialFloor ?? defaultCombinedEssentialFloor;
 
   const inflationFactor = Math.pow(1 + (profile.expectedInflationRate ?? 2.5) / 100, p.age - profile.currentAge);

@@ -60,7 +60,7 @@ export function generatePlanNarrative(ctx: NarrativeContext): GeneratedPlanNarra
   let decumNarrative = '';
   const strategyName = (drawdownStrategy || 'Tax-Optimised Waterfall').replace(/_/g, ' ');
   const retRow = (projections || []).find((p) => p.age === retAge);
-  const pclsTaken = retRow?.pclsTaxFreeDrawnThisYear || (profile.lumpSumOption === 'take_pcls' ? (retRow?.pensionPot || 0) * 0.25 : 0); 
+  const pclsTaken = retRow?.pclsTaxFreeDrawnThisYear || (profile.takeLumpSumAtStart ? (retRow?.pensionPot || 0) * ((profile.pclsLumpSumPercent || 25) / 100) : 0); 
 
   decumNarrative = `Your drawdown strategy is configured to '${strategyName}'. `;
 

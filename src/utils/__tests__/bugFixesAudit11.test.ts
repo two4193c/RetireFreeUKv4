@@ -4,7 +4,7 @@ import { computePlanInsights } from '../planInsightsEngine';
 import { calculateMortgagePaymentForAge } from '../sankeyEngine';
 import { solveTaxOptimalAnnualDrawdown } from '../taxOptimizerSolver';
 import { UserProfile, InvestmentPots } from '../../types';
-import { DEFAULT_POTS, DEFAULT_PARTNER_POTS, DEFAULT_PROFILE } from '../defaultData';
+import { DEFAULT_POTS, DEFAULT_PARTNER_POTS, DEFAULT_PROFILE, DEFAULT_MORTGAGE, DEFAULT_CUSTOM_TAX_BANDS } from '../defaultData';
 
 describe('Audit Round 11 Regression Tests (BUG-65 to BUG-69)', () => {
   // --------------------------------------------------------------------------
@@ -85,6 +85,7 @@ describe('Audit Round 11 Regression Tests (BUG-65 to BUG-69)', () => {
         currentAge: 40,
         targetRetirementAge: 60,
         mortgage: {
+          ...DEFAULT_MORTGAGE,
           enabled: true,
           currentBalance: 120000,
           remainingTermYears: 10,
@@ -93,6 +94,7 @@ describe('Audit Round 11 Regression Tests (BUG-65 to BUG-69)', () => {
           repaymentType: 'repayment',
           propertyValue: 300000,
           payoffAtRetirement: false,
+          regularMonthlyOverpayment: 0,
         },
       };
 
@@ -183,6 +185,7 @@ describe('Audit Round 11 Regression Tests (BUG-65 to BUG-69)', () => {
         isCouple: false,
         remainingRetirementYears: 25,
         customTaxBands: {
+          ...DEFAULT_CUSTOM_TAX_BANDS,
           enabled: true,
           personalAllowance: 15000,
           scotIntermediateThreshold: 35000,

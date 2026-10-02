@@ -25,7 +25,7 @@ export const StrategySummaryCard: React.FC<StrategySummaryCardProps> = ({
   const isCouple = Boolean(profile.isCouplePlanning);
 
   const primaryStratId = profile.drawdownStrategy || 'isa_first';
-  const primaryStratDef = STRATEGY_DEFINITIONS.find((s) => s.id === primaryStratId) || STRATEGY_DEFINITIONS[3];
+  const primaryStratDef = STRATEGY_DEFINITIONS.find((s) => s.id === primaryStratId) || STRATEGY_DEFINITIONS.find((s) => s.id === 'isa_first') || STRATEGY_DEFINITIONS[0];
 
   const partnerStratId = profile.partnerDrawdownStrategy || primaryStratId;
   const partnerStratDef = STRATEGY_DEFINITIONS.find((s) => s.id === partnerStratId) || primaryStratDef;

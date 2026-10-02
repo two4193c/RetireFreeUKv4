@@ -5,15 +5,16 @@ import { runMonteCarloSimulation } from '../monteCarloEngine';
 import { runHistoricModelingSimulation } from '../historicModelingEngine';
 import { calculateUKTax } from '../ukTaxEngine';
 import { UserProfile, InvestmentPots, PotTransfer } from '../../types';
-import { DEFAULT_PARTNER_POTS, ZERO_POTS } from '../defaultData';
+import { DEFAULT_PARTNER_POTS, ZERO_POTS, DEFAULT_PROFILE } from '../defaultData';
 
 describe('Logic Bugs Audit Round 3 (BUG-18 to BUG-24)', () => {
   const baseProfile: UserProfile = {
+    ...DEFAULT_PROFILE,
     currentAge: 40,
     targetRetirementAge: 60,
     targetRetirementIncomeAnnual: 40000,
     grossAnnualSalary: 60000,
-    taxRegion: 'england',
+    taxRegion: 'england_ni_wales',
     pensionContributionMethod: 'relief_at_source',
     includeStatePension: true,
     qualifyingYears: 35,
@@ -86,12 +87,13 @@ describe('Logic Bugs Audit Round 3 (BUG-18 to BUG-24)', () => {
     // 1. Transfer Workplace Pension -> SIPP
     const pensionTransfer: PotTransfer = {
       id: 'trans_1',
+      name: 'Transfer 1',
       enabled: true,
       sourcePot: 'workplace_pension',
       destinationPot: 'sipp',
       amount: 10000,
       transferDate: '2026-10-01',
-      sourceOwner: 'primary',
+      owner: 'primary',
       destinationOwner: 'primary',
     };
     profile.potTransfers = [pensionTransfer];
@@ -115,12 +117,13 @@ describe('Logic Bugs Audit Round 3 (BUG-18 to BUG-24)', () => {
     // 2. Transfer ISA -> LISA at age 52 (age >= 50)
     const lisaTransfer: PotTransfer = {
       id: 'trans_2',
+      name: 'Transfer 2',
       enabled: true,
       sourcePot: 'stocks_and_shares_isa',
       destinationPot: 'lisa',
       amount: 4000,
       transferDate: '2026-10-01',
-      sourceOwner: 'primary',
+      owner: 'primary',
       destinationOwner: 'primary',
     };
     profile.potTransfers = [lisaTransfer];
@@ -199,7 +202,9 @@ describe('Logic Bugs Audit Round 3 (BUG-18 to BUG-24)', () => {
       targetRetirementAge: 65, // Primary retires at 65
       partnerCurrentAge: 58,
       partnerTargetRetirementAge: 60, // Partner retires at 60
-      partnerLumpSumTakeAge: 60, // Partner takes upfront PCLS at 60
+      partnerTakeLumpSumAtStart: true,
+      partnerLumpSumTiming: 'custom',
+      partnerLumpSumCustomAge: 60, // Partner takes upfront PCLS at 60
       pclsLumpSumPercent: 25,
       partnerPclsLumpSumPercent: 25,
       crystallisationMode: 'upfront',
