@@ -1460,7 +1460,19 @@ function App() {
               </div>
             )}
 
-            {/* Tab 3: Accumulation Review (Advanced Only) */}
+            {/* Tab 3: Property Planning */}
+            {!studioMode && activeTab === 'mortgage' && (
+              <div className="space-y-6">
+                <div id="card-mortgage-debt" className="scroll-mt-24 transition-all duration-300">
+                  <MortgageDebtCard profile={profile} onChange={handleProfileChange} />
+                </div>
+                <div id="card-right-sizing" className="scroll-mt-24 transition-all duration-300">
+                  <RightSizingCard profile={profile} onChange={handleProfileChange} />
+                </div>
+              </div>
+            )}
+
+            {/* Tab 4: Accumulation Planning (Advanced Only) */}
             {!studioMode && activeTab === 'accumulation_review' && appMode === 'advanced' && (
               <div className="space-y-6">
                 <div id="card-accum-savings" className="scroll-mt-24 transition-all duration-300">
@@ -1509,7 +1521,7 @@ function App() {
               </div>
             )}
 
-            {/* Tab 3b: Strategy Analysis (Advanced Mode Only) */}
+            {/* Tab 5: Drawdown Analysis (Advanced Mode Only) */}
             {!studioMode && activeTab === 'strategy_analysis' && (
               <div className="space-y-6">
                 <div id="card-pwr-metric" className="scroll-mt-24 transition-all duration-300">
@@ -1640,7 +1652,7 @@ function App() {
               </div>
             )}
 
-            {/* Tab 6: Estate */}
+            {/* Tab 6: Estate Planning */}
             {!studioMode && activeTab === 'estate' && (
               <div className="space-y-6">
                 <div id="card-estate-iht" className="scroll-mt-24 transition-all duration-300">
@@ -1729,18 +1741,6 @@ function App() {
                     onSelectScenarioB={setCompareScenarioBId}
                     onClose={() => setActiveTab('overview')}
                   />
-                </div>
-              </div>
-            )}
-
-            {/* Tab 9: Property Planning */}
-            {!studioMode && activeTab === 'mortgage' && (
-              <div className="space-y-6">
-                <div id="card-mortgage-debt" className="scroll-mt-24 transition-all duration-300">
-                  <MortgageDebtCard profile={profile} onChange={handleProfileChange} />
-                </div>
-                <div id="card-right-sizing" className="scroll-mt-24 transition-all duration-300">
-                  <RightSizingCard profile={profile} onChange={handleProfileChange} />
                 </div>
               </div>
             )}

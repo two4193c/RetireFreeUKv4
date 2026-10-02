@@ -84,8 +84,18 @@ export const NAV_STRUCTURE: TabGroup[] = [
     ],
   },
   {
+    id: 'mortgage',
+    label: 'Property Planning',
+    icon: Home,
+    description: 'Mortgage payoff & right-sizing / downsizing strategy',
+    cards: [
+      { id: 'card-mortgage-debt', label: 'Mortgage & Debt Repayment Strategy' },
+      { id: 'card-right-sizing', label: 'Right-Sizing Your Home' },
+    ],
+  },
+  {
     id: 'accumulation_review',
-    label: 'Accumulation Analysis',
+    label: 'Accumulation Planning',
     icon: TrendingUp,
     description: 'Savings rate, tax traps, and wealth accumulation',
     cards: [
@@ -98,18 +108,8 @@ export const NAV_STRUCTURE: TabGroup[] = [
     ],
   },
   {
-    id: 'mortgage',
-    label: 'Property Planning',
-    icon: Home,
-    description: 'Mortgage payoff & right-sizing / downsizing strategy',
-    cards: [
-      { id: 'card-mortgage-debt', label: 'Mortgage & Debt Repayment Strategy' },
-      { id: 'card-right-sizing', label: 'Right-Sizing Your Home' },
-    ],
-  },
-  {
     id: 'strategy_analysis',
-    label: 'Strategy Analysis',
+    label: 'Drawdown Analysis',
     icon: LineChart,
     description: 'SWR Heatmap Matrix, Dynamic Guardrails, Essential Floor Split, PWR Metric, SWR Trajectory, and Bengen UK/US Benchmarks',
     cards: [
@@ -148,7 +148,7 @@ export const NAV_STRUCTURE: TabGroup[] = [
   },
   {
     id: 'estate',
-    label: 'Estate',
+    label: 'Estate Planning',
     icon: Landmark,
     description: 'Inheritance Tax (IHT) modeling & estate planning',
     cards: [
