@@ -96,6 +96,8 @@ export function calculateMortgagePaymentForAge(profile: UserProfile, age: number
     let pmt = 0;
     if (mortgage.repaymentType === 'interest_only') {
       pmt = P * r;
+    } else if (r === 0) {
+      pmt = P / n;
     } else {
       pmt = (P * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
     }
@@ -125,7 +127,7 @@ export function computeCashFlowSankeyData(
   const defaultCombinedEssentialFloor = Math.round(((profile.targetRetirementIncomeAnnual || 30000) * 0.65) / 500) * 500;
   const combinedEssentialFloor = customEssentialFloor ?? defaultCombinedEssentialFloor;
 
-  const inflationFactor = Math.pow(1 + (profile.expectedInflationRate || 2.5) / 100, p.age - profile.currentAge);
+  const inflationFactor = Math.pow(1 + (profile.expectedInflationRate ?? 2.5) / 100, p.age - profile.currentAge);
   const partnerAgeDiff = (profile.partnerCurrentAge ?? profile.currentAge) - profile.currentAge;
   const partnerAge = p.age + partnerAgeDiff;
 
@@ -144,7 +146,7 @@ export function computeCashFlowSankeyData(
     const totalSalary = priSalary + partSalary;
 
     const priTax = calculateUKTax(profile, pots || DEFAULT_POTS, false, p.age);
-    const partTax = isCouple ? calculatePartnerUKTax(profile, profile.partnerPots || DEFAULT_PARTNER_POTS) : null;
+    const partTax = isCouple ? calculatePartnerUKTax(profile, profile.partnerPots || DEFAULT_PARTNER_POTS, partnerAge) : null;
 
     const priEmpPension = (priTax.employeePensionContributionsAnnual || 0) * accumScale;
     const priEmprPension = (priTax.employerPensionContributionsAnnual || 0) * accumScale;
@@ -745,9 +747,9 @@ export function computeCashFlowSankeyData(
     }
     const partIsaDrawdown = isCouple ? ((p.partnerIsaDrawdown || 0) * scale) : 0;
     const partCashDrawdown = isCouple ? ((p.partnerCashDrawdown || 0) * scale) : 0;
-    const partLifeEventsInc = isCouple ? ((p.partnerLifeEventsIncome ?? 0) * scale) : 0;
+    const partLifeEventsInc = isCouple ? ((p.partnerLifeEventsIncome ?? ((p.lifeEventsIncome || 0) * 0.5)) * scale) : 0;
     const partDownsizeInc = (isCouple && p.propertyDownsizeEquityReleased) ? p.propertyDownsizeEquityReleased * 0.5 * scale : 0;
-    const partTaxPaid = isCouple ? ((p.partnerTaxPaid || 0) * scale) : 0;
+    const partTaxPaid = isCouple ? ((p.partnerTaxPaid ?? ((p.totalTaxPaid || 0) * 0.5)) * scale) : 0;
 
     const partGrossTotal =
       partStatePension +
@@ -789,8 +791,12 @@ export function computeCashFlowSankeyData(
 
       const lifeEventsExpense = p.lifeEventsExpense || 0;
       const availableLiving = Math.max(0, totalSpendable - reinvestSurplus - lifeEventsExpense);
-      const priLifeEventsAlloc = totalSpendable > 0 ? (priSpendable / totalSpendable) * lifeEventsExpense : 0;
-      const partLifeEventsAlloc = totalSpendable > 0 ? (partSpendable / totalSpendable) * lifeEventsExpense : 0;
+      const priLifeEventsAlloc = (p.primaryLifeEventsExpense !== undefined && p.partnerLifeEventsExpense !== undefined)
+        ? (p.primaryLifeEventsExpense * scale)
+        : (totalSpendable > 0 ? (priSpendable / totalSpendable) * lifeEventsExpense : 0);
+      const partLifeEventsAlloc = (p.primaryLifeEventsExpense !== undefined && p.partnerLifeEventsExpense !== undefined)
+        ? (p.partnerLifeEventsExpense * scale)
+        : (totalSpendable > 0 ? (partSpendable / totalSpendable) * lifeEventsExpense : 0);
 
       const essentialLiving = Math.min(availableLiving, inflatedEssentialTarget);
       const priEssential = availableLiving > 0 ? (priSpendable / totalSpendable) * essentialLiving : 0;
@@ -1176,8 +1182,6 @@ export function computeCashFlowSankeyData(
           category: 'allocation',
           column: 3,
         });
-        const priLifeEventsAlloc = totalSpendable > 0 ? (priSpendable / totalSpendable) * lifeEventsExpense : 0;
-        const partLifeEventsAlloc = totalSpendable > 0 ? (partSpendable / totalSpendable) * lifeEventsExpense : 0;
         if (priLifeEventsAlloc > 0) links.push({ sourceId: 'pri_net_spendable', targetId: 'life_events_expense', amount: priLifeEventsAlloc, color: '#f59e0b' });
         if (partLifeEventsAlloc > 0) links.push({ sourceId: 'part_net_spendable', targetId: 'life_events_expense', amount: partLifeEventsAlloc, color: '#fbbf24' });
       }
@@ -1313,8 +1317,8 @@ export function computeCashFlowSankeyData(
       : (isCouple ? (((p.annualIncomeExcess || 0) + (p.propertyDownsizeEquityReleased || 0)) * 0.5) : ((p.annualIncomeExcess || 0) + (p.propertyDownsizeEquityReleased || 0)));
     let reinvestSurplus = Math.min(spendableAfterMortgage, annualExcess);
     let lifeEventsExpense = p.lifeEventsExpense || 0;
-    if (activeViewMode === 'primary') lifeEventsExpense = p.primaryLifeEventsExpense || (isCouple ? lifeEventsExpense * 0.5 : lifeEventsExpense);
-    if (activeViewMode === 'partner') lifeEventsExpense = p.partnerLifeEventsExpense || (isCouple ? lifeEventsExpense * 0.5 : 0);
+    if (activeViewMode === 'primary') lifeEventsExpense = p.primaryLifeEventsExpense ?? (isCouple ? lifeEventsExpense * 0.5 : lifeEventsExpense);
+    if (activeViewMode === 'partner') lifeEventsExpense = p.partnerLifeEventsExpense ?? (isCouple ? lifeEventsExpense * 0.5 : 0);
     
     let availableForLiving = Math.max(0, spendableAfterMortgage - reinvestSurplus - lifeEventsExpense);
 

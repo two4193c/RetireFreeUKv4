@@ -162,12 +162,12 @@ export function computePlanInsights(
   // 3. Guaranteed Floor & State Pension Coverage
   // ---------------------------------------------------------------------------
   const priStatePension = profile.includeStatePension
-    ? (profile.statePensionAmountAnnual || profile.fullStatePensionAmount || STATE_PENSION_FULL_ANNUAL) * priDefBoost
+    ? (profile.statePensionAmountAnnual ?? profile.fullStatePensionAmount ?? STATE_PENSION_FULL_ANNUAL) * priDefBoost
     : 0;
   const partDefYears = profile.partnerStatePensionDeferralYears || 0;
   const partDefBoost = 1 + (0.058 * partDefYears);
   const partStatePension = isCouple && profile.partnerIncludeStatePension !== false
-    ? (profile.partnerStatePensionAmountAnnual || profile.partnerFullStatePensionAmount || STATE_PENSION_FULL_ANNUAL) * partDefBoost
+    ? (profile.partnerStatePensionAmountAnnual ?? profile.partnerFullStatePensionAmount ?? STATE_PENSION_FULL_ANNUAL) * partDefBoost
     : 0;
   const statePensionTotalAnnual = priStatePension + partStatePension;
 
@@ -270,7 +270,7 @@ export function computePlanInsights(
   }
 
   // Milestone B: State Pension Commencement & Drawdown Drop
-  if (profile.includeStatePension) {
+  if (profile.includeStatePension && priStatePension > 0) {
     const spaProj = projections.find((p) => p.age === priSpaAge);
     const preSpaProj = projections.find((p) => p.age === priSpaAge - 1);
     const drawBefore = preSpaProj
@@ -295,7 +295,7 @@ export function computePlanInsights(
 
   // Milestone B2: Partner State Pension Commencement
   if (isCouple && (profile.partnerIncludeStatePension ?? true) && partStatePension > 0) {
-    const partSpaAge = profile.partnerStatePensionAge || 67;
+    const partSpaAge = (profile.partnerStatePensionAge || 67) + partDefYears;
     const partnerAgeDiff = (profile.partnerCurrentAge ?? profile.currentAge) - profile.currentAge;
     const primaryAgeAtPartSpa = partSpaAge - partnerAgeDiff;
 
@@ -312,8 +312,7 @@ export function computePlanInsights(
 
   // Milestone C: Mortgage Clearance / Payoff
   if (profile.mortgage?.enabled && (profile.mortgage.currentBalance || 0) > 0) {
-    const termYears = profile.mortgage.remainingTermYears || 20;
-    const clearanceAge = currentAge + Math.ceil(termYears);
+    const clearanceAge = Math.ceil(calculateActualMortgageClearanceAge(profile));
     const isPayoffAtRetirement = profile.mortgage.payoffAtRetirement;
 
     if (isPayoffAtRetirement) {
@@ -391,7 +390,7 @@ export function computePlanInsights(
   // ---------------------------------------------------------------------------
   // 7. ACTIONABLE TAX OPTIMIZATIONS & WEALTH OPPORTUNITIES
   // ---------------------------------------------------------------------------
-  const partnerTaxResult = profile.isCouplePlanning ? calculatePartnerUKTax(profile, pots) : null;
+  const partnerTaxResult = profile.isCouplePlanning ? calculatePartnerUKTax(profile, cleanPartnerPots, profile.partnerCurrentAge ?? currentAge) : null;
   const opportunities: ActionableOpportunity[] = [];
 
   // Helper function to evaluate Tax Trap
@@ -478,7 +477,7 @@ export function computePlanInsights(
   const evaluateStatePensionGap = (ownerName: string, includeSP: boolean, qYears: number, ownerPrefix: string) => {
     if (includeSP) {
       const qualifyingYears = qYears;
-      const fullSp = (ownerPrefix === 'primary' ? profile.fullStatePensionAmount : profile.partnerFullStatePensionAmount) || profile.fullStatePensionAmount || STATE_PENSION_FULL_ANNUAL;
+      const fullSp = (ownerPrefix === 'primary' ? profile.fullStatePensionAmount : profile.partnerFullStatePensionAmount) ?? profile.fullStatePensionAmount ?? STATE_PENSION_FULL_ANNUAL;
       if (qualifyingYears < 35) {
         const missingYears = 35 - qualifyingYears;
         const annualStatePensionLoss = Math.round(missingYears * (fullSp / 35));
@@ -513,15 +512,15 @@ export function computePlanInsights(
     }
   };
 
-  evaluateStatePensionGap(profile.isCouplePlanning ? priName : 'Primary', profile.includeStatePension, profile.qualifyingYears ?? 35, 'primary');
+  evaluateStatePensionGap(profile.isCouplePlanning ? priName : 'Primary', profile.includeStatePension !== false, profile.qualifyingYears ?? 35, 'primary');
   if (profile.isCouplePlanning) {
     evaluateStatePensionGap(partName, profile.partnerIncludeStatePension !== false, profile.partnerQualifyingYears ?? 35, 'partner');
   }
 
   // Opportunity 4: Spousal Allowance Equalisation (Couple Mode)
   if (isCouple) {
-    const priPension = pots.workplacePensionBalance + pots.sippBalance;
-    const partPension = profile.partnerPots ? (profile.partnerPots.workplacePensionBalance + profile.partnerPots.sippBalance) : 0;
+    const priPension = cleanPots.workplacePensionBalance + cleanPots.sippBalance;
+    const partPension = cleanPartnerPots.workplacePensionBalance + cleanPartnerPots.sippBalance;
 
     // Calculate total ongoing partner annual pension contributions
     const partnerSippMonthly = profile.partnerPots?.sippMonthlyContribution || 0;
@@ -678,7 +677,7 @@ export function computePlanInsights(
       title: 'Lump Sum Allowance (£268,275 LSA Cap) Headroom Review',
       impactLevel: 'Medium Impact',
       status: 'review_suggested',
-      observation: `Projected pension pots (£${Math.round(priPensionAtTake).toLocaleString()}) produce a ${profile.pclsLumpSumPercent || 25}% tax-free cash entitlement of £${priRawPcls.toLocaleString()}, which exceeds your LSA allowance of £${priMaxPcls.lsaLimit.toLocaleString()} by £${(priRawPcls - priMaxPcls.lsaLimit).toLocaleString()}.`,
+      observation: `Projected pension pots (£${Math.round(priPensionAtTake).toLocaleString()}) produce a ${profile.pclsLumpSumPercent ?? 25}% tax-free cash entitlement of £${priRawPcls.toLocaleString()}, which exceeds your LSA allowance of £${priMaxPcls.lsaLimit.toLocaleString()} by £${(priRawPcls - priMaxPcls.lsaLimit).toLocaleString()}.`,
       actionableStep: `Check if you hold historic transitional protection (Enhanced, Fixed, or Individual Protection) or consider redirecting future surplus savings into ISAs.`,
       projectedBenefit: `Prevents excess pension lump sum withdrawals above your LSA from being taxed at marginal income tax rates (up to 40%–45%).`,
         owner: 'Primary',
@@ -710,7 +709,7 @@ export function computePlanInsights(
         title: 'Partner Lump Sum Allowance (£268,275 LSA Cap) Headroom Review',
         impactLevel: 'Medium Impact',
         status: 'review_suggested',
-        observation: `Partner's projected pension pots (£${Math.round(partPensionAtTake).toLocaleString()}) produce a ${profile.partnerPclsLumpSumPercent || 25}% tax-free cash entitlement of £${partRawPcls.toLocaleString()}, which exceeds their LSA allowance of £${partMaxPcls.lsaLimit.toLocaleString()} by £${(partRawPcls - partMaxPcls.lsaLimit).toLocaleString()}.`,
+        observation: `Partner's projected pension pots (£${Math.round(partPensionAtTake).toLocaleString()}) produce a ${profile.partnerPclsLumpSumPercent ?? 25}% tax-free cash entitlement of £${partRawPcls.toLocaleString()}, which exceeds their LSA allowance of £${partMaxPcls.lsaLimit.toLocaleString()} by £${(partRawPcls - partMaxPcls.lsaLimit).toLocaleString()}.`,
         actionableStep: `Check if the partner holds historic transitional protection or consider redirecting their surplus savings into ISAs.`,
         projectedBenefit: `Prevents partner's excess pension lump sum withdrawals above their LSA from being taxed at marginal income tax rates (up to 40%–45%).`,
         owner: 'Partner',

@@ -269,8 +269,15 @@ export function getProjectedPotBalance(
           }
           if (dstOwner === owner && t.destinationPot === potType) {
             let added = amt;
-            if (t.destinationPot === 'sipp') added *= 1.25;
-            else if (t.destinationPot === 'lisa') added += Math.min(added, 4000) * 0.25;
+            const srcIsPension = t.sourcePot === 'sipp' || t.sourcePot === 'workplace_pension';
+            if (t.destinationPot === 'sipp' && !srcIsPension) {
+              added *= 1.25;
+            } else if (t.destinationPot === 'lisa') {
+              const evalAge = (dstOwner === 'partner' ? partnerAge : primaryAge) + (yr - currentYear);
+              if (evalAge < 50 && t.sourcePot !== 'lisa') {
+                added += Math.min(added, 4000) * 0.25;
+              }
+            }
             balance += added;
           }
         }

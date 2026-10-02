@@ -1,6 +1,6 @@
 import { UserProfile, InvestmentPots, YearProjection, SpendingPhasesConfig, AnnuityType, AnnuityDurationOption, CoupleMaxSpendScope } from '../types';
 import { generateProjections } from './projectionEngine';
-import { calculateUKTax } from './ukTaxEngine';
+import { calculateUKTax, getPensionAccessAge } from './ukTaxEngine';
 import { DEFAULT_PARTNER_POTS } from './defaultData';
 
 export type AnnuityFloorMode = 'none' | 'target_floor' | 'custom_percent';
@@ -152,7 +152,12 @@ export function getScopeEvaluationInputs(
     // Only evaluate primary wealth
     evalProfile.isCouplePlanning = false;
     evalProfile.partnerGrossAnnualSalary = 0;
-    evalProfile.dbPensions = (profileInput.dbPensions || []).filter((p) => p.owner !== 'partner');
+    evalProfile.dbPensions = (profileInput.dbPensions || []).filter((p) => (p.owner || 'primary') !== 'partner');
+    evalProfile.fixedIncomeStreams = (profileInput.fixedIncomeStreams || []).filter((s) => (s.owner || 'primary') !== 'partner');
+    evalProfile.oneOffContributions = (profileInput.oneOffContributions || []).filter((c) => (c.owner || 'primary') !== 'partner');
+    evalProfile.decumulationLifeEvents = (profileInput.decumulationLifeEvents || []).filter((e) => (e.owner || 'primary') !== 'partner');
+    evalProfile.crystallisationTranches = (profileInput.crystallisationTranches || []).filter((t) => (t.owner || 'primary') !== 'partner');
+    evalProfile.potTransfers = (profileInput.potTransfers || []).filter((t) => (t.owner || 'primary') !== 'partner' && (t.destinationOwner || 'primary') !== 'partner');
     evalProfile.partnerPots = {
       workplacePensionBalance: 0,
       workplacePensionMonthlyEmployee: 0,
@@ -178,19 +183,36 @@ export function getScopeEvaluationInputs(
   } else if (scope === 'partner') {
     // Evaluate partner wealth by replacing primary pots with partner's pots, and setting profile to single partner mode
     evalProfile.isCouplePlanning = false;
+    evalProfile.dateOfBirth = profileInput.partnerDateOfBirth ?? profileInput.dateOfBirth;
     evalProfile.currentAge = profileInput.partnerCurrentAge ?? profileInput.currentAge;
     evalProfile.targetRetirementAge = profileInput.partnerTargetRetirementAge ?? profileInput.targetRetirementAge;
+    evalProfile.lifeExpectancyAge = profileInput.partnerLifeExpectancyAge ?? profileInput.lifeExpectancyAge ?? 90;
     evalProfile.statePensionAge = profileInput.partnerStatePensionAge ?? 67;
     evalProfile.statePensionDeferralYears = profileInput.partnerStatePensionDeferralYears ?? 0;
     evalProfile.grossAnnualSalary = profileInput.partnerGrossAnnualSalary ?? 0;
     evalProfile.taxRegion = profileInput.partnerTaxRegion ?? profileInput.taxRegion;
     evalProfile.includeStatePension = profileInput.partnerIncludeStatePension ?? profileInput.includeStatePension;
-    if (profileInput.partnerStatePensionAmountAnnual) {
-      evalProfile.statePensionAmountAnnual = profileInput.partnerStatePensionAmountAnnual;
-    }
-    if (profileInput.partnerQualifyingYears !== undefined) {
-      evalProfile.qualifyingYears = profileInput.partnerQualifyingYears;
-    }
+    evalProfile.statePensionAmountAnnual = profileInput.partnerStatePensionAmountAnnual;
+    evalProfile.fullStatePensionAmount = profileInput.partnerFullStatePensionAmount;
+    evalProfile.qualifyingYears = profileInput.partnerQualifyingYears;
+    evalProfile.enableTripleLock = profileInput.partnerEnableTripleLock ?? profileInput.enableTripleLock;
+    evalProfile.pensionContributionMethod = profileInput.partnerPensionContributionMethod ?? profileInput.pensionContributionMethod;
+    evalProfile.employerNiPassThroughPercent = profileInput.partnerEmployerNiPassThroughPercent ?? 0;
+    evalProfile.employerNiRate = profileInput.partnerEmployerNiRate ?? 0.138;
+    evalProfile.hasTriggeredMpaa = profileInput.partnerHasTriggeredMpaa ?? false;
+    evalProfile.carryForwardAllowance = profileInput.partnerCarryForwardAllowance ?? 0;
+    evalProfile.pensionAccessAge = profileInput.partnerPensionAccessAge ?? profileInput.pensionAccessAge;
+    evalProfile.protectedPensionAccessAge = profileInput.partnerProtectedPensionAccessAge ?? profileInput.protectedPensionAccessAge;
+    evalProfile.pclsLumpSumPercent = profileInput.partnerPclsLumpSumPercent ?? profileInput.pclsLumpSumPercent;
+    evalProfile.takeLumpSumAtStart = profileInput.partnerTakeLumpSumAtStart ?? profileInput.takeLumpSumAtStart;
+    evalProfile.crystallisationMode = profileInput.partnerCrystallisationMode ?? profileInput.crystallisationMode;
+    evalProfile.lumpSumTiming = profileInput.partnerLumpSumTiming ?? profileInput.lumpSumTiming;
+    evalProfile.lumpSumCustomAge = profileInput.partnerLumpSumCustomAge ?? profileInput.lumpSumCustomAge;
+    evalProfile.lsaProtectionType = profileInput.partnerLsaProtectionType ?? profileInput.lsaProtectionType;
+    evalProfile.customLsaAllowance = profileInput.partnerCustomLsaAllowance ?? profileInput.customLsaAllowance;
+    evalProfile.lumpSumTargetPot = profileInput.partnerLumpSumTargetPot ?? profileInput.lumpSumTargetPot;
+    evalProfile.lumpSumSplits = profileInput.partnerLumpSumSplits ?? profileInput.lumpSumSplits;
+    evalProfile.drawdownStrategy = profileInput.partnerDrawdownStrategy ?? profileInput.drawdownStrategy;
 
     const pPots = profileInput.partnerPots || DEFAULT_PARTNER_POTS;
     evalPots.workplacePensionBalance = pPots.workplacePensionBalance || profileInput.partnerWorkplacePensionBalance || 0;
@@ -234,6 +256,11 @@ export function getScopeEvaluationInputs(
     evalProfile.partnerSippBalance = 0;
     evalProfile.partnerIsaBalance = 0;
     evalProfile.dbPensions = (profileInput.dbPensions || []).filter((p) => p.owner === 'partner').map((p) => ({ ...p, owner: 'primary' as const }));
+    evalProfile.fixedIncomeStreams = (profileInput.fixedIncomeStreams || []).filter((s) => s.owner === 'partner').map((s) => ({ ...s, owner: 'primary' as const }));
+    evalProfile.oneOffContributions = (profileInput.oneOffContributions || []).filter((c) => c.owner === 'partner').map((c) => ({ ...c, owner: 'primary' as const }));
+    evalProfile.decumulationLifeEvents = (profileInput.decumulationLifeEvents || []).filter((e) => e.owner === 'partner').map((e) => ({ ...e, owner: 'primary' as const }));
+    evalProfile.crystallisationTranches = (profileInput.partnerCrystallisationTranches || profileInput.crystallisationTranches || []).filter((t) => t.owner === 'partner').map((t) => ({ ...t, owner: 'primary' as const }));
+    evalProfile.potTransfers = (profileInput.potTransfers || []).filter((t) => t.owner === 'partner').map((t) => ({ ...t, owner: 'primary' as const, destinationOwner: 'primary' as const }));
   }
 
   return { evalProfile, evalPots };
@@ -281,7 +308,7 @@ export function createCandidateProfile(
   if (annuityFloorOpts && annuityFloorOpts.annuityFloorMode && annuityFloorOpts.annuityFloorMode !== 'none') {
     const mode = annuityFloorOpts.annuityFloorMode;
     const retAge = candidate.targetRetirementAge || 60;
-    const pensionAccessAge = candidate.protectedPensionAccessAge || 57;
+    const pensionAccessAge = getPensionAccessAge(candidate);
     const purchaseAge = Math.max(pensionAccessAge, annuityFloorOpts.annuityFloorAge || retAge);
     const ratePercent = annuityFloorOpts.annuityRatePercent || 6.0;
     const aType = annuityFloorOpts.annuityType || 'inflation_linked_single';
@@ -433,7 +460,7 @@ export function createCandidateProfile(
  */
 function clampBridgeRangesIfNeeded(candidateProfile: UserProfile, pots: InvestmentPots): UserProfile {
   const retAge = candidateProfile.targetRetirementAge || 60;
-  const pensionAccessAge = candidateProfile.protectedPensionAccessAge || 57;
+  const pensionAccessAge = getPensionAccessAge(candidateProfile);
 
   if (retAge >= pensionAccessAge || !candidateProfile.maximizedSpendConfig) {
     return candidateProfile;
@@ -631,7 +658,7 @@ export function solveMaximizedSpend(options: SolveMaximizedSpendOptions): SolveM
 
   const originalAnnualIncome = Math.round(getOriginalBaseIncome(profile));
   const retAge = profile.targetRetirementAge || 60;
-  const pensionAccessAge = profile.protectedPensionAccessAge || 57;
+  const pensionAccessAge = getPensionAccessAge(profile);
   const clampedEndAge = Math.max(retAge + 1, Math.min(100, targetEndAge));
 
   let low = 0;

@@ -93,7 +93,7 @@ export const SalarySacrificeOptimizerCard: React.FC<SalarySacrificeOptimizerCard
   const [claimChildBenefit, setClaimChildBenefit] = useState<boolean>(false);
   const [childBenefitChildren, setChildBenefitChildren] = useState<number>(2);
   const [isScottish, setIsScottish] = useState<boolean>(profile.taxRegion === 'scotland');
-  const [expectedReturn, setExpectedReturn] = useState<number>(profile.expectedInvestmentReturn || 6.5);
+  const [expectedReturn, setExpectedReturn] = useState<number>(profile.expectedInvestmentReturn ?? 6.5);
   const [yearsToRetirement, setYearsToRetirement] = useState<number>(defaultYearsToRetirement);
   const [showProjectionTable, setShowProjectionTable] = useState<boolean>(false);
   const [appliedSuccessMessage, setAppliedSuccessMessage] = useState<string | null>(null);

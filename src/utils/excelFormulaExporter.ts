@@ -9,7 +9,10 @@ import {
   getPartnerLumpSumTakeAge,
   getProjectedPensionAtTakeAge,
   allocateLumpSumToPots,
+  getPensionAccessAge,
+  getPartnerPensionAccessAge,
 } from './ukTaxEngine';
+import { STATE_PENSION_FULL_ANNUAL } from '../config/ukTaxRates';
 
 function getPotCategoryName(pot: InvestmentPotType): string {
   switch (pot) {
@@ -353,8 +356,8 @@ export async function generateFormulaExcelWorkbook(
     cell.alignment = { vertical: 'middle', horizontal: 'center' };
   });
 
-  const primaryNmpa = profile.protectedPensionAccessAge || profile.pensionAccessAge || 57;
-  const partnerNmpa = profile.partnerProtectedPensionAccessAge || profile.partnerPensionAccessAge || 57;
+  const primaryNmpa = getPensionAccessAge(profile);
+  const partnerNmpa = isCouple ? getPartnerPensionAccessAge(profile) : 57;
 
   wsInputs.addRow(['Current Age', profile.currentAge || 50, isCouple ? (profile.partnerCurrentAge || 50) : 0, 'Cell B4 (YOU) & Cell C4 (PARTNER)']); // Row 4
   wsInputs.addRow(['Normal Minimum Pension Access Age (NMPA)', primaryNmpa, isCouple ? partnerNmpa : 0, 'Cell B5 (YOU) & Cell C5 (PARTNER)']); // Row 5
@@ -363,8 +366,12 @@ export async function generateFormulaExcelWorkbook(
   const partSpaWithDef = isCouple ? ((profile.partnerStatePensionAge || 67) + (profile.partnerStatePensionDeferralYears || 0)) : 67;
   const priSpBoost = 1 + (0.058 * (profile.statePensionDeferralYears || 0));
   const partSpBoost = 1 + (0.058 * (profile.partnerStatePensionDeferralYears || 0));
-  const priSpAmount = Math.round((profile.statePensionAmountAnnual || 12548) * priSpBoost);
-  const partSpAmount = Math.round((profile.partnerStatePensionAmountAnnual || 12548) * partSpBoost);
+  const priSpAmount = Math.round(
+    (profile.statePensionAmountAnnual ?? profile.fullStatePensionAmount ?? STATE_PENSION_FULL_ANNUAL) * priSpBoost
+  );
+  const partSpAmount = Math.round(
+    (profile.partnerStatePensionAmountAnnual ?? profile.partnerFullStatePensionAmount ?? STATE_PENSION_FULL_ANNUAL) * partSpBoost
+  );
   wsInputs.addRow(['State Pension Start Age (SPA)', priSpaWithDef, isCouple ? partSpaWithDef : 67, 'Cell B7 (YOU) & Cell C7 (PARTNER)']); // Row 7
   wsInputs.addRow(['State Pension Today (£/yr)', priSpAmount, isCouple ? partSpAmount : 0, 'Cell B8 (YOU) & Cell C8 (PARTNER)']); // Row 8
 
@@ -1223,7 +1230,7 @@ export async function generateFormulaExcelWorkbook(
     ? (profile.crystallisationTranches || []).filter(t => t.enabled !== false && t.owner !== 'partner')
     : [];
   activeTranchesPrimary.forEach((t) => {
-    const tAge = t.age || 57;
+    const tAge = t.age ?? getPensionAccessAge(profile);
     const tYear = (new Date().getFullYear()) + Math.max(0, tAge - primaryCurrentAge);
     const tGross = t.amount || 0;
     const tPct = (t.pclsPercent ?? 25) / 100;
@@ -1317,7 +1324,7 @@ export async function generateFormulaExcelWorkbook(
       : [];
 
     partnerActiveTranches.forEach((t) => {
-      const tAge = t.age || 57;
+      const tAge = t.age ?? getPartnerPensionAccessAge(profile);
       const tYear = (new Date().getFullYear()) + Math.max(0, tAge - partnerCurrentAge);
       const tGross = t.amount || 0;
       const tPct = (t.pclsPercent ?? 25) / 100;
@@ -1623,7 +1630,7 @@ export async function generateFormulaExcelWorkbook(
     lastSummaryRow++;
     const tOwner = t.owner === 'partner' ? 'PARTNER' : 'YOU';
     const tAge = t.purchaseAge || 65;
-    const tYear = new Date().getFullYear() + Math.max(0, tAge - (t.owner === 'partner' ? (profile.partnerCurrentAge || profile.currentAge) : profile.currentAge));
+    const tYear = new Date().getFullYear() + Math.max(0, tAge - (t.owner === 'partner' ? (profile.partnerCurrentAge ?? profile.currentAge) : profile.currentAge));
     const tAllocPct = (t.allocationPercent || 50) / 100;
     const tOwnerPot = t.owner === 'partner' ? partnerPensionBal : primaryPensionBal;
     const tAmount = Math.round(tOwnerPot * tAllocPct);
@@ -2525,10 +2532,13 @@ export async function generateFormulaExcelWorkbook(
   });
 
   const currentYear = new Date().getFullYear();
+  const paVal = profile.customTaxBands?.enabled ? (profile.customTaxBands.personalAllowance ?? 12570) : 12570;
+  const brVal = profile.customTaxBands?.enabled ? (profile.customTaxBands.basicRateThreshold ?? 50270) : 50270;
+  const hrVal = profile.customTaxBands?.enabled ? (profile.customTaxBands.higherRateThreshold ?? 125140) : 125140;
   wsSettings.addRow(['Current Tax Year', currentYear, 'Year', 'Benchmark start year (Cell B4)']); // Row 4
-  wsSettings.addRow(['Personal Tax Allowance (£)', 12570, '£ / year', 'Tax-free income allowance (Cell B5)']); // Row 5
-  wsSettings.addRow(['Basic Rate Tax Band Threshold (£)', 50270, '£ / year', '20% Tax Band Ceiling (Cell B6)']); // Row 6
-  wsSettings.addRow(['Higher Rate Tax Band Threshold (£)', 125140, '£ / year', '40% Tax Band Ceiling (Cell B7)']); // Row 7
+  wsSettings.addRow(['Personal Tax Allowance (£)', paVal, '£ / year', 'Tax-free income allowance (Cell B5)']); // Row 5
+  wsSettings.addRow(['Basic Rate Tax Band Threshold (£)', brVal, '£ / year', '20% Tax Band Ceiling (Cell B6)']); // Row 6
+  wsSettings.addRow(['Higher Rate Tax Band Threshold (£)', hrVal, '£ / year', '40% Tax Band Ceiling (Cell B7)']); // Row 7
   wsSettings.addRow(['Lump Sum Allowance LSA Cap (£)', 268275, '£ Lifetime', '25% Tax-free PCLS limit (Cell B8)']); // Row 8
 
   wsSettings.getCell('B4').numFmt = '0';
@@ -2551,9 +2561,9 @@ export async function generateFormulaExcelWorkbook(
 
   const netPensionDecumRate = getEffectiveDecumulationReturn(profile.postRetirementReturn ?? 4.5, profile.assetAllocationSplit, profile.investmentFees) / 100;
   const netIsaDecumRate = netPensionDecumRate;
-  const netCashDecumRate = Math.min(0.035, Math.max(0.01, (profile.expectedInflationRate || 2.5) / 100 + 0.005));
+  const netCashDecumRate = Math.min(0.035, Math.max(0.01, (profile.expectedInflationRate ?? 2.5) / 100 + 0.005));
 
-  wsSettings.addRow(['Inflation Growth Rate (%)', (profile.expectedInflationRate || 2.5) / 100, '% / year', 'CPI Annual Inflation Index (Cell B11)']); // Row 11
+  wsSettings.addRow(['Inflation Growth Rate (%)', (profile.expectedInflationRate ?? 2.5) / 100, '% / year', 'CPI Annual Inflation Index (Cell B11)']); // Row 11
   wsSettings.addRow(['DC Pension Asset Growth Rate (%)', netPensionDecumRate, '% / year', 'Net Annual Decumulation Growth (Cell B12)']); // Row 12
   wsSettings.addRow(['ISA Investment Growth Rate (%)', netIsaDecumRate, '% / year', 'Net Annual Decumulation Growth (Cell B13)']); // Row 13
   wsSettings.addRow(['Cash & Savings Growth Rate (%)', netCashDecumRate, '% / year', 'Net Cash Interest Rate (Cell B14)']); // Row 14

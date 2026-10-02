@@ -48,15 +48,18 @@ export const AiTaxAdvisorModal: React.FC<AiTaxAdvisorModalProps> = ({
 
     // 2. Pension Contribution Method & Higher Rate Relief
     let pensionVsIsa = '';
-    if ((taxResult?.marginalTaxRate || 20) >= 40) {
-      pensionVsIsa = `As a Higher Rate tax payer (${taxResult?.marginalTaxRate || 40}%), pension contributions provide 40% to 45% tax relief vs non-deductible ISA contributions. Prioritize Workplace Pension / SIPP to max tax relief before filling ISAs.`;
+    const marginalRate = taxResult?.marginalTaxRate ?? 20;
+    if (marginalRate >= 40) {
+      pensionVsIsa = `As a Higher Rate tax payer (${marginalRate}%), pension contributions provide 40% to 45% tax relief vs non-deductible ISA contributions. Prioritize Workplace Pension / SIPP to max tax relief before filling ISAs.`;
       if (profile.pensionContributionMethod === 'relief_at_source') {
         score -= 5;
         opportunities.push('Submit a HMRC Self-Assessment or call HMRC to claim your extra 20% higher-rate pension tax relief!');
         nextSteps.push('Claim higher-rate tax relief on SIPP contributions via HMRC Self Assessment.');
       }
+    } else if (marginalRate > 0) {
+      pensionVsIsa = `As a Basic Rate tax payer (${marginalRate}%), balance your £20,000/yr ISA allowance for tax-free flexibility with workplace pension for employer match.`;
     } else {
-      pensionVsIsa = 'As a Basic Rate tax payer (20%), balance your £20,000/yr ISA allowance for tax-free flexibility with workplace pension for employer match.';
+      pensionVsIsa = 'As a Non-Taxpayer (0% marginal rate within Personal Allowance), you can still contribute up to £2,880 net (£3,600 gross) into a SIPP annually and receive £720 in free basic rate tax relief from HMRC.';
     }
 
     // 3. Salary Sacrifice NIC Savings
@@ -83,7 +86,7 @@ export const AiTaxAdvisorModal: React.FC<AiTaxAdvisorModalProps> = ({
     }
 
     return {
-      summary: `Your retirement plan is projected to reach £${(projectedAtRetirement?.totalPot || 0).toLocaleString()} at age ${profile.targetRetirementAge}. Marginal tax rate is ${taxResult?.marginalTaxRate || 20}%. Total annual tax relief gained: £${(taxResult?.totalTaxReliefGained || 0).toLocaleString()}/yr.`,
+      summary: `Your retirement plan is projected to reach £${(projectedAtRetirement?.totalPot || 0).toLocaleString()} at age ${profile.targetRetirementAge}. Marginal tax rate is ${marginalRate}%. Total annual tax relief gained: £${(taxResult?.totalTaxReliefGained || 0).toLocaleString()}/yr.`,
       taxEfficiencyScore: Math.max(40, score),
       keyOpportunities: opportunities,
       taxTrapAdvice,

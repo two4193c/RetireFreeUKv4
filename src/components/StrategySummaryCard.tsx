@@ -433,7 +433,7 @@ export const StrategySummaryCard: React.FC<StrategySummaryCardProps> = ({
             <div className="flex justify-between border-t border-slate-100 dark:border-slate-700/60 pt-1">
               <span className="text-slate-500 dark:text-slate-400">Inflation Indexing:</span>
               <span className="font-bold text-slate-900 dark:text-white">
-                {(profile.enableTripleLock ?? true) ? `Triple Lock (${profile.expectedInflationRate || 2.5}% CPI)` : 'Disabled (Flat Nominal £)'}
+                {(profile.enableTripleLock ?? true) ? `Triple Lock (${profile.expectedInflationRate ?? 2.5}% CPI)` : 'Disabled (Flat Nominal £)'}
               </span>
             </div>
           </div>

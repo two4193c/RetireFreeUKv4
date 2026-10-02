@@ -258,7 +258,7 @@ export function generateProjections(
     .filter((p) => p.enabled && (p.owner || 'primary') !== 'partner' && (p.startAge || 65) < profile.currentAge)
     .reduce((sum, p) => sum + (p.taxFreeLumpSum || 0), 0);
   const priorPartnerDbLumpSum = (profile.dbPensions || [])
-    .filter((p) => p.enabled && p.owner === 'partner' && (p.startAge || 65) < (profile.partnerCurrentAge || profile.currentAge))
+    .filter((p) => p.enabled && p.owner === 'partner' && (p.startAge || 65) < (profile.partnerCurrentAge ?? profile.currentAge))
     .reduce((sum, p) => sum + (p.taxFreeLumpSum || 0), 0);
 
   // Dual individual LSA tracking for primary and partner
@@ -410,7 +410,7 @@ function parseAnnuityTypeConfig(type?: string) {
     }
 
     // Partner Mortality Inheritance
-    if (profile.isCouplePlanning && !partnerDead && partnerAge >= (profile.partnerLifeExpectancyAge || 95)) {
+    if (profile.isCouplePlanning && !partnerDead && partnerAge >= (profile.partnerLifeExpectancyAge ?? 95)) {
       partnerDead = true;
       
       // Issue 4 Fix: Inherited pension must not generate further PCLS for the beneficiary.
@@ -1258,12 +1258,12 @@ function parseAnnuityTypeConfig(type?: string) {
 
       // 2. Partner Annuity Purchase Logic
       if (profile.isCouplePlanning && partnerPensionPot > 0) {
-        const partnerAge = age + ((profile.partnerCurrentAge || profile.currentAge) - profile.currentAge);
+        const partnerAge = age + ((profile.partnerCurrentAge ?? profile.currentAge) - profile.currentAge);
         const partnerCanAccess = partnerAge >= partnerPensionAccessAge;
 
         if (partnerCanAccess) {
           const partnerOption = profile.partnerIncomeProductOption || profile.incomeProductOption;
-          const partnerTargetPurchaseAge = Math.max(partnerPensionAccessAge, profile.partnerAnnuityPurchaseAge || (profile.partnerTargetRetirementAge || profile.targetRetirementAge));
+          const partnerTargetPurchaseAge = Math.max(partnerPensionAccessAge, profile.partnerAnnuityPurchaseAge ?? (profile.partnerTargetRetirementAge ?? profile.targetRetirementAge));
           if (
             !annuityPurchasedPartner &&
             partnerAge >= partnerTargetPurchaseAge &&
@@ -1391,7 +1391,7 @@ function parseAnnuityTypeConfig(type?: string) {
 
       let primaryAnnuityIncomeThisYear = 0;
       let partnerAnnuityIncomeThisYear = 0;
-      const currentPartnerAge = age + ((profile.partnerCurrentAge || profile.currentAge) - profile.currentAge);
+      const currentPartnerAge = age + ((profile.partnerCurrentAge ?? profile.currentAge) - profile.currentAge);
 
       activeAnnuityStreams.forEach((stream) => {
         const ownerAge = stream.owner === 'partner' ? currentPartnerAge : age;
@@ -1738,7 +1738,7 @@ function parseAnnuityTypeConfig(type?: string) {
         const partnerAge = age + ((profile.partnerCurrentAge ?? profile.currentAge) - profile.currentAge);
         const partnerDeferralYears = profile.partnerStatePensionDeferralYears || 0;
           const partnerDeferralBoost = 1 + (0.058 * partnerDeferralYears);
-          if (partnerAge >= (profile.partnerStatePensionAge || 67) + partnerDeferralYears) {
+          if (partnerAge >= (profile.partnerStatePensionAge ?? 67) + partnerDeferralYears) {
           const partnerYears = profile.partnerQualifyingYears ?? 35;
           if (partnerYears >= 10) {
             const partnerTripleLock = profile.partnerEnableTripleLock ?? true;
@@ -1977,7 +1977,7 @@ function parseAnnuityTypeConfig(type?: string) {
 
       const returnAccumulationGross = (profile.assetAllocationSplit && profile.assetAllocationSplit.enabled)
         ? calculateWeightedAssetReturn(profile.assetAllocationSplit.accumulation, profile.assetAllocationSplit.assetClassReturns) / 100
-        : (profile.expectedInvestmentReturn || 6.5) / 100;
+        : (profile.expectedInvestmentReturn ?? 6.5) / 100;
 
       const primaryPensionFee = getPotFeePercent(profile.investmentFees, 'primary', 'pension', cleanPots) / 100;
       const partnerPensionFee = getPotFeePercent(profile.investmentFees, 'partner', 'pension', profile.partnerPots) / 100;
@@ -1987,24 +1987,24 @@ function parseAnnuityTypeConfig(type?: string) {
       const partnerGiaFee = getPotFeePercent(profile.investmentFees, 'partner', 'gia') / 100;
 
       const primaryAccumPensionGross = useOverrides
-        ? (overrides!.workplacePensionReturn || 7.0) / 100
+        ? (overrides!.workplacePensionReturn ?? 7.0) / 100
         : getPotGrossReturn(profile.assetAllocationSplit, 'primary', 'pension', 'accumulation', returnAccumulationGross * 100) / 100;
       const partnerAccumPensionGross = useOverrides
-        ? (overrides!.workplacePensionReturn || 7.0) / 100
+        ? (overrides!.workplacePensionReturn ?? 7.0) / 100
         : getPotGrossReturn(profile.assetAllocationSplit, 'partner', 'pension', 'accumulation', returnAccumulationGross * 100) / 100;
 
       const primaryAccumIsaGross = useOverrides
-        ? (overrides!.stocksAndSharesIsaReturn || 7.5) / 100
+        ? (overrides!.stocksAndSharesIsaReturn ?? 7.5) / 100
         : getPotGrossReturn(profile.assetAllocationSplit, 'primary', 'stocksAndSharesIsa', 'accumulation', returnAccumulationGross * 100) / 100;
       const partnerAccumIsaGross = useOverrides
-        ? (overrides!.stocksAndSharesIsaReturn || 7.5) / 100
+        ? (overrides!.stocksAndSharesIsaReturn ?? 7.5) / 100
         : getPotGrossReturn(profile.assetAllocationSplit, 'partner', 'stocksAndSharesIsa', 'accumulation', returnAccumulationGross * 100) / 100;
 
       const primaryAccumGiaGross = useOverrides
-        ? (overrides!.giaReturn || 6.5) / 100
+        ? (overrides!.giaReturn ?? 6.5) / 100
         : getPotGrossReturn(profile.assetAllocationSplit, 'primary', 'gia', 'accumulation', returnAccumulationGross * 90) / 100;
       const partnerAccumGiaGross = useOverrides
-        ? (overrides!.giaReturn || 6.5) / 100
+        ? (overrides!.giaReturn ?? 6.5) / 100
         : getPotGrossReturn(profile.assetAllocationSplit, 'partner', 'gia', 'accumulation', returnAccumulationGross * 90) / 100;
 
       const primaryAccumPensionRate = Math.max(-0.05, primaryAccumPensionGross - primaryPensionFee);
@@ -2014,7 +2014,7 @@ function parseAnnuityTypeConfig(type?: string) {
       const primaryAccumGiaRate = Math.max(-0.05, primaryAccumGiaGross - primaryGiaFee);
       const partnerAccumGiaRate = Math.max(-0.05, partnerAccumGiaGross - partnerGiaFee);
 
-      const accumCashRate = useOverrides ? (overrides!.cashSavingsReturn || 3.5) / 100 : returnAccumulationGross * 0.85;
+      const accumCashRate = useOverrides ? (overrides!.cashSavingsReturn ?? 3.5) / 100 : returnAccumulationGross * 0.85;
 
       const accumFeesPaid = Math.round(
         (primaryPensionPot * primaryPensionFee) +
@@ -2149,9 +2149,9 @@ function parseAnnuityTypeConfig(type?: string) {
         partnerLsaRemaining: Math.round(Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn)),
         totalLsaRemaining: Math.round(Math.max(0, primaryMaxLsa - primaryCumulativeTaxFreeDrawn) + (profile.isCouplePlanning ? Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn) : 0)),
         isaPot: Math.round(isaPot),
-        stocksAndSharesIsaPot: Math.round(stocksAndSharesIsaPot),
-        cashIsaPot: Math.round(cashIsaPot),
-        lisaPot: Math.round(lisaPot),
+        stocksAndSharesIsaPot: Math.round(primarySsIsaPot + partnerSsIsaPot),
+        cashIsaPot: Math.round(primaryCashIsaPot + partnerCashIsaPot),
+        lisaPot: Math.round(primaryLisaPot + partnerLisaPot),
         cashGiaPot: Math.round(cashGiaPot),
         giaPot: Math.round(giaPot),
         cashSavingsPot: Math.round(cashSavingsPot),
@@ -2236,11 +2236,11 @@ function parseAnnuityTypeConfig(type?: string) {
 
       const returnAccumulationGross = (profile.assetAllocationSplit && profile.assetAllocationSplit.enabled)
         ? calculateWeightedAssetReturn(profile.assetAllocationSplit.accumulation, profile.assetAllocationSplit.assetClassReturns) / 100
-        : (profile.expectedInvestmentReturn || 6.5) / 100;
+        : (profile.expectedInvestmentReturn ?? 6.5) / 100;
 
       const returnDecumulationGross = (profile.assetAllocationSplit && profile.assetAllocationSplit.enabled)
         ? calculateWeightedAssetReturn(profile.assetAllocationSplit.decumulation, profile.assetAllocationSplit.assetClassReturns) / 100
-        : (profile.postRetirementReturn || 4.5) / 100;
+        : (profile.postRetirementReturn ?? 4.5) / 100;
       const returnBaseGross = isRetired ? returnDecumulationGross : returnAccumulationGross;
 
       const primaryPensionFeeDecum = getPotFeePercent(profile.investmentFees, 'primary', 'pension', cleanPots) / 100;
@@ -2253,24 +2253,24 @@ function parseAnnuityTypeConfig(type?: string) {
       const currentPhase = isRetired ? 'decumulation' : 'accumulation';
 
       const primaryPensionGrossDecum = useOverrides
-        ? (overrides!.workplacePensionReturn || 7.0) / 100
+        ? (overrides!.workplacePensionReturn ?? 7.0) / 100
         : getPotGrossReturn(profile.assetAllocationSplit, 'primary', 'pension', currentPhase, returnBaseGross * 100) / 100;
       const partnerPensionGrossDecum = useOverrides
-        ? (overrides!.workplacePensionReturn || 7.0) / 100
+        ? (overrides!.workplacePensionReturn ?? 7.0) / 100
         : getPotGrossReturn(profile.assetAllocationSplit, 'partner', 'pension', currentPhase, returnBaseGross * 100) / 100;
 
       const primaryIsaGrossDecum = useOverrides
-        ? (overrides!.stocksAndSharesIsaReturn || 7.5) / 100
+        ? (overrides!.stocksAndSharesIsaReturn ?? 7.5) / 100
         : getPotGrossReturn(profile.assetAllocationSplit, 'primary', 'stocksAndSharesIsa', currentPhase, returnBaseGross * 100) / 100;
       const partnerIsaGrossDecum = useOverrides
-        ? (overrides!.stocksAndSharesIsaReturn || 7.5) / 100
+        ? (overrides!.stocksAndSharesIsaReturn ?? 7.5) / 100
         : getPotGrossReturn(profile.assetAllocationSplit, 'partner', 'stocksAndSharesIsa', currentPhase, returnBaseGross * 100) / 100;
 
       const primaryGiaGrossDecum = useOverrides
-        ? (overrides!.giaReturn || 6.5) / 100
+        ? (overrides!.giaReturn ?? 6.5) / 100
         : getPotGrossReturn(profile.assetAllocationSplit, 'primary', 'gia', currentPhase, (isRetired ? returnDecumulationGross * 95 : returnAccumulationGross * 90)) / 100;
       const partnerGiaGrossDecum = useOverrides
-        ? (overrides!.giaReturn || 6.5) / 100
+        ? (overrides!.giaReturn ?? 6.5) / 100
         : getPotGrossReturn(profile.assetAllocationSplit, 'partner', 'gia', currentPhase, (isRetired ? returnDecumulationGross * 95 : returnAccumulationGross * 90)) / 100;
 
       const primaryPensionRateDecum = Math.max(-0.05, primaryPensionGrossDecum - primaryPensionFeeDecum);
@@ -2281,11 +2281,11 @@ function parseAnnuityTypeConfig(type?: string) {
       const partnerGiaRateDecum = Math.max(-0.05, partnerGiaGrossDecum - partnerGiaFeeDecum);
 
       const effectiveCashIsaRate = useOverrides
-        ? (overrides!.cashIsaReturn || 4.2) / 100
+        ? (overrides!.cashIsaReturn ?? 4.2) / 100
         : (isRetired ? returnDecumulation * 0.85 : returnAccumulation * 0.85);
 
       const effectiveCashSavingsRate = useOverrides
-        ? (overrides!.cashSavingsReturn || 3.5) / 100
+        ? (overrides!.cashSavingsReturn ?? 3.5) / 100
         : (isRetired ? returnDecumulation * 0.85 : returnAccumulation * 0.80);
 
       // Apply annual investment growth for remaining active pots (Primary & Partner)
@@ -2451,6 +2451,8 @@ function parseAnnuityTypeConfig(type?: string) {
                  priActualDraw += d;
               }
               primaryPensionPot = primaryCrystallisedPot + primaryUncrystallisedPot;
+              const drawn = amount - remaining;
+              pensionDrawdown += drawn;
             } else {
               let remaining = amount;
               if (partnerCrystallisedPot > 0) {
@@ -2467,27 +2469,35 @@ function parseAnnuityTypeConfig(type?: string) {
                  partActualDraw += d;
               }
               partnerPensionPot = partnerCrystallisedPot + partnerUncrystallisedPot;
+              const drawn = amount - remaining;
+              pensionDrawdown += drawn;
             }
             pensionPot = primaryPensionPot + partnerPensionPot;
-            pensionDrawdown += amount;
           } else if (potType === 'isa') {
             if (owner === 'primary') {
-               const r = amount / primaryIsaPot;
-               primarySsIsaPot = Math.max(0, primarySsIsaPot * (1 - r));
-               primaryCashIsaPot = Math.max(0, primaryCashIsaPot * (1 - r));
-               primaryLisaPot = Math.max(0, primaryLisaPot * (1 - r));
-               primaryIsaPot = primarySsIsaPot + primaryCashIsaPot + primaryLisaPot;
-               primaryIsaDrawdown += amount;
+               const actualDraw = Math.min(primaryIsaPot, amount);
+               if (actualDraw > 0) {
+                 const r = primaryIsaPot > 0 ? (actualDraw / primaryIsaPot) : 1;
+                 primarySsIsaPot = Math.max(0, primarySsIsaPot * (1 - r));
+                 primaryCashIsaPot = Math.max(0, primaryCashIsaPot * (1 - r));
+                 primaryLisaPot = Math.max(0, primaryLisaPot * (1 - r));
+                 primaryIsaPot = primarySsIsaPot + primaryCashIsaPot + primaryLisaPot;
+                 primaryIsaDrawdown += actualDraw;
+                 isaDrawdown += actualDraw;
+               }
             } else {
-               const r = amount / partnerIsaPot;
-               partnerSsIsaPot = Math.max(0, partnerSsIsaPot * (1 - r));
-               partnerCashIsaPot = Math.max(0, partnerCashIsaPot * (1 - r));
-               partnerLisaPot = Math.max(0, partnerLisaPot * (1 - r));
-               partnerIsaPot = partnerSsIsaPot + partnerCashIsaPot + partnerLisaPot;
-               partnerIsaDrawdown += amount;
+               const actualDraw = Math.min(partnerIsaPot, amount);
+               if (actualDraw > 0) {
+                 const r = partnerIsaPot > 0 ? (actualDraw / partnerIsaPot) : 1;
+                 partnerSsIsaPot = Math.max(0, partnerSsIsaPot * (1 - r));
+                 partnerCashIsaPot = Math.max(0, partnerCashIsaPot * (1 - r));
+                 partnerLisaPot = Math.max(0, partnerLisaPot * (1 - r));
+                 partnerIsaPot = partnerSsIsaPot + partnerCashIsaPot + partnerLisaPot;
+                 partnerIsaDrawdown += actualDraw;
+                 isaDrawdown += actualDraw;
+               }
             }
             isaPot = primaryIsaPot + partnerIsaPot;
-            isaDrawdown += amount;
           } else if (potType === 'cashGia') {
             if (owner === 'primary') {
                let remaining = amount;
@@ -2501,8 +2511,10 @@ function parseAnnuityTypeConfig(type?: string) {
                  primaryGiaPot -= d;
                  remaining -= d;
                }
+               const drawn = amount - remaining;
                primaryCashGiaPot = primaryCashSavingsPot + primaryGiaPot;
-               primaryCashDrawdown += amount;
+               primaryCashDrawdown += drawn;
+               cashDrawdown += drawn;
             } else {
                let remaining = amount;
                if (partnerCashSavingsPot > 0) {
@@ -2515,13 +2527,14 @@ function parseAnnuityTypeConfig(type?: string) {
                  partnerGiaPot -= d;
                  remaining -= d;
                }
+               const drawn = amount - remaining;
                partnerCashGiaPot = partnerCashSavingsPot + partnerGiaPot;
-               partnerCashDrawdown += amount;
+               partnerCashDrawdown += drawn;
+               cashDrawdown += drawn;
             }
             cashGiaPot = primaryCashGiaPot + partnerCashGiaPot;
             cashSavingsPot = primaryCashSavingsPot + partnerCashSavingsPot;
             giaPot = primaryGiaPot + partnerGiaPot;
-            cashDrawdown += amount;
           }
         };
 

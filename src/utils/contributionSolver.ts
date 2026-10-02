@@ -83,11 +83,15 @@ export function solveContributionIncrease(
 
   const marginalTaxRate = (baseTax.marginalTaxRate ?? 20) / 100;
   const isSalarySacrifice = profile.pensionContributionMethod === 'salary_sacrifice';
-  // NI savings rate: 0 if no income, 2% above higher-rate threshold, 8% basic rate band
-  const niSavingsRate = marginalTaxRate <= 0 ? 0 : marginalTaxRate >= 0.40 ? 0.02 : 0.08;
+  const grossSalary = profile.grossAnnualSalary || 0;
+  // NI savings rate: 0 below Primary Threshold (£12,570), 2% above Upper Earnings Limit (£50,270), 8% between PT and UEL
+  const niSavingsRate = grossSalary <= 12570 ? 0 : grossSalary > 50270 ? 0.02 : 0.08;
   const salarySacrificeReliefRate = marginalTaxRate + niSavingsRate;
   // Whether the user has a salary / employer to contribute to workplace pension
-  const hasWorkplaceSalary = (profile.grossAnnualSalary || 0) > 0;
+  const hasWorkplaceSalary = grossSalary > 0;
+  const baseWorkplaceMonthly = activePots.workplacePensionMonthlyEmployeeType === 'percent'
+    ? (grossSalary * ((activePots.workplacePensionMonthlyEmployee || 0) / 100)) / 12
+    : (activePots.workplacePensionMonthlyEmployee || 0);
 
   // ISA limit headroom calculation:
   // baseTax.isaAllowanceRemaining is the remaining ISA allowance for the current tax year.
@@ -119,7 +123,7 @@ export function solveContributionIncrease(
         ...activePots,
         sippMonthlyContribution: potType === 'sipp' ? (activePots.sippMonthlyContribution || 0) + sippNetDelta : activePots.sippMonthlyContribution,
         stocksAndSharesIsaMonthlyContribution: potType === 'isa' ? (activePots.stocksAndSharesIsaMonthlyContribution || 0) + mid : activePots.stocksAndSharesIsaMonthlyContribution,
-        workplacePensionMonthlyEmployee: potType === 'workplace' ? (activePots.workplacePensionMonthlyEmployee || 0) + mid : activePots.workplacePensionMonthlyEmployee,
+        workplacePensionMonthlyEmployee: potType === 'workplace' ? baseWorkplaceMonthly + mid : activePots.workplacePensionMonthlyEmployee,
         workplacePensionMonthlyEmployeeType: potType === 'workplace' ? 'fixed' : activePots.workplacePensionMonthlyEmployeeType,
       };
 

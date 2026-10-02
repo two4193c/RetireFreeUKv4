@@ -20,6 +20,7 @@ export interface PotState {
   partnerCashIsaPot: number;
   primaryCashGiaPot: number;
   partnerCashGiaPot: number;
+  partnerLisaPot?: number;
 }
 
 export interface TaxOptimizerAnnualInput {
@@ -83,7 +84,7 @@ export function solveTaxOptimalAnnualDrawdown(
     age,
     partnerAge = age,
     pensionAccessAge,
-    partnerPensionAccessAge = 57,
+    partnerPensionAccessAge = pensionAccessAge ?? 57,
     netIncomeNeeded,
     primaryTaxableGuaranteed,
     partnerTaxableGuaranteed,
@@ -108,7 +109,7 @@ export function solveTaxOptimalAnnualDrawdown(
   const partTotalPension = isCouple ? (pots.partnerUncrystallisedPot + pots.partnerCrystallisedPot) : 0;
 
   const priIsaTotal = pots.primarySsIsaPot + pots.primaryCashIsaPot + pots.primaryLisaPot;
-  const partIsaTotal = isCouple ? (pots.partnerSsIsaPot + pots.partnerCashIsaPot) : 0;
+  const partIsaTotal = isCouple ? (pots.partnerSsIsaPot + pots.partnerCashIsaPot + (pots.partnerLisaPot ?? 0)) : 0;
   const totalIsaAvail = priIsaTotal + partIsaTotal;
 
   const totalCashGiaAvail = pots.primaryCashGiaPot + (isCouple ? pots.partnerCashGiaPot : 0);
@@ -178,11 +179,12 @@ export function solveTaxOptimalAnnualDrawdown(
   const basicBandWidth = customTaxBands?.enabled ? (customTaxBands.basicRateThreshold ?? RUK_BASIC_THRESHOLD) * inflMult : RUK_BASIC_THRESHOLD * inflMult;
   const higherGrossLimit = customTaxBands?.enabled ? (customTaxBands.higherRateThreshold ?? RUK_ADDITIONAL_THRESHOLD) * inflMult : RUK_ADDITIONAL_THRESHOLD * inflMult;
 
-  const priBasicLimit = singlePA + (isScottishTax ? (SCOT_INTERMEDIATE_THRESHOLD * inflMult) : basicBandWidth);
-  const partBasicLimit = singlePA + (isPartnerScottishTax ? (SCOT_INTERMEDIATE_THRESHOLD * inflMult) : basicBandWidth);
+  const scotIntermediateThresh = customTaxBands?.enabled ? (customTaxBands.scotIntermediateThreshold ?? SCOT_INTERMEDIATE_THRESHOLD) : SCOT_INTERMEDIATE_THRESHOLD;
+  const priBasicLimit = singlePA + (isScottishTax ? (scotIntermediateThresh * inflMult) : basicBandWidth);
+  const partBasicLimit = singlePA + (isPartnerScottishTax ? (scotIntermediateThresh * inflMult) : basicBandWidth);
 
-  const priHigherLimit = isScottishTax ? (singlePA + (SCOT_HIGHER_THRESHOLD * inflMult)) : higherGrossLimit;
-  const partHigherLimit = isPartnerScottishTax ? (singlePA + (SCOT_HIGHER_THRESHOLD * inflMult)) : higherGrossLimit;
+  const priHigherLimit = higherGrossLimit;
+  const partHigherLimit = higherGrossLimit;
 
   const computeIncomeTax = (grossTaxableIncome: number, inflationMult: number, isScottish: boolean): number => {
     if (grossTaxableIncome <= 0) return 0;
@@ -265,6 +267,11 @@ export function solveTaxOptimalAnnualDrawdown(
       } else {
         low = mid;
       }
+    }
+
+    if (bestPri === 0 && bestPart === 0 && high > 0 && targetNet > 0) {
+      bestPri = maxPriGross;
+      bestPart = maxPartGross;
     }
 
     const finalEval = evaluatePensionDraws(bestPri, bestPart);
@@ -467,6 +474,15 @@ export function solveTaxOptimalAnnualDrawdown(
       } else {
         low = mid;
       }
+    }
+
+    if (bestExtraPri === 0 && bestExtraPart === 0 && high > 0) {
+      // If the target shortfall could not be fully met even at the upper bound (pots exhausting),
+      // draw whatever remaining pension pot capacity exists.
+      const remPriPot = canAccessPriPension ? Math.max(0, priTotalPension - optimalPriGross) : 0;
+      const remPartPot = canAccessPartPension ? Math.max(0, partTotalPension - optimalPartGross) : 0;
+      bestExtraPri = remPriPot;
+      bestExtraPart = remPartPot;
     }
 
     optimalPriGross += bestExtraPri;

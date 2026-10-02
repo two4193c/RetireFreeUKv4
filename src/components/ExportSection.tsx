@@ -604,7 +604,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
           rawEvents.push({
             primaryAge: primarySpaVal,
             title: `${isCouple ? `${priName} ` : ''}State Pension Start (Age ${primarySpaVal})`,
-            subtitle: `Guaranteed DWP State Pension commencement (£${Math.round(profile.statePensionAmountAnnual || profile.fullStatePensionAmount || STATE_PENSION_FULL_ANNUAL).toLocaleString()}/yr Triple-Lock floor)`,
+            subtitle: `Guaranteed DWP State Pension commencement (£${Math.round(profile.statePensionAmountAnnual ?? profile.fullStatePensionAmount ?? STATE_PENSION_FULL_ANNUAL).toLocaleString()}/yr Triple-Lock floor)`,
             phaseLabel: `State Pension Age (${primarySpaVal})`,
             priority: 6,
           });
@@ -618,7 +618,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
           rawEvents.push({
             primaryAge: pAgeAtPartSpa,
             title: `${partName} State Pension Start (${partName} Age ${partnerSpaVal})`,
-            subtitle: `${partName} DWP State Pension commencement (£${Math.round(profile.partnerStatePensionAmountAnnual || profile.partnerFullStatePensionAmount || STATE_PENSION_FULL_ANNUAL).toLocaleString()}/yr guaranteed floor)`,
+            subtitle: `${partName} DWP State Pension commencement (£${Math.round(profile.partnerStatePensionAmountAnnual ?? profile.partnerFullStatePensionAmount ?? profile.fullStatePensionAmount ?? STATE_PENSION_FULL_ANNUAL).toLocaleString()}/yr guaranteed floor)`,
             phaseLabel: `Partner State Pension (${partName} Age ${partnerSpaVal})`,
             priority: 7,
           });
@@ -902,7 +902,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       const getScaledPot = (snap: any) => {
         const ageVal = snap?.age || profile.targetRetirementAge;
         const off = Math.max(0, ageVal - profile.currentAge);
-        const f = Math.pow(1 + (profile.expectedInflationRate || 2.5) / 100, off);
+        const f = Math.pow(1 + (profile.expectedInflationRate ?? 2.5) / 100, off);
         const s = (isAdjusted && f > 0) ? (1 / f) : 1;
         return Math.round((snap?.totalPot || 0) * s);
       };
@@ -1820,7 +1820,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
         const isAdjusted = profile.adjustForInflation !== false;
         const snapAge = snapshot?.age || profile.targetRetirementAge;
         const snapOffset = Math.max(0, snapAge - profile.currentAge);
-        const snapInflFact = Math.pow(1 + (profile.expectedInflationRate || 2.5) / 100, snapOffset);
+        const snapInflFact = Math.pow(1 + (profile.expectedInflationRate ?? 2.5) / 100, snapOffset);
         const snapScale = (isAdjusted && snapInflFact > 0) ? (1 / snapInflFact) : 1;
 
         doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
@@ -3053,7 +3053,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
         priHierarchy,
         profile.crystallisationMode,
         priActivePhased,
-        profile.pclsLumpSumPercent || 25,
+        profile.pclsLumpSumPercent ?? 25,
         Boolean(profile.takeLumpSumAtStart),
         profile.lumpSumTargetPot,
         profile.lumpSumSplits,
@@ -3078,7 +3078,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
           partHierarchy,
           profile.partnerCrystallisationMode || profile.crystallisationMode,
           partActivePhased,
-          profile.partnerPclsLumpSumPercent || profile.pclsLumpSumPercent || 25,
+          profile.partnerPclsLumpSumPercent ?? profile.pclsLumpSumPercent ?? 25,
           Boolean(profile.partnerTakeLumpSumAtStart ?? profile.takeLumpSumAtStart),
           profile.partnerLumpSumTargetPot || profile.lumpSumTargetPot,
           profile.partnerLumpSumSplits || profile.lumpSumSplits,
@@ -3996,7 +3996,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       doc.setFontSize(7);
 
       const priStateYear = projections.find((p) => p.age === priStateAge)?.year || (new Date().getFullYear() + Math.max(0, priStateAge - currentAge));
-      const priSpAnnual = profile.statePensionAmountAnnual || 12548;
+      const priSpAnnual = profile.statePensionAmountAnnual ?? profile.fullStatePensionAmount ?? 12548;
       const priSpWeekly = Math.round(priSpAnnual / 52);
 
       doc.text(primaryName, 20, spBoxY + 4);
@@ -4014,7 +4014,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
         const partStateAgeVal = partStateAge || 67;
         const priAgeAtPartState = currentAge + (partStateAgeVal - partCurAge);
         const partStateYear = projections.find((p) => p.age === priAgeAtPartState)?.year || (new Date().getFullYear() + Math.max(0, partStateAgeVal - partCurAge));
-        const partSpAnnual = profile.partnerStatePensionAmountAnnual || profile.statePensionAmountAnnual || 12548;
+        const partSpAnnual = profile.partnerStatePensionAmountAnnual ?? profile.partnerFullStatePensionAmount ?? profile.fullStatePensionAmount ?? 12548;
         const partSpWeekly = Math.round(partSpAnnual / 52);
 
         doc.text(partnerName || 'Partner', 20, spBoxY + 4);
@@ -4354,7 +4354,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
 
       const isAdjustedDiagram = profile.adjustForInflation !== false;
       const retOffset = Math.max(0, targetAge - currentAge);
-      const retInflFact = Math.pow(1 + (profile.expectedInflationRate || 2.5) / 100, retOffset);
+      const retInflFact = Math.pow(1 + (profile.expectedInflationRate ?? 2.5) / 100, retOffset);
       const retScale = (isAdjustedDiagram && retInflFact > 0) ? (1 / retInflFact) : 1;
 
       doc.text(`Diagram 1: Portfolio Asset Distribution at Retirement Start (Age ${targetAge})${isAdjustedDiagram ? " (Real Terms - Today's £)" : " (Nominal £)"}`, 18, p4Y + 8);
@@ -4565,7 +4565,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       const getNominalTarget = (p, age) => {
         let nominal = p?.targetRetirementIncome;
         if (!nominal) {
-          const infFact = Math.pow(1 + profile.expectedInflationRate / 100, Math.max(0, age - profile.currentAge));
+          const infFact = Math.pow(1 + (profile.expectedInflationRate ?? 2.5) / 100, Math.max(0, age - profile.currentAge));
           let increaseFact = infFact;
           if (profile.incomeIncreaseMode === 'custom') {
             increaseFact = Math.pow(1 + (profile.customIncomeIncreasePercent ?? 0)/100, Math.max(0, age - profile.currentAge));
@@ -4719,12 +4719,12 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       const d4BoxY = p5Y + 14;
 
       const realIncomes = (projections || []).filter((p) => p.isRetired).map((p) => {
-        const infFact = Math.pow(1 + (profile.expectedInflationRate || 2.5) / 100, p.age - currentAge);
+        const infFact = Math.pow(1 + (profile.expectedInflationRate ?? 2.5) / 100, p.age - currentAge);
         return p.purchasingPowerAdjustedIncome || ((p.netRetirementIncome || 0) / infFact);
       });
       
       const realTargets = (projections || []).filter((p) => p.isRetired).map((p) => {
-        const infFact = Math.pow(1 + profile.expectedInflationRate / 100, Math.max(0, p.age - profile.currentAge));
+        const infFact = Math.pow(1 + (profile.expectedInflationRate ?? 2.5) / 100, Math.max(0, p.age - profile.currentAge));
         return getNominalTarget(p, p.age) / infFact;
       });
       const maxRetIncReal = Math.max(35000, ...realIncomes, ...realTargets);
@@ -4744,7 +4744,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       const targetPointsReal = d3Ages.map((item) => {
         
         const p = (projections || []).find((proj) => proj.age === item.age) || retirementYear;
-        const infFact = Math.pow(1 + profile.expectedInflationRate / 100, Math.max(0, item.age - profile.currentAge));
+        const infFact = Math.pow(1 + (profile.expectedInflationRate ?? 2.5) / 100, Math.max(0, item.age - profile.currentAge));
         const targetVal = getNominalTarget(p, item.age) / infFact;
         const y = d4BoxY + 6 + (1 - Math.min(1, targetVal / (maxRetIncReal || 1))) * 40;
         return { x: item.x, y, targetVal };
@@ -4775,7 +4775,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       d3Ages.forEach((item) => {
         const p = (projections || []).find((proj) => proj.age === item.age) || retirementYear;
         const pYear = p.year || (new Date().getFullYear() + (item.age - currentAge));
-        const infFact = Math.pow(1 + (profile.expectedInflationRate || 2.5) / 100, item.age - currentAge);
+        const infFact = Math.pow(1 + (profile.expectedInflationRate ?? 2.5) / 100, item.age - currentAge);
 
         const stateIncReal = (p.statePensionReceived || 0) / infFact;
         const dbIncReal = ((p.dbPensionIncomeReceived || 0) + (p.taxableFixedIncomeReceived || 0) + (p.taxFreeFixedIncomeReceived || 0)) / infFact;

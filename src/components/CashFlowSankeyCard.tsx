@@ -178,6 +178,8 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
       let pmt = 0;
       if (mortgage.repaymentType === 'interest_only') {
         pmt = P * r;
+      } else if (r === 0) {
+        pmt = P / n;
       } else {
         pmt = (P * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
       }
@@ -191,7 +193,7 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
     if (!selectedProjection) return null;
 
     const p = selectedProjection;
-    const inflationFactor = Math.pow(1 + (profile.expectedInflationRate || 2.5) / 100, p.age - profile.currentAge);
+    const inflationFactor = Math.pow(1 + (profile.expectedInflationRate ?? 2.5) / 100, p.age - profile.currentAge);
       const scale = adjustInflation ? 1 / inflationFactor : 1;
       const scaledMortgageAnnual = mortgagePaymentAnnual * scale;
     const partnerAgeDiff = (profile.partnerCurrentAge ?? profile.currentAge) - profile.currentAge;
@@ -208,7 +210,7 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
 
       // Calculate annual tax and deductions for this year
       const priTax = calculateUKTax(profile, pots || DEFAULT_POTS, false, p.age);
-      const partTax = isCouple ? calculatePartnerUKTax(profile, profile.partnerPots || DEFAULT_PARTNER_POTS) : null;
+      const partTax = isCouple ? calculatePartnerUKTax(profile, profile.partnerPots || DEFAULT_PARTNER_POTS, partnerAge) : null;
 
       const priEmpPension = (priTax.employeePensionContributionsAnnual || 0) * accumScale;
       const priEmprPension = (priTax.employerPensionContributionsAnnual || 0) * accumScale;

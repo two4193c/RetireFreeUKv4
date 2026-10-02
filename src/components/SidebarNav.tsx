@@ -53,7 +53,7 @@ export interface TabGroup {
 export const NAV_STRUCTURE: TabGroup[] = [
   {
     id: 'inputs',
-    label: 'Inputs & Assets',
+    label: 'Input & Accumulation',
     icon: Wallet,
     description: 'Personal profile, income, pots, pension and lump sums',
     cards: [
@@ -67,6 +67,20 @@ export const NAV_STRUCTURE: TabGroup[] = [
       { id: 'card-inputs-fixedincome', label: 'Fixed Income & Annuities' },
       { id: 'card-inputs-lifeevents', label: 'Life Events' },
       { id: 'card-inputs-fees', label: 'Investment & Adviser Fees' },
+      { id: 'card-inputs-macro', label: 'Asset Allocation & Macro Settings' },
+    ],
+  },
+  {
+    id: 'strategy',
+    label: 'Drawdown Planning',
+    icon: Percent,
+    description: 'Drawdown sequencing, tax brackets, and spending phases',
+    cards: [
+      { id: 'card-strat-planner', label: 'Drawdown Strategy Planner' },
+      { id: 'card-strat-phases', label: 'Retirement Income Requirement' },
+      { id: 'card-dynamic-optimiser', label: 'Dynamic Optimiser' },
+      { id: 'card-strat-gilt-ladder', label: 'UK Gilt Ladder Strategy' },
+      { id: 'card-strat-macro', label: 'Asset Allocation & Macro Settings' },
     ],
   },
   {
@@ -84,21 +98,8 @@ export const NAV_STRUCTURE: TabGroup[] = [
     ],
   },
   {
-    id: 'strategy',
-    label: 'Strategy',
-    icon: Percent,
-    description: 'Drawdown sequencing, tax brackets, and spending phases',
-    cards: [
-      { id: 'card-strat-planner', label: 'Drawdown Strategy Planner' },
-      { id: 'card-strat-phases', label: 'Retirement Income Requirement' },
-      { id: 'card-dynamic-optimiser', label: 'Dynamic Optimiser' },
-      { id: 'card-strat-gilt-ladder', label: 'UK Gilt Ladder Strategy' },
-      { id: 'card-strat-macro', label: 'Asset Allocation & Macro Settings' },
-    ],
-  },
-  {
     id: 'mortgage',
-    label: 'Housing Strategy',
+    label: 'Property Planning',
     icon: Home,
     description: 'Mortgage payoff & right-sizing / downsizing strategy',
     cards: [
@@ -137,7 +138,7 @@ export const NAV_STRUCTURE: TabGroup[] = [
   },
   {
     id: 'risk',
-    label: 'Risk Analysis',
+    label: 'Risk Projection',
     icon: Shield,
     description: 'Monte Carlo stress tests and historic sequence of returns',
     cards: [

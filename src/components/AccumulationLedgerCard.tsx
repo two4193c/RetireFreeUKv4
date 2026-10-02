@@ -31,6 +31,7 @@ interface AccumulationLedgerCardProps {
   profile: UserProfile;
   pots: InvestmentPots;
   onChange?: (updatedProfile: UserProfile) => void;
+  defaultExpandMode?: LedgerExpandMode;
 }
 
 export type LedgerCategory = 'all' | 'contribution' | 'transfer';
@@ -101,13 +102,14 @@ export const AccumulationLedgerCard: React.FC<AccumulationLedgerCardProps> = ({
   profile,
   pots,
   onChange,
+  defaultExpandMode = 'monthly',
 }) => {
   const [categoryFilter, setCategoryFilter] = useState<LedgerCategory>('all');
   const [ownerFilter, setOwnerFilter] = useState<LedgerOwnerFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOrder, setSortOrder] = useState<LedgerSortOrder>('asc');
   const [showDisabled, setShowDisabled] = useState(true);
-  const [expandMode, setExpandMode] = useState<LedgerExpandMode>('annual');
+  const [expandMode, setExpandMode] = useState<LedgerExpandMode>(defaultExpandMode);
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 50;
 

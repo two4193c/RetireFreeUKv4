@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { UserProfile, InvestmentPots, AnnuityType, AnnuityDurationOption, CoupleMaxSpendScope } from '../types';
 import { solveMaximizedSpend, SolveMaximizedSpendResult, createCandidateProfile, AnnuityFloorMode, getScopeEvaluationInputs } from '../utils/maximizedSpendSolver';
 import { generateProjections } from '../utils/projectionEngine';
+import { getPensionAccessAge } from '../utils/ukTaxEngine';
 import {
   X,
   Sparkles,
@@ -44,7 +45,7 @@ export const MaximizedSpendSolverModal: React.FC<MaximizedSpendSolverModalProps>
 
   const currentRetirementAge = profile.targetRetirementAge || 60;
   const initialEndAge = profile.lifeExpectancyAge || 95;
-  const pensionAccessAge = profile.protectedPensionAccessAge || 57;
+  const pensionAccessAge = getPensionAccessAge(profile);
 
   const cfg = profile.maximizedSpendConfig;
 

@@ -218,7 +218,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
       const priDefYears = profile.statePensionDeferralYears || 0;
       const stateAge = (profile.statePensionAge || 67) + priDefYears;
       const startYear = currentYear + (stateAge - primaryCurrentAge);
-      const amount = (profile.statePensionAmountAnnual || 12547.6) * (1 + 0.058 * priDefYears);
+      const amount = (profile.statePensionAmountAnnual ?? profile.fullStatePensionAmount ?? 12547.6) * (1 + 0.058 * priDefYears);
       items.push({
         id: 'pri_state',
         name: priDefYears > 0 ? `State Pension (Deferred to ${stateAge})` : 'State Pension',
@@ -235,7 +235,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
       const partDefYears = profile.partnerStatePensionDeferralYears || 0;
       const partStateAge = (profile.partnerStatePensionAge || 67) + partDefYears;
       const startYear = currentYear + (partStateAge - partnerCurrentAge);
-      const amount = (profile.partnerStatePensionAmountAnnual || 12547.6) * (1 + 0.058 * partDefYears);
+      const amount = (profile.partnerStatePensionAmountAnnual ?? profile.partnerFullStatePensionAmount ?? profile.fullStatePensionAmount ?? 12547.6) * (1 + 0.058 * partDefYears);
       items.push({
         id: 'part_state',
         name: partDefYears > 0 ? `State Pension (Deferred to ${partStateAge})` : 'State Pension',
@@ -683,12 +683,12 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
       const item: Record<string, any> = {
         age,
         year: new Date().getFullYear() + (age - currentAge),
-        [scenarioA.name]: getValue(pA, scenarioA.profile.expectedInflationRate || 2.5),
-        [scenarioB.name]: getValue(pB, scenarioB.profile.expectedInflationRate || 2.5),
+        [scenarioA.name]: getValue(pA, scenarioA.profile.expectedInflationRate ?? 2.5),
+        [scenarioB.name]: getValue(pB, scenarioB.profile.expectedInflationRate ?? 2.5),
       };
 
       if (showScenarioC) {
-        item[scenarioC.name] = getValue(pC, scenarioC.profile.expectedInflationRate || 2.5);
+        item[scenarioC.name] = getValue(pC, scenarioC.profile.expectedInflationRate ?? 2.5);
       }
 
       return item;

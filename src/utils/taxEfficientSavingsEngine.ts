@@ -1,17 +1,13 @@
 import { UserProfile, InvestmentPots, YearProjection } from '../types';
 import {
   PERSONAL_ALLOWANCE,
-  RUK_BASIC_THRESHOLD,
-  RUK_HIGHER_RATE,
-  RUK_ADDITIONAL_THRESHOLD,
-  SCOT_STARTER_THRESHOLD,
-  SCOT_BASIC_THRESHOLD,
-  SCOT_INTERMEDIATE_THRESHOLD,
-  SCOT_HIGHER_THRESHOLD,
-  SCOT_ADVANCED_THRESHOLD,
+  NI_PRIMARY_THRESHOLD,
+  NI_UPPER_EARNINGS_LIMIT,
+  EMPLOYEE_NI_RATE,
+  NI_ABOVE_UEL_RATE,
   LSA_STANDARD_LIMIT,
 } from '../config/ukTaxRates';
-import { computeIncomeTaxOnAmount } from './ukTaxEngine';
+import { computeIncomeTaxOnAmount, getPensionAccessAge } from './ukTaxEngine';
 
 export interface AgeSavingsBreakdown {
   age: number;
@@ -57,7 +53,7 @@ export function calculateTaxEfficientSavingsCrossover(
 ): TaxEfficientSavingsCrossoverResult {
   const currentAge = profile.currentAge || 45;
   const targetRetirementAge = profile.targetRetirementAge || 60;
-  const pensionAccessAge = profile.protectedPensionAccessAge || (targetRetirementAge >= 57 ? 57 : 57);
+  const pensionAccessAge = getPensionAccessAge(profile);
   const isScottish = profile.taxRegion === 'scotland';
   const salary = profile.grossAnnualSalary || 0;
   const method = profile.pensionContributionMethod || 'salary_sacrifice';
@@ -66,42 +62,21 @@ export function calculateTaxEfficientSavingsCrossover(
   let contributionMarginalTaxRate = 0;
   let niSavingsRate = 0;
 
-  if (isScottish) {
-    if (salary > SCOT_ADVANCED_THRESHOLD) {
-      contributionMarginalTaxRate = 0.48;
-    } else if (salary > SCOT_HIGHER_THRESHOLD) {
-      contributionMarginalTaxRate = 0.42;
-    } else if (salary > SCOT_INTERMEDIATE_THRESHOLD) {
-      contributionMarginalTaxRate = 0.21;
-    } else if (salary > SCOT_BASIC_THRESHOLD) {
-      contributionMarginalTaxRate = 0.20;
-    } else if (salary > SCOT_STARTER_THRESHOLD) {
-      contributionMarginalTaxRate = 0.19;
-    } else {
-      contributionMarginalTaxRate = 0.0;
-    }
-  } else {
-    if (salary > RUK_ADDITIONAL_THRESHOLD) {
-      contributionMarginalTaxRate = 0.45;
-    } else if (salary > RUK_BASIC_THRESHOLD) {
-      contributionMarginalTaxRate = 0.40;
-    } else if (salary > PERSONAL_ALLOWANCE) {
-      contributionMarginalTaxRate = 0.20;
-    } else {
-      contributionMarginalTaxRate = 0.0;
-    }
+  if (salary > 0) {
+    const taxInfo = computeIncomeTaxOnAmount(salary, isScottish, profile.customTaxBands);
+    contributionMarginalTaxRate = taxInfo.marginalRate / 100;
   }
 
   // NI Savings under Salary Sacrifice
   if (method === 'salary_sacrifice') {
-    if (salary > RUK_BASIC_THRESHOLD) {
-      niSavingsRate = 0.02; // 2% NI above higher rate threshold
-    } else if (salary > PERSONAL_ALLOWANCE) {
-      niSavingsRate = 0.08; // 8% NI basic rate
+    if (salary > NI_UPPER_EARNINGS_LIMIT) {
+      niSavingsRate = NI_ABOVE_UEL_RATE; // 2% NI above higher rate / upper earnings threshold (£50,270)
+    } else if (salary > NI_PRIMARY_THRESHOLD) {
+      niSavingsRate = EMPLOYEE_NI_RATE; // 8% NI basic rate (£12,570 - £50,270)
     }
   }
 
-  const totalUpfrontReliefRate = Math.min(0.60, contributionMarginalTaxRate + niSavingsRate);
+  const totalUpfrontReliefRate = Math.min(0.70, contributionMarginalTaxRate + niSavingsRate);
 
   // For £1,000 net take-home salary invested:
   // Net cost of ISA = £1,000 net. Gross into ISA = £1,000.

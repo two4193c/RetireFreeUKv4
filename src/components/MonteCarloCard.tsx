@@ -175,7 +175,7 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
 
   const prepareChartData = (result: typeof mcResult) => {
     if (!result) return [];
-    const inflationRate = (profile.expectedInflationRate || 2.5) / 100;
+    const inflationRate = (profile.expectedInflationRate ?? 2.5) / 100;
     return result.agePercentiles.map((p) => {
       const yearOffset = p.age - profile.currentAge;
       const discount = adjustInflation ? Math.pow(1 + inflationRate, yearOffset) : 1;
@@ -462,7 +462,7 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
                   <span>1. Standard Volatility Model</span>
                 </h4>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Compounding returns fluctuate around baseline expected annual growth ({profile.expectedInvestmentReturn || 6}% accum / {profile.postRetirementReturn || 4.5}% decum).
+                  Compounding returns fluctuate around baseline expected annual growth ({profile.expectedInvestmentReturn ?? 6}% accum / {profile.postRetirementReturn ?? 4.5}% decum).
                 </p>
               </div>
               <div className="flex items-center gap-2 bg-primary-100 dark:bg-primary-950/80 text-primary-800 dark:text-primary-300 px-3 py-1.5 rounded-xl border border-primary-200 dark:border-primary-800 text-xs font-bold shrink-0">
@@ -1001,7 +1001,7 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
                 )}
               </div>
               <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 leading-tight">
-                Baseline expected returns ({profile.expectedInvestmentReturn || 6}% accum / {profile.postRetirementReturn || 4.5}% decum)
+                Baseline expected returns ({profile.expectedInvestmentReturn ?? 6}% accum / {profile.postRetirementReturn ?? 4.5}% decum)
               </p>
             </button>
 
@@ -1030,7 +1030,7 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
                 )}
               </div>
               <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 leading-tight">
-                -{(localParams.stressedReturnDropPercent ?? 2.0).toFixed(1)}% p.a. drag ({Math.max(0, (profile.expectedInvestmentReturn || 6) - (localParams.stressedReturnDropPercent ?? 2.0)).toFixed(1)}% / {Math.max(0, (profile.postRetirementReturn || 4.5) - (localParams.stressedReturnDropPercent ?? 2.0)).toFixed(1)}%)
+                -{(localParams.stressedReturnDropPercent ?? 2.0).toFixed(1)}% p.a. drag ({Math.max(0, (profile.expectedInvestmentReturn ?? 6) - (localParams.stressedReturnDropPercent ?? 2.0)).toFixed(1)}% / {Math.max(0, (profile.postRetirementReturn ?? 4.5) - (localParams.stressedReturnDropPercent ?? 2.0)).toFixed(1)}%)
               </p>
             </button>
 
@@ -1369,7 +1369,7 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
             <div className="bg-amber-50 dark:bg-amber-950/40 p-3 rounded-2xl border border-amber-200 dark:border-amber-800/60 flex items-start gap-2 text-xs text-amber-950 dark:text-amber-200 font-medium">
               <TrendingDown className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
               <p>
-                <strong>Stressed Market Model Active:</strong> Reduces expected annual growth by {(localParams.stressedReturnDropPercent ?? 2.0).toFixed(1)}% p.a. across all years ({Math.max(0, (profile.expectedInvestmentReturn || 6) - (localParams.stressedReturnDropPercent ?? 2.0)).toFixed(1)}% pre-retirement / {Math.max(0, (profile.postRetirementReturn || 4.5) - (localParams.stressedReturnDropPercent ?? 2.0)).toFixed(1)}% post-retirement). This tests how your portfolio holds up under lower growth or sustained inflationary drag.
+                <strong>Stressed Market Model Active:</strong> Reduces expected annual growth by {(localParams.stressedReturnDropPercent ?? 2.0).toFixed(1)}% p.a. across all years ({Math.max(0, (profile.expectedInvestmentReturn ?? 6) - (localParams.stressedReturnDropPercent ?? 2.0)).toFixed(1)}% pre-retirement / {Math.max(0, (profile.postRetirementReturn ?? 4.5) - (localParams.stressedReturnDropPercent ?? 2.0)).toFixed(1)}% post-retirement). This tests how your portfolio holds up under lower growth or sustained inflationary drag.
               </p>
             </div>
           ) : (localParams.marketScenario || params.marketScenario) === 'early_crash' ? (
@@ -1383,7 +1383,7 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
             <div className="bg-indigo-50/60 dark:bg-indigo-950/40 p-3 rounded-2xl border border-indigo-100 dark:border-indigo-800/60 flex items-start gap-2 text-xs text-indigo-900 dark:text-indigo-200 font-medium">
               <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" />
               <p>
-                <strong>Standard Volatility Model:</strong> Compounding returns fluctuate randomly around your expected annual growth rates ({profile.expectedInvestmentReturn || 6}% pre-retirement / {profile.postRetirementReturn || 4.5}% post-retirement).
+                <strong>Standard Volatility Model:</strong> Compounding returns fluctuate randomly around your expected annual growth rates ({profile.expectedInvestmentReturn ?? 6}% pre-retirement / {profile.postRetirementReturn ?? 4.5}% post-retirement).
                 The <strong>10th percentile</strong> shows a pessimistic sequence, while the <strong>90th percentile</strong> represents optimistic market conditions.
               </p>
             </div>

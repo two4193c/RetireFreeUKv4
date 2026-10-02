@@ -43,7 +43,7 @@ export const AnnualBreakdownTable: React.FC<AnnualBreakdownTableProps> = ({
   const [showTaxBreakdownModal, setShowTaxBreakdownModal] = useState<YearProjection | null>(null);
 
   // Inflation rate
-  const inflationRate = (profile.expectedInflationRate || 2.5) / 100;
+  const inflationRate = (profile.expectedInflationRate ?? 2.5) / 100;
 
   // Format currency helper
   const formatCurrency = (val: number, isReal = false, yearOffset = 0) => {

@@ -449,13 +449,13 @@ export function calculateTrapOptimizations(
   const paSacrifice = isEligiblePa
     ? Math.min(salary - targetPaSalary, PENSION_ANNUAL_ALLOWANCE)
     : 0;
-  const paMarginalSaved = isScottish ? 65 : 62; // 60% tax + 2% NI (or 63% scot + 2% NI)
+  const paMarginalSaved = isScottish ? 69.5 : 62; // 60% tax + 2% NI (or 67.5% Scot Advanced Rate taper + 2% NI)
   const paNetSaving = paSacrifice * (paMarginalSaved / 100);
 
   traps.push({
     id: 'pa_taper',
     title: '60% Personal Allowance Trap Buster',
-    badge: '62% Tax & NI Relief',
+    badge: isScottish ? '69.5% Tax & NI Relief' : '62% Tax & NI Relief',
     description: `Sacrifice earnings down to £100,000 to eliminate the brutal Personal Allowance taper and reclaim £1 of tax-free allowance for every £2 sacrificed.`,
     recommendedSacrifice: paSacrifice,
     targetSalary: targetPaSalary,
@@ -485,20 +485,23 @@ export function calculateTrapOptimizations(
     isApplicable: isEligibleCb,
   });
 
-  // 3. 40% Higher Rate Threshold (£50,270)
-  const isEligibleHr = salary > 50270;
-  const targetHrSalary = 50270;
+  // 3. Higher Rate Threshold (£50,270 rUK / £43,662 Scotland)
+  const targetHrSalary = isScottish ? 43662 : 50270;
+  const isEligibleHr = salary > targetHrSalary;
   const hrSacrifice = isEligibleHr
     ? Math.min(salary - targetHrSalary, PENSION_ANNUAL_ALLOWANCE)
     : 0;
-  const hrMarginalSaved = isScottish ? 44 : 42; // 40% + 2% NI (or 42% Scot + 2% NI)
+  // In Scotland: 42% Higher Rate + 2% NI (above £50,270) or + 8% NI (between £43,662 and £50,270)
+  const hrMarginalSaved = isScottish ? (salary > 50270 ? 44 : 50) : 42;
   const hrNetSaving = hrSacrifice * (hrMarginalSaved / 100);
 
   traps.push({
     id: 'higher_rate',
-    title: 'Higher Rate (40%) Bracket Buster',
-    badge: '42% Relief',
-    description: `Sacrifice all income taxed at the Higher Rate (40% + 2% NI) down to the Basic Rate threshold of £50,270.`,
+    title: isScottish ? 'Higher Rate (42%) Bracket Buster' : 'Higher Rate (40%) Bracket Buster',
+    badge: `${hrMarginalSaved}% Relief`,
+    description: isScottish
+      ? `Sacrifice all income taxed at the Scottish Higher Rate (42% + NI) down to the Intermediate Rate threshold of £43,662.`
+      : `Sacrifice all income taxed at the Higher Rate (40% + 2% NI) down to the Basic Rate threshold of £50,270.`,
     recommendedSacrifice: hrSacrifice,
     targetSalary: targetHrSalary,
     marginalRateSavedPercent: hrMarginalSaved,

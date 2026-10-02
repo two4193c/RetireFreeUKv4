@@ -128,7 +128,7 @@ export const UserGuideCard: React.FC<UserGuideCardProps> = ({
               </div>
               <h4 className="font-bold text-slate-900 dark:text-white">Enter Core Assets</h4>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                In <strong>Inputs & Assets</strong>, enter your DC pensions, DB pensions, ISAs, Cash, State Pension age/amount, and Property.
+                In <strong>Input & Accumulation</strong>, enter your DC pensions, DB pensions, ISAs, Cash, State Pension age/amount, and Property.
               </p>
             </div>
 
@@ -195,7 +195,7 @@ export const UserGuideCard: React.FC<UserGuideCardProps> = ({
       content: (
         <div className="space-y-4 text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
           <p>
-            The <strong>Inputs & Assets</strong> page builds the baseline financial foundation for your retirement projection:
+            The <strong>Input & Accumulation</strong> page builds the baseline financial foundation for your retirement projection:
           </p>
 
           <div className="space-y-3">
@@ -642,7 +642,7 @@ export const UserGuideCard: React.FC<UserGuideCardProps> = ({
               </div>
               <h4 className="font-bold text-slate-900 dark:text-white">Risk & Estate (IHT)</h4>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Stress-test sequence of returns in <strong>Risk Analysis</strong> and model 40% IHT liabilities under April 2027 rules.
+                Stress-test sequence of returns in <strong>Risk Projection</strong> and model 40% IHT liabilities under April 2027 rules.
               </p>
             </div>
 
@@ -689,7 +689,7 @@ export const UserGuideCard: React.FC<UserGuideCardProps> = ({
       content: (
         <div className="space-y-4 text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
           <p>
-            The <strong>Inputs & Assets</strong> page builds the baseline financial foundation for your retirement projection:
+            The <strong>Input & Accumulation</strong> page builds the baseline financial foundation for your retirement projection:
           </p>
 
           <div className="space-y-3">
@@ -947,7 +947,7 @@ export const UserGuideCard: React.FC<UserGuideCardProps> = ({
     },
     {
       id: 'risk-and-estate',
-      title: '6. Risk Analysis & Estate (IHT) Planning',
+      title: '6. Risk Projection & Estate (IHT) Planning',
       icon: ShieldCheck,
       badge: 'Protection',
       summary: 'Stress-testing sequence of returns, inflation shocks, and calculating Inheritance Tax liabilities.',

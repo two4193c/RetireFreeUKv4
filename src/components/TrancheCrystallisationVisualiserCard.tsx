@@ -131,7 +131,7 @@ export const TrancheCrystallisationVisualiserCard: React.FC<TrancheCrystallisati
 
     if (initialCurrentDcPot > 0 && firstTrancheAge > currentAge) {
       const years = firstTrancheAge - currentAge;
-      const returnRate = (profile.expectedInvestmentReturn || 6.5) / 100;
+      const returnRate = (profile.expectedInvestmentReturn ?? 6.5) / 100;
       return Math.round(initialCurrentDcPot * Math.pow(1 + returnRate, years));
     }
     return initialCurrentDcPot;

@@ -180,6 +180,7 @@ export function getCouponTaxRate(
   // Auto-detect from income
   if (profileGrossSalary > 125140) return 0.45;
   if (profileGrossSalary > 50270) return 0.40;
+  if (profileGrossSalary <= 12570) return 0.0;
   return 0.20;
 }
 
@@ -198,7 +199,7 @@ export function calculateGiltLadder(
   const personStatePensionAge = isPartner
     ? ((profile.partnerStatePensionAge ?? profile.statePensionAge ?? 67) + (profile.partnerStatePensionDeferralYears || 0))
     : ((profile.statePensionAge || 67) + (profile.statePensionDeferralYears || 0));
-  const personSalary = isPartner ? (profile.partnerGrossAnnualSalary ?? 0) : (profile.grossAnnualSalary || 50000);
+  const personSalary = isPartner ? (profile.partnerGrossAnnualSalary ?? 0) : (profile.grossAnnualSalary ?? 50000);
   const personDOB = isPartner ? profile.partnerDateOfBirth : profile.dateOfBirth;
 
   const purchaseAge = Math.max(personCurrentAge, config.purchaseAge || config.startAge || personRetireAge);
@@ -238,9 +239,9 @@ export function calculateGiltLadder(
     personSalary
   );
 
-  const inflationRate = (profile.expectedInflationRate || 2.5) / 100;
+  const inflationRate = (profile.expectedInflationRate ?? 2.5) / 100;
   const isInflationLinked = Boolean(config.inflationLinked);
-  const defaultYtm = config.customYieldPercent || 4.35;
+  const defaultYtm = config.customYieldPercent ?? 4.35;
 
   // Initialize rungs structure
   interface RawRung {
@@ -305,10 +306,13 @@ export function calculateGiltLadder(
 
     // Sum net coupons coming in year `i` from all longer-dated gilts (j > i)
     let couponsFromFutureRungs = 0;
+    let couponsTaxFromFutureRungs = 0;
     for (let j = i + 1; j < durationYears; j++) {
       const futureRung = rawRungs[j];
-      const futureNetCoupon = futureRung.nominal * (futureRung.couponPercent / 100) * (1 - couponTaxRate);
+      const futureGrossCoupon = futureRung.nominal * (futureRung.couponPercent / 100);
+      const futureNetCoupon = futureGrossCoupon * (1 - couponTaxRate);
       couponsFromFutureRungs += futureNetCoupon;
+      couponsTaxFromFutureRungs += (futureGrossCoupon - futureNetCoupon);
     }
     current.futureCouponsReceived = Math.round(couponsFromFutureRungs);
 
@@ -329,7 +333,7 @@ export function calculateGiltLadder(
 
     current.grossCouponIncome = grossCoupon;
     current.netCouponIncome = netCoupon;
-    current.taxPaid = taxOnThisRungCoupon;
+    current.taxPaid = Math.round(taxOnThisRungCoupon + couponsTaxFromFutureRungs);
     current.totalNetPayout = current.redemptionValue + current.netCouponIncome + current.futureCouponsReceived;
     current.taxFreeGain = Math.max(0, current.redemptionValue - current.purchaseCost);
   }
@@ -398,7 +402,7 @@ export function calculateGiltLadder(
     maturingPrincipal: r.redemptionValue,
     grossCouponIncome: r.grossCouponIncome,
     netCouponIncome: r.netCouponIncome,
-    annualCouponCashflow: r.netCouponIncome,
+    annualCouponCashflow: r.netCouponIncome + (r.futureCouponsReceived || 0),
     futureCouponsReceived: r.futureCouponsReceived,
     totalNetPayout: r.totalNetPayout,
     taxFreeGain: r.taxFreeGain,

@@ -7,6 +7,7 @@ export function getTotalFeePercent(fees?: InvestmentFeeConfig): number {
       fees.primaryPots.workplacePension,
       fees.primaryPots.sipp,
       fees.primaryPots.stocksAndSharesIsa,
+      fees.primaryPots.cashIsa,
       fees.primaryPots.gia,
     ].filter(Boolean);
     if (pots.length > 0) {
@@ -117,13 +118,14 @@ export function getEffectiveDecumulationReturn(
 export function getPotAssetAllocation(
   aaSplit?: AssetAllocationSplit,
   owner: 'primary' | 'partner' = 'primary',
-  potType?: 'workplacePension' | 'sipp' | 'stocksAndSharesIsa' | 'cashIsa' | 'gia' | 'pension',
+  potType?: 'workplacePension' | 'sipp' | 'stocksAndSharesIsa' | 'cashIsa' | 'gia' | 'pension' | 'lisa' | 'cashSavings',
   phase: 'accumulation' | 'decumulation' = 'accumulation'
 ): AssetAllocationConfig {
   if (aaSplit?.enabled && aaSplit?.perPotAllocationsEnabled && potType) {
     const personPots = owner === 'partner' ? aaSplit.partnerPots : aaSplit.primaryPots;
     if (personPots) {
-      const potPhases = potType === 'pension' ? (personPots.workplacePension || personPots.sipp) : personPots[potType];
+      const potKey = potType === 'lisa' ? 'stocksAndSharesIsa' : (potType === 'cashSavings' ? 'cashIsa' : potType);
+      const potPhases = potKey === 'pension' ? (personPots.workplacePension || personPots.sipp) : personPots[potKey as keyof typeof personPots];
       if (potPhases) {
         const config = phase === 'decumulation' ? potPhases.decumulation : potPhases.accumulation;
         if (config) return config;
@@ -139,7 +141,7 @@ export function getPotAssetAllocation(
 export function getPotGrossReturn(
   aaSplit?: AssetAllocationSplit,
   owner: 'primary' | 'partner' = 'primary',
-  potType?: 'workplacePension' | 'sipp' | 'stocksAndSharesIsa' | 'cashIsa' | 'gia' | 'pension',
+  potType?: 'workplacePension' | 'sipp' | 'stocksAndSharesIsa' | 'cashIsa' | 'gia' | 'pension' | 'lisa' | 'cashSavings',
   phase: 'accumulation' | 'decumulation' = 'accumulation',
   fallbackReturn?: number
 ): number {

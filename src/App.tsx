@@ -1131,8 +1131,10 @@ function App() {
                       <RightSizingCard isStudioMode={true} profile={profile} onChange={handleProfileChange} />
                     </div>
                     {/* 15. Asset allocation & macro settings */}
-                    <div id="card-adv-macro" className="scroll-mt-24 transition-all duration-300">
-                      <MacroSettingsCard isStudioMode={true} profile={profile} pots={pots} onChange={handleProfileChange} />
+                    <div id="card-inputs-macro" className="scroll-mt-24 transition-all duration-300">
+                      <div id="card-adv-macro">
+                        <MacroSettingsCard isStudioMode={true} profile={profile} pots={pots} onChange={handleProfileChange} />
+                      </div>
                     </div>
                     {/* 16. AI Tax & Pension Advisor */}
                     <div id="card-ai-advisor" className="scroll-mt-24 transition-all duration-300">
@@ -1350,7 +1352,7 @@ function App() {
               </div>
             )}
 
-            {/* Tab 1: Inputs & Assets */}
+            {/* Tab 1: Input & Accumulation */}
             {!studioMode && activeTab === 'inputs' && (
               <div className="space-y-6">
                 <div id="card-inputs-couple" className="scroll-mt-24 transition-all duration-300">
@@ -1398,59 +1400,13 @@ function App() {
                     </div>
                   </>
                 )}
-              </div>
-            )}
-
-            {/* Tab 2: Accumulation Review (Advanced Only) */}
-            {!studioMode && activeTab === 'accumulation_review' && appMode === 'advanced' && (
-              <div className="space-y-6">
-                <div id="card-accum-savings" className="scroll-mt-24 transition-all duration-300">
-                  <MonthlySavingsRateCard profile={profile} pots={pots} />
-                </div>
-                <div id="card-accum-efficiency" className="scroll-mt-24 transition-all duration-300">
-                  <IsaVsPensionEfficiencyCard
-                    profile={profile}
-                    pots={pots}
-                    taxResult={taxResult}
-                    projections={projections}
-                    onChange={handleProfileChange}
-                  />
-                </div>
-                <div id="card-accum-tax" className="scroll-mt-24 transition-all duration-300">
-                  <TaxOptimizerCard
-                    taxResult={taxResult}
-                    profile={profile}
-                    pots={pots}
-                    onOptimizeTaxTrap={handleOptimizeTaxTrap}
-                  />
-                </div>
-                <div id="card-accum-salary-sacrifice" className="scroll-mt-24 transition-all duration-300">
-                  <SalarySacrificeOptimizerCard
-                    profile={profile}
-                    pots={pots}
-                    onChange={handleProfileChange}
-                  />
-                </div>
-                <div id="card-accum-asset-location" className="scroll-mt-24 transition-all duration-300">
-                  <AssetLocationTaxDragCard
-                    profile={profile}
-                    pots={pots}
-                    projections={projections}
-                    onChange={handleProfileChange}
-                    basis="current"
-                  />
-                </div>
-                <div id="card-accum-ledger" className="scroll-mt-24 transition-all duration-300">
-                  <AccumulationLedgerCard
-                    profile={profile}
-                    pots={pots}
-                    onChange={handleProfileChange}
-                  />
+                <div id="card-inputs-macro" className="scroll-mt-24 transition-all duration-300">
+                  <MacroSettingsCard profile={profile} pots={pots} onChange={handleProfileChange} />
                 </div>
               </div>
             )}
 
-            {/* Tab 3: Strategy */}
+            {/* Tab 2: Drawdown Planning */}
             {!studioMode && activeTab === 'strategy' && (
               <div className="space-y-6">
                 <div id="card-strat-planner" className="scroll-mt-24 transition-all duration-300">
@@ -1501,6 +1457,55 @@ function App() {
                     <MacroSettingsCard profile={profile} pots={pots} onChange={handleProfileChange} />
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Tab 3: Accumulation Review (Advanced Only) */}
+            {!studioMode && activeTab === 'accumulation_review' && appMode === 'advanced' && (
+              <div className="space-y-6">
+                <div id="card-accum-savings" className="scroll-mt-24 transition-all duration-300">
+                  <MonthlySavingsRateCard profile={profile} pots={pots} />
+                </div>
+                <div id="card-accum-efficiency" className="scroll-mt-24 transition-all duration-300">
+                  <IsaVsPensionEfficiencyCard
+                    profile={profile}
+                    pots={pots}
+                    taxResult={taxResult}
+                    projections={projections}
+                    onChange={handleProfileChange}
+                  />
+                </div>
+                <div id="card-accum-tax" className="scroll-mt-24 transition-all duration-300">
+                  <TaxOptimizerCard
+                    taxResult={taxResult}
+                    profile={profile}
+                    pots={pots}
+                    onOptimizeTaxTrap={handleOptimizeTaxTrap}
+                  />
+                </div>
+                <div id="card-accum-salary-sacrifice" className="scroll-mt-24 transition-all duration-300">
+                  <SalarySacrificeOptimizerCard
+                    profile={profile}
+                    pots={pots}
+                    onChange={handleProfileChange}
+                  />
+                </div>
+                <div id="card-accum-asset-location" className="scroll-mt-24 transition-all duration-300">
+                  <AssetLocationTaxDragCard
+                    profile={profile}
+                    pots={pots}
+                    projections={projections}
+                    onChange={handleProfileChange}
+                    basis="current"
+                  />
+                </div>
+                <div id="card-accum-ledger" className="scroll-mt-24 transition-all duration-300">
+                  <AccumulationLedgerCard
+                    profile={profile}
+                    pots={pots}
+                    onChange={handleProfileChange}
+                  />
+                </div>
               </div>
             )}
 
@@ -1728,7 +1733,7 @@ function App() {
               </div>
             )}
 
-            {/* Tab 9: Housing Strategy */}
+            {/* Tab 9: Property Planning */}
             {!studioMode && activeTab === 'mortgage' && (
               <div className="space-y-6">
                 <div id="card-mortgage-debt" className="scroll-mt-24 transition-all duration-300">

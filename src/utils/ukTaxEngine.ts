@@ -163,14 +163,18 @@ export function getPensionAccessAge(profile: UserProfile): number {
   if (profile.protectedPensionAccessAge !== undefined && profile.protectedPensionAccessAge !== null && !isNaN(profile.protectedPensionAccessAge) && profile.protectedPensionAccessAge > 0) {
     return profile.protectedPensionAccessAge;
   }
-  if (!profile.dateOfBirth) return 57;
-  const dob = new Date(profile.dateOfBirth);
-  if (isNaN(dob.getTime())) return 57;
-
-  // Born before 6 April 1973 -> Normal Minimum Pension Age (NMPA) is 55
-  // Born on or after 6 April 1973 -> NMPA increases to 57 starting 6 April 2028
-  const cutoff = new Date('1973-04-06');
-  return dob < cutoff ? 55 : 57;
+  if (profile.dateOfBirth) {
+    const dob = new Date(profile.dateOfBirth);
+    if (!isNaN(dob.getTime())) {
+      // Born before 6 April 1973 -> Normal Minimum Pension Age (NMPA) is 55
+      // Born on or after 6 April 1973 -> NMPA increases to 57 starting 6 April 2028
+      const cutoff = new Date('1973-04-06');
+      return dob < cutoff ? 55 : 57;
+    }
+  }
+  const age = profile.currentAge ?? 35;
+  const birthYear = new Date().getFullYear() - age;
+  return birthYear < 1973 ? 55 : 57;
 }
 
 export function getLumpSumTakeAge(profile: UserProfile): number {
@@ -287,7 +291,7 @@ export function getLsaLimit(profile: UserProfile): number {
 
 export function calculateMaxPcls(pensionBalance: number, profile: UserProfile) {
   const lsaLimit = getLsaLimit(profile);
-  const pclsPercent = profile.pclsLumpSumPercent || 25;
+  const pclsPercent = profile.pclsLumpSumPercent ?? 25;
   const uncappedPcls = pensionBalance * (pclsPercent / 100);
 
   // Sum active DB scheme tax-free lump sums for primary
@@ -328,9 +332,9 @@ export function getPartnerPensionAccessAge(profile: UserProfile): number {
       return dob < cutOff ? 55 : 57;
     }
   }
-  const partnerAge = profile.partnerCurrentAge || profile.currentAge || 35;
+  const partnerAge = profile.partnerCurrentAge ?? profile.currentAge ?? 35;
   const partnerBirthYear = new Date().getFullYear() - partnerAge;
-  return partnerBirthYear < 1971 ? 55 : 57;
+  return partnerBirthYear < 1973 ? 55 : 57;
 }
 
 export function getPartnerLumpSumTakeAge(profile: UserProfile): number {
@@ -361,7 +365,7 @@ export function getPartnerLsaLimit(profile: UserProfile): number {
 
 export function calculatePartnerMaxPcls(pensionBalance: number, profile: UserProfile) {
   const lsaLimit = getPartnerLsaLimit(profile);
-  const pclsPercent = profile.partnerPclsLumpSumPercent || 25;
+  const pclsPercent = profile.partnerPclsLumpSumPercent ?? 25;
   const uncappedPcls = pensionBalance * (pclsPercent / 100);
 
   // Sum active DB scheme tax-free lump sums for partner
@@ -405,9 +409,9 @@ export function getProjectedPensionAtTakeAge(
 
   const overrides = profile.potReturnOverrides;
   const useOverrides = Boolean(overrides?.enabled);
-  const returnAccumulation = useOverrides && overrides.workplacePensionReturn
+  const returnAccumulation = useOverrides && overrides.workplacePensionReturn !== undefined && overrides.workplacePensionReturn !== null
     ? overrides.workplacePensionReturn / 100
-    : (profile.expectedInvestmentReturn || 6.0) / 100;
+    : (profile.expectedInvestmentReturn ?? 6.0) / 100;
 
   const targetRetireAge = isPartner
     ? (profile.partnerTargetRetirementAge || profile.targetRetirementAge)
@@ -493,7 +497,7 @@ export function getProjectedPensionAtAccessAge(
     return Math.round(pensionPot);
   }
 
-  const returnAccumulation = (profile.expectedInvestmentReturn || 6.0) / 100;
+  const returnAccumulation = (profile.expectedInvestmentReturn ?? 6.0) / 100;
 
   for (let age = profile.currentAge; age < pensionAccessAge; age++) {
     // Existing pot earns full year return; ongoing monthly contributions earn half-year average return
@@ -632,7 +636,7 @@ export function aggregateIncome(
   const currentEvalAge = evalAge ?? ownerCurrentAge;
   const isRetired = currentEvalAge >= ownerRetireAge;
 
-  const grossSalary = isRetired ? 0 : (isPartner ? (profile.partnerGrossAnnualSalary || 0) : (profile.grossAnnualSalary || 0));
+  const grossSalary = isRetired ? 0 : (isPartner ? (profile.partnerGrossAnnualSalary ?? profile.grossAnnualSalary ?? 0) : (profile.grossAnnualSalary || 0));
 
   let taxableFixedIncome = 0;
   (profile.fixedIncomeStreams || []).forEach((stream) => {
@@ -659,7 +663,7 @@ export function aggregateIncome(
   });
 
   let statePensionIncome = 0;
-  const includeSp = isPartner ? profile.partnerIncludeStatePension : profile.includeStatePension;
+  const includeSp = isPartner ? (profile.partnerIncludeStatePension !== false) : (profile.includeStatePension !== false);
   const deferralYears = isPartner ? (profile.partnerStatePensionDeferralYears || 0) : (profile.statePensionDeferralYears || 0);
   const deferralBoost = 1 + (0.058 * deferralYears);
   const spAge = (isPartner ? (profile.partnerStatePensionAge ?? 67) : (profile.statePensionAge ?? 67)) + deferralYears;
@@ -1274,7 +1278,7 @@ export function calculateUKTax(
   // 2. There is a SIGNIFICANT INCREASE (>30% of PCLS and >£7,500) in pension contributions resulting from the PCLS.
   // NOTE: Maintaining normal, pre-existing, routine workplace pension contributions paid from normal salary
   // does NOT constitute recycling because there is no "significant increase" resulting from the lump sum (PTM133800).
-  const isUpfrontPcls = profile.takeLumpSumAtStart ?? false;
+  const isUpfrontPcls = (profile.crystallisationMode === 'upfront') || (profile.takeLumpSumAtStart ?? false);
   const pclsLumpSumValue = Math.round(maxTaxFreeCashCurrentBalance);
   
   let isPclsRecyclingRisk = false;
@@ -1489,6 +1493,7 @@ export function calculatePartnerUKTax(
 
   const partnerProfile: UserProfile = {
     ...profile,
+    name: profile.partnerName || 'Partner',
     grossAnnualSalary: profile.partnerGrossAnnualSalary ?? 35000,
     taxRegion: profile.partnerTaxRegion || profile.taxRegion,
     pensionContributionMethod: profile.partnerPensionContributionMethod || profile.pensionContributionMethod,
@@ -1498,10 +1503,21 @@ export function calculatePartnerUKTax(
     protectedPensionAccessAge: profile.partnerProtectedPensionAccessAge,
     pclsLumpSumPercent: profile.partnerPclsLumpSumPercent ?? 25,
     takeLumpSumAtStart: profile.partnerTakeLumpSumAtStart ?? false,
+    crystallisationMode: profile.partnerCrystallisationMode ?? profile.crystallisationMode,
+    crystallisationTranches: profile.partnerCrystallisationTranches,
+    lumpSumTargetPot: profile.partnerLumpSumTargetPot,
+    lumpSumSplits: profile.partnerLumpSumSplits,
     lumpSumTiming: profile.partnerLumpSumTiming ?? 'access_age',
     lumpSumCustomAge: profile.partnerLumpSumCustomAge,
     lsaProtectionType: profile.partnerLsaProtectionType ?? 'standard',
     customLsaAllowance: profile.partnerCustomLsaAllowance,
+    drawdownStrategy: profile.partnerDrawdownStrategy || profile.drawdownStrategy,
+    incomeProductOption: profile.partnerIncomeProductOption || profile.incomeProductOption,
+    employerNiPassThroughPercent: profile.partnerEmployerNiPassThroughPercent ?? profile.employerNiPassThroughPercent,
+    employerNiRate: profile.partnerEmployerNiRate ?? profile.employerNiRate,
+    hasTriggeredMpaa: profile.partnerHasTriggeredMpaa ?? false,
+    carryForwardAllowance: profile.partnerCarryForwardAllowance,
+    giltLadderConfig: profile.partnerGiltLadderConfig,
   };
 
   return calculateUKTax(partnerProfile, pots, true, evalAge);

@@ -99,7 +99,7 @@ export const MortgageGuideCard: React.FC = () => {
           <span>Property Right-Sizing & Equity Release</span>
         </h3>
         <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
-          Downsizing (or "right-sizing") is a powerful strategy to unlock liquidity from your primary residence. When modeling a property downsize in the Housing Strategy section, consider these factors:
+          Downsizing (or "right-sizing") is a powerful strategy to unlock liquidity from your primary residence. When modeling a property downsize in the Property Planning section, consider these factors:
         </p>
         <ul className="list-disc pl-5 space-y-1.5 text-slate-600 dark:text-slate-400 text-xs">
           <li><strong>Primary Residence Relief (PRR):</strong> Selling your main home does not incur Capital Gains Tax.</li>

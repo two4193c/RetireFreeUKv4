@@ -1,7 +1,7 @@
 import { UserProfile, InvestmentPots, TaxCalculationResult } from '../types';
 import { DEFAULT_PARTNER_POTS, DEFAULT_POTS, ZERO_POTS, sanitizePots } from './defaultData';
 import { parseTransferYear } from './potTransferUtils';
-import { getPensionAccessAge, getPartnerPensionAccessAge, getLsaLimit, getPartnerLsaLimit, getLumpSumTakeAge, calculateUKTax, calculatePartnerUKTax, allocateLumpSumToPots } from './ukTaxEngine';
+import { getPensionAccessAge, getPartnerPensionAccessAge, getLsaLimit, getPartnerLsaLimit, getLumpSumTakeAge, getPartnerLumpSumTakeAge, calculateUKTax, calculatePartnerUKTax, allocateLumpSumToPots } from './ukTaxEngine';
 import { getTargetIncomeForAge, getActualSpendingTargetForAge } from './projectionEngine';
 import { SCOT_INTERMEDIATE_THRESHOLD, RUK_BASIC_THRESHOLD, SCOT_HIGHER_THRESHOLD, RUK_ADDITIONAL_THRESHOLD, STATE_PENSION_FULL_ANNUAL } from '../config/ukTaxRates';
 import { getEffectiveAccumulationReturn, getEffectiveDecumulationReturn } from './assetAllocation';
@@ -58,7 +58,7 @@ export function calculateCashBufferRequiredDetails(
 ): CashBufferSummary {
   const safeCurrentAge = Math.max(18, Math.min(100, Number(profile.currentAge) || 30));
   const currentYear = new Date().getFullYear();
-  const inflation = (profile.expectedInflationRate || 2.5) / 100;
+  const inflation = (profile.expectedInflationRate ?? 2.5) / 100;
   
   const sanitizedPots = sanitizePots(pots, pots ? ZERO_POTS : DEFAULT_POTS);
   const sanitizedPartnerPots = sanitizePots(profile.partnerPots, profile.partnerPots ? ZERO_POTS : (profile.isCouplePlanning ? DEFAULT_PARTNER_POTS : ZERO_POTS));
@@ -174,7 +174,10 @@ export function calculateCashBufferRequiredDetails(
     const isBracketStrategy = ['tax_optimizer', 'tax_free_bracket', 'basic_rate_bracket', 'higher_rate_bracket'].includes(profile.drawdownStrategy || 'isa_first');
     
     if (isBracketStrategy) {
-      const paRoom = 12570 * inflationFactor;
+      const indexTaxBands = profile.indexTaxBands ?? true;
+      const paMult = indexTaxBands ? inflationFactor : 1;
+      const singlePa = profile.customTaxBands?.enabled ? (profile.customTaxBands?.personalAllowance ?? 12570) : 12570;
+      const paRoom = (profile.isCouplePlanning ? singlePa * 2 : singlePa) * paMult;
       const availablePA = Math.max(0, paRoom - totalGuaranteedIncome);
       taxFreePensionAvoided = Math.min(availablePA, Math.max(0, targetNetIncome - totalGuaranteedIncome));
     }
@@ -306,9 +309,9 @@ export function runMonteCarloSimulation(
 
   const marketScenario = customParams?.marketScenario || 'standard';
 
-  const inflation = (profile.expectedInflationRate || 2.5) / 100;
-  let meanAccumReturn = getEffectiveAccumulationReturn(profile.expectedInvestmentReturn || 6.0, profile.assetAllocationSplit, profile.investmentFees) / 100;
-  let meanDecumReturn = getEffectiveDecumulationReturn(profile.postRetirementReturn || 4.5, profile.assetAllocationSplit, profile.investmentFees) / 100;
+  const inflation = (profile.expectedInflationRate ?? 2.5) / 100;
+  let meanAccumReturn = getEffectiveAccumulationReturn(profile.expectedInvestmentReturn ?? 6.0, profile.assetAllocationSplit, profile.investmentFees) / 100;
+  let meanDecumReturn = getEffectiveDecumulationReturn(profile.postRetirementReturn ?? 4.5, profile.assetAllocationSplit, profile.investmentFees) / 100;
 
   const stressedReturnDrop = (customParams?.stressedReturnDropPercent ?? 2.0) / 100;
   const crashStartAge = customParams?.crashStartAge ?? profile.targetRetirementAge;
@@ -331,6 +334,7 @@ export function runMonteCarloSimulation(
   const pensionAccessAge = getPensionAccessAge(profile);
   const partnerPensionAccessAge = profile.isCouplePlanning ? getPartnerPensionAccessAge(profile) : 57;
   const lumpSumTakeAge = getLumpSumTakeAge(profile);
+  const partnerLumpSumTakeAge = profile.isCouplePlanning ? getPartnerLumpSumTakeAge(profile) : 57;
   const maxLsa = getLsaLimit(profile);
   const partnerMaxLsa = profile.isCouplePlanning ? getPartnerLsaLimit(profile) : maxLsa;
 
@@ -650,7 +654,7 @@ function parseAnnuityTypeConfig(type?: string) {
         profile.isCouplePlanning &&
         isUpfrontPartner &&
         !partnerDead && !partnerPclsTaken &&
-        partnerAge >= lumpSumTakeAge &&
+        partnerAge >= partnerLumpSumTakeAge &&
         partnerCanAccessPension &&
         partnerPensionPot > 0 &&
         (profile.partnerPclsLumpSumPercent ?? 25) > 0
@@ -692,35 +696,21 @@ function parseAnnuityTypeConfig(type?: string) {
             } else if (contrib.targetPot === 'sipp') {
               const sippGross = contrib.sippContributionType === 'gross' ? gross : gross * 1.25;
               addProRata("pension", sippGross, isPartner);
-            } else if (contrib.targetPot === 'stocks_and_shares_isa') {
+            } else if (contrib.targetPot === 'stocks_and_shares_isa' || contrib.targetPot === 'cash_isa') {
               addProRata("isa", gross, isPartner);
             } else if (contrib.targetPot === 'lisa') {
               const lisaBonus = Math.min(gross, 4000) * 0.25;
               addProRata("isa", gross + lisaBonus, isPartner);
-            } else if (contrib.targetPot === 'gia' || contrib.targetPot === 'cash_savings' || contrib.targetPot === 'cash_isa') {
+            } else if (contrib.targetPot === 'gia' || contrib.targetPot === 'cash_savings') {
               addProRata("cashGia", gross, isPartner);
             }
           }
         }
       });
 
-      // Process decumulation life events
-      const activeLifeEvents = (profile.decumulationLifeEvents || []).filter(e => e.enabled !== false);
-      activeLifeEvents.forEach(e => {
-        const isEvtPartner = e.owner === 'partner';
-        if (isEvtPartner && (!profile.isCouplePlanning || partnerDead)) return;
-        const evalAge = isEvtPartner ? partnerAge : age;
-        if (e.age !== evalAge) return;
-        const evtAmount = e.inflationLinked !== false ? (e.amount || 0) * inflationFactor : (e.amount || 0);
-        const potStr = (e.targetPot || '') as string;
-        const evtPotType = (potStr === 'stocks_and_shares_isa' || potStr === 'cash_isa' || potStr === 'lisa') ? 'isa'
-          : (potStr === 'sipp' || potStr === 'workplace_pension') ? 'pension' : 'cashGia';
-        if (e.type === 'income') {
-          addProRata(evtPotType, evtAmount, isEvtPartner);
-        } else {
-          deductProRata(evtPotType, evtAmount);
-        }
-      });
+      // Note: Decumulation life events are processed inside the decumulation (isRetired) branch below,
+      // which correctly splits income events (addProRata) from expense events (lifeEventsExpenseThisYear).
+      // Processing them here would double-count during decumulation years.
 
       // Process Pot Transfers for this simulation year
       const activeTransfers = (profile.potTransfers || []).filter((t) => t.enabled);
@@ -778,8 +768,13 @@ function parseAnnuityTypeConfig(type?: string) {
             const dstIsGiaCash = transfer.destinationPot === 'gia' || transfer.destinationPot === 'cash_savings';
 
             let addedAmount = actualTransfer;
-            if (dstIsSipp && !srcIsPension) addedAmount = actualTransfer * 1.25;
-            else if (dstIsLisa) addedAmount = actualTransfer + Math.min(actualTransfer, 4000) * 0.25;
+            const dstOwnerAge = isDstPartner ? partnerAge : age;
+            const srcIsLisa = transfer.sourcePot === 'lisa';
+            if (dstIsSipp && !srcIsPension) {
+              addedAmount = actualTransfer * 1.25;
+            } else if (dstIsLisa && dstOwnerAge < 50 && !srcIsLisa) {
+              addedAmount = actualTransfer + Math.min(actualTransfer, 4000) * 0.25;
+            }
 
             if (dstIsPension) addProRata("pension", addedAmount, isDstPartner);
             else if (dstIsIsa || dstIsLisa) addProRata("isa", addedAmount, isDstPartner);
@@ -824,7 +819,7 @@ function parseAnnuityTypeConfig(type?: string) {
 
       // If Cash Buffer strategy is enabled, ensure required buffer is ring-fenced in cash at crash start age
       if (useCashBuf && marketScenario === 'early_crash' && age === crashStartAge) {
-        const bufSummary = calculateCashBufferRequiredDetails(profile, pots, crashStartAge, cashBufYears);
+        const bufSummary = calculateCashBufferRequiredDetails(profile, cleanPots, crashStartAge, cashBufYears);
         const neededBuffer = bufSummary.totalNetCashBufferRequired;
         if (cashGiaPot < neededBuffer) {
           let shortfall = neededBuffer - cashGiaPot;
@@ -854,10 +849,10 @@ function parseAnnuityTypeConfig(type?: string) {
               const partDraw = partnerCanAccessPension ? pensionDraw * (1 - priR) : 0;
               deductProRata("pension", pensionDraw);
 
-            if (primaryCumulativeTaxFreeDrawn < maxLsa && priDraw > 0) {
+            if (!pclsTaken && primaryCumulativeTaxFreeDrawn < maxLsa && priDraw > 0) {
               primaryCumulativeTaxFreeDrawn += Math.min(priDraw * 0.25, Math.max(0, maxLsa - primaryCumulativeTaxFreeDrawn));
             }
-            if (partnerCumulativeTaxFreeDrawn < partnerMaxLsa && partDraw > 0) {
+            if (!partnerPclsTaken && partnerCumulativeTaxFreeDrawn < partnerMaxLsa && partDraw > 0) {
               partnerCumulativeTaxFreeDrawn += Math.min(partDraw * 0.25, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn));
             }
             
@@ -876,16 +871,20 @@ function parseAnnuityTypeConfig(type?: string) {
           ? calculatePartnerUKTax(profile, partnerPots, partnerAge)
           : null;
 
-        let primaryPensionContrib = primaryTaxThisYr.regularPensionContributionsAnnual ?? primaryTaxThisYr.totalPensionContributionsAnnual;
-        let primaryIsaContrib = (primaryTaxThisYr.regularSsIsaContributionsAnnual ?? primaryTaxThisYr.regularIsaContributionsAnnual ?? 0) + (primaryTaxThisYr.regularLisaContributionsAnnual ?? 0) + primaryTaxThisYr.lisaGovernmentBonusAnnual;
-        let primaryCashGiaContrib = (primaryTaxThisYr.regularCashGiaContributionsAnnual ?? primaryTaxThisYr.totalCashGiaContributionsAnnual ?? 0) + (primaryTaxThisYr.regularCashIsaContributionsAnnual ?? 0);
+        const primaryPensionContrib = primaryTaxThisYr.regularPensionContributionsAnnual ?? primaryTaxThisYr.totalPensionContributionsAnnual;
+        const primaryIsaContrib = (primaryTaxThisYr.regularSsIsaContributionsAnnual ?? primaryTaxThisYr.regularIsaContributionsAnnual ?? 0) + (primaryTaxThisYr.regularLisaContributionsAnnual ?? 0) + primaryTaxThisYr.lisaGovernmentBonusAnnual;
+        const primaryCashGiaContrib = (primaryTaxThisYr.regularCashGiaContributionsAnnual ?? primaryTaxThisYr.totalCashGiaContributionsAnnual ?? 0) + (primaryTaxThisYr.regularCashIsaContributionsAnnual ?? 0);
+
+        let partnerPensionContrib = 0;
+        let partnerIsaContrib = 0;
+        let partnerCashGiaContrib = 0;
 
         if (profile.isCouplePlanning && partnerTaxThisYr) {
           const partnerRetireAge = profile.partnerTargetRetirementAge ?? 60;
           if (partnerAge < partnerRetireAge) {
-            primaryPensionContrib += partnerTaxThisYr.regularPensionContributionsAnnual ?? partnerTaxThisYr.totalPensionContributionsAnnual;
-            primaryIsaContrib += (partnerTaxThisYr.regularSsIsaContributionsAnnual ?? partnerTaxThisYr.regularIsaContributionsAnnual ?? 0) + (partnerTaxThisYr.regularLisaContributionsAnnual ?? 0) + partnerTaxThisYr.lisaGovernmentBonusAnnual;
-            primaryCashGiaContrib += (partnerTaxThisYr.regularCashGiaContributionsAnnual ?? partnerTaxThisYr.totalCashGiaContributionsAnnual ?? 0) + (partnerTaxThisYr.regularCashIsaContributionsAnnual ?? 0);
+            partnerPensionContrib = partnerTaxThisYr.regularPensionContributionsAnnual ?? partnerTaxThisYr.totalPensionContributionsAnnual;
+            partnerIsaContrib = (partnerTaxThisYr.regularSsIsaContributionsAnnual ?? partnerTaxThisYr.regularIsaContributionsAnnual ?? 0) + (partnerTaxThisYr.regularLisaContributionsAnnual ?? 0) + partnerTaxThisYr.lisaGovernmentBonusAnnual;
+            partnerCashGiaContrib = (partnerTaxThisYr.regularCashGiaContributionsAnnual ?? partnerTaxThisYr.totalCashGiaContributionsAnnual ?? 0) + (partnerTaxThisYr.regularCashIsaContributionsAnnual ?? 0);
           }
         }
 
@@ -903,8 +902,52 @@ function parseAnnuityTypeConfig(type?: string) {
         addProRata('isa', primaryIsaContrib * inflationFactor * (1 + randomReturn / 2), false);
         addProRata('cashGia', primaryCashGiaContrib * inflationFactor * (1 + (randomReturn * 0.85) / 2), false);
 
-        
-        
+        if (partnerPensionContrib > 0) addProRata('pension', partnerPensionContrib * inflationFactor * (1 + randomReturn / 2), true);
+        if (partnerIsaContrib > 0) addProRata('isa', partnerIsaContrib * inflationFactor * (1 + randomReturn / 2), true);
+        if (partnerCashGiaContrib > 0) addProRata('cashGia', partnerCashGiaContrib * inflationFactor * (1 + (randomReturn * 0.85) / 2), true);
+
+        // Process accumulation life events (income injections or capital expense deductions)
+        const activeAccumEvents = (profile.decumulationLifeEvents || []).filter((e) => e.enabled);
+        for (const event of activeAccumEvents) {
+          const isPartnerEvent = event.owner === 'partner';
+          const targetAgeMatches = isPartnerEvent ? partnerAge === event.age : age === event.age;
+          if (targetAgeMatches) {
+            const rawAmount = Number(event.amount) || 0;
+            if (rawAmount > 0) {
+              const inflLinked = event.inflationLinked ?? true;
+              const eventAmount = inflLinked ? rawAmount * inflationFactor : rawAmount;
+              if (event.type === 'income') {
+                const potTarget = event.targetPot || 'cash_savings';
+                const isPension = potTarget === 'sipp';
+                const isIsa = (potTarget as string) === 'stocks_and_shares_isa' || (potTarget as string) === 'cash_isa' || (potTarget as string) === 'lisa' || (potTarget as string) === 'isa';
+                const potName = isPension ? 'pension' : isIsa ? 'isa' : 'cashGia';
+                addProRata(potName, eventAmount, isPartnerEvent);
+              } else {
+                const potTarget = event.targetPot || 'cash_savings';
+                const isPension = potTarget === 'sipp';
+                const isIsa = (potTarget as string) === 'stocks_and_shares_isa' || (potTarget as string) === 'cash_isa' || (potTarget as string) === 'lisa' || (potTarget as string) === 'isa';
+                const potName = isPension ? 'pension' : isIsa ? 'isa' : 'cashGia';
+
+                const availTarget = potName === 'pension' ? (canAccessPension ? pensionPot : 0) : potName === 'isa' ? isaPot : cashGiaPot;
+                const drawn = Math.min(availTarget, eventAmount);
+                deductProRata(potName, drawn);
+                let remExpense = eventAmount - drawn;
+                if ((event.allowWaterfall ?? false) && remExpense > 0) {
+                  if (cashGiaPot > 0 && remExpense > 0) {
+                    const d = Math.min(cashGiaPot, remExpense);
+                    deductProRata('cashGia', d);
+                    remExpense -= d;
+                  }
+                  if (isaPot > 0 && remExpense > 0) {
+                    const d = Math.min(isaPot, remExpense);
+                    deductProRata('isa', d);
+                    remExpense -= d;
+                  }
+                }
+              }
+            }
+          }
+        }
 
       } else {
         // DECUMULATION PHASE (For Primary, but partner might still be working)
@@ -946,7 +989,7 @@ function parseAnnuityTypeConfig(type?: string) {
           const grossPotForAnnuity = primaryPensionPot * (allocPercent / 100);
           let actualCapitalToAnnuity = grossPotForAnnuity;
 
-          if (primaryCumulativeTaxFreeDrawn < maxLsa) {
+          if (!pclsTaken && primaryCumulativeTaxFreeDrawn < maxLsa) {
             const uncrystPcls = Math.min(grossPotForAnnuity * 0.25, Math.max(0, maxLsa - primaryCumulativeTaxFreeDrawn));
             actualCapitalToAnnuity = grossPotForAnnuity - uncrystPcls;
             const alloc = allocateLumpSumToPots(uncrystPcls, profile.lumpSumTargetPot, profile.lumpSumSplits);
@@ -996,7 +1039,7 @@ function parseAnnuityTypeConfig(type?: string) {
           const grossPotForAnnuity = partnerPensionPot * (allocPercent / 100);
           let actualCapitalToAnnuity = grossPotForAnnuity;
 
-          if (partnerCumulativeTaxFreeDrawn < partnerMaxLsa) {
+          if (!partnerPclsTaken && partnerCumulativeTaxFreeDrawn < partnerMaxLsa) {
             const uncrystPcls = Math.min(grossPotForAnnuity * 0.25, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn));
             actualCapitalToAnnuity = grossPotForAnnuity - uncrystPcls;
             const alloc = allocateLumpSumToPots(uncrystPcls, profile.partnerLumpSumTargetPot || profile.lumpSumTargetPot, profile.partnerLumpSumSplits || profile.lumpSumSplits);
@@ -1175,45 +1218,51 @@ function parseAnnuityTypeConfig(type?: string) {
           }
         }
 
+        let incomeIncreaseFactor = inflationFactor;
+        if (profile.incomeIncreaseMode === 'custom') {
+          const customRate = (profile.customIncomeIncreasePercent ?? 0) / 100;
+          incomeIncreaseFactor = Math.pow(1 + customRate, yr);
+        }
+
         // Guyton-Klinger Dynamic Spending Rules
-          if (profile.dynamicSpendingRules?.enabled) {
-            const totalWealth = pensionPot + isaPot + cashGiaPot;
-            const nominalBaseTarget = getActualSpendingTargetForAge(profile, age) * inflationFactor;
+        if (profile.dynamicSpendingRules?.enabled) {
+          const totalWealth = pensionPot + isaPot + cashGiaPot;
+          const nominalBaseTarget = getActualSpendingTargetForAge(profile, age) * incomeIncreaseFactor;
+          
+          if (initialWithdrawalRate === 0 && totalWealth > 0) {
+            initialWithdrawalRate = nominalBaseTarget / totalWealth;
+          } else if (initialWithdrawalRate > 0 && totalWealth > 0) {
+            const currentWithdrawalRate = (nominalBaseTarget * gkMultiplier) / totalWealth;
+            const presThresh = 1 + (profile.dynamicSpendingRules.capitalPreservationThresholdPercent / 100);
+            const presCut = profile.dynamicSpendingRules.capitalPreservationCutPercent / 100;
+            const prospThresh = 1 - (profile.dynamicSpendingRules.prosperityThresholdPercent / 100);
+            const prospInc = profile.dynamicSpendingRules.prosperityIncreasePercent / 100;
             
-            if (initialWithdrawalRate === 0 && totalWealth > 0) {
-              initialWithdrawalRate = nominalBaseTarget / totalWealth;
-            } else if (initialWithdrawalRate > 0 && totalWealth > 0) {
-              const currentWithdrawalRate = (nominalBaseTarget * gkMultiplier) / totalWealth;
-              const presThresh = 1 + (profile.dynamicSpendingRules.capitalPreservationThresholdPercent / 100);
-              const presCut = profile.dynamicSpendingRules.capitalPreservationCutPercent / 100;
-              const prospThresh = 1 - (profile.dynamicSpendingRules.prosperityThresholdPercent / 100);
-              const prospInc = profile.dynamicSpendingRules.prosperityIncreasePercent / 100;
-              
-              if (currentWithdrawalRate > (initialWithdrawalRate * presThresh)) {
-                gkMultiplier *= (1 - presCut);
-              } else if (currentWithdrawalRate < (initialWithdrawalRate * prospThresh)) {
-                gkMultiplier *= (1 + prospInc);
-              }
-              
-              if (profile.dynamicSpendingRules.skipInflationOnNegativeReturn && randomReturn < 0) {
-                // Cancel out this year's inflation growth
-                gkMultiplier /= (1 + inflation);
-              }
+            if (currentWithdrawalRate > (initialWithdrawalRate * presThresh)) {
+              gkMultiplier *= (1 - presCut);
+            } else if (currentWithdrawalRate < (initialWithdrawalRate * prospThresh)) {
+              gkMultiplier *= (1 + prospInc);
+            }
+            
+            if (profile.dynamicSpendingRules.skipInflationOnNegativeReturn && randomReturn < 0) {
+              // Cancel out this year's inflation growth
+              gkMultiplier /= (1 + inflation);
             }
           }
+        }
 
-          // Required inflation-adjusted gross target
-          const maxDrawdownIncomeTarget = getTargetIncomeForAge(profile, age) * gkMultiplier;
-          const actualSpendingBase = getActualSpendingTargetForAge(profile, age) * gkMultiplier;
+        // Required inflation-adjusted gross target
+        const maxDrawdownIncomeTarget = getTargetIncomeForAge(profile, age) * gkMultiplier;
+        const actualSpendingBase = getActualSpendingTargetForAge(profile, age) * gkMultiplier;
         const isReinvestExcess = Boolean(
           profile.reinvestExcessDrawdown ||
           profile.maximizedSpendConfig?.reinvestExcessDrawdown
         );
 
-        const requiredNetIncomeTarget = actualSpendingBase * inflationFactor + lifeEventsExpenseThisYear;
-              const isBracketStrategy = ['tax_optimizer', 'tax_free_bracket', 'basic_rate_bracket', 'higher_rate_bracket'].includes(profile.drawdownStrategy || 'isa_first');
-      const effectiveReinvestExcess = isReinvestExcess || isBracketStrategy;
-      const drawdownNetTarget = effectiveReinvestExcess ? (maxDrawdownIncomeTarget * inflationFactor + lifeEventsExpenseThisYear) : requiredNetIncomeTarget;
+        const requiredNetIncomeTarget = actualSpendingBase * incomeIncreaseFactor + lifeEventsExpenseThisYear;
+        const isBracketStrategy = ['tax_optimizer', 'tax_free_bracket', 'basic_rate_bracket', 'higher_rate_bracket'].includes(profile.drawdownStrategy || 'isa_first');
+        const effectiveReinvestExcess = isReinvestExcess || isBracketStrategy;
+        const drawdownNetTarget = effectiveReinvestExcess ? (maxDrawdownIncomeTarget * incomeIncreaseFactor + lifeEventsExpenseThisYear) : requiredNetIncomeTarget;
 
         // State Pension (Primary + Partner if couple mode)
         let primaryStatePension = 0;
@@ -1279,8 +1328,8 @@ function parseAnnuityTypeConfig(type?: string) {
           return tax;
         };
 
-        const priBaseTax = computeIncomeTax(primaryTaxableGuaranteed, inflationFactor, isScottishTax);
-        const partBaseTax = profile.isCouplePlanning ? computeIncomeTax(partnerTaxableGuaranteed, inflationFactor, isPartnerScottishTax) : 0;
+        const priBaseTax = computeIncomeTax(primaryTaxableGuaranteed, inflMult, isScottishTax);
+        const partBaseTax = profile.isCouplePlanning ? computeIncomeTax(partnerTaxableGuaranteed, inflMult, isPartnerScottishTax) : 0;
         const guaranteedTaxLiability = priBaseTax + partBaseTax;
         const partnerTaxFreeSecured = (profile.isCouplePlanning && !partnerDead) ? partnerTaxFreeFixedIncomeThisYr : 0;
         const guaranteedIncomeTotal = primaryTaxableGuaranteed + partnerTaxableGuaranteed + primaryTaxFreeFixedIncomeThisYr + partnerTaxFreeSecured;
@@ -1344,13 +1393,16 @@ function parseAnnuityTypeConfig(type?: string) {
 
         const approximateNetFromGrossForOwner = (grossDraw: number, owner: 'primary' | 'partner'): number => {
           let taxFree = 0;
-          if (owner === 'primary') {
-            if (primaryCumulativeTaxFreeDrawn < maxLsa) {
-               taxFree = Math.min(grossDraw * 0.25, maxLsa - primaryCumulativeTaxFreeDrawn);
-            }
-          } else {
-            if (partnerCumulativeTaxFreeDrawn < partnerMaxLsa) {
-               taxFree = Math.min(grossDraw * 0.25, partnerMaxLsa - partnerCumulativeTaxFreeDrawn);
+          const hasTakenUpfrontPcls = owner === 'primary' ? (isUpfrontPrimary && pclsTaken) : (isUpfrontPartner && partnerPclsTaken);
+          if (!hasTakenUpfrontPcls) {
+            if (owner === 'primary') {
+              if (primaryCumulativeTaxFreeDrawn < maxLsa) {
+                 taxFree = Math.min(grossDraw * 0.25, maxLsa - primaryCumulativeTaxFreeDrawn);
+              }
+            } else {
+              if (partnerCumulativeTaxFreeDrawn < partnerMaxLsa) {
+                 taxFree = Math.min(grossDraw * 0.25, partnerMaxLsa - partnerCumulativeTaxFreeDrawn);
+              }
             }
           }
           const taxableDrawdown = grossDraw - taxFree;
@@ -1359,8 +1411,8 @@ function parseAnnuityTypeConfig(type?: string) {
           const totalTaxable = guaranteedTaxable + previousDraws + taxableDrawdown;
           const isScot = owner === 'primary' ? isScottishTax : isPartnerScottishTax;
           
-          const totalTax = computeIncomeTax(totalTaxable, inflationFactor, isScot);
-          const baseTax = computeIncomeTax(guaranteedTaxable + previousDraws, inflationFactor, isScot);
+          const totalTax = computeIncomeTax(totalTaxable, inflMult, isScot);
+          const baseTax = computeIncomeTax(guaranteedTaxable + previousDraws, inflMult, isScot);
           const marginalTax = Math.max(0, totalTax - baseTax);
           
           return grossDraw - marginalTax;
@@ -1416,19 +1468,26 @@ function parseAnnuityTypeConfig(type?: string) {
           const doReinvest = isCashBufferActiveYr ? false : isReinvestExcess;
 
           const executePensionDeduct = (grossDrawNeeded: number) => {
-             const draw = Math.min(pPot, grossDrawNeeded);
-             executeDeduct('pension', draw, owner);
+             const currentPPot = isPrimary ? primaryPensionPot : partnerPensionPot;
+             const draw = Math.min(currentPPot, grossDrawNeeded);
+             if (draw <= 0) return;
              const netDraw = approximateNetFromGrossForOwner(draw, owner);
-             // Update LSA AFTER tax calc so the current draw's tax-free portion is correctly computed
-             if (isPrimary && primaryCumulativeTaxFreeDrawn < maxLsa) {
-                primaryCumulativeTaxFreeDrawn += Math.min(draw * 0.25, Math.max(0, maxLsa - primaryCumulativeTaxFreeDrawn));
-             } else if (!isPrimary && partnerCumulativeTaxFreeDrawn < partnerMaxLsa) {
-                partnerCumulativeTaxFreeDrawn += Math.min(draw * 0.25, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn));
+             executeDeduct('pension', draw, owner);
+             // Capture LSA headroom BEFORE incrementing so taxFreeThisDraw reflects this draw's actual tax-free portion
+             const hasTakenUpfrontPcls = isPrimary ? (isUpfrontPrimary && pclsTaken) : (isUpfrontPartner && partnerPclsTaken);
+             const lsaHeadroomBefore = isPrimary
+               ? Math.max(0, maxLsa - primaryCumulativeTaxFreeDrawn)
+               : Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn);
+             const taxFreeThisDraw = hasTakenUpfrontPcls ? 0 : Math.min(draw * 0.25, lsaHeadroomBefore);
+             // Update LSA AFTER capturing tax-free portion
+             if (!hasTakenUpfrontPcls) {
+               if (isPrimary && primaryCumulativeTaxFreeDrawn < maxLsa) {
+                  primaryCumulativeTaxFreeDrawn += taxFreeThisDraw;
+               } else if (!isPrimary && partnerCumulativeTaxFreeDrawn < partnerMaxLsa) {
+                  partnerCumulativeTaxFreeDrawn += taxFreeThisDraw;
+               }
              }
-             // Track cumulative taxable pension draws for accurate marginal tax
-             const taxFreeThisDraw = owner === 'primary'
-               ? (primaryCumulativeTaxFreeDrawn < maxLsa ? Math.min(draw * 0.25, Math.max(0, maxLsa - primaryCumulativeTaxFreeDrawn)) : 0)
-               : (partnerCumulativeTaxFreeDrawn < partnerMaxLsa ? Math.min(draw * 0.25, Math.max(0, partnerMaxLsa - partnerCumulativeTaxFreeDrawn)) : 0);
+             // Track cumulative taxable pension draws for accurate marginal tax on subsequent draws this year
              if (owner === 'primary') primaryTaxableDrawnThisYear += (draw - taxFreeThisDraw);
              else partnerTaxableDrawnThisYear += (draw - taxFreeThisDraw);
              remaining = Math.max(0, remaining - netDraw);
@@ -1523,30 +1582,42 @@ function parseAnnuityTypeConfig(type?: string) {
                executePensionDeduct(targetGross);
             }
             if (activeStrategy === 'tax_free_then_cash') {
-              if (cPot > 0 && remaining > 0) {
-                const draw = Math.min(cPot, remaining);
+              const currentCPot = isPrimary ? primaryCashGiaPot : partnerCashGiaPot;
+              if (currentCPot > 0 && remaining > 0) {
+                const draw = Math.min(currentCPot, remaining);
                 executeDeduct('cashGia', draw, owner);
                 remaining -= draw;
                 netAchieved += draw;
               }
-              if (iPot > 0 && remaining > 0) {
-                const draw = Math.min(iPot, remaining);
+              const currentIPot = isPrimary ? primaryIsaPot : partnerIsaPot;
+              if (currentIPot > 0 && remaining > 0) {
+                const draw = Math.min(currentIPot, remaining);
                 executeDeduct('isa', draw, owner);
                 remaining -= draw;
                 netAchieved += draw;
               }
             } else {
-              if (iPot > 0 && remaining > 0) {
-                const draw = Math.min(iPot, remaining);
+              const currentIPot = isPrimary ? primaryIsaPot : partnerIsaPot;
+              if (currentIPot > 0 && remaining > 0) {
+                const draw = Math.min(currentIPot, remaining);
                 executeDeduct('isa', draw, owner);
                 remaining -= draw;
                 netAchieved += draw;
               }
-              if (cPot > 0 && remaining > 0) {
-                const draw = Math.min(cPot, remaining);
+              const currentCPot = isPrimary ? primaryCashGiaPot : partnerCashGiaPot;
+              if (currentCPot > 0 && remaining > 0) {
+                const draw = Math.min(currentCPot, remaining);
                 executeDeduct('cashGia', draw, owner);
                 remaining -= draw;
                 netAchieved += draw;
+              }
+            }
+            // If spending need still remains after bracket, ISA, and Cash are drawn, draw remaining shortfall from pension
+            if (hasAccess && remaining > 0) {
+              const currentPPot = isPrimary ? primaryPensionPot : partnerPensionPot;
+              if (currentPPot > 0) {
+                const grossDrawNeeded = getGrossPensionNeededForNetForOwner(remaining, currentPPot, owner);
+                executePensionDeduct(grossDrawNeeded);
               }
             }
           } else if (activeStrategy === 'pro_rata') {
@@ -1613,7 +1684,58 @@ function parseAnnuityTypeConfig(type?: string) {
           }
         }
         
-        const totalNetAchieved = priAchieved + partAchieved;
+        let totalNetAchieved = priAchieved + partAchieved;
+        let householdShortfall = remainingNeeded - totalNetAchieved;
+
+        // Household safety fallback: if individual strategies didn't fully meet the income need, sweep remaining liquid pots and pensions
+        if (householdShortfall > 0) {
+          if (primaryIsaPot > 0 && householdShortfall > 0) {
+            const draw = Math.min(primaryIsaPot, householdShortfall);
+            executeDeduct('isa', draw, 'primary');
+            householdShortfall -= draw;
+            priAchieved += draw;
+          }
+          if (profile.isCouplePlanning && !partnerDead && partnerIsaPot > 0 && householdShortfall > 0) {
+            const draw = Math.min(partnerIsaPot, householdShortfall);
+            executeDeduct('isa', draw, 'partner');
+            householdShortfall -= draw;
+            partAchieved += draw;
+          }
+          if (primaryCashGiaPot > 0 && householdShortfall > 0) {
+            const draw = Math.min(primaryCashGiaPot, householdShortfall);
+            executeDeduct('cashGia', draw, 'primary');
+            householdShortfall -= draw;
+            priAchieved += draw;
+          }
+          if (profile.isCouplePlanning && !partnerDead && partnerCashGiaPot > 0 && householdShortfall > 0) {
+            const draw = Math.min(partnerCashGiaPot, householdShortfall);
+            executeDeduct('cashGia', draw, 'partner');
+            householdShortfall -= draw;
+            partAchieved += draw;
+          }
+          if (canAccessPension && primaryPensionPot > 0 && householdShortfall > 0) {
+            const grossNeeded = getGrossPensionNeededForNetForOwner(householdShortfall, primaryPensionPot, 'primary');
+            const draw = Math.min(primaryPensionPot, grossNeeded);
+            if (draw > 0) {
+              const netDraw = approximateNetFromGrossForOwner(draw, 'primary');
+              executeDeduct('pension', draw, 'primary');
+              householdShortfall = Math.max(0, householdShortfall - netDraw);
+              priAchieved += netDraw;
+            }
+          }
+          if (profile.isCouplePlanning && !partnerDead && partnerCanAccessPension && partnerPensionPot > 0 && householdShortfall > 0) {
+            const grossNeeded = getGrossPensionNeededForNetForOwner(householdShortfall, partnerPensionPot, 'partner');
+            const draw = Math.min(partnerPensionPot, grossNeeded);
+            if (draw > 0) {
+              const netDraw = approximateNetFromGrossForOwner(draw, 'partner');
+              executeDeduct('pension', draw, 'partner');
+              householdShortfall = Math.max(0, householdShortfall - netDraw);
+              partAchieved += netDraw;
+            }
+          }
+        }
+
+        totalNetAchieved = priAchieved + partAchieved;
         remainingNeeded = Math.max(0, drawdownNetTarget - netGuaranteedIncomeSecured - totalNetAchieved);
 
         // Handle Reinvest Surplus (drawdown excess only — guaranteed surplus already reinvested above)
@@ -1652,6 +1774,10 @@ function parseAnnuityTypeConfig(type?: string) {
         partnerIsaPot = 0;
         primaryCashGiaPot += partnerCashGiaPot;
         partnerCashGiaPot = 0;
+
+        pensionPot = primaryPensionPot + partnerPensionPot;
+        isaPot = primaryIsaPot + partnerIsaPot;
+        cashGiaPot = primaryCashGiaPot + partnerCashGiaPot;
       }
 
       const deflator = (profile.adjustForInflation !== false) ? inflationFactor : 1.0;

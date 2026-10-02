@@ -408,9 +408,12 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
           stocksAndSharesIsaMonthlyContribution: (pots.stocksAndSharesIsaMonthlyContribution || 0) + solution.monthlyPotFieldValue,
         });
       } else if (solution.potType === 'workplace') {
+        const currentMonthly = pots.workplacePensionMonthlyEmployeeType === 'percent'
+          ? ((profile.grossAnnualSalary || 0) * ((pots.workplacePensionMonthlyEmployee || 0) / 100)) / 12
+          : (pots.workplacePensionMonthlyEmployee || 0);
         onPotsChange({
           ...pots,
-          workplacePensionMonthlyEmployee: (pots.workplacePensionMonthlyEmployee || 0) + solution.monthlyPotFieldValue,
+          workplacePensionMonthlyEmployee: Math.round(currentMonthly + solution.monthlyPotFieldValue),
           workplacePensionMonthlyEmployeeType: 'fixed',
         });
       }

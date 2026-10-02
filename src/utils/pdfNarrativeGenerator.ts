@@ -22,7 +22,7 @@ export function generatePlanNarrative(ctx: NarrativeContext): GeneratedPlanNarra
   const currentAge = profile.currentAge || 35;
   const retAge = profile.targetRetirementAge || 60;
   const maxAge = profile.lifeExpectancyAge || 90;
-  const annualSpend = profile.maximizedSpendConfig?.targetAnnualIncome || 30000;
+  const annualSpend = (profile.maximizedSpendConfig?.enabled ? profile.maximizedSpendConfig.targetAnnualIncome : undefined) ?? profile.targetRetirementIncomeAnnual ?? 30000;
   const isCouple = profile.isCouplePlanning ?? false;
 
   const retiredYears = (projections || []).filter((p) => p.isRetired);
@@ -59,7 +59,8 @@ export function generatePlanNarrative(ctx: NarrativeContext): GeneratedPlanNarra
   // ---------------------------------------------------------------------------
   let decumNarrative = '';
   const strategyName = (drawdownStrategy || 'Tax-Optimised Waterfall').replace(/_/g, ' ');
-  const pclsTaken = 0; 
+  const retRow = (projections || []).find((p) => p.age === retAge);
+  const pclsTaken = retRow?.pclsTaxFreeDrawnThisYear || (profile.lumpSumOption === 'take_pcls' ? (retRow?.pensionPot || 0) * 0.25 : 0); 
 
   decumNarrative = `Your drawdown strategy is configured to '${strategyName}'. `;
 
