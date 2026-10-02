@@ -3,7 +3,7 @@ import { DEFAULT_PARTNER_POTS, DEFAULT_POTS, ZERO_POTS, sanitizePots } from './d
 import { parseTransferYear } from './potTransferUtils';
 import { getPensionAccessAge, getPartnerPensionAccessAge, getLsaLimit, getPartnerLsaLimit, getLumpSumTakeAge, calculateUKTax, calculatePartnerUKTax, allocateLumpSumToPots, computeIncomeTaxOnAmount } from './ukTaxEngine';
 import { getTargetIncomeForAge, getActualSpendingTargetForAge } from './projectionEngine';
-import { SCOT_INTERMEDIATE_THRESHOLD, RUK_BASIC_THRESHOLD, SCOT_HIGHER_THRESHOLD, RUK_ADDITIONAL_THRESHOLD } from '../config/ukTaxRates';
+import { SCOT_INTERMEDIATE_THRESHOLD, RUK_BASIC_THRESHOLD, SCOT_HIGHER_THRESHOLD, RUK_ADDITIONAL_THRESHOLD, STATE_PENSION_FULL_ANNUAL } from '../config/ukTaxRates';
 import { HISTORIC_MARKET_DATA, getHistoricSequence, HistoricYearData } from '../data/historicMarketData';
 import { getPotFeePercent } from './assetAllocation';
 
@@ -617,7 +617,7 @@ export function runHistoricModelingSimulation(
       if ((profile.includeStatePension ?? true) && age >= (profile.statePensionAge || 67) + primaryDeferralYears) {
         const primaryYears = Math.min(35, profile.qualifyingYears ?? 35);
         if (primaryYears >= 10) {
-          const primaryFull = profile.fullStatePensionAmount ?? 12547.60;
+          const primaryFull = profile.fullStatePensionAmount ?? STATE_PENSION_FULL_ANNUAL;
           const primaryAnnualCalculated = Math.round((primaryYears / 35) * primaryFull * 100) / 100;
           const spAmount = profile.statePensionAmountAnnual ?? primaryAnnualCalculated;
           const primaryTripleLock = profile.enableTripleLock ?? true;
@@ -631,7 +631,7 @@ export function runHistoricModelingSimulation(
           const partnerYears = Math.min(35, profile.partnerQualifyingYears ?? 35);
           if (partnerYears >= 10) {
             const partnerTripleLock = profile.partnerEnableTripleLock ?? true;
-            const partnerFull = profile.partnerFullStatePensionAmount ?? 12547.60;
+            const partnerFull = profile.partnerFullStatePensionAmount ?? STATE_PENSION_FULL_ANNUAL;
             const partnerAnnualCalculated = Math.round((partnerYears / 35) * partnerFull * 100) / 100;
             const pSpAmount = profile.partnerStatePensionAmountAnnual ?? partnerAnnualCalculated;
             statePensionThisYr += pSpAmount * (partnerTripleLock ? cumulativeInflationFactor : 1) * partnerDeferralBoost;
@@ -1096,18 +1096,21 @@ export function runHistoricModelingSimulation(
                 remaining = Math.max(0, remaining - netDraw);
                 netAchieved += netDraw;
               }
-              if (iPot > 0 && remaining > 0) {
-                const portion = iPot / totalAccessible;
-                const draw = Math.min(iPot, remaining * portion);
-                executeDeduct('isa', draw, owner);
-                remaining -= draw;
-                netAchieved += draw;
-              }
-              if (cPot > 0 && remaining > 0) {
-                const draw = Math.min(cPot, remaining);
-                executeDeduct('cashGia', draw, owner);
-                remaining -= draw;
-                netAchieved += draw;
+              const nonPensionAccessible = iPot + cPot;
+              if (nonPensionAccessible > 0 && remaining > 0) {
+                if (iPot > 0) {
+                  const portion = iPot / nonPensionAccessible;
+                  const draw = Math.min(iPot, remaining * portion);
+                  executeDeduct('isa', draw, owner);
+                  remaining -= draw;
+                  netAchieved += draw;
+                }
+                if (cPot > 0 && remaining > 0) {
+                  const draw = Math.min(cPot, remaining);
+                  executeDeduct('cashGia', draw, owner);
+                  remaining -= draw;
+                  netAchieved += draw;
+                }
               }
             }
           }

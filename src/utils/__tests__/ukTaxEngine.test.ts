@@ -447,14 +447,20 @@ describe('ukTaxEngine - Tapering edge cases', () => {
 });
 
 describe('ukTaxEngine - Capital Gains Tax', () => {
-  it('calculates CGT with basic rate band remaining', () => {
-    const result = calculateCapitalGainsTax(20000, 10000, false);
-    expect(result.cgtTax).toBe(7000 * 0.18);
+  it('calculates CGT for non-residential assets (10% basic, 20% higher)', () => {
+    const basicResult = calculateCapitalGainsTax(20000, 10000, false);
+    expect(basicResult.cgtTax).toBe(7000 * 0.10);
+
+    const higherResult = calculateCapitalGainsTax(40000, 10000, false);
+    expect(higherResult.cgtTax).toBe(7000 * 0.20);
   });
 
-  it('calculates CGT above basic rate band', () => {
-    const result = calculateCapitalGainsTax(40000, 10000, false);
-    expect(result.cgtTax).toBe(7000 * 0.24);
+  it('calculates CGT for residential property (18% basic, 24% higher)', () => {
+    const basicResult = calculateCapitalGainsTax(20000, 10000, true);
+    expect(basicResult.cgtTax).toBe(7000 * 0.18);
+
+    const higherResult = calculateCapitalGainsTax(40000, 10000, true);
+    expect(higherResult.cgtTax).toBe(7000 * 0.24);
   });
 });
 

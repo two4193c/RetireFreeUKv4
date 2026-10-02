@@ -2,6 +2,7 @@ import { UserProfile, InvestmentPots, TaxCalculationResult, YearProjection } fro
 import { getPensionAccessAge, getPartnerPensionAccessAge, getProjectedPensionAtTakeAge, getLumpSumTakeAge, getPartnerLumpSumTakeAge, calculateMaxPcls, calculatePartnerMaxPcls, calculatePartnerUKTax } from './ukTaxEngine';
 import { sanitizePots, DEFAULT_POTS, DEFAULT_PARTNER_POTS } from './defaultData';
 import { solveMaximizedSpend } from './maximizedSpendSolver';
+import { STATE_PENSION_FULL_ANNUAL } from '../config/ukTaxRates';
 
 export interface PlanScorecard {
   runwayYears: number;
@@ -161,12 +162,12 @@ export function computePlanInsights(
   // 3. Guaranteed Floor & State Pension Coverage
   // ---------------------------------------------------------------------------
   const priStatePension = profile.includeStatePension
-    ? (profile.statePensionAmountAnnual || profile.fullStatePensionAmount || 12547.6) * priDefBoost
+    ? (profile.statePensionAmountAnnual || profile.fullStatePensionAmount || STATE_PENSION_FULL_ANNUAL) * priDefBoost
     : 0;
   const partDefYears = profile.partnerStatePensionDeferralYears || 0;
   const partDefBoost = 1 + (0.058 * partDefYears);
   const partStatePension = isCouple && profile.partnerIncludeStatePension !== false
-    ? (profile.partnerStatePensionAmountAnnual || profile.partnerFullStatePensionAmount || 12547.6) * partDefBoost
+    ? (profile.partnerStatePensionAmountAnnual || profile.partnerFullStatePensionAmount || STATE_PENSION_FULL_ANNUAL) * partDefBoost
     : 0;
   const statePensionTotalAnnual = priStatePension + partStatePension;
 
@@ -477,9 +478,10 @@ export function computePlanInsights(
   const evaluateStatePensionGap = (ownerName: string, includeSP: boolean, qYears: number, ownerPrefix: string) => {
     if (includeSP) {
       const qualifyingYears = qYears;
+      const fullSp = (ownerPrefix === 'primary' ? profile.fullStatePensionAmount : profile.partnerFullStatePensionAmount) || profile.fullStatePensionAmount || STATE_PENSION_FULL_ANNUAL;
       if (qualifyingYears < 35) {
         const missingYears = 35 - qualifyingYears;
-        const annualStatePensionLoss = Math.round(missingYears * (12547.6 / 35));
+        const annualStatePensionLoss = Math.round(missingYears * (fullSp / 35));
         const estClass3Cost = Math.round(missingYears * 907.4);
         opportunities.push({
           id: `state_pension_gap_fill_${ownerPrefix}`,
@@ -502,9 +504,9 @@ export function computePlanInsights(
           title: `${ownerName}: Full State Pension Entitlement Secured`,
           impactLevel: 'Strategic Value',
           status: 'already_optimised',
-          observation: `Full 35 qualifying National Insurance years achieved, securing 100% of the New State Pension (£12,548/yr).`,
+          observation: `Full 35 qualifying National Insurance years achieved, securing 100% of the New State Pension (£${Math.round(fullSp).toLocaleString()}/yr).`,
           actionableStep: `Maintain NI record until State Pension Age (${spaAge}).`,
-          projectedBenefit: `Guarantees £${Math.round(12547.6 * (horizonAge - spaAge)).toLocaleString()} of cumulative triple-lock indexed income across retirement.`,
+          projectedBenefit: `Guarantees £${Math.round(fullSp * (horizonAge - spaAge)).toLocaleString()} of cumulative triple-lock indexed income across retirement.`,
         owner: ownerPrefix === 'primary' ? 'Primary' : 'Partner',
         });
       }

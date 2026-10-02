@@ -3,7 +3,7 @@ import { DEFAULT_PARTNER_POTS, DEFAULT_POTS, ZERO_POTS, sanitizePots } from './d
 import { parseTransferYear } from './potTransferUtils';
 import { getPensionAccessAge, getPartnerPensionAccessAge, getLsaLimit, getPartnerLsaLimit, getLumpSumTakeAge, calculateUKTax, calculatePartnerUKTax, allocateLumpSumToPots } from './ukTaxEngine';
 import { getTargetIncomeForAge, getActualSpendingTargetForAge } from './projectionEngine';
-import { SCOT_INTERMEDIATE_THRESHOLD, RUK_BASIC_THRESHOLD, SCOT_HIGHER_THRESHOLD, RUK_ADDITIONAL_THRESHOLD } from '../config/ukTaxRates';
+import { SCOT_INTERMEDIATE_THRESHOLD, RUK_BASIC_THRESHOLD, SCOT_HIGHER_THRESHOLD, RUK_ADDITIONAL_THRESHOLD, STATE_PENSION_FULL_ANNUAL } from '../config/ukTaxRates';
 import { getEffectiveAccumulationReturn, getEffectiveDecumulationReturn } from './assetAllocation';
 
 export type MarketScenario = 'standard' | 'stressed' | 'early_crash';
@@ -122,7 +122,7 @@ export function calculateCashBufferRequiredDetails(
       if (primaryYears >= 10) {
         const primaryTripleLock = profile.enableTripleLock ?? true;
         const primaryIndexFactor = primaryTripleLock ? inflationFactor : 1;
-        const primaryFull = profile.fullStatePensionAmount ?? 12547.60;
+        const primaryFull = profile.fullStatePensionAmount ?? STATE_PENSION_FULL_ANNUAL;
         const primaryAnnualCalculated = Math.round((primaryYears / 35) * primaryFull * 100) / 100;
         const primaryBaseAmount = profile.statePensionAmountAnnual ?? primaryAnnualCalculated;
         statePension += primaryBaseAmount * primaryIndexFactor * primaryDeferralBoost;
@@ -137,7 +137,7 @@ export function calculateCashBufferRequiredDetails(
         if (partnerYears >= 10) {
           const partnerTripleLock = profile.partnerEnableTripleLock ?? true;
           const partnerIndexFactor = partnerTripleLock ? inflationFactor : 1;
-          const partnerFull = profile.partnerFullStatePensionAmount ?? 12547.60;
+          const partnerFull = profile.partnerFullStatePensionAmount ?? STATE_PENSION_FULL_ANNUAL;
           const partnerAnnualCalculated = Math.round((partnerYears / 35) * partnerFull * 100) / 100;
           const partnerBaseAmount = profile.partnerStatePensionAmountAnnual ?? partnerAnnualCalculated;
           statePension += partnerBaseAmount * partnerIndexFactor * partnerDeferralBoost;
@@ -1224,7 +1224,7 @@ function parseAnnuityTypeConfig(type?: string) {
           if (primaryYears >= 10) {
             const primaryTripleLock = profile.enableTripleLock ?? true;
             const primaryIndexFactor = primaryTripleLock ? inflationFactor : 1;
-            const primaryFull = profile.fullStatePensionAmount ?? 12547.60;
+            const primaryFull = profile.fullStatePensionAmount ?? STATE_PENSION_FULL_ANNUAL;
             const primaryAnnualCalculated = Math.round((primaryYears / 35) * primaryFull * 100) / 100;
             const primaryBaseAmount = profile.statePensionAmountAnnual ?? primaryAnnualCalculated;
             primaryStatePension = primaryBaseAmount * primaryIndexFactor * primaryDeferralBoost;
@@ -1240,7 +1240,7 @@ function parseAnnuityTypeConfig(type?: string) {
             if (partnerYears >= 10) {
               const partnerTripleLock = profile.partnerEnableTripleLock ?? true;
               const partnerIndexFactor = partnerTripleLock ? inflationFactor : 1;
-              const partnerFull = profile.partnerFullStatePensionAmount ?? 12547.60;
+              const partnerFull = profile.partnerFullStatePensionAmount ?? STATE_PENSION_FULL_ANNUAL;
               const partnerAnnualCalculated = Math.round((partnerYears / 35) * partnerFull * 100) / 100;
               const partnerBaseAmount = profile.partnerStatePensionAmountAnnual ?? partnerAnnualCalculated;
               partnerStatePension = partnerBaseAmount * partnerIndexFactor * partnerDeferralBoost;
@@ -1376,8 +1376,7 @@ function parseAnnuityTypeConfig(type?: string) {
             const net = approximateNetFromGrossForOwner(mid, owner);
             if (net >= netNeeded) { high = mid; bestGross = mid; } else { low = mid; }
           }
-          const exactGross = approximateNetFromGrossForOwner(bestGross, owner) >= netNeeded ? bestGross : potAvailable;
-          return Math.min(potAvailable, Math.ceil(exactGross));
+          return Math.min(potAvailable, Math.ceil(bestGross));
         };
 
         const applyReinvest = (opt: string, amt: number, isPartner: boolean) => {
@@ -1559,18 +1558,21 @@ function parseAnnuityTypeConfig(type?: string) {
                 const grossDrawNeeded = getGrossPensionNeededForNetForOwner(netToDraw, pPot, owner);
                 executePensionDeduct(grossDrawNeeded);
               }
-              if (iPot > 0 && remaining > 0) {
-                const portion = iPot / totalAccessible;
-                const draw = Math.min(iPot, remaining * portion);
-                executeDeduct('isa', draw, owner);
-                remaining -= draw;
-                netAchieved += draw;
-              }
-              if (cPot > 0 && remaining > 0) {
-                const draw = Math.min(cPot, remaining);
-                executeDeduct('cashGia', draw, owner);
-                remaining -= draw;
-                netAchieved += draw;
+              const nonPensionAccessible = iPot + cPot;
+              if (nonPensionAccessible > 0 && remaining > 0) {
+                if (iPot > 0) {
+                  const portion = iPot / nonPensionAccessible;
+                  const draw = Math.min(iPot, remaining * portion);
+                  executeDeduct('isa', draw, owner);
+                  remaining -= draw;
+                  netAchieved += draw;
+                }
+                if (cPot > 0 && remaining > 0) {
+                  const draw = Math.min(cPot, remaining);
+                  executeDeduct('cashGia', draw, owner);
+                  remaining -= draw;
+                  netAchieved += draw;
+                }
               }
             }
           }

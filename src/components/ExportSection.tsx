@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { UserProfile, InvestmentPots, YearProjection, UKTaxResult, PlannerScenario, CrystallisationTranche, LumpSumSplit } from '../types';
 import { DEFAULT_PARTNER_POTS, DEFAULT_POTS, DEFAULT_MORTGAGE, DEFAULT_INVESTMENT_FEES, DEFAULT_SINGLE_POT_FEE, sanitizePots } from '../utils/defaultData';
 import { calculateGiltLadder } from '../utils/giltLadderEngine';
+import { STATE_PENSION_FULL_ANNUAL } from '../config/ukTaxRates';
 import { jsPDF } from 'jspdf';
 import { FileText, Download, Printer, CheckCircle2, Sparkles, ShieldCheck, ArrowUpRight, Table, PieChart, Image as ImageIcon, BarChart3, Upload, FileJson, FileSpreadsheet } from 'lucide-react';
 import { getProjectedPensionAtTakeAge, getPensionAccessAge, getPartnerPensionAccessAge, calculateUKTax, calculatePartnerUKTax, calculateMaxPcls, calculatePartnerMaxPcls, getLumpSumTakeAge, getPartnerLumpSumTakeAge } from '../utils/ukTaxEngine';
@@ -603,7 +604,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
           rawEvents.push({
             primaryAge: primarySpaVal,
             title: `${isCouple ? `${priName} ` : ''}State Pension Start (Age ${primarySpaVal})`,
-            subtitle: `Guaranteed DWP State Pension commencement (£${Math.round(profile.statePensionAnnualAmount || 11502).toLocaleString()}/yr Triple-Lock floor)`,
+            subtitle: `Guaranteed DWP State Pension commencement (£${Math.round(profile.statePensionAmountAnnual || profile.fullStatePensionAmount || STATE_PENSION_FULL_ANNUAL).toLocaleString()}/yr Triple-Lock floor)`,
             phaseLabel: `State Pension Age (${primarySpaVal})`,
             priority: 6,
           });
@@ -617,7 +618,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
           rawEvents.push({
             primaryAge: pAgeAtPartSpa,
             title: `${partName} State Pension Start (${partName} Age ${partnerSpaVal})`,
-            subtitle: `${partName} DWP State Pension commencement (£${Math.round(profile.partnerStatePensionAnnualAmount || 11502).toLocaleString()}/yr guaranteed floor)`,
+            subtitle: `${partName} DWP State Pension commencement (£${Math.round(profile.partnerStatePensionAmountAnnual || profile.partnerFullStatePensionAmount || STATE_PENSION_FULL_ANNUAL).toLocaleString()}/yr guaranteed floor)`,
             phaseLabel: `Partner State Pension (${partName} Age ${partnerSpaVal})`,
             priority: 7,
           });

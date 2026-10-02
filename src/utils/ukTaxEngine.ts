@@ -26,6 +26,7 @@ import {
   PENSION_ANNUAL_ALLOWANCE,
   ISA_ANNUAL_LIMIT,
   LISA_ANNUAL_LIMIT,
+  STATE_PENSION_FULL_ANNUAL,
 } from '../config/ukTaxRates';
 
 /**
@@ -149,7 +150,7 @@ export function computeIncomeTaxOnAmount(
 
   const taperCeiling = paTaperThresh + (paValue * 2);
   if (grossIncome > paTaperThresh && grossIncome <= taperCeiling) {
-    marginalRate += (marginalRate / 2);
+    marginalRate += 20;
   }
 
   return { tax, marginalRate };
@@ -664,8 +665,8 @@ export function aggregateIncome(
   const spAge = (isPartner ? (profile.partnerStatePensionAge ?? 67) : (profile.statePensionAge ?? 67)) + deferralYears;
   if (includeSp && currentEvalAge >= spAge) {
     const rawSp = isPartner
-      ? (profile.partnerStatePensionAmountAnnual ?? profile.partnerFullStatePensionAmount ?? 11502)
-      : (profile.statePensionAmountAnnual ?? profile.fullStatePensionAmount ?? 11502);
+      ? (profile.partnerStatePensionAmountAnnual ?? profile.partnerFullStatePensionAmount ?? STATE_PENSION_FULL_ANNUAL)
+      : (profile.statePensionAmountAnnual ?? profile.fullStatePensionAmount ?? STATE_PENSION_FULL_ANNUAL);
     statePensionIncome = rawSp * deferralBoost;
   }
 
@@ -1516,7 +1517,7 @@ export function calculatePartnerUKTax(
 export function calculateDividendTax(
   taxableIncome: number,
   grossDividendIncome: number,
-  isScottish: boolean = false,
+  _isScottish: boolean = false, // Dividend tax is UK-wide and not devolved to Scotland
   grossRasToExtendBand: number = 0,
   unusedPersonalAllowance: number = 0
 ): {
@@ -1600,8 +1601,8 @@ export function calculateCapitalGainsTax(
   // CGT is NOT devolved to Scotland. Always use UK-wide basic rate ceiling.
   // CGT does not use Personal Allowance, so the threshold is strictly taxable income (37700).
   const basicRateCeiling = 37700 + grossRasToExtendBand;
-  const basicRate = isResidentialProperty ? 0.18 : 0.18;
-  const higherRate = isResidentialProperty ? 0.24 : 0.24;
+  const basicRate = isResidentialProperty ? 0.18 : 0.10;
+  const higherRate = isResidentialProperty ? 0.24 : 0.20;
 
   let cgtTax = 0;
   if (taxableIncome >= basicRateCeiling) {
