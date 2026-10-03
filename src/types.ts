@@ -366,6 +366,23 @@ export interface DynamicSpendingRules {
   skipInflationOnNegativeReturn: boolean;
 }
 
+export type MarketScenario = 'standard' | 'stressed' | 'early_crash';
+
+export interface MonteCarloParams {
+  numSimulations?: number;
+  accumulationVolatility?: number;
+  decumulationVolatility?: number;
+  maxAge?: number;
+  marketScenario?: MarketScenario;
+  stressedReturnDropPercent?: number;
+  crashDepthPercent?: number;
+  crashStartAge?: number;
+  crashDurationYears?: number;
+  crashYearDropsPercent?: number[];
+  useCashBuffer?: boolean;
+  cashBufferYears?: number;
+}
+
 export interface UserProfile {
   name?: string;
   dateOfBirth: string; // e.g. '1988-05-15'
@@ -526,6 +543,9 @@ export interface UserProfile {
   // UK Gilt Ladder & Liability Matching Portfolio
   giltLadderConfig?: GiltLadderConfig;
   partnerGiltLadderConfig?: GiltLadderConfig;
+
+  // Monte Carlo & Market Stress Settings
+  monteCarloParams?: MonteCarloParams;
 }
 
 export interface SinglePotFeeConfig {

@@ -90,6 +90,19 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
   const [selectedScenario, setSelectedScenario] = useState<SimulationScenarioType>('mc50');
   const [showEventLog, setShowEventLog] = useState<boolean>(true);
 
+  const activeMarketScenario = monteCarloResult?.params?.marketScenario || profile.monteCarloParams?.marketScenario || 'standard';
+  const prevScenarioRef = React.useRef(activeMarketScenario);
+
+  React.useEffect(() => {
+    if (prevScenarioRef.current !== activeMarketScenario) {
+      prevScenarioRef.current = activeMarketScenario;
+      // If user had switched to a non-MC scenario (like historical cycle/bull/stress), switch to mc50 so the live MC stress model is immediately visualized
+      if (selectedScenario !== 'mc10' && selectedScenario !== 'mc50' && selectedScenario !== 'mc90') {
+        setSelectedScenario('mc50');
+      }
+    }
+  }, [activeMarketScenario, selectedScenario]);
+
   const updateField = (key: keyof UserProfile, val: any) => {
     onChange({
       ...profile,
@@ -192,12 +205,27 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
     const prng = mulberry32(seedBase);
 
     const runs: { returns: number[]; compoundGrowth: number }[] = [];
+    const scenario = profile.monteCarloParams?.marketScenario || 'standard';
+    const stressedDrop = (profile.monteCarloParams?.stressedReturnDropPercent ?? 2.0) / 100;
+    const crashStart = profile.monteCarloParams?.crashStartAge ?? retAge;
+    const crashDur = profile.monteCarloParams?.crashDurationYears ?? 2;
+    const crashDrops = (profile.monteCarloParams?.crashYearDropsPercent || [30, 15]).map((d) => d / 100);
 
     for (let i = 0; i < numRuns; i++) {
       const returns: number[] = [];
       let compound = 1.0;
       for (let y = 0; y < horizonYears; y++) {
-        const ret = sampleLogNormal(prng, meanDecumReturn, volatility);
+        const curAge = retAge + y;
+        let ret: number;
+        if (scenario === 'stressed') {
+          ret = sampleLogNormal(prng, meanDecumReturn - stressedDrop, volatility);
+        } else if (scenario === 'early_crash' && curAge >= crashStart && curAge < crashStart + crashDur) {
+          const dropIdx = curAge - crashStart;
+          const drop = crashDrops[dropIdx] ?? 0.15;
+          ret = sampleLogNormal(prng, -drop, volatility);
+        } else {
+          ret = sampleLogNormal(prng, meanDecumReturn, volatility);
+        }
         returns.push(ret);
         compound *= 1 + ret;
       }
@@ -217,7 +245,7 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
       mc90: runs[p90Idx].returns,
       isFromRealSimulation: false,
     };
-  }, [monteCarloResult, horizonYears, initialTarget, meanDecumReturn, retAge]);
+  }, [monteCarloResult, horizonYears, initialTarget, meanDecumReturn, retAge, profile.monteCarloParams]);
 
   // Run dynamic simulation for selected scenario
   const simulationResults = useMemo(() => {
@@ -687,7 +715,23 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
                   {isMonteCarloScenario && (
                     <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 flex items-center gap-1">
                       <Sparkles className="w-3 h-3 text-indigo-500" />
-                      <span>{monteCarloPaths.isFromRealSimulation ? 'Simulated (500 Runs)' : 'Monte Carlo Path'}</span>
+                      <span>
+                        {monteCarloPaths.isFromRealSimulation
+                          ? `Simulated (500 Runs • ${
+                              activeMarketScenario === 'stressed'
+                                ? `Stressed -${(monteCarloResult?.params?.stressedReturnDropPercent ?? profile.monteCarloParams?.stressedReturnDropPercent ?? 2.0).toFixed(1)}%`
+                                : activeMarketScenario === 'early_crash'
+                                ? 'Early Crash Model'
+                                : 'Standard Market'
+                            })`
+                          : `Monte Carlo Path (${
+                              activeMarketScenario === 'stressed'
+                                ? 'Stressed Market'
+                                : activeMarketScenario === 'early_crash'
+                                ? 'Early Crash'
+                                : 'Standard Market'
+                            })`}
+                      </span>
                     </span>
                   )}
                 </div>
@@ -702,6 +746,21 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
                 <div className="flex items-center gap-1">
                   <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 px-1.5 py-0.5">
                     Monte Carlo:
+                  </span>
+                  <span
+                    className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-sm uppercase tracking-wider ${
+                      activeMarketScenario === 'stressed'
+                        ? 'bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
+                        : activeMarketScenario === 'early_crash'
+                        ? 'bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
+                    }`}
+                  >
+                    {activeMarketScenario === 'stressed'
+                      ? 'Stressed'
+                      : activeMarketScenario === 'early_crash'
+                      ? 'Crash'
+                      : 'Standard'}
                   </span>
                   <button
                     type="button"

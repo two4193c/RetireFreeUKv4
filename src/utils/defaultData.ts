@@ -213,6 +213,17 @@ export const DEFAULT_PROFILE: UserProfile = {
   mortgage: DEFAULT_MORTGAGE,
   assetAllocationSplit: DEFAULT_ASSET_ALLOCATION_SPLIT,
   investmentFees: DEFAULT_INVESTMENT_FEES,
+  monteCarloParams: {
+    numSimulations: 500,
+    accumulationVolatility: 12.0,
+    decumulationVolatility: 8.0,
+    marketScenario: 'standard',
+    stressedReturnDropPercent: 2.0,
+    crashDurationYears: 2,
+    crashYearDropsPercent: [30, 15],
+    useCashBuffer: false,
+    cashBufferYears: 2,
+  },
 };
 
 export const DEFAULT_POTS: InvestmentPots = {

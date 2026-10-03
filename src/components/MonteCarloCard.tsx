@@ -39,20 +39,42 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({
   const isStudioMode = appMode === 'studio';
   const targetHorizonAge = profile.maximizedSpendConfig?.targetEndAge || profile.lifeExpectancyAge || 95;
 
-  const [params, setParams] = useState<MonteCarloParams>({
-    numSimulations: 500,
-    accumulationVolatility: 12.0,
-    decumulationVolatility: 8.0,
-    maxAge: targetHorizonAge,
-    stressedReturnDropPercent: 2.0,
-    crashStartAge: profile.targetRetirementAge,
-    crashDurationYears: 2,
-    crashYearDropsPercent: [30, 15],
-  });
+  const initialParams: MonteCarloParams = useMemo(() => ({
+    numSimulations: profile.monteCarloParams?.numSimulations ?? 500,
+    accumulationVolatility: profile.monteCarloParams?.accumulationVolatility ?? 12.0,
+    decumulationVolatility: profile.monteCarloParams?.decumulationVolatility ?? 8.0,
+    maxAge: profile.monteCarloParams?.maxAge ?? targetHorizonAge,
+    marketScenario: profile.monteCarloParams?.marketScenario ?? 'standard',
+    stressedReturnDropPercent: profile.monteCarloParams?.stressedReturnDropPercent ?? 2.0,
+    crashStartAge: profile.monteCarloParams?.crashStartAge ?? profile.targetRetirementAge,
+    crashDurationYears: profile.monteCarloParams?.crashDurationYears ?? 2,
+    crashYearDropsPercent: profile.monteCarloParams?.crashYearDropsPercent ?? [30, 15],
+    useCashBuffer: profile.monteCarloParams?.useCashBuffer ?? false,
+    cashBufferYears: profile.monteCarloParams?.cashBufferYears ?? 2,
+  }), [profile.monteCarloParams, targetHorizonAge, profile.targetRetirementAge]);
 
-  const [localParams, setLocalParams] = useState<MonteCarloParams>(params);
+  const [params, setParams] = useState<MonteCarloParams>(initialParams);
+  const [localParams, setLocalParams] = useState<MonteCarloParams>(initialParams);
+  const lastEmittedParamsRef = React.useRef<string>(JSON.stringify(initialParams));
   const [iterationSeed, setIterationSeed] = useState(0);
   const [isSimulating, setIsSimulating] = useState(false);
+
+  // Sync external changes to profile.monteCarloParams (e.g. from scenario switching)
+  React.useEffect(() => {
+    if (!profile.monteCarloParams) return;
+    const str = JSON.stringify(profile.monteCarloParams);
+    if (str !== lastEmittedParamsRef.current) {
+      lastEmittedParamsRef.current = str;
+      setLocalParams((prev) => ({
+        ...prev,
+        ...profile.monteCarloParams,
+      }));
+      setParams((prev) => ({
+        ...prev,
+        ...profile.monteCarloParams,
+      }));
+    }
+  }, [profile.monteCarloParams]);
 
   React.useEffect(() => {
     setLocalParams((prev) => ({
@@ -62,12 +84,29 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({
     }));
   }, [targetHorizonAge, profile.targetRetirementAge]);
 
+  // Debounced sync to params and parent profile for slider/text inputs
   React.useEffect(() => {
     const timer = setTimeout(() => {
       setParams(localParams);
-    }, 300);
+      const str = JSON.stringify(localParams);
+      if (lastEmittedParamsRef.current !== str) {
+        lastEmittedParamsRef.current = str;
+        onChange?.({ monteCarloParams: localParams });
+      }
+    }, 250);
     return () => clearTimeout(timer);
-  }, [localParams]);
+  }, [localParams, onChange]);
+
+  const handleMarketScenarioSelect = (scenario: MarketScenario) => {
+    const updated: MonteCarloParams = {
+      ...localParams,
+      marketScenario: scenario,
+    };
+    lastEmittedParamsRef.current = JSON.stringify(updated);
+    setLocalParams(updated);
+    setParams(updated);
+    onChange?.({ monteCarloParams: updated });
+  };
 
   const [activeTab, setActiveTab] = useState<'fan' | 'breakdown' | 'survival'>('fan');
   const adjustInflation = profile.adjustForInflation !== false;
@@ -141,14 +180,22 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({
   // Compute Monte Carlo simulation for current single selection
   const mcResult = useMemo(() => {
     if (!taxResult) return null;
+    const isScenarioMatch =
+      (params.marketScenario || 'standard') === (precomputedResult?.params?.marketScenario || 'standard');
     if (
       precomputedResult &&
       iterationSeed === 0 &&
-      params.marketScenario === 'standard' &&
-      params.numSimulations === 500 &&
-      localParams.accumulationVolatility === 12 &&
-      localParams.decumulationVolatility === 8 &&
-      localParams.maxAge === targetHorizonAge
+      isScenarioMatch &&
+      params.numSimulations === precomputedResult.params.numSimulations &&
+      localParams.accumulationVolatility === precomputedResult.params.accumulationVolatility &&
+      localParams.decumulationVolatility === precomputedResult.params.decumulationVolatility &&
+      localParams.maxAge === precomputedResult.params.maxAge &&
+      (params.marketScenario !== 'stressed' ||
+        params.stressedReturnDropPercent === precomputedResult.params.stressedReturnDropPercent) &&
+      (params.marketScenario !== 'early_crash' ||
+        ((params.crashStartAge ?? profile.targetRetirementAge) === precomputedResult.params.crashStartAge &&
+          (params.crashDurationYears ?? 2) === precomputedResult.params.crashDurationYears &&
+          Boolean(params.useCashBuffer) === Boolean(precomputedResult.params.useCashBuffer)))
     ) {
       return precomputedResult;
     }
@@ -993,8 +1040,7 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({
               role="radio"
               aria-checked={(localParams.marketScenario || 'standard') === 'standard'}
               onClick={() => {
-                setLocalParams((prev) => ({ ...prev, marketScenario: 'standard' }));
-                setParams((prev) => ({ ...prev, marketScenario: 'standard' }));
+                handleMarketScenarioSelect('standard');
               }}
               className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between space-y-1 ${
                 (localParams.marketScenario || 'standard') === 'standard'
@@ -1022,8 +1068,7 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({
               role="radio"
               aria-checked={localParams.marketScenario === 'stressed'}
               onClick={() => {
-                setLocalParams((prev) => ({ ...prev, marketScenario: 'stressed' }));
-                setParams((prev) => ({ ...prev, marketScenario: 'stressed' }));
+                handleMarketScenarioSelect('stressed');
               }}
               className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between space-y-1 ${
                 localParams.marketScenario === 'stressed'
@@ -1051,8 +1096,7 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({
               role="radio"
               aria-checked={localParams.marketScenario === 'early_crash'}
               onClick={() => {
-                setLocalParams((prev) => ({ ...prev, marketScenario: 'early_crash' }));
-                setParams((prev) => ({ ...prev, marketScenario: 'early_crash' }));
+                handleMarketScenarioSelect('early_crash');
               }}
               className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between space-y-1 ${
                 localParams.marketScenario === 'early_crash'

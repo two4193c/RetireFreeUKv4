@@ -793,10 +793,17 @@ function App() {
     try {
       const tax = calculateUKTax(profile, pots);
       return runMonteCarloSimulation(profile, pots, tax, {
-        numSimulations: 500,
-        accumulationVolatility: 12.0,
-        decumulationVolatility: 8.0,
-        maxAge: profile.maximizedSpendConfig?.targetEndAge || profile.lifeExpectancyAge || 95,
+        numSimulations: profile.monteCarloParams?.numSimulations ?? 500,
+        accumulationVolatility: profile.monteCarloParams?.accumulationVolatility ?? 12.0,
+        decumulationVolatility: profile.monteCarloParams?.decumulationVolatility ?? 8.0,
+        maxAge: profile.monteCarloParams?.maxAge ?? (profile.maximizedSpendConfig?.targetEndAge || profile.lifeExpectancyAge || 95),
+        marketScenario: profile.monteCarloParams?.marketScenario ?? 'standard',
+        stressedReturnDropPercent: profile.monteCarloParams?.stressedReturnDropPercent ?? 2.0,
+        crashStartAge: profile.monteCarloParams?.crashStartAge ?? profile.targetRetirementAge,
+        crashDurationYears: profile.monteCarloParams?.crashDurationYears ?? 2,
+        crashYearDropsPercent: profile.monteCarloParams?.crashYearDropsPercent ?? [30, 15],
+        useCashBuffer: profile.monteCarloParams?.useCashBuffer ?? false,
+        cashBufferYears: profile.monteCarloParams?.cashBufferYears ?? 2,
       });
     } catch {
       return null;
@@ -812,16 +819,23 @@ function App() {
     const timer = setTimeout(() => {
       try {
         const mc = runMonteCarloSimulation(profile, pots, taxResult, {
-          numSimulations: 500,
-          accumulationVolatility: 12.0,
-          decumulationVolatility: 8.0,
-          maxAge: profile.maximizedSpendConfig?.targetEndAge || profile.lifeExpectancyAge || 95,
+          numSimulations: profile.monteCarloParams?.numSimulations ?? 500,
+          accumulationVolatility: profile.monteCarloParams?.accumulationVolatility ?? 12.0,
+          decumulationVolatility: profile.monteCarloParams?.decumulationVolatility ?? 8.0,
+          maxAge: profile.monteCarloParams?.maxAge ?? (profile.maximizedSpendConfig?.targetEndAge || profile.lifeExpectancyAge || 95),
+          marketScenario: profile.monteCarloParams?.marketScenario ?? 'standard',
+          stressedReturnDropPercent: profile.monteCarloParams?.stressedReturnDropPercent ?? 2.0,
+          crashStartAge: profile.monteCarloParams?.crashStartAge ?? profile.targetRetirementAge,
+          crashDurationYears: profile.monteCarloParams?.crashDurationYears ?? 2,
+          crashYearDropsPercent: profile.monteCarloParams?.crashYearDropsPercent ?? [30, 15],
+          useCashBuffer: profile.monteCarloParams?.useCashBuffer ?? false,
+          cashBufferYears: profile.monteCarloParams?.cashBufferYears ?? 2,
         });
         setCentralMonteCarloResult(mc);
       } catch (err) {
         console.error('Central Monte Carlo calculation error:', err);
       }
-    }, 120);
+    }, 60);
 
     return () => clearTimeout(timer);
   }, [profile, pots, taxResult]);

@@ -1,4 +1,4 @@
-import { UserProfile, InvestmentPots, TaxCalculationResult } from '../types';
+import { UserProfile, InvestmentPots, TaxCalculationResult, MarketScenario, MonteCarloParams } from '../types';
 import { DEFAULT_PARTNER_POTS, DEFAULT_POTS, ZERO_POTS, sanitizePots } from './defaultData';
 import { parseTransferYear } from './potTransferUtils';
 import { getPensionAccessAge, getPartnerPensionAccessAge, getLsaLimit, getPartnerLsaLimit, getLumpSumTakeAge, getPartnerLumpSumTakeAge, calculateUKTax, calculatePartnerUKTax, allocateLumpSumToPots } from './ukTaxEngine';
@@ -6,22 +6,7 @@ import { getTargetIncomeForAge, getActualSpendingTargetForAge } from './projecti
 import { SCOT_INTERMEDIATE_THRESHOLD, RUK_BASIC_THRESHOLD, SCOT_HIGHER_THRESHOLD, RUK_ADDITIONAL_THRESHOLD, STATE_PENSION_FULL_ANNUAL } from '../config/ukTaxRates';
 import { getEffectiveAccumulationReturn, getEffectiveDecumulationReturn } from './assetAllocation';
 
-export type MarketScenario = 'standard' | 'stressed' | 'early_crash';
-
-export interface MonteCarloParams {
-  numSimulations?: number; // Default 500
-  accumulationVolatility?: number; // e.g. 12% (std dev)
-  decumulationVolatility?: number; // e.g. 8% (std dev)
-  maxAge?: number; // e.g. 95
-  marketScenario?: MarketScenario;
-  stressedReturnDropPercent?: number; // e.g. 2.0 (% p.a. drop)
-  crashDepthPercent?: number; // e.g. 30 (% drop)
-  crashStartAge?: number; // e.g. targetRetirementAge
-  crashDurationYears?: number; // e.g. 2
-  crashYearDropsPercent?: number[]; // e.g. [30, 15] for Year 1 -30%, Year 2 -15%
-  useCashBuffer?: boolean;
-  cashBufferYears?: number;
-}
+export type { MarketScenario, MonteCarloParams };
 
 export interface CashBufferYearDetail {
   crashYearIndex: number;
@@ -1874,11 +1859,24 @@ function parseAnnuityTypeConfig(type?: string) {
   const retirementTotals = simTotalPots.map((s) => s[retirementYrIndex]).sort((a, b) => a - b);
   const endTotals = simTotalPots.map((s) => s[endYrIndex]).sort((a, b) => a - b);
 
-  // Identify simulation run indices closest to 10th, 50th, and 90th percentiles of ending wealth
-  const indexedEndTotals = simTotalPots.map((s, idx) => ({ pot: s[endYrIndex] ?? 0, idx })).sort((a, b) => a.pot - b.pot);
-  const p10SimIdx = indexedEndTotals[Math.max(0, Math.min(indexedEndTotals.length - 1, Math.floor(indexedEndTotals.length * 0.1)))].idx;
-  const p50SimIdx = indexedEndTotals[Math.max(0, Math.min(indexedEndTotals.length - 1, Math.floor(indexedEndTotals.length * 0.5)))].idx;
-  const p90SimIdx = indexedEndTotals[Math.max(0, Math.min(indexedEndTotals.length - 1, Math.floor(indexedEndTotals.length * 0.9)))].idx;
+  // Identify simulation run indices closest to 10th, 50th, and 90th percentiles of performance
+  const simCompoundPerformance = simDecumReturns.map((returns, idx) => {
+    let compound = 1.0;
+    for (const r of returns) {
+      compound *= 1 + r;
+    }
+    const endPot = simTotalPots[idx]?.[endYrIndex] ?? 0;
+    return { endPot, compound, idx };
+  });
+
+  simCompoundPerformance.sort((a, b) => {
+    if (a.endPot !== b.endPot) return a.endPot - b.endPot;
+    return a.compound - b.compound;
+  });
+
+  const p10SimIdx = simCompoundPerformance[Math.max(0, Math.min(simCompoundPerformance.length - 1, Math.floor(simCompoundPerformance.length * 0.1)))].idx;
+  const p50SimIdx = simCompoundPerformance[Math.max(0, Math.min(simCompoundPerformance.length - 1, Math.floor(simCompoundPerformance.length * 0.5)))].idx;
+  const p90SimIdx = simCompoundPerformance[Math.max(0, Math.min(simCompoundPerformance.length - 1, Math.floor(simCompoundPerformance.length * 0.9)))].idx;
 
   depletionAges.sort((a, b) => a - b);
   const medianDepletionAge = depletionAges.length > 0 ? getPercentile(depletionAges, 50) : undefined;
