@@ -14,7 +14,7 @@ vi.mock('recharts', async () => {
   };
 });
 
-describe('DynamicSpendingCard - Guyton-Klinger Spending Rules & Visualization', () => {
+describe('DynamicSpendingCard - Guyton-Klinger Spending Rules & Monte Carlo Paths', () => {
   const baseProfileDisabled: UserProfile = {
     ...DEFAULT_PROFILE,
     targetRetirementIncomeAnnual: 40000,
@@ -64,7 +64,7 @@ describe('DynamicSpendingCard - Guyton-Klinger Spending Rules & Visualization', 
     );
   });
 
-  it('renders complete visualization, scenario switcher, and guardrail corridor when active', () => {
+  it('renders complete visualization, Monte Carlo 10th/50th/90th percentile options, and guardrail corridor', () => {
     const onChange = vi.fn();
     render(<DynamicSpendingCard profile={baseProfileEnabled} pots={DEFAULT_POTS} onChange={onChange} />);
 
@@ -72,10 +72,15 @@ describe('DynamicSpendingCard - Guyton-Klinger Spending Rules & Visualization', 
     expect(screen.getByText(/Live Guardrail Trigger Boundaries/i)).toBeInTheDocument();
     expect(screen.getByText('Dynamic Income Trajectory & Trigger Points')).toBeInTheDocument();
 
-    // Verify scenario buttons
-    expect(screen.getByRole('button', { name: /Early Bear Market/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Market Cycle/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Bull Market/i })).toBeInTheDocument();
+    // Verify Monte Carlo scenario buttons
+    expect(screen.getByRole('button', { name: /10th %ile/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /50th %ile/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /90th %ile/i })).toBeInTheDocument();
+
+    // Verify historical preset buttons
+    expect(screen.getByRole('button', { name: /Bear Shock/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Cycle/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Bull Run/i })).toBeInTheDocument();
 
     // Verify KPI strip
     expect(screen.getByText('Preservation Cuts')).toBeInTheDocument();
@@ -88,21 +93,27 @@ describe('DynamicSpendingCard - Guyton-Klinger Spending Rules & Visualization', 
     expect(screen.getByTestId('responsive-container')).toBeInTheDocument();
   });
 
-  it('switches simulation scenarios and updates scenario description', () => {
+  it('switches to Monte Carlo 10th, 50th, and 90th percentile paths and updates banner descriptions', () => {
     const onChange = vi.fn();
     render(<DynamicSpendingCard profile={baseProfileEnabled} pots={DEFAULT_POTS} onChange={onChange} />);
 
-    // Click Bull Market button
-    const bullBtn = screen.getByRole('button', { name: /Bull Market/i });
-    fireEvent.click(bullBtn);
+    // Default is 50th %ile
+    expect(screen.getByText(/Monte Carlo 50th Percentile Path/i)).toBeInTheDocument();
 
-    expect(screen.getByText(/Bull Market Scenario:/i)).toBeInTheDocument();
+    // Click 10th %ile button
+    const mc10Btn = screen.getByRole('button', { name: /10th %ile/i });
+    fireEvent.click(mc10Btn);
+    expect(screen.getByText(/Monte Carlo 10th Percentile Path/i)).toBeInTheDocument();
 
-    // Click Market Cycle button
-    const cycleBtn = screen.getByRole('button', { name: /Market Cycle/i });
-    fireEvent.click(cycleBtn);
+    // Click 90th %ile button
+    const mc90Btn = screen.getByRole('button', { name: /90th %ile/i });
+    fireEvent.click(mc90Btn);
+    expect(screen.getByText(/Monte Carlo 90th Percentile Path/i)).toBeInTheDocument();
 
-    expect(screen.getByText(/Alternating Economic Cycles:/i)).toBeInTheDocument();
+    // Click Bear Shock button
+    const bearBtn = screen.getByRole('button', { name: /Bear Shock/i });
+    fireEvent.click(bearBtn);
+    expect(screen.getByText(/Early Sequence Risk Shock:/i)).toBeInTheDocument();
   });
 
   it('allows editing trigger thresholds and cuts', () => {

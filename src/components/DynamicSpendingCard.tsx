@@ -23,9 +23,9 @@ import {
   YAxis,
   Tooltip,
   Legend,
-  ReferenceLine,
 } from 'recharts';
 import { getActualSpendingTargetForAge } from '../utils/projectionEngine';
+import { getEffectiveDecumulationReturn } from '../utils/assetAllocation';
 import { DEFAULT_POTS } from '../utils/defaultData';
 
 interface DynamicSpendingCardProps {
@@ -35,7 +35,7 @@ interface DynamicSpendingCardProps {
   onChange: (updatedProfile: UserProfile) => void;
 }
 
-type SimulationScenarioType = 'stress' | 'bull' | 'cycle';
+export type SimulationScenarioType = 'mc10' | 'mc50' | 'mc90' | 'stress' | 'cycle' | 'bull';
 
 interface SimulationPoint {
   age: number;
@@ -51,13 +51,40 @@ interface SimulationPoint {
   diffFromBaseline: number;
 }
 
+// Deterministic 32-bit PRNG (Mulberry32) for reproducible Monte Carlo paths
+function mulberry32(seed: number) {
+  return function () {
+    let t = (seed += 0x6d2b79f5);
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// Seeded Box-Muller normal distribution transform
+function seededRandomNormal(prng: () => number, mean = 0, stdDev = 1): number {
+  let u = 0;
+  let v = 0;
+  while (u === 0) u = prng();
+  while (v === 0) v = prng();
+  const z = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+  return mean + z * stdDev;
+}
+
+// Log-normal return sampling with drift correction
+function sampleLogNormal(prng: () => number, meanReturn: number, volatility: number): number {
+  const z = seededRandomNormal(prng, 0, 1);
+  const drift = Math.log(1 + meanReturn) - 0.5 * volatility * volatility;
+  return Math.exp(drift + volatility * z) - 1;
+}
+
 export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
   profile,
   pots = DEFAULT_POTS,
   projections,
   onChange,
 }) => {
-  const [selectedScenario, setSelectedScenario] = useState<SimulationScenarioType>('stress');
+  const [selectedScenario, setSelectedScenario] = useState<SimulationScenarioType>('mc50');
   const [showEventLog, setShowEventLog] = useState<boolean>(true);
 
   const updateField = (key: keyof UserProfile, val: any) => {
@@ -122,39 +149,90 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
   const lowerGuardrailRate = initialWithdrawalRate * (1 - rules.prosperityThresholdPercent / 100);
 
   // Approximate trigger portfolio levels at retirement
-  const upperTriggerPortfolio = upperGuardrailRate > 0 ? (initialTarget / (upperGuardrailRate / 100)) : 0;
-  const lowerTriggerPortfolio = lowerGuardrailRate > 0 ? (initialTarget / (lowerGuardrailRate / 100)) : 0;
+  const upperTriggerPortfolio = upperGuardrailRate > 0 ? initialTarget / (upperGuardrailRate / 100) : 0;
+  const lowerTriggerPortfolio = lowerGuardrailRate > 0 ? initialTarget / (lowerGuardrailRate / 100) : 0;
+
+  // Mean decumulation return accounting for asset allocation split & investment fee drag
+  const meanDecumReturn = useMemo(() => {
+    return (
+      getEffectiveDecumulationReturn(
+        profile.postRetirementReturn ?? 4.5,
+        profile.assetAllocationSplit,
+        profile.investmentFees
+      ) / 100
+    );
+  }, [profile.postRetirementReturn, profile.assetAllocationSplit, profile.investmentFees]);
+
+  // Generate 200 Monte Carlo stochastic runs and extract the 10th, 50th, and 90th percentile return paths
+  const monteCarloPaths = useMemo(() => {
+    const numRuns = 200;
+    const volatility = 0.08; // Standard decumulation volatility
+    const seedBase = 777 + retAge * 13 + Math.round(initialTarget % 1000);
+    const prng = mulberry32(seedBase);
+
+    const runs: { returns: number[]; compoundGrowth: number }[] = [];
+
+    for (let i = 0; i < numRuns; i++) {
+      const returns: number[] = [];
+      let compound = 1.0;
+      for (let y = 0; y < horizonYears; y++) {
+        const ret = sampleLogNormal(prng, meanDecumReturn, volatility);
+        returns.push(ret);
+        compound *= 1 + ret;
+      }
+      runs.push({ returns, compoundGrowth: compound });
+    }
+
+    // Sort by compound growth (lowest to highest)
+    runs.sort((a, b) => a.compoundGrowth - b.compoundGrowth);
+
+    const p10Idx = Math.max(0, Math.min(runs.length - 1, Math.floor(runs.length * 0.1)));
+    const p50Idx = Math.max(0, Math.min(runs.length - 1, Math.floor(runs.length * 0.5)));
+    const p90Idx = Math.max(0, Math.min(runs.length - 1, Math.floor(runs.length * 0.9)));
+
+    return {
+      mc10: runs[p10Idx].returns,
+      mc50: runs[p50Idx].returns,
+      mc90: runs[p90Idx].returns,
+    };
+  }, [horizonYears, initialTarget, meanDecumReturn, retAge]);
 
   // Run dynamic simulation for selected scenario
   const simulationResults = useMemo(() => {
     const points: SimulationPoint[] = [];
 
-    // Return profiles for illustrative scenarios
+    // Return series mapping (including the 3 Monte Carlo paths)
     const scenarioReturns: Record<SimulationScenarioType, number[]> = {
-      // Early bear market (Sequence of returns shock): heavy early losses followed by recovery
+      // 1. Monte Carlo 10th Percentile Path (Unfavourable stochastic sequence)
+      mc10: monteCarloPaths.mc10,
+      // 2. Monte Carlo 50th Percentile Path (Median expected trajectory)
+      mc50: monteCarloPaths.mc50,
+      // 3. Monte Carlo 90th Percentile Path (Top-decile favourable expansion)
+      mc90: monteCarloPaths.mc90,
+      // 4. Early bear market (Sequence of returns shock): heavy early losses followed by recovery
       stress: [
-        -0.12, -0.16, -0.04, 0.02, 0.08, 0.12, 0.06, 0.04, -0.05, 0.07,
-        0.06, 0.05, -0.03, 0.07, 0.08, 0.05, 0.04, -0.02, 0.06, 0.05,
-        0.06, 0.04, 0.05, 0.05, 0.04, 0.05, 0.04, 0.05, 0.04, 0.05, 0.04, 0.05
+        -0.12, -0.16, -0.04, 0.02, 0.08, 0.12, 0.06, 0.04, -0.05, 0.07, 0.06, 0.05, -0.03, 0.07,
+        0.08, 0.05, 0.04, -0.02, 0.06, 0.05, 0.06, 0.04, 0.05, 0.05, 0.04, 0.05, 0.04, 0.05,
+        0.04, 0.05, 0.04, 0.05,
       ],
-      // Strong expansion: high early returns, occasional normal dips
+      // 5. Strong expansion: high early returns, occasional normal dips
       bull: [
-        0.16, 0.14, 0.09, 0.12, -0.02, 0.11, 0.08, 0.13, 0.07, -0.03,
-        0.10, 0.09, 0.12, 0.06, 0.08, 0.09, 0.07, 0.08, 0.06, 0.07,
-        0.08, 0.06, 0.07, 0.07, 0.06, 0.07, 0.06, 0.07, 0.06, 0.07, 0.06, 0.07
+        0.16, 0.14, 0.09, 0.12, -0.02, 0.11, 0.08, 0.13, 0.07, -0.03, 0.1, 0.09, 0.12, 0.06,
+        0.08, 0.09, 0.07, 0.08, 0.06, 0.07, 0.08, 0.06, 0.07, 0.07, 0.06, 0.07, 0.06, 0.07,
+        0.06, 0.07, 0.06, 0.07,
       ],
-      // Standard realistic cycle: alternating bear and bull phases
+      // 6. Standard realistic cycle: alternating bear and bull phases
       cycle: [
-        0.07, -0.08, -0.11, 0.14, 0.09, 0.05, -0.04, 0.11, 0.08, -0.06,
-        0.12, 0.06, -0.05, 0.08, 0.07, 0.05, -0.03, 0.09, 0.06, 0.04,
-        0.07, 0.05, -0.04, 0.08, 0.06, 0.05, 0.07, 0.05, 0.06, 0.05, 0.06, 0.05
+        0.07, -0.08, -0.11, 0.14, 0.09, 0.05, -0.04, 0.11, 0.08, -0.06, 0.12, 0.06, -0.05, 0.08,
+        0.07, 0.05, -0.03, 0.09, 0.06, 0.04, 0.07, 0.05, -0.04, 0.08, 0.06, 0.05, 0.07, 0.05,
+        0.06, 0.05, 0.06, 0.05,
       ],
     };
 
-    const returnSeries = scenarioReturns[selectedScenario];
+    const returnSeries = scenarioReturns[selectedScenario] || monteCarloPaths.mc50;
     let currentPot = startingWealth;
     let spendingMultiplier = 1.0;
-    let initialGkRate = initialWithdrawalRate / 100;
+    const initialGkRate = initialWithdrawalRate / 100;
 
     for (let yr = 0; yr <= horizonYears; yr++) {
       const currentAge = retAge + yr;
@@ -164,7 +242,7 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
       const baseTargetAtAge = getActualSpendingTargetForAge(profile, currentAge) * inflationFactor;
       const essentialFloorAtAge = Math.round(essentialFloorBaseline * inflationFactor);
 
-      const ret = yr > 0 ? (returnSeries[(yr - 1) % returnSeries.length] ?? 0.05) : 0;
+      const ret = yr > 0 ? returnSeries[(yr - 1) % returnSeries.length] ?? 0.05 : 0;
 
       // Apply return to remaining portfolio
       if (yr > 0) {
@@ -199,13 +277,13 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
         }
         // Prosperity Rule Trigger
         else if (currentRate < initialGkRate * prospThresh) {
-          spendingMultiplier *= (1 + prospInc);
+          spendingMultiplier *= 1 + prospInc;
           event = 'raise';
           eventNote = `Prosperity Rule triggered: Portfolio growth lowered withdrawal rate to ${(currentRate * 100).toFixed(1)}% (-${((1 - currentRate / initialGkRate) * 100).toFixed(0)}% vs initial). Spending raised by ${rules.prosperityIncreasePercent}%.`;
         }
         // Inflation Freeze Rule Trigger
         else if (rules.skipInflationOnNegativeReturn && ret < 0) {
-          spendingMultiplier /= (1 + inflationRate);
+          spendingMultiplier /= 1 + inflationRate;
           event = 'freeze';
           eventNote = `Inflation Freeze triggered: Negative portfolio return (${(ret * 100).toFixed(1)}%) skipped annual +${(inflationRate * 100).toFixed(1)}% inflation adjustment to protect capital.`;
         }
@@ -245,6 +323,7 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
     inflationRate,
     initialTarget,
     initialWithdrawalRate,
+    monteCarloPaths,
     profile,
     retAge,
     rules,
@@ -293,6 +372,8 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
   const triggeredEvents = useMemo(() => {
     return simulationResults.filter((p) => p.event !== undefined);
   }, [simulationResults]);
+
+  const isMonteCarloScenario = selectedScenario === 'mc10' || selectedScenario === 'mc50' || selectedScenario === 'mc90';
 
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 md:p-6 shadow-xs space-y-6 transition-all">
@@ -362,12 +443,22 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug">
-                  If the portfolio drops and your withdrawal rate rises <strong className="text-slate-700 dark:text-slate-200">+{rules.capitalPreservationThresholdPercent}%</strong> above initial rate, cut spending by <strong className="text-rose-600 dark:text-rose-400">-{rules.capitalPreservationCutPercent}%</strong> (cushioned at Essential Floor).
+                  If the portfolio drops and your withdrawal rate rises{' '}
+                  <strong className="text-slate-700 dark:text-slate-200">
+                    +{rules.capitalPreservationThresholdPercent}%
+                  </strong>{' '}
+                  above initial rate, cut spending by{' '}
+                  <strong className="text-rose-600 dark:text-rose-400">
+                    -{rules.capitalPreservationCutPercent}%
+                  </strong>{' '}
+                  (cushioned at Essential Floor).
                 </p>
 
                 <div className="grid grid-cols-2 gap-2.5 pt-1">
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Trigger (+X%)</label>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                      Trigger (+X%)
+                    </label>
                     <div className="relative">
                       <input
                         type="number"
@@ -387,7 +478,9 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
                     </div>
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Spending Cut (-Y%)</label>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                      Spending Cut (-Y%)
+                    </label>
                     <div className="relative">
                       <input
                         type="number"
@@ -423,12 +516,22 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug">
-                  If the portfolio surges and your withdrawal rate falls <strong className="text-slate-700 dark:text-slate-200">-{rules.prosperityThresholdPercent}%</strong> below initial rate, raise spending by <strong className="text-emerald-600 dark:text-emerald-400">+{rules.prosperityIncreasePercent}%</strong>.
+                  If the portfolio surges and your withdrawal rate falls{' '}
+                  <strong className="text-slate-700 dark:text-slate-200">
+                    -{rules.prosperityThresholdPercent}%
+                  </strong>{' '}
+                  below initial rate, raise spending by{' '}
+                  <strong className="text-emerald-600 dark:text-emerald-400">
+                    +{rules.prosperityIncreasePercent}%
+                  </strong>
+                  .
                 </p>
 
                 <div className="grid grid-cols-2 gap-2.5 pt-1">
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Trigger (-X%)</label>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                      Trigger (-X%)
+                    </label>
                     <div className="relative">
                       <input
                         type="number"
@@ -448,7 +551,9 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
                     </div>
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Spending Raise (+Y%)</label>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                      Spending Raise (+Y%)
+                    </label>
                     <div className="relative">
                       <input
                         type="number"
@@ -550,86 +655,169 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
 
           {/* VISUALIZATION: Dynamic Income Corridor & Trigger Timeline */}
           <div className="bg-slate-50 dark:bg-slate-800/40 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700/80 space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
               <div>
-                <h4 className="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider flex items-center gap-1.5">
-                  <Layers className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                  <span>Dynamic Income Trajectory &amp; Trigger Points</span>
-                </h4>
+                <div className="flex items-center gap-2">
+                  <h4 className="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider flex items-center gap-1.5">
+                    <Layers className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    <span>Dynamic Income Trajectory &amp; Trigger Points</span>
+                  </h4>
+                  {isMonteCarloScenario && (
+                    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 flex items-center gap-1">
+                      <Sparkles className="w-3 h-3 text-indigo-500" />
+                      <span>Monte Carlo Path</span>
+                    </span>
+                  )}
+                </div>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                  Real-time visualization comparing baseline spending requirements against dynamic Guyton-Klinger income and your non-negotiable Essential Floor.
+                  Real-time visualization comparing baseline spending requirements against dynamic Guyton-Klinger income and your non-negotiable Essential Floor across Monte Carlo paths and stress models.
                 </p>
               </div>
 
-              {/* Scenario Switcher Tabs */}
-              <div className="flex items-center gap-1.5 bg-white dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 self-start sm:self-auto shadow-xs">
-                <button
-                  type="button"
-                  onClick={() => setSelectedScenario('stress')}
-                  className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
-                    selectedScenario === 'stress'
-                      ? 'bg-rose-600 text-white shadow-xs'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                  }`}
-                >
-                  <TrendingDown className="w-3.5 h-3.5" />
-                  <span>Early Bear Market</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedScenario('cycle')}
-                  className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
-                    selectedScenario === 'cycle'
-                      ? 'bg-indigo-600 text-white shadow-xs'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                  }`}
-                >
-                  <Zap className="w-3.5 h-3.5" />
-                  <span>Market Cycle</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedScenario('bull')}
-                  className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
-                    selectedScenario === 'bull'
-                      ? 'bg-emerald-600 text-white shadow-xs'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                  }`}
-                >
-                  <TrendingUp className="w-3.5 h-3.5" />
-                  <span>Bull Market</span>
-                </button>
+              {/* Scenario Switcher Tabs: Monte Carlo Paths & Model Presets */}
+              <div className="flex flex-wrap items-center gap-1.5 bg-white dark:bg-slate-800 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-700 self-start lg:self-auto shadow-xs">
+                {/* Group 1: Monte Carlo Percentile Paths */}
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 px-1.5 py-0.5">
+                    Monte Carlo:
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedScenario('mc10')}
+                    className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
+                      selectedScenario === 'mc10'
+                        ? 'bg-rose-600 text-white shadow-xs'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700/60'
+                    }`}
+                    title="Monte Carlo 10th Percentile (Unfavourable stochastic sequence)"
+                  >
+                    <TrendingDown className="w-3.5 h-3.5" />
+                    <span>10th %ile</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedScenario('mc50')}
+                    className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
+                      selectedScenario === 'mc50'
+                        ? 'bg-indigo-600 text-white shadow-xs'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700/60'
+                    }`}
+                    title="Monte Carlo 50th Percentile (Median expected trajectory)"
+                  >
+                    <Layers className="w-3.5 h-3.5" />
+                    <span>50th %ile</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedScenario('mc90')}
+                    className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
+                      selectedScenario === 'mc90'
+                        ? 'bg-emerald-600 text-white shadow-xs'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700/60'
+                    }`}
+                    title="Monte Carlo 90th Percentile (Top-decile favourable expansion)"
+                  >
+                    <TrendingUp className="w-3.5 h-3.5" />
+                    <span>90th %ile</span>
+                  </button>
+                </div>
+
+                <div className="hidden sm:block w-px h-5 bg-slate-200 dark:bg-slate-700 mx-1" />
+
+                {/* Group 2: Model & Historical Cycle Presets */}
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 px-1.5 py-0.5">
+                    Historical:
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedScenario('stress')}
+                    className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
+                      selectedScenario === 'stress'
+                        ? 'bg-rose-600 text-white shadow-xs'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700/60'
+                    }`}
+                    title="Early Bear Market / Sequence Shock"
+                  >
+                    <span>Bear Shock</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedScenario('cycle')}
+                    className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
+                      selectedScenario === 'cycle'
+                        ? 'bg-indigo-600 text-white shadow-xs'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700/60'
+                    }`}
+                    title="Alternating Market Cycle"
+                  >
+                    <span>Cycle</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedScenario('bull')}
+                    className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
+                      selectedScenario === 'bull'
+                        ? 'bg-emerald-600 text-white shadow-xs'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700/60'
+                    }`}
+                    title="Bull Market Run"
+                  >
+                    <span>Bull Run</span>
+                  </button>
+                </div>
               </div>
             </div>
 
             {/* Scenario Description Banner */}
             <div
               className={`p-3 rounded-xl border text-xs flex items-center justify-between gap-3 ${
-                selectedScenario === 'stress'
+                selectedScenario === 'mc10' || selectedScenario === 'stress'
                   ? 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-900/50 text-rose-900 dark:text-rose-200'
-                  : selectedScenario === 'bull'
+                  : selectedScenario === 'mc90' || selectedScenario === 'bull'
                   ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900/50 text-emerald-900 dark:text-emerald-200'
                   : 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-900/50 text-indigo-900 dark:text-indigo-200'
               }`}
             >
               <div className="flex items-center gap-2">
-                {selectedScenario === 'stress' && <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />}
-                {selectedScenario === 'bull' && <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />}
-                {selectedScenario === 'cycle' && <Info className="w-4 h-4 text-indigo-600 shrink-0" />}
+                {(selectedScenario === 'mc10' || selectedScenario === 'stress') && (
+                  <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+                )}
+                {(selectedScenario === 'mc90' || selectedScenario === 'bull') && (
+                  <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
+                )}
+                {(selectedScenario === 'mc50' || selectedScenario === 'cycle') && (
+                  <Info className="w-4 h-4 text-indigo-600 shrink-0" />
+                )}
                 <span>
+                  {selectedScenario === 'mc10' && (
+                    <>
+                      <strong>Monte Carlo 10th Percentile Path (Unfavourable Stochastic Trail):</strong> Simulates a challenging economic run from the 10th percentile of your Monte Carlo portfolio distribution. Capital Preservation cuts (-{rules.capitalPreservationCutPercent}%) and inflation freezes trigger dynamically during market drawdowns to preserve portfolio capital, while strictly defending your <strong>Essential Floor (£{essentialFloorBaseline.toLocaleString()}/yr)</strong>.
+                    </>
+                  )}
+                  {selectedScenario === 'mc50' && (
+                    <>
+                      <strong>Monte Carlo 50th Percentile Path (Median Expected Trail):</strong> Represents the expected median stochastic performance based on your post-retirement asset allocation and {((1 - meanDecumReturn / (profile.postRetirementReturn ? profile.postRetirementReturn / 100 : 0.045)) * 100).toFixed(1)}% fee drag. Spending adjusts smoothly within the safe guardrail corridor.
+                    </>
+                  )}
+                  {selectedScenario === 'mc90' && (
+                    <>
+                      <strong>Monte Carlo 90th Percentile Path (Favourable Expansion Trail):</strong> Top-decile compounding performance from your Monte Carlo simulation. As the portfolio surges and withdrawal rates fall below {lowerGuardrailRate.toFixed(1)}%, the <strong>Prosperity Rule (+{rules.prosperityIncreasePercent}%)</strong> unlocks lifestyle spending raises.
+                    </>
+                  )}
                   {selectedScenario === 'stress' && (
                     <>
-                      <strong>Early Sequence Risk Scenario:</strong> Market drops -12% and -16% in early retirement. Guyton-Klinger triggers <strong>Capital Preservation cuts (-{rules.capitalPreservationCutPercent}%)</strong> and freezes inflation to extend pot longevity, without ever breaching the <strong>Essential Floor</strong>.
+                      <strong>Early Sequence Risk Shock:</strong> Severe early market drops (-12%, -16%). Guyton-Klinger triggers <strong>Capital Preservation cuts (-{rules.capitalPreservationCutPercent}%)</strong> and freezes inflation to extend pot longevity, without ever breaching the <strong>Essential Floor</strong>.
                     </>
                   )}
                   {selectedScenario === 'bull' && (
                     <>
-                      <strong>Bull Market Scenario:</strong> Portfolio experiences high compounding growth (+16%, +14%). As withdrawal rates drop below {lowerGuardrailRate.toFixed(1)}%, the <strong>Prosperity Rule (+{rules.prosperityIncreasePercent}%)</strong> unlocks extra lifestyle spending.
+                      <strong>Bull Market Expansion Model:</strong> High compounding growth (+16%, +14%). As withdrawal rates drop below {lowerGuardrailRate.toFixed(1)}%, the <strong>Prosperity Rule (+{rules.prosperityIncreasePercent}%)</strong> unlocks extra lifestyle spending.
                     </>
                   )}
                   {selectedScenario === 'cycle' && (
                     <>
-                      <strong>Alternating Economic Cycles:</strong> Illustrates both upward and downward spending guardrail adjustments across varying market environments.
+                      <strong>Alternating Economic Cycles:</strong> Illustrates both upward and downward spending guardrail adjustments across varying cyclical market environments.
                     </>
                   )}
                 </span>
@@ -683,7 +871,7 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
                               Age {data.age} (Year {data.yearIndex + 1})
                             </span>
                             <span className="text-[10px] text-slate-500">
-                              Market Return: {data.returnRate > 0 ? `+${data.returnRate}%` : `${data.returnRate}%`}
+                              Annual Return: {data.returnRate > 0 ? `+${data.returnRate}%` : `${data.returnRate}%`}
                             </span>
                           </div>
 
