@@ -831,19 +831,8 @@ function App() {
     }
 
     const currentSig = JSON.stringify({
+      profile,
       pots,
-      currentAge: profile.currentAge,
-      targetRetirementAge: profile.targetRetirementAge,
-      targetRetirementIncomeAnnual: profile.targetRetirementIncomeAnnual,
-      drawdownStrategy: profile.drawdownStrategy,
-      expectedInvestmentReturn: profile.expectedInvestmentReturn,
-      postRetirementReturn: profile.postRetirementReturn,
-      expectedInflationRate: profile.expectedInflationRate,
-      monteCarloParams: profile.monteCarloParams,
-      assetAllocationSplit: profile.assetAllocationSplit,
-      investmentFees: profile.investmentFees,
-      isCouplePlanning: profile.isCouplePlanning,
-      partnerPots: profile.partnerPots,
       taxSummary: { gross: taxResult.grossIncome, tax: taxResult.totalTaxPaid },
     });
 

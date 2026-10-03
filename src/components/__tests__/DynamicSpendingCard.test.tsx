@@ -283,5 +283,25 @@ describe('DynamicSpendingCard - Guyton-Klinger Spending Rules & Monte Carlo Path
     fireEvent.click(corridorBtn);
     expect(screen.queryByText(/Left Axis:/i)).not.toBeInTheDocument();
   });
+
+  it('disables dynamic spending rules when the active toggle switch is clicked on a plan loaded with rules enabled', () => {
+    const onChange = vi.fn();
+    render(<DynamicSpendingCard profile={baseProfileEnabled} pots={DEFAULT_POTS} onChange={onChange} />);
+
+    const checkboxes = screen.getAllByRole('checkbox');
+    const mainToggle = checkboxes[0];
+    expect(mainToggle).toBeChecked();
+    expect(screen.getByText('Active')).toBeInTheDocument();
+
+    fireEvent.click(mainToggle);
+
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        dynamicSpendingRules: expect.objectContaining({
+          enabled: false,
+        }),
+      })
+    );
+  });
 });
 
