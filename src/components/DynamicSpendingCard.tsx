@@ -90,7 +90,7 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
   const [selectedScenario, setSelectedScenario] = useState<SimulationScenarioType>('mc50');
   const [showEventLog, setShowEventLog] = useState<boolean>(true);
 
-  const activeMarketScenario = monteCarloResult?.params?.marketScenario || profile.monteCarloParams?.marketScenario || 'standard';
+  const activeMarketScenario = profile.monteCarloParams?.marketScenario || monteCarloResult?.params?.marketScenario || 'standard';
   const prevScenarioRef = React.useRef(activeMarketScenario);
 
   React.useEffect(() => {
@@ -117,8 +117,29 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
 
   // Calculate starting retirement portfolio
   const startingWealth = useMemo(() => {
+    // When Monte Carlo simulation results matching the active scenario are available,
+    // use the scenario-adjusted retirement pot totals for accurate stress modeling
+    const isScenarioMatch = !monteCarloResult?.params?.marketScenario || monteCarloResult.params.marketScenario === activeMarketScenario;
+    if (isScenarioMatch && monteCarloResult) {
+      if (selectedScenario === 'mc10' && (monteCarloResult.p10RetirementPot || 0) > 0) {
+        return monteCarloResult.p10RetirementPot;
+      }
+      if (selectedScenario === 'mc90' && (monteCarloResult.p90RetirementPot || 0) > 0) {
+        return monteCarloResult.p90RetirementPot;
+      }
+      if ((monteCarloResult.medianRetirementPot || 0) > 0) {
+        return monteCarloResult.medianRetirementPot;
+      }
+    }
+
     const retRow = projections?.find((p) => p.age === retAge);
     if (retRow && retRow.totalPot > 0) {
+      if (activeMarketScenario === 'stressed') {
+        const accumYears = Math.max(0, retAge - (profile.currentAge || 30));
+        const drag = (profile.monteCarloParams?.stressedReturnDropPercent ?? 2.0) / 100;
+        const discountFactor = Math.pow(1 - drag, accumYears * 0.5);
+        return Math.round(retRow.totalPot * discountFactor);
+      }
       return retRow.totalPot;
     }
     let total =
@@ -141,7 +162,18 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
         (profile.partnerPots.cashSavingsBalance || 0);
     }
     return Math.max(150000, total);
-  }, [pots, profile.isCouplePlanning, profile.partnerPots, projections, retAge]);
+  }, [
+    monteCarloResult,
+    activeMarketScenario,
+    selectedScenario,
+    pots,
+    profile.isCouplePlanning,
+    profile.partnerPots,
+    profile.currentAge,
+    profile.monteCarloParams?.stressedReturnDropPercent,
+    projections,
+    retAge,
+  ]);
 
   const initialTarget = getActualSpendingTargetForAge(profile, retAge);
   const essentialFloorBaseline =
@@ -182,7 +214,9 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
   // Extract the 10th, 50th, and 90th percentile return paths from the central Monte Carlo simulation
   // (with deterministic Mulberry32 fallback when simulation data is booting or unprovided)
   const monteCarloPaths = useMemo(() => {
+    const isScenarioMatch = !monteCarloResult?.params?.marketScenario || monteCarloResult.params.marketScenario === activeMarketScenario;
     if (
+      isScenarioMatch &&
       monteCarloResult?.paths &&
       monteCarloResult.paths.mc10Returns &&
       monteCarloResult.paths.mc10Returns.length > 0 &&
@@ -205,7 +239,7 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
     const prng = mulberry32(seedBase);
 
     const runs: { returns: number[]; compoundGrowth: number }[] = [];
-    const scenario = profile.monteCarloParams?.marketScenario || 'standard';
+    const scenario = activeMarketScenario;
     const stressedDrop = (profile.monteCarloParams?.stressedReturnDropPercent ?? 2.0) / 100;
     const crashStart = profile.monteCarloParams?.crashStartAge ?? retAge;
     const crashDur = profile.monteCarloParams?.crashDurationYears ?? 2;
@@ -245,7 +279,15 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
       mc90: runs[p90Idx].returns,
       isFromRealSimulation: false,
     };
-  }, [monteCarloResult, horizonYears, initialTarget, meanDecumReturn, retAge, profile.monteCarloParams]);
+  }, [
+    monteCarloResult,
+    horizonYears,
+    initialTarget,
+    meanDecumReturn,
+    retAge,
+    profile.monteCarloParams,
+    activeMarketScenario,
+  ]);
 
   // Run dynamic simulation for selected scenario
   const simulationResults = useMemo(() => {
@@ -878,7 +920,15 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
                   )}
                   {selectedScenario === 'mc50' && (
                     <>
-                      <strong>Monte Carlo 50th Percentile Path (Median Expected Trail):</strong> Represents the expected median stochastic performance based on your post-retirement asset allocation and {((1 - meanDecumReturn / (profile.postRetirementReturn ? profile.postRetirementReturn / 100 : 0.045)) * 100).toFixed(1)}% fee drag. Spending adjusts smoothly within the safe guardrail corridor.
+                      <strong>
+                        Monte Carlo 50th Percentile Path (Median Expected Trail
+                        {activeMarketScenario === 'stressed'
+                          ? ` • Stressed -${(profile.monteCarloParams?.stressedReturnDropPercent ?? 2.0).toFixed(1)}%`
+                          : activeMarketScenario === 'early_crash'
+                          ? ' • Market Crash'
+                          : ''}):
+                      </strong>{' '}
+                      Represents the expected median stochastic performance based on your post-retirement asset allocation and {((1 - meanDecumReturn / (profile.postRetirementReturn ? profile.postRetirementReturn / 100 : 0.045)) * 100).toFixed(1)}% fee drag. Spending adjusts smoothly within the safe guardrail corridor.
                     </>
                   )}
                   {selectedScenario === 'mc90' && (

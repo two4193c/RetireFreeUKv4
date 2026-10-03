@@ -162,6 +162,92 @@ describe('DynamicSpendingCard - Guyton-Klinger Spending Rules & Monte Carlo Path
     );
 
     // Verify Simulated (500 Runs) badge is shown
-    expect(screen.getByText('Simulated (500 Runs)')).toBeInTheDocument();
+    expect(screen.getByText(/Simulated \(500 Runs/i)).toBeInTheDocument();
+  });
+
+  it('updates display and parameters when market scenario changes to stressed or early_crash', () => {
+    const onChange = vi.fn();
+    const stressedProfile: UserProfile = {
+      ...baseProfileEnabled,
+      monteCarloParams: {
+        numSimulations: 500,
+        accumulationVolatility: 12.0,
+        decumulationVolatility: 8.0,
+        marketScenario: 'stressed',
+        stressedReturnDropPercent: 2.0,
+      },
+    };
+
+    const stressedMcResult = {
+      params: { numSimulations: 500, marketScenario: 'stressed', stressedReturnDropPercent: 2.0 } as any,
+      agePercentiles: [],
+      percentiles: [],
+      successRate: 85,
+      successRateAge85: 80,
+      medianRetirementPot: 420000,
+      p10RetirementPot: 280000,
+      p90RetirementPot: 650000,
+      paths: {
+        mc10Returns: [-0.08, -0.06, 0.01, 0.02],
+        mc50Returns: [0.02, 0.025, 0.02, 0.025],
+        mc90Returns: [0.08, 0.07, 0.08, 0.07],
+      },
+    };
+
+    const { rerender } = render(
+      <DynamicSpendingCard
+        profile={stressedProfile}
+        pots={DEFAULT_POTS}
+        onChange={onChange}
+        monteCarloResult={stressedMcResult as any}
+      />
+    );
+
+    // Verify Stressed badge and pills are visible
+    expect(screen.getByText(/Simulated \(500 Runs • Stressed -2.0%\)/i)).toBeInTheDocument();
+    expect(screen.getByText('Stressed')).toBeInTheDocument();
+
+    // Now switch to Early Crash scenario
+    const crashProfile: UserProfile = {
+      ...baseProfileEnabled,
+      monteCarloParams: {
+        numSimulations: 500,
+        accumulationVolatility: 12.0,
+        decumulationVolatility: 8.0,
+        marketScenario: 'early_crash',
+        crashStartAge: 60,
+        crashDurationYears: 2,
+        crashYearDropsPercent: [30, 15],
+      },
+    };
+
+    const crashMcResult = {
+      params: { numSimulations: 500, marketScenario: 'early_crash', crashStartAge: 60, crashDurationYears: 2 } as any,
+      agePercentiles: [],
+      percentiles: [],
+      successRate: 72,
+      successRateAge85: 68,
+      medianRetirementPot: 400000,
+      p10RetirementPot: 220000,
+      p90RetirementPot: 600000,
+      paths: {
+        mc10Returns: [-0.35, -0.20, 0.02, 0.05],
+        mc50Returns: [-0.30, -0.15, 0.04, 0.05],
+        mc90Returns: [-0.25, -0.10, 0.08, 0.09],
+      },
+    };
+
+    rerender(
+      <DynamicSpendingCard
+        profile={crashProfile}
+        pots={DEFAULT_POTS}
+        onChange={onChange}
+        monteCarloResult={crashMcResult as any}
+      />
+    );
+
+    // Verify Early Crash Model badge and pills are visible
+    expect(screen.getByText(/Simulated \(500 Runs • Early Crash Model\)/i)).toBeInTheDocument();
+    expect(screen.getByText('Crash')).toBeInTheDocument();
   });
 });

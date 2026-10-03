@@ -183,7 +183,7 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({
     const isScenarioMatch =
       (params.marketScenario || 'standard') === (precomputedResult?.params?.marketScenario || 'standard');
     if (
-      precomputedResult &&
+      precomputedResult?.params &&
       iterationSeed === 0 &&
       isScenarioMatch &&
       params.numSimulations === precomputedResult.params.numSimulations &&
@@ -206,12 +206,13 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({
   const baseResult = useMemo(() => {
     if (!taxResult) return null;
     if (
-      precomputedResult &&
+      precomputedResult?.params &&
       iterationSeed === 0 &&
       params.numSimulations === 500 &&
       localParams.accumulationVolatility === 12 &&
       localParams.decumulationVolatility === 8 &&
-      localParams.maxAge === targetHorizonAge
+      localParams.maxAge === targetHorizonAge &&
+      (precomputedResult.params.marketScenario || 'standard') === 'standard'
     ) {
       return precomputedResult;
     }

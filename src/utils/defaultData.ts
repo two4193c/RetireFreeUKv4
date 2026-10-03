@@ -373,6 +373,20 @@ export function sanitizeProfile(profile?: Partial<UserProfile> | null): UserProf
       ...DEFAULT_MORTGAGE,
       ...(base.mortgage || {}),
     },
+    monteCarloParams: {
+      ...DEFAULT_PROFILE.monteCarloParams,
+      ...(base.monteCarloParams || {}),
+    },
+    dynamicSpendingRules: base.dynamicSpendingRules
+      ? {
+          enabled: base.dynamicSpendingRules.enabled ?? false,
+          capitalPreservationThresholdPercent: base.dynamicSpendingRules.capitalPreservationThresholdPercent ?? 20,
+          capitalPreservationCutPercent: base.dynamicSpendingRules.capitalPreservationCutPercent ?? 10,
+          prosperityThresholdPercent: base.dynamicSpendingRules.prosperityThresholdPercent ?? 20,
+          prosperityIncreasePercent: base.dynamicSpendingRules.prosperityIncreasePercent ?? 10,
+          skipInflationOnNegativeReturn: base.dynamicSpendingRules.skipInflationOnNegativeReturn ?? true,
+        }
+      : undefined,
   };
 }
 
