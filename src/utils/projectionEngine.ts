@@ -137,6 +137,19 @@ export function getEssentialFloorForAge(profile: UserProfile, age: number): numb
   return Math.round((target * 0.65) / 500) * 500;
 }
 
+/**
+ * Single source of truth for the plan's projection end age (Projection Horizon).
+ * Priority: Projection Horizon → Maximised Spend end age → life expectancy → 95. Clamped to [currentAge+1, 100].
+ */
+export function getProjectionEndAge(profile: UserProfile): number {
+  const raw = Number(
+    profile.monteCarloParams?.maxAge ??
+    (profile.maximizedSpendConfig?.targetEndAge || profile.lifeExpectancyAge || 95)
+  ) || 95;
+  const minAge = (Number(profile.currentAge) || 0) + 1;
+  return Math.max(minAge, Math.min(100, Math.floor(raw)));
+}
+
 export function getActualSpendingTargetForAge(profile: UserProfile, age: number): number {
   const isReinvest = Boolean(
     profile.reinvestExcessDrawdown ||

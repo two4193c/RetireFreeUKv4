@@ -17,6 +17,7 @@ import {
 } from 'recharts';
 import { UserProfile, InvestmentPots, TaxCalculationResult, AppMode } from '../types';
 import { getPensionAccessAge, getPartnerPensionAccessAge } from '../utils/ukTaxEngine';
+import { getProjectionEndAge } from '../utils/projectionEngine';
 import {
   runHistoricSimulation,
   AssetAllocation,
@@ -69,16 +70,15 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
     cashPercent: 10,
   });
 
+  const projectionEndAge = getProjectionEndAge(profile);
   const [maxAge, setMaxAge] = useState<number>(() =>
-    Math.min(100, Math.max(minHorizonAge, profile.lifeExpectancyAge || 95))
+    Math.min(100, Math.max(minHorizonAge, projectionEndAge))
   );
 
   React.useEffect(() => {
-    if (profile.lifeExpectancyAge) {
-      const targetAge = Math.min(100, Math.max(minHorizonAge, profile.lifeExpectancyAge));
-      setMaxAge((prev) => (prev === targetAge ? prev : targetAge));
-    }
-  }, [profile.lifeExpectancyAge, minHorizonAge]);
+    const targetAge = Math.min(100, Math.max(minHorizonAge, projectionEndAge));
+    setMaxAge((prev) => (prev === targetAge ? prev : targetAge));
+  }, [projectionEndAge, minHorizonAge]);
   const [adjustReal, setAdjustReal] = useState<boolean>(true); // Inflation adjusted
   const [activeTab, setActiveTab] = useState<'trajectories' | 'sequences_chart' | 'heatmap' | 'table' | 'market_data'>('sequences_chart');
   const [sequenceSubView, setSequenceSubView] = useState<'spaghetti' | 'bar'>('spaghetti');
@@ -445,7 +445,7 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
               </div>
             </div>
             <div className="text-xs font-bold text-amber-900 dark:text-amber-200 bg-amber-100/80 dark:bg-amber-900/60 px-3 py-1.5 rounded-xl border border-amber-300/60 dark:border-amber-800 shrink-0 self-end sm:self-auto">
-              Target Horizon: Age {profile.maximizedSpendConfig.targetEndAge || profile.lifeExpectancyAge || 95}
+              Target Horizon: Age {profile.maximizedSpendConfig.targetEndAge || projectionEndAge}
             </div>
           </div>
         );

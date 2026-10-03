@@ -1,6 +1,7 @@
 import React from 'react';
 import { UserProfile, InvestmentPots, CustomTaxBandOverrides } from '../types';
 import { getPensionAccessAge, getPartnerPensionAccessAge } from '../utils/ukTaxEngine';
+import { getProjectionEndAge } from '../utils/projectionEngine';
 import { DEFAULT_CUSTOM_TAX_BANDS } from '../utils/defaultData';
 import { RetirementTargetInput } from './RetirementTargetInput';
 import { calculateRetirementDateFromAge, calculateAgeFromRetirementDate } from '../utils/dateAgeUtils';
@@ -264,6 +265,29 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
                   });
                 }}
               />
+
+              {/* Projection Horizon — single end age used by every chart and simulation */}
+              <div className="space-y-1.5">
+                <label htmlFor="projection-horizon-select" className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                  <span>Projection Horizon</span>
+                  <span className="text-[10px] font-semibold text-slate-400">All charts</span>
+                </label>
+                <select
+                  id="projection-horizon-select"
+                  value={getProjectionEndAge(profile)}
+                  onChange={(e) =>
+                    onChange({
+                      ...profile,
+                      monteCarloParams: { ...(profile.monteCarloParams || {}), maxAge: Number(e.target.value) } as UserProfile['monteCarloParams'],
+                    })
+                  }
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+                >
+                  {Array.from(new Set([85, 90, 95, 100, getProjectionEndAge(profile)])).sort((x, y) => x - y).map((a) => (
+                    <option key={a} value={a}>To Age {a}</option>
+                  ))}
+                </select>
+              </div>
 
               {/* Primary Private Pension Access Age Input */}
               <div className="space-y-1.5 sm:col-span-2">

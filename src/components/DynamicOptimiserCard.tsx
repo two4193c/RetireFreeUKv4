@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import { UserProfile, InvestmentPots, TaxCalculationResult, YearProjection, AppMode } from '../types';
 import { runMonteCarloSimulation, MonteCarloResult } from '../utils/monteCarloEngine';
+import { getProjectionEndAge } from '../utils/projectionEngine';
 
 const PA = 12570;
 const BASIC_CEIL = 50270;
@@ -165,7 +166,7 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
           numSimulations: 500,
           accumulationVolatility: 12,
           decumulationVolatility: 8,
-          maxAge: profile.lifeExpectancyAge ?? 95,
+          maxAge: getProjectionEndAge(profile),
         });
         setMcSuccessRate(result.successRate);
       } catch {

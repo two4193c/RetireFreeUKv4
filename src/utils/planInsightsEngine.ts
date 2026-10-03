@@ -4,6 +4,7 @@ import { sanitizePots, DEFAULT_POTS, DEFAULT_PARTNER_POTS } from './defaultData'
 import { solveMaximizedSpend } from './maximizedSpendSolver';
 import { STATE_PENSION_FULL_ANNUAL } from '../config/ukTaxRates';
 import { MonteCarloResult } from './monteCarloEngine';
+import { getProjectionEndAge } from './projectionEngine';
 
 export interface PlanScorecard {
   runwayYears: number;
@@ -114,7 +115,7 @@ export function computePlanInsights(
   const isCouple = Boolean(profile.isCouplePlanning);
   const currentAge = profile.currentAge || 40;
   const targetAge = profile.targetRetirementAge || 60;
-  const horizonAge = profile.lifeExpectancyAge || 90;
+  const horizonAge = getProjectionEndAge(profile);
   const targetIncome = profile.targetRetirementIncomeAnnual || 35000;
   const priDefYears = profile.statePensionDeferralYears || 0;
   const priDefBoost = 1 + (0.058 * priDefYears);

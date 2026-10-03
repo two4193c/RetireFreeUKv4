@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { UserProfile, InvestmentPots, TaxCalculationResult, YearProjection } from '../types';
 import { computePlanInsights, ActionableOpportunity } from '../utils/planInsightsEngine';
 import { MonteCarloResult } from '../utils/monteCarloEngine';
+import { getProjectionEndAge } from '../utils/projectionEngine';
 import {
   Lightbulb,
   Sparkles,
@@ -126,7 +127,7 @@ export const PlanInsightsCard: React.FC<PlanInsightsCardProps> = ({
               <Calendar className="w-3.5 h-3.5 text-indigo-500" />
             </div>
             <div className="text-base font-black text-slate-900 dark:text-white">
-              {scorecard.isFullyFunded ? `Age ${profile.lifeExpectancyAge || 90}+` : `Age ${scorecard.depletionAge}`}
+              {scorecard.isFullyFunded ? `Age ${getProjectionEndAge(profile)}+` : `Age ${scorecard.depletionAge}`}
             </div>
             <div className="text-[10px] font-bold">
               {scorecard.isFullyFunded ? (

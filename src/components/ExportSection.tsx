@@ -9,7 +9,7 @@ import { FileText, Download, Printer, CheckCircle2, Sparkles, ShieldCheck, Arrow
 import { getProjectedPensionAtTakeAge, getPensionAccessAge, getPartnerPensionAccessAge, calculateUKTax, calculatePartnerUKTax, calculateMaxPcls, calculatePartnerMaxPcls, getLumpSumTakeAge, getPartnerLumpSumTakeAge } from '../utils/ukTaxEngine';
 import { runMonteCarloSimulation } from '../utils/monteCarloEngine';
 import { runHistoricSimulation } from '../utils/historicModelingEngine';
-import { getTargetIncomeForAge, generateProjections } from '../utils/projectionEngine';
+import { getTargetIncomeForAge, generateProjections, getProjectionEndAge } from '../utils/projectionEngine';
 import { generatePlanNarrative } from '../utils/pdfNarrativeGenerator';
 import { computePlanInsights } from '../utils/planInsightsEngine';
 import { generateFormulaExcelWorkbook } from '../utils/excelFormulaExporter';
@@ -172,7 +172,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
 
       const targetAge = profile.targetRetirementAge || 60;
       const currentAge = profile.currentAge || 30;
-      const horizonAge = profile.lifeExpectancyAge || 90;
+      const horizonAge = getProjectionEndAge(profile);
 
       // Color Tokens
       const emeraldColor = [16, 185, 129];
@@ -1256,8 +1256,8 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       const kpis = [
         {
           label: 'Portfolio Runway',
-          val: planInsights.scorecard.isFullyFunded ? `Age ${profile.lifeExpectancyAge || 90}+` : `Age ${planInsights.scorecard.depletionAge}`,
-          sub: planInsights.scorecard.isFullyFunded ? `+£${(planInsights.scorecard.finalPotBalance || 0).toLocaleString()} at 90` : `${planInsights.scorecard.runwayYears} yrs runway`,
+          val: planInsights.scorecard.isFullyFunded ? `Age ${getProjectionEndAge(profile)}+` : `Age ${planInsights.scorecard.depletionAge}`,
+          sub: planInsights.scorecard.isFullyFunded ? `+£${(planInsights.scorecard.finalPotBalance || 0).toLocaleString()} at ${getProjectionEndAge(profile)}` : `${planInsights.scorecard.runwayYears} yrs runway`,
           color: planInsights.scorecard.isFullyFunded ? [16, 185, 129] : [225, 29, 72],
         },
         {
@@ -7049,7 +7049,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
         }[] = [];
 
         const curAge = profile.currentAge || 40;
-        const maxLifeAge = profile.lifeExpectancyAge || 90;
+        const maxLifeAge = Math.max(getProjectionEndAge(profile), profile.lifeExpectancyAge || 0);
         const minAgeSpan = Math.min(curAge, 35);
         const totalSpanYears = Math.max(1, maxLifeAge - minAgeSpan);
         const baseYear = new Date().getFullYear();

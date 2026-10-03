@@ -15,6 +15,7 @@ import {
 import { UserProfile, InvestmentPots, TaxCalculationResult, AppMode } from '../types';
 import { runMonteCarloSimulation, MonteCarloParams, MarketScenario, calculateCashBufferRequiredDetails, MonteCarloResult } from '../utils/monteCarloEngine';
 import { getPensionAccessAge, getPartnerPensionAccessAge } from '../utils/ukTaxEngine';
+import { getProjectionEndAge } from '../utils/projectionEngine';
 import { Dices, ShieldAlert, Sparkles, Sliders, TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, Zap, RefreshCw } from 'lucide-react';
 
 interface MonteCarloCardProps {
@@ -61,7 +62,7 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({
     numSimulations: profile.monteCarloParams?.numSimulations ?? 500,
     accumulationVolatility: profile.monteCarloParams?.accumulationVolatility ?? 12.0,
     decumulationVolatility: profile.monteCarloParams?.decumulationVolatility ?? 8.0,
-    maxAge: profile.monteCarloParams?.maxAge ?? targetHorizonAge,
+    maxAge: getProjectionEndAge(profile),
     marketScenario: profile.monteCarloParams?.marketScenario ?? 'standard',
     stressedReturnDropPercent: profile.monteCarloParams?.stressedReturnDropPercent ?? 2.0,
     crashStartAge: profile.monteCarloParams?.crashStartAge ?? profile.targetRetirementAge,

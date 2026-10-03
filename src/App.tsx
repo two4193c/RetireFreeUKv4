@@ -8,7 +8,7 @@ import { DeletePlanModal } from './components/DeletePlanModal';
 import { ManagePlansModal, ManagePlansTab } from './components/ManagePlansModal';
 import { ResetPresetsModal } from './components/ResetPresetsModal';
 import { calculateUKTax } from './utils/ukTaxEngine';
-import { generateProjections } from './utils/projectionEngine';
+import { generateProjections, getProjectionEndAge } from './utils/projectionEngine';
 import { solveMaximizedSpend, disableMaximizedSpend } from './utils/maximizedSpendSolver';
 import { runMonteCarloSimulation, MonteCarloResult } from './utils/monteCarloEngine';
 import { Header } from './components/Header';
@@ -800,6 +800,13 @@ function App() {
     }
   }, [profile, pots]);
 
+  // Keep SWR heatmap horizon aligned with the plan's Projection Horizon
+  const projectionEndAge = getProjectionEndAge(profile);
+  useEffect(() => {
+    const yrs = Math.max(10, Math.min(60, projectionEndAge - (profile.targetRetirementAge || 60)));
+    setSwrHorizonYears((prev) => (prev === yrs ? prev : yrs));
+  }, [projectionEndAge, profile.targetRetirementAge]);
+
   // Central live Monte Carlo simulation (automatically computed and shared across all cards)
   const [centralMonteCarloResult, setCentralMonteCarloResult] = useState<MonteCarloResult | null>(() => {
     try {
@@ -808,7 +815,7 @@ function App() {
         numSimulations: profile.monteCarloParams?.numSimulations ?? 500,
         accumulationVolatility: profile.monteCarloParams?.accumulationVolatility ?? 12.0,
         decumulationVolatility: profile.monteCarloParams?.decumulationVolatility ?? 8.0,
-        maxAge: profile.monteCarloParams?.maxAge ?? (profile.maximizedSpendConfig?.targetEndAge || profile.lifeExpectancyAge || 95),
+        maxAge: getProjectionEndAge(profile),
         marketScenario: profile.monteCarloParams?.marketScenario ?? 'standard',
         stressedReturnDropPercent: profile.monteCarloParams?.stressedReturnDropPercent ?? 2.0,
         crashStartAge: profile.monteCarloParams?.crashStartAge ?? profile.targetRetirementAge,
@@ -846,7 +853,7 @@ function App() {
           numSimulations: profile.monteCarloParams?.numSimulations ?? 500,
           accumulationVolatility: profile.monteCarloParams?.accumulationVolatility ?? 12.0,
           decumulationVolatility: profile.monteCarloParams?.decumulationVolatility ?? 8.0,
-          maxAge: profile.monteCarloParams?.maxAge ?? (profile.maximizedSpendConfig?.targetEndAge || profile.lifeExpectancyAge || 95),
+          maxAge: getProjectionEndAge(profile),
           marketScenario: profile.monteCarloParams?.marketScenario ?? 'standard',
           stressedReturnDropPercent: profile.monteCarloParams?.stressedReturnDropPercent ?? 2.0,
           crashStartAge: profile.monteCarloParams?.crashStartAge ?? profile.targetRetirementAge,

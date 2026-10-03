@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { UserProfile, InvestmentPots, YearProjection } from '../types';
+import { getProjectionEndAge } from '../utils/projectionEngine';
 import {
   Shield,
   TrendingUp,
@@ -117,7 +118,7 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
   };
 
   const retAge = profile.targetRetirementAge || 60;
-  const endAge = Math.min(100, Math.max(retAge + 10, profile.targetAge || 95));
+  const endAge = Math.max(retAge + 1, getProjectionEndAge(profile));
   const horizonYears = Math.max(10, endAge - retAge);
   const inflationRate = (profile.expectedInflationRate ?? 2.5) / 100;
 

@@ -7,6 +7,7 @@ import {
   LifeEventType,
 } from '../types';
 import { getPensionAccessAge, getPartnerPensionAccessAge } from '../utils/ukTaxEngine';
+import { getProjectionEndAge } from '../utils/projectionEngine';
 import {
   Calendar,
   Sparkles,
@@ -87,7 +88,7 @@ export const MilestoneTimelineCard: React.FC<MilestoneTimelineCardProps> = ({
   const isCouple = Boolean(profile.isCouplePlanning);
   const currentAge = profile.currentAge || 40;
   const currentYear = new Date().getFullYear();
-  const maxHorizon = profile.lifeExpectancyAge || 90;
+  const maxHorizon = Math.max(getProjectionEndAge(profile), profile.lifeExpectancyAge || 0);
   const minHorizon = Math.min(currentAge, 35);
   const totalYearsSpan = Math.max(1, maxHorizon - minHorizon);
 

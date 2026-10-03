@@ -1,4 +1,5 @@
 import { UserProfile, YearProjection } from '../types';
+import { getProjectionEndAge } from './projectionEngine';
 
 export interface NarrativeContext {
   profile: UserProfile;
@@ -21,7 +22,7 @@ export function generatePlanNarrative(ctx: NarrativeContext): GeneratedPlanNarra
 
   const currentAge = profile.currentAge || 35;
   const retAge = profile.targetRetirementAge || 60;
-  const maxAge = profile.lifeExpectancyAge || 90;
+  const maxAge = getProjectionEndAge(profile);
   const annualSpend = (profile.maximizedSpendConfig?.enabled ? profile.maximizedSpendConfig.targetAnnualIncome : undefined) ?? profile.targetRetirementIncomeAnnual ?? 30000;
   const isCouple = profile.isCouplePlanning ?? false;
 

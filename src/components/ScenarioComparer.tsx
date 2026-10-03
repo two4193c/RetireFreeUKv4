@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { PlannerScenario, UserProfile, YearProjection, InvestmentPots } from '../types';
 import { calculateUKTax, calculateMaxPcls, calculatePartnerMaxPcls, getLumpSumTakeAge, getPartnerLumpSumTakeAge, getProjectedPensionAtTakeAge } from '../utils/ukTaxEngine';
-import { generateProjections, getTargetIncomeForAge } from '../utils/projectionEngine';
+import { generateProjections, getTargetIncomeForAge, getProjectionEndAge } from '../utils/projectionEngine';
 import { DEFAULT_IHT_SETTINGS, DEFAULT_POTS, sanitizePots, sanitizeProfile } from '../utils/defaultData';
 import {
   ResponsiveContainer,
@@ -745,7 +745,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
       numSimulations: 300,
       accumulationVolatility: 12.0,
       decumulationVolatility: 8.0,
-      maxAge: Math.min(100, scenarioA.profile.lifeExpectancyAge || 95),
+      maxAge: getProjectionEndAge(scenarioA.profile),
       stressedReturnDropPercent: 2.0,
       crashStartAge: scenarioA.profile.targetRetirementAge,
       crashDurationYears: 2,
@@ -759,7 +759,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
       numSimulations: 300,
       accumulationVolatility: 12.0,
       decumulationVolatility: 8.0,
-      maxAge: Math.min(100, scenarioB.profile.lifeExpectancyAge || 95),
+      maxAge: getProjectionEndAge(scenarioB.profile),
       stressedReturnDropPercent: 2.0,
       crashStartAge: scenarioB.profile.targetRetirementAge,
       crashDurationYears: 2,
@@ -773,7 +773,7 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
       numSimulations: 300,
       accumulationVolatility: 12.0,
       decumulationVolatility: 8.0,
-      maxAge: Math.min(100, scenarioC.profile.lifeExpectancyAge || 95),
+      maxAge: getProjectionEndAge(scenarioC.profile),
       stressedReturnDropPercent: 2.0,
       crashStartAge: scenarioC.profile.targetRetirementAge,
       crashDurationYears: 2,
