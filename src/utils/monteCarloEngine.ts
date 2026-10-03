@@ -1269,9 +1269,12 @@ function parseAnnuityTypeConfig(type?: string) {
           }
         }
 
-        // Required inflation-adjusted gross target
-        const maxDrawdownIncomeTarget = getTargetIncomeForAge(profile, age) * gkMultiplier;
-        const actualSpendingBase = getActualSpendingTargetForAge(profile, age) * gkMultiplier;
+        // Required inflation-adjusted gross target (strictly cushioned at Essential Floor)
+        const essentialFloor = (profile.essentialRetirementIncomeAnnual !== undefined && profile.essentialRetirementIncomeAnnual > 0)
+          ? profile.essentialRetirementIncomeAnnual
+          : Math.round(getActualSpendingTargetForAge(profile, age) * 0.65);
+        const maxDrawdownIncomeTarget = Math.max(essentialFloor, getTargetIncomeForAge(profile, age) * gkMultiplier);
+        const actualSpendingBase = Math.max(essentialFloor, getActualSpendingTargetForAge(profile, age) * gkMultiplier);
         const isReinvestExcess = Boolean(
           profile.reinvestExcessDrawdown ||
           profile.maximizedSpendConfig?.reinvestExcessDrawdown

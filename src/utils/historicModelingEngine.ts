@@ -921,8 +921,11 @@ export function runHistoricModelingSimulation(
           }
         }
 
-        const maxDrawdownIncomeTarget = getTargetIncomeForAge(profile, age) * gkMultiplier;
-        const actualSpendingBase = getActualSpendingTargetForAge(profile, age) * gkMultiplier;
+        const essentialFloor = (profile.essentialRetirementIncomeAnnual !== undefined && profile.essentialRetirementIncomeAnnual > 0)
+          ? profile.essentialRetirementIncomeAnnual
+          : Math.round(getActualSpendingTargetForAge(profile, age) * 0.65);
+        const maxDrawdownIncomeTarget = Math.max(essentialFloor, getTargetIncomeForAge(profile, age) * gkMultiplier);
+        const actualSpendingBase = Math.max(essentialFloor, getActualSpendingTargetForAge(profile, age) * gkMultiplier);
 
         const isReinvestExcess = Boolean(
           profile.reinvestExcessDrawdown ||

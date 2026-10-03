@@ -95,4 +95,38 @@ describe('WithdrawalGuardrailGaugeCard', () => {
     // SWR percentage must match across real and nominal modes
     expect(realSwrText).toEqual(nominalSwrText);
   });
+
+  it('updates guardrail triggers and cut/raise percentages based on dynamicSpendingRules inputs', () => {
+    const profile = {
+      ...DEFAULT_PROFILE,
+      currentAge: 60,
+      targetRetirementAge: 60,
+      targetRetirementIncomeAnnual: 40000,
+      dynamicSpendingRules: {
+        enabled: true,
+        capitalPreservationThresholdPercent: 30,
+        capitalPreservationCutPercent: 15,
+        prosperityThresholdPercent: 15,
+        prosperityIncreasePercent: 12,
+        skipInflationOnNegativeReturn: true,
+      },
+    };
+
+    const pots = {
+      ...DEFAULT_POTS,
+      sippBalance: 1000000,
+    };
+
+    render(
+      <WithdrawalGuardrailGaugeCard
+        profile={profile}
+        pots={pots}
+        horizonYears={30}
+      />
+    );
+
+    expect(screen.getByText(/\+30% \/ -15% corridor/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/15%/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/12%/i).length).toBeGreaterThan(0);
+  });
 });

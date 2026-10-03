@@ -303,5 +303,39 @@ describe('DynamicSpendingCard - Guyton-Klinger Spending Rules & Monte Carlo Path
       })
     );
   });
+
+  it('accurately applies capital preservation cut and prosperity raise based on the input figures', () => {
+    const customRulesProfile: UserProfile = {
+      ...baseProfileEnabled,
+      dynamicSpendingRules: {
+        enabled: true,
+        capitalPreservationThresholdPercent: 30,
+        capitalPreservationCutPercent: 15,
+        prosperityThresholdPercent: 15,
+        prosperityIncreasePercent: 12,
+        skipInflationOnNegativeReturn: true,
+      },
+    };
+
+    const onChange = vi.fn();
+    render(<DynamicSpendingCard profile={customRulesProfile} pots={DEFAULT_POTS} onChange={onChange} />);
+
+    // Check that configured input percentages are rendered
+    expect(screen.getByText(/\+30%/)).toBeInTheDocument();
+    expect(screen.getAllByText(/-15%/).length).toBeGreaterThan(0);
+    expect(screen.getByText(/\+12%/)).toBeInTheDocument();
+
+    // Verify input fields contain the custom numbers
+    const inputs = screen.getAllByRole('spinbutton') as HTMLInputElement[];
+    const presThreshInput = inputs.find((i) => i.value === '30');
+    const presCutInput = inputs.find((i) => i.value === '15');
+    const prospThreshInput = inputs.find((i) => i.value === '15');
+    const prospIncInput = inputs.find((i) => i.value === '12');
+
+    expect(presThreshInput).toBeDefined();
+    expect(presCutInput).toBeDefined();
+    expect(prospThreshInput).toBeDefined();
+    expect(prospIncInput).toBeDefined();
+  });
 });
 

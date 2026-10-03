@@ -57,14 +57,14 @@ export const DynamicWithdrawalGuideCard: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
           <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60 space-y-1.5">
-            <h4 className="font-bold text-slate-900 dark:text-white">1. Capital Preservation Rule (Lower Guardrail)</h4>
+            <h4 className="font-bold text-slate-900 dark:text-white">1. Capital Preservation Rule (Upper Guardrail)</h4>
             <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
               If your current withdrawal rate exceeds your initial withdrawal rate by 20% due to market drops, <strong>reduce your annual spending target by 10%</strong> to preserve capital.
             </p>
           </div>
 
           <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60 space-y-1.5">
-            <h4 className="font-bold text-slate-900 dark:text-white">2. Prosperity Rule (Upper Guardrail)</h4>
+            <h4 className="font-bold text-slate-900 dark:text-white">2. Prosperity Rule (Lower Guardrail)</h4>
             <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
               If strong market gains reduce your withdrawal rate by 20% below your initial rate, <strong>increase your annual spending target by 10%</strong> to enjoy your wealth.
             </p>

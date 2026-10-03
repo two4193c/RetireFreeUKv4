@@ -123,11 +123,25 @@ export const WithdrawalGuardrailGaugeCard: React.FC<WithdrawalGuardrailGaugeCard
   
   // Initial SWR — guard against zero
   const initialSwr = totalAssets > 0 ? (withdrawalNeeded / totalAssets) * 100 : 3.5;
-  // Pure Guyton-Klinger ±20% corridor around initial SWR
+  const rules = profile.dynamicSpendingRules || {
+    enabled: false,
+    capitalPreservationThresholdPercent: 20,
+    capitalPreservationCutPercent: 10,
+    prosperityThresholdPercent: 20,
+    prosperityIncreasePercent: 10,
+    skipInflationOnNegativeReturn: true,
+  };
+
+  const presThreshFrac = (rules.capitalPreservationThresholdPercent ?? 20) / 100;
+  const presCutPct = rules.capitalPreservationCutPercent ?? 10;
+  const prospThreshFrac = (rules.prosperityThresholdPercent ?? 20) / 100;
+  const prospIncPct = rules.prosperityIncreasePercent ?? 10;
+
+  // Pure Guyton-Klinger corridor around initial SWR using configured parameters
   // Horizon adjustment: for horizons longer than 30 years, tighten upper guardrail slightly
   const horizonAdjustment = Math.max(0, (horizonYears - 30) * 0.03);
-  const lowerGuardrail = Math.max(1.5, Math.round((initialSwr * 0.8) * 10) / 10);
-  const upperGuardrail = Math.min(8.0, Math.round((initialSwr * 1.2 - horizonAdjustment) * 10) / 10);
+  const lowerGuardrail = Math.max(1.5, Math.round((initialSwr * (1 - prospThreshFrac)) * 10) / 10);
+  const upperGuardrail = Math.min(8.0, Math.round((initialSwr * (1 + presThreshFrac) - horizonAdjustment) * 10) / 10);
 
   // Status
   let status: 'prosperity' | 'safe' | 'capital_preservation' = 'safe';
@@ -157,7 +171,7 @@ export const WithdrawalGuardrailGaugeCard: React.FC<WithdrawalGuardrailGaugeCard
               </span>
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Guyton-Klinger ±20% corridor around your initial withdrawal rate. Linked to SWR Heatmap horizon and equity settings.
+              Guyton-Klinger +{rules.capitalPreservationThresholdPercent ?? 20}% / -{rules.prosperityThresholdPercent ?? 20}% corridor around your initial withdrawal rate. Linked to SWR Heatmap horizon and equity settings.
             </p>
           </div>
         </div>
@@ -183,13 +197,13 @@ export const WithdrawalGuardrailGaugeCard: React.FC<WithdrawalGuardrailGaugeCard
           {status === 'capital_preservation' && (
             <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 text-xs font-extrabold border border-rose-200 dark:border-rose-800">
               <AlertTriangle className="w-4 h-4" />
-              <span>Upper Guardrail Breached — Capital Preservation Rule: Cut Spend 10%</span>
+              <span>Upper Guardrail Breached — Capital Preservation Rule: Cut Spend {presCutPct}%</span>
             </div>
           )}
           {status === 'prosperity' && (
             <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-indigo-100 dark:bg-indigo-950 text-indigo-800 dark:text-indigo-300 text-xs font-extrabold border border-indigo-200 dark:border-indigo-800">
               <CheckCircle2 className="w-4 h-4" />
-              <span>Below Lower Guardrail — Prosperity Rule: Increase Spend 10%</span>
+              <span>Below Lower Guardrail — Prosperity Rule: Increase Spend {prospIncPct}%</span>
             </div>
           )}
         </div>
@@ -214,9 +228,9 @@ export const WithdrawalGuardrailGaugeCard: React.FC<WithdrawalGuardrailGaugeCard
           </div>
 
           <div className="flex justify-between text-[11px] text-slate-500 dark:text-slate-400 font-semibold">
-            <span>Prosperity (↑ +10% spend)</span>
+            <span>Prosperity (↑ +{prospIncPct}% spend)</span>
             <span className="text-primary-600 dark:text-primary-400 font-bold">Safe Corridor</span>
-            <span>Capital Preservation (↓ −10% spend)</span>
+            <span>Capital Preservation (↓ −{presCutPct}% spend)</span>
           </div>
         </div>
       </div>
@@ -226,13 +240,13 @@ export const WithdrawalGuardrailGaugeCard: React.FC<WithdrawalGuardrailGaugeCard
         <div className="p-4 rounded-xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-200/80 dark:border-indigo-800/80 space-y-1.5">
           <h4 className="font-bold text-indigo-900 dark:text-indigo-300">Prosperity Rule (Lower Guardrail: {lowerGuardrail.toFixed(1)}%)</h4>
           <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-            If portfolio growth drops your effective SWR below <strong>{lowerGuardrail.toFixed(1)}%</strong>, increase annual spending by <strong>10%</strong> to enjoy more of your capital.
+            If portfolio growth drops your effective SWR below <strong>{lowerGuardrail.toFixed(1)}%</strong>, increase annual spending by <strong>{prospIncPct}%</strong> to enjoy more of your capital.
           </p>
         </div>
         <div className="p-4 rounded-xl bg-rose-50/70 dark:bg-rose-950/30 border border-rose-200/80 dark:border-rose-800/80 space-y-1.5">
           <h4 className="font-bold text-rose-900 dark:text-rose-300">Capital Preservation Rule (Upper: {upperGuardrail.toFixed(1)}%)</h4>
           <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-            If market falls push your effective SWR above <strong>{upperGuardrail.toFixed(1)}%</strong>, cut annual spending by <strong>10%</strong> to protect long-term capital.
+            If market falls push your effective SWR above <strong>{upperGuardrail.toFixed(1)}%</strong>, cut annual spending by <strong>{presCutPct}%</strong> to protect long-term capital.
           </p>
         </div>
       </div>

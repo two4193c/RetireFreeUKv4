@@ -327,37 +327,64 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
       ],
     };
 
+    const isAdjustedReal = profile.adjustForInflation !== false;
     const returnSeries = scenarioReturns[selectedScenario] || monteCarloPaths.mc50;
-    let currentPot = startingWealth;
     let spendingMultiplier = 1.0;
     const initialGkRate = initialWithdrawalRate / 100;
+    const presThresh = 1 + (rules.capitalPreservationThresholdPercent ?? 20) / 100;
+    const presCut = (rules.capitalPreservationCutPercent ?? 10) / 100;
+    const prospThresh = 1 - (rules.prosperityThresholdPercent ?? 20) / 100;
+    const prospInc = (rules.prosperityIncreasePercent ?? 10) / 100;
+
+    const isMcScenario = selectedScenario === 'mc10' || selectedScenario === 'mc50' || selectedScenario === 'mc90';
+    const isScenarioMatch = !monteCarloResult?.params?.marketScenario || monteCarloResult.params.marketScenario === activeMarketScenario;
+    const hasMcPercentiles = isScenarioMatch && Boolean(monteCarloResult?.agePercentiles?.length);
+
+    let runningSimPot = startingWealth;
+    let prevDynamicSpend = 0;
 
     for (let yr = 0; yr <= horizonYears; yr++) {
       const currentAge = retAge + yr;
       if (currentAge > endAge) break;
 
       const inflationFactor = Math.pow(1 + inflationRate, yr);
-      const baseTargetAtAge = getActualSpendingTargetForAge(profile, currentAge) * inflationFactor;
-      const essentialFloorAtAge = Math.round(essentialFloorBaseline * inflationFactor);
+      const baseTargetAtAge = isAdjustedReal
+        ? getActualSpendingTargetForAge(profile, currentAge)
+        : getActualSpendingTargetForAge(profile, currentAge) * inflationFactor;
+      const essentialFloorAtAge = isAdjustedReal
+        ? Math.round(essentialFloorBaseline)
+        : Math.round(essentialFloorBaseline * inflationFactor);
 
       const ret = yr > 0 ? returnSeries[(yr - 1) % returnSeries.length] ?? 0.05 : 0;
 
-      // Apply return to remaining portfolio
+      // Determine this year's portfolio pot balance available for withdrawal
+      let portfolioThisAge = startingWealth;
       if (yr > 0) {
-        currentPot = Math.max(0, currentPot * (1 + ret));
+        if (isMcScenario && hasMcPercentiles) {
+          const mcPoint = monteCarloResult!.agePercentiles.find((p) => p.age === currentAge);
+          if (mcPoint) {
+            if (selectedScenario === 'mc50') portfolioThisAge = mcPoint.p50TotalPot;
+            else if (selectedScenario === 'mc10') portfolioThisAge = mcPoint.p10TotalPot;
+            else if (selectedScenario === 'mc90') portfolioThisAge = mcPoint.p90TotalPot;
+          } else {
+            const realRet = isAdjustedReal ? ((1 + ret) / (1 + inflationRate) - 1) : ret;
+            runningSimPot = Math.max(0, (runningSimPot - prevDynamicSpend) * (1 + realRet));
+            portfolioThisAge = runningSimPot;
+          }
+        } else {
+          const realRet = isAdjustedReal ? ((1 + ret) / (1 + inflationRate) - 1) : ret;
+          runningSimPot = Math.max(0, (runningSimPot - prevDynamicSpend) * (1 + realRet));
+          portfolioThisAge = runningSimPot;
+        }
       }
 
       let event: 'cut' | 'raise' | 'freeze' | 'floor_protected' | undefined = undefined;
       let eventNote: string | undefined = undefined;
 
-      if (yr > 0 && rules.enabled && currentPot > 0 && initialGkRate > 0) {
-        const currentRate = (baseTargetAtAge * spendingMultiplier) / currentPot;
-        const presThresh = 1 + rules.capitalPreservationThresholdPercent / 100;
-        const presCut = rules.capitalPreservationCutPercent / 100;
-        const prospThresh = 1 - rules.prosperityThresholdPercent / 100;
-        const prospInc = rules.prosperityIncreasePercent / 100;
+      if (yr > 0 && rules.enabled && portfolioThisAge > 0 && initialGkRate > 0) {
+        const currentRate = (baseTargetAtAge * spendingMultiplier) / portfolioThisAge;
 
-        // Capital Preservation Rule Trigger
+        // Capital Preservation Rule Trigger (Upper Guardrail)
         if (currentRate > initialGkRate * presThresh) {
           const prospectiveMultiplier = spendingMultiplier * (1 - presCut);
           const prospectiveIncome = baseTargetAtAge * prospectiveMultiplier;
@@ -366,22 +393,22 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
             // Clamped at essential floor
             spendingMultiplier = Math.max(0.2, essentialFloorAtAge / baseTargetAtAge);
             event = 'floor_protected';
-            eventNote = `Capital Preservation triggered (+${((currentRate / initialGkRate - 1) * 100).toFixed(0)}% SWR surge), but spending cut was cushioned at your Essential Floor.`;
+            eventNote = `Capital Preservation triggered (+${((currentRate / initialGkRate - 1) * 100).toFixed(0)}% SWR surge to ${(currentRate * 100).toFixed(1)}%), but spending cut was cushioned at your Essential Floor (£${essentialFloorAtAge.toLocaleString()}/yr).`;
           } else {
             spendingMultiplier = prospectiveMultiplier;
             event = 'cut';
-            eventNote = `Capital Preservation triggered: Withdrawal rate hit ${(currentRate * 100).toFixed(1)}% (+${((currentRate / initialGkRate - 1) * 100).toFixed(0)}% vs initial). Spending cut by ${rules.capitalPreservationCutPercent}%.`;
+            eventNote = `Capital Preservation triggered: Withdrawal rate hit ${(currentRate * 100).toFixed(1)}% (+${((currentRate / initialGkRate - 1) * 100).toFixed(0)}% vs initial ${initialWithdrawalRate.toFixed(1)}%). Spending cut by ${rules.capitalPreservationCutPercent}%.`;
           }
         }
-        // Prosperity Rule Trigger
+        // Prosperity Rule Trigger (Lower Guardrail)
         else if (currentRate < initialGkRate * prospThresh) {
           spendingMultiplier *= 1 + prospInc;
           event = 'raise';
-          eventNote = `Prosperity Rule triggered: Portfolio growth lowered withdrawal rate to ${(currentRate * 100).toFixed(1)}% (-${((1 - currentRate / initialGkRate) * 100).toFixed(0)}% vs initial). Spending raised by ${rules.prosperityIncreasePercent}%.`;
+          eventNote = `Prosperity Rule triggered: Portfolio growth lowered withdrawal rate to ${(currentRate * 100).toFixed(1)}% (-${((1 - currentRate / initialGkRate) * 100).toFixed(0)}% vs initial ${initialWithdrawalRate.toFixed(1)}%). Spending raised by ${rules.prosperityIncreasePercent}%.`;
         }
         // Inflation Freeze Rule Trigger
         else if (rules.skipInflationOnNegativeReturn && ret < 0) {
-          spendingMultiplier /= 1 + inflationRate;
+          spendingMultiplier /= (1 + inflationRate);
           event = 'freeze';
           eventNote = `Inflation Freeze triggered: Negative portfolio return (${(ret * 100).toFixed(1)}%) skipped annual +${(inflationRate * 100).toFixed(1)}% inflation adjustment to protect capital.`;
         }
@@ -392,28 +419,14 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
       if (dynamicSpend < essentialFloorAtAge) {
         dynamicSpend = essentialFloorAtAge;
       }
+      prevDynamicSpend = dynamicSpend;
 
-      // Subtract spend from pot
-      currentPot = Math.max(0, currentPot - dynamicSpend);
-
-      // Align portfolio pot balance with the central Monte Carlo simulation percentile paths when available
-      let displayPortfolio = Math.round(currentPot);
-      const isScenarioMatch = !monteCarloResult?.params?.marketScenario || monteCarloResult.params.marketScenario === activeMarketScenario;
-      if (isScenarioMatch && monteCarloResult?.agePercentiles) {
-        const mcPoint = monteCarloResult.agePercentiles.find((p) => p.age === currentAge);
-        if (mcPoint) {
-          if (selectedScenario === 'mc50') displayPortfolio = mcPoint.p50TotalPot;
-          else if (selectedScenario === 'mc10') displayPortfolio = mcPoint.p10TotalPot;
-          else if (selectedScenario === 'mc90') displayPortfolio = mcPoint.p90TotalPot;
-        }
-      }
-
-      const actualWr = displayPortfolio > 0 ? (dynamicSpend / (displayPortfolio + dynamicSpend)) * 100 : 100;
+      const actualWr = portfolioThisAge > 0 ? (dynamicSpend / portfolioThisAge) * 100 : 100;
 
       points.push({
         age: currentAge,
         yearIndex: yr,
-        portfolio: displayPortfolio,
+        portfolio: Math.round(portfolioThisAge),
         baselineIncome: Math.round(baseTargetAtAge),
         dynamicIncome: dynamicSpend,
         essentialFloor: essentialFloorAtAge,
