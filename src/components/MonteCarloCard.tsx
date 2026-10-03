@@ -285,33 +285,26 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({
 
   const prepareChartData = (result: typeof mcResult) => {
     if (!result) return [];
-    const inflationRate = (profile.expectedInflationRate ?? 2.5) / 100;
-    return result.agePercentiles.map((p) => {
-      const yearOffset = p.age - profile.currentAge;
-      const discount = adjustInflation ? Math.pow(1 + inflationRate, yearOffset) : 1;
-
-      return {
-        age: p.age,
-        year: p.year,
-        isRetired: p.isRetired,
-        p10: Math.round(p.p10TotalPot / discount),
-        p25: Math.round(p.p25TotalPot / discount),
-        p50: Math.round(p.p50TotalPot / discount),
-        p75: Math.round(p.p75TotalPot / discount),
-        p90: Math.round(p.p90TotalPot / discount),
-        p50Pension: Math.round(p.p50PensionPot / discount),
-        p50Isa: Math.round(p.p50IsaPot / discount),
-        p50Cash: Math.round(p.p50CashGiaPot / discount),
-        survivalRate: p.survivalRate,
-      };
-    });
+    return result.agePercentiles.map((p) => ({
+      age: p.age,
+      year: p.year,
+      isRetired: p.isRetired,
+      p10: p.p10TotalPot,
+      p25: p.p25TotalPot,
+      p50: p.p50TotalPot,
+      p75: p.p75TotalPot,
+      p90: p.p90TotalPot,
+      p50Pension: p.p50PensionPot,
+      p50Isa: p.p50IsaPot,
+      p50Cash: p.p50CashGiaPot,
+      survivalRate: p.survivalRate,
+    }));
   };
 
-  // Inflation adjustments for chart rendering
-  const chartData = useMemo(() => prepareChartData(mcResult), [mcResult, profile.currentAge, profile.expectedInflationRate, adjustInflation]);
-  const baseChartData = useMemo(() => prepareChartData(baseResult), [baseResult, profile.currentAge, profile.expectedInflationRate, adjustInflation]);
-  const stressedChartData = useMemo(() => prepareChartData(stressedResult), [stressedResult, profile.currentAge, profile.expectedInflationRate, adjustInflation]);
-  const crashChartData = useMemo(() => prepareChartData(crashResult), [crashResult, profile.currentAge, profile.expectedInflationRate, adjustInflation]);
+  const chartData = useMemo(() => prepareChartData(mcResult), [mcResult]);
+  const baseChartData = useMemo(() => prepareChartData(baseResult), [baseResult]);
+  const stressedChartData = useMemo(() => prepareChartData(stressedResult), [stressedResult]);
+  const crashChartData = useMemo(() => prepareChartData(crashResult), [crashResult]);
 
   if (!taxResult) {
     return (

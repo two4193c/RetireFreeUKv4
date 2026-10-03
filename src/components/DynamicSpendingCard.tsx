@@ -396,12 +396,24 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
       // Subtract spend from pot
       currentPot = Math.max(0, currentPot - dynamicSpend);
 
-      const actualWr = currentPot > 0 ? (dynamicSpend / (currentPot + dynamicSpend)) * 100 : 100;
+      // Align portfolio pot balance with the central Monte Carlo simulation percentile paths when available
+      let displayPortfolio = Math.round(currentPot);
+      const isScenarioMatch = !monteCarloResult?.params?.marketScenario || monteCarloResult.params.marketScenario === activeMarketScenario;
+      if (isScenarioMatch && monteCarloResult?.agePercentiles) {
+        const mcPoint = monteCarloResult.agePercentiles.find((p) => p.age === currentAge);
+        if (mcPoint) {
+          if (selectedScenario === 'mc50') displayPortfolio = mcPoint.p50TotalPot;
+          else if (selectedScenario === 'mc10') displayPortfolio = mcPoint.p10TotalPot;
+          else if (selectedScenario === 'mc90') displayPortfolio = mcPoint.p90TotalPot;
+        }
+      }
+
+      const actualWr = displayPortfolio > 0 ? (dynamicSpend / (displayPortfolio + dynamicSpend)) * 100 : 100;
 
       points.push({
         age: currentAge,
         yearIndex: yr,
-        portfolio: Math.round(currentPot),
+        portfolio: displayPortfolio,
         baselineIncome: Math.round(baseTargetAtAge),
         dynamicIncome: dynamicSpend,
         essentialFloor: essentialFloorAtAge,
@@ -415,6 +427,7 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
 
     return points;
   }, [
+    activeMarketScenario,
     endAge,
     essentialFloorBaseline,
     horizonYears,
@@ -422,6 +435,7 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
     initialTarget,
     initialWithdrawalRate,
     monteCarloPaths,
+    monteCarloResult,
     profile,
     retAge,
     rules,

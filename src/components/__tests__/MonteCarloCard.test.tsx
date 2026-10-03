@@ -166,4 +166,28 @@ describe('MonteCarloCard', () => {
     // Because profile params match initial localParams, onChange should not be repeatedly invoked
     expect(onChange).toHaveBeenCalledTimes(0);
   });
+
+  it('preserves real pot values in Median Pot Split breakdown without double deflation when adjustForInflation is enabled', () => {
+    (monteCarloEngine.runMonteCarloSimulation as any).mockReturnValue(mockResult);
+    (monteCarloEngine.calculateCashBufferRequiredDetails as any).mockReturnValue({
+      totalNetCashBufferRequired: 0,
+      existingCashAvailable: 0,
+      shortfallOrSurplus: 0,
+      isFullyCovered: true,
+      yearlyDetails: [],
+    });
+
+    render(
+      <MonteCarloCard
+        profile={{ ...mockProfile, adjustForInflation: true, expectedInflationRate: 2.5 }}
+        pots={mockPots}
+        taxResult={mockTaxResult}
+        precomputedResult={mockResult as any}
+      />
+    );
+
+    // Target Age 60 Pot should display £100k directly matching mockResult.agePercentiles[0].p50TotalPot
+    expect(screen.getByText(/Target Age 60 Pot \(Median\)/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/£100k/i).length).toBeGreaterThan(0);
+  });
 });
