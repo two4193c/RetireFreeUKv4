@@ -108,6 +108,35 @@ export function getTargetIncomeForAge(profile: UserProfile, age: number): number
   return profile.targetRetirementIncomeAnnual;
 }
 
+export function getEssentialFloorForAge(profile: UserProfile, age: number): number {
+  if (profile.spendingPhases?.enabled) {
+    const phases = profile.spendingPhases;
+    if (phases.customRanges && phases.customRanges.length > 0) {
+      const sorted = [...phases.customRanges].sort((a, b) => a.startAge - b.startAge);
+      const match = sorted.find(
+        (r) => age >= r.startAge && (r.endAge === undefined || r.endAge === null || r.endAge <= 0 || age <= r.endAge)
+      );
+      if (match && match.essentialIncomeFloor !== undefined && match.essentialIncomeFloor !== null && match.essentialIncomeFloor > 0) {
+        return match.essentialIncomeFloor;
+      }
+      const lastRange = sorted[sorted.length - 1];
+      if (lastRange && lastRange.endAge && age > lastRange.endAge && lastRange.essentialIncomeFloor) {
+        return lastRange.essentialIncomeFloor;
+      }
+      if (sorted[0] && age < sorted[0].startAge && sorted[0].essentialIncomeFloor) {
+        return sorted[0].essentialIncomeFloor;
+      }
+    }
+  }
+
+  if (profile.essentialRetirementIncomeAnnual !== undefined && profile.essentialRetirementIncomeAnnual !== null && profile.essentialRetirementIncomeAnnual > 0) {
+    return profile.essentialRetirementIncomeAnnual;
+  }
+
+  const target = getTargetIncomeForAge(profile, age) || profile.targetRetirementIncomeAnnual || 32000;
+  return Math.round((target * 0.65) / 500) * 500;
+}
+
 export function getActualSpendingTargetForAge(profile: UserProfile, age: number): number {
   const isReinvest = Boolean(
     profile.reinvestExcessDrawdown ||

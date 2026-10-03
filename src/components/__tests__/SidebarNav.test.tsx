@@ -78,4 +78,19 @@ describe('SidebarNav menu configuration', () => {
     expect(advMortgageIdx).toBe(advStrategyIdx + 1);
     expect(advAccumIdx).toBe(advMortgageIdx + 1);
   });
+
+  it('places Dynamic Optimiser first, Trajectory Chart second, and Bengen Benchmark after PWR Metric in Drawdown Analysis', () => {
+    const stratTab = NAV_STRUCTURE.find((t) => t.id === 'strategy');
+    const stratAnalysisTab = NAV_STRUCTURE.find((t) => t.id === 'strategy_analysis');
+
+    expect(stratTab?.cards.some((c) => c.id === 'card-dynamic-optimiser')).toBe(false);
+    expect(stratAnalysisTab?.cards[0]?.id).toBe('card-dynamic-optimiser');
+    expect(stratAnalysisTab?.cards[0]?.label).toBe('Dynamic Optimiser');
+    expect(stratAnalysisTab?.cards[1]?.id).toBe('card-swr-trajectory-chart');
+    expect(stratAnalysisTab?.cards[1]?.label).toBe('Effective Withdrawal Rate Trajectory Chart');
+    expect(stratAnalysisTab?.cards[2]?.id).toBe('card-pwr-metric');
+    expect(stratAnalysisTab?.cards[2]?.label).toBe('Personalized Withdrawal Rate (PWR) Metric');
+    expect(stratAnalysisTab?.cards[3]?.id).toBe('card-swr-uk-us-benchmark');
+    expect(stratAnalysisTab?.cards[3]?.label).toBe('Bengen (US) vs UK Domestic Market Benchmark');
+  });
 });

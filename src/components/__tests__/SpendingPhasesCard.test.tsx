@@ -17,7 +17,7 @@ describe('SpendingPhasesCard - Retirement Income Requirement & Essential Floor',
     render(<SpendingPhasesCard profile={baseProfile} onChange={onChange} />);
 
     expect(screen.getByText('Retirement Income Requirement')).toBeDefined();
-    expect(screen.getByText('Essential Spending Floor')).toBeDefined();
+    expect(screen.getByText('Essential Income Floor')).toBeDefined();
     expect(screen.getByText('65% of Target')).toBeDefined();
   });
 

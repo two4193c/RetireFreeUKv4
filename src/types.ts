@@ -252,6 +252,7 @@ export interface SpendingAgeRange {
   startAge: number;
   endAge?: number; // undefined or null for ongoing (e.g. 85+)
   annualTargetIncome: number; // £/year in today's money
+  essentialIncomeFloor?: number; // £/year in today's money for essential floor in this stage
   description?: string;
 }
 

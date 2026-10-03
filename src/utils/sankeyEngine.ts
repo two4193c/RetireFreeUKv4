@@ -1,6 +1,6 @@
 import { UserProfile, InvestmentPots, YearProjection, UKTaxResult } from '../types';
 import { calculateUKTax, calculatePartnerUKTax, getPensionAccessAge, getPartnerPensionAccessAge } from './ukTaxEngine';
-import { getTargetIncomeForAge } from './projectionEngine';
+import { getTargetIncomeForAge, getEssentialFloorForAge } from './projectionEngine';
 import { DEFAULT_POTS, DEFAULT_PARTNER_POTS } from './defaultData';
 
 export type CashFlowViewMode = 'combined' | 'split' | 'primary' | 'partner';
@@ -124,9 +124,7 @@ export function computeCashFlowSankeyData(
   const primaryName = profile.name || 'Primary';
   const partnerName = profile.partnerName || 'Partner';
 
-  const defaultCombinedEssentialFloor = (profile.essentialRetirementIncomeAnnual !== undefined && profile.essentialRetirementIncomeAnnual !== null && profile.essentialRetirementIncomeAnnual > 0)
-    ? profile.essentialRetirementIncomeAnnual
-    : Math.round(((getTargetIncomeForAge(profile, p.age) || profile.targetRetirementIncomeAnnual || 30000) * 0.65) / 500) * 500;
+  const defaultCombinedEssentialFloor = getEssentialFloorForAge(profile, p.age);
   const combinedEssentialFloor = customEssentialFloor ?? defaultCombinedEssentialFloor;
 
   const inflationFactor = Math.pow(1 + (profile.expectedInflationRate ?? 2.5) / 100, p.age - profile.currentAge);

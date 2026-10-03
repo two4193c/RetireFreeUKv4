@@ -12,7 +12,7 @@ import {
   calculatePartnerUKTax,
 } from '../utils/ukTaxEngine';
 import { DEFAULT_POTS, DEFAULT_PARTNER_POTS } from '../utils/defaultData';
-import { getTargetIncomeForAge } from '../utils/projectionEngine';
+import { getTargetIncomeForAge, getEssentialFloorForAge } from '../utils/projectionEngine';
 import { STRATEGY_DEFINITIONS } from './QuickDrawdownStrategyBar';
 import {
   Waves,
@@ -89,11 +89,7 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
   const defaultAge = profile.targetRetirementAge || (projections[0]?.age ?? 60);
   const [selectedAge, setSelectedAge] = useState<number>(defaultAge);
   const defaultCombinedEssentialFloor = useMemo(() => {
-    if (profile.essentialRetirementIncomeAnnual !== undefined && profile.essentialRetirementIncomeAnnual !== null && profile.essentialRetirementIncomeAnnual > 0) {
-      return profile.essentialRetirementIncomeAnnual;
-    }
-    const target = getTargetIncomeForAge(profile, selectedAge) || profile.targetRetirementIncomeAnnual || 30000;
-    return Math.round((target * 0.65) / 500) * 500;
+    return getEssentialFloorForAge(profile, selectedAge);
   }, [profile, selectedAge]);
 
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);

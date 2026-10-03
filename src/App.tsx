@@ -823,7 +823,7 @@ function App() {
               mortgage: 'card-right-sizing',
               advanced_settings: 'card-adv-macro',
               accumulation_review: 'card-accum-savings',
-              strategy_analysis: 'card-pwr-metric',
+              strategy_analysis: 'card-dynamic-optimiser',
               projections: 'card-proj-chart',
               risk: 'card-risk-monte',
               estate: 'card-estate-iht',
@@ -1177,20 +1177,6 @@ function App() {
                         appMode={appMode}
                       />
                     </div>
-                    <div id="card-dynamic-optimiser" className="scroll-mt-24 transition-all duration-300">
-                      <DynamicOptimiserCard
-                        profile={profile}
-                        pots={pots}
-                        taxResult={taxResult}
-                        projections={projections}
-                        appMode={appMode}
-                        onRunStressTest={() => setActiveTab('risk')}
-                        onChange={handleProfileChange}
-                      />
-                    </div>
-                    <div id="card-swr-trajectory-chart" className="scroll-mt-24 transition-all duration-300">
-                      <SwrTrajectoryChart projections={projections} profile={profile} />
-                    </div>
                     <div id="card-cashflow-sankey" className="scroll-mt-24 transition-all duration-300">
                       <CashFlowSankeyCard
                         projections={projections}
@@ -1210,8 +1196,26 @@ function App() {
                       <div id="card-risk-historic" className="scroll-mt-24 transition-all duration-300">
                       <HistoricModelingCard profile={profile} pots={pots} taxResult={taxResult} onChange={handleProfileChange} appMode={appMode} />
                     </div>
+                    {/* Drawdown Analysis Cards */}
+                    <div id="card-dynamic-optimiser" className="scroll-mt-24 transition-all duration-300">
+                      <DynamicOptimiserCard
+                        profile={profile}
+                        pots={pots}
+                        taxResult={taxResult}
+                        projections={projections}
+                        appMode={appMode}
+                        onRunStressTest={() => setActiveTab('risk')}
+                        onChange={handleProfileChange}
+                      />
+                    </div>
+                    <div id="card-swr-trajectory-chart" className="scroll-mt-24 transition-all duration-300">
+                      <SwrTrajectoryChart projections={projections} profile={profile} />
+                    </div>
                     <div id="card-pwr-metric" className="scroll-mt-24 transition-all duration-300">
                       <PwrMetricBannerCard profile={profile} pots={pots} projections={projections} />
+                    </div>
+                    <div id="card-swr-uk-us-benchmark" className="scroll-mt-24 transition-all duration-300">
+                      <SwrUkUsBenchmarkCard />
                     </div>
                     <div id="card-swr-matrix" className="scroll-mt-24 transition-all duration-300">
                       <SwrMatrixCard
@@ -1242,9 +1246,6 @@ function App() {
                         projections={projections}
                         onChange={handleProfileChange}
                       />
-                    </div>
-                    <div id="card-swr-uk-us-benchmark" className="scroll-mt-24 transition-all duration-300">
-                      <SwrUkUsBenchmarkCard />
                     </div>
                     {/* Asset Location & Strategy Depletion Sequence (strategy-contextualised) */}
                     <div id="card-strat-asset-location-analysis" className="scroll-mt-24 transition-all duration-300">
@@ -1431,17 +1432,6 @@ function App() {
                     appMode={appMode}
                   />
                 </div>
-                <div id="card-dynamic-optimiser" className="scroll-mt-24 transition-all duration-300">
-                  <DynamicOptimiserCard
-                    profile={profile}
-                    pots={pots}
-                    taxResult={taxResult}
-                    projections={projections}
-                    appMode={appMode}
-                    onRunStressTest={() => setActiveTab('risk')}
-                    onChange={handleProfileChange}
-                  />
-                </div>
                 {appMode === 'advanced' && (
                   <div id="card-strat-gilt-ladder" className="scroll-mt-24 transition-all duration-300">
                     <GiltLadderCard
@@ -1524,8 +1514,25 @@ function App() {
             {/* Tab 5: Drawdown Analysis (Advanced Mode Only) */}
             {!studioMode && activeTab === 'strategy_analysis' && (
               <div className="space-y-6">
+                <div id="card-dynamic-optimiser" className="scroll-mt-24 transition-all duration-300">
+                  <DynamicOptimiserCard
+                    profile={profile}
+                    pots={pots}
+                    taxResult={taxResult}
+                    projections={projections}
+                    appMode={appMode}
+                    onRunStressTest={() => setActiveTab('risk')}
+                    onChange={handleProfileChange}
+                  />
+                </div>
+                <div id="card-swr-trajectory-chart" className="scroll-mt-24 transition-all duration-300">
+                  <SwrTrajectoryChart projections={projections} profile={profile} />
+                </div>
                 <div id="card-pwr-metric" className="scroll-mt-24 transition-all duration-300">
                   <PwrMetricBannerCard profile={profile} pots={pots} projections={projections} />
+                </div>
+                <div id="card-swr-uk-us-benchmark" className="scroll-mt-24 transition-all duration-300">
+                  <SwrUkUsBenchmarkCard />
                 </div>
                 <div id="card-swr-matrix" className="scroll-mt-24 transition-all duration-300">
                   <SwrMatrixCard
@@ -1556,12 +1563,6 @@ function App() {
                     projections={projections}
                     onChange={handleProfileChange}
                   />
-                </div>
-                <div id="card-swr-trajectory-chart" className="scroll-mt-24 transition-all duration-300">
-                  <SwrTrajectoryChart projections={projections} profile={profile} />
-                </div>
-                <div id="card-swr-uk-us-benchmark" className="scroll-mt-24 transition-all duration-300">
-                  <SwrUkUsBenchmarkCard />
                 </div>
                 {/* Asset Location & Strategy Depletion Sequence */}
                 <div id="card-strat-asset-location-analysis" className="scroll-mt-24 transition-all duration-300">
