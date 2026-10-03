@@ -136,4 +136,32 @@ describe('DynamicSpendingCard - Guyton-Klinger Spending Rules & Monte Carlo Path
       );
     }
   });
+
+  it('uses real simulation paths from monteCarloResult when provided', () => {
+    const onChange = vi.fn();
+    const mockMcResult = {
+      params: { numSimulations: 500 } as any,
+      agePercentiles: [],
+      percentiles: [],
+      successRate: 92,
+      successRateAge85: 90,
+      paths: {
+        mc10Returns: [-0.05, -0.08, 0.01, 0.04],
+        mc50Returns: [0.04, 0.05, 0.04, 0.05],
+        mc90Returns: [0.12, 0.10, 0.09, 0.11],
+      },
+    };
+
+    render(
+      <DynamicSpendingCard
+        profile={baseProfileEnabled}
+        pots={DEFAULT_POTS}
+        onChange={onChange}
+        monteCarloResult={mockMcResult as any}
+      />
+    );
+
+    // Verify Simulated (500 Runs) badge is shown
+    expect(screen.getByText('Simulated (500 Runs)')).toBeInTheDocument();
+  });
 });

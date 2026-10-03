@@ -13,7 +13,7 @@ import {
   ReferenceLine,
 } from 'recharts';
 import { UserProfile, InvestmentPots, TaxCalculationResult, AppMode } from '../types';
-import { runMonteCarloSimulation, MonteCarloParams, MarketScenario, calculateCashBufferRequiredDetails } from '../utils/monteCarloEngine';
+import { runMonteCarloSimulation, MonteCarloParams, MarketScenario, calculateCashBufferRequiredDetails, MonteCarloResult } from '../utils/monteCarloEngine';
 import { getPensionAccessAge, getPartnerPensionAccessAge } from '../utils/ukTaxEngine';
 import { Dices, ShieldAlert, Sparkles, Sliders, TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, Zap, RefreshCw } from 'lucide-react';
 
@@ -24,9 +24,18 @@ interface MonteCarloCardProps {
   onChange?: (updatedProfile: UserProfile | Partial<UserProfile>) => void;
   showAllScenarios?: boolean;
   appMode?: AppMode;
+  precomputedResult?: MonteCarloResult | null;
 }
 
-export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, taxResult, onChange, showAllScenarios = false, appMode = 'basic' }) => {
+export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({
+  profile,
+  pots,
+  taxResult,
+  onChange,
+  showAllScenarios = false,
+  appMode = 'basic',
+  precomputedResult,
+}) => {
   const isStudioMode = appMode === 'studio';
   const targetHorizonAge = profile.maximizedSpendConfig?.targetEndAge || profile.lifeExpectancyAge || 95;
 
@@ -42,7 +51,7 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
   });
 
   const [localParams, setLocalParams] = useState<MonteCarloParams>(params);
-  const [hasRun, setHasRun] = useState(false);
+  const [iterationSeed, setIterationSeed] = useState(0);
   const [isSimulating, setIsSimulating] = useState(false);
 
   React.useEffect(() => {
@@ -131,30 +140,51 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
 
   // Compute Monte Carlo simulation for current single selection
   const mcResult = useMemo(() => {
-    if (!taxResult || !hasRun) return null;
+    if (!taxResult) return null;
+    if (
+      precomputedResult &&
+      iterationSeed === 0 &&
+      params.marketScenario === 'standard' &&
+      params.numSimulations === 500 &&
+      localParams.accumulationVolatility === 12 &&
+      localParams.decumulationVolatility === 8 &&
+      localParams.maxAge === targetHorizonAge
+    ) {
+      return precomputedResult;
+    }
     return runMonteCarloSimulation(profile, pots, taxResult, params);
-  }, [profile, pots, taxResult, params, hasRun]);
+  }, [profile, pots, taxResult, params, precomputedResult, iterationSeed, localParams, targetHorizonAge]);
 
   // Compute 3 scenario results for Overview tab comparison view
   const baseResult = useMemo(() => {
-    if (!taxResult || !hasRun) return null;
+    if (!taxResult) return null;
+    if (
+      precomputedResult &&
+      iterationSeed === 0 &&
+      params.numSimulations === 500 &&
+      localParams.accumulationVolatility === 12 &&
+      localParams.decumulationVolatility === 8 &&
+      localParams.maxAge === targetHorizonAge
+    ) {
+      return precomputedResult;
+    }
     return runMonteCarloSimulation(profile, pots, taxResult, { ...params, marketScenario: 'standard' });
-  }, [profile, pots, taxResult, params, hasRun]);
+  }, [profile, pots, taxResult, params, precomputedResult, iterationSeed, localParams, targetHorizonAge]);
 
   const stressedResult = useMemo(() => {
-    if (!taxResult || !hasRun) return null;
+    if (!taxResult) return null;
     return runMonteCarloSimulation(profile, pots, taxResult, { ...params, marketScenario: 'stressed' });
-  }, [profile, pots, taxResult, params, hasRun]);
+  }, [profile, pots, taxResult, params, iterationSeed]);
 
   const crashResult = useMemo(() => {
-    if (!taxResult || !hasRun) return null;
+    if (!taxResult) return null;
     return runMonteCarloSimulation(profile, pots, taxResult, {
       ...params,
       marketScenario: 'early_crash',
       useCashBuffer: params.useCashBuffer ?? false,
       cashBufferYears: params.cashBufferYears ?? params.crashDurationYears ?? 2,
     });
-  }, [profile, pots, taxResult, params, hasRun]);
+  }, [profile, pots, taxResult, params, iterationSeed]);
 
   const projectedCashAtCrashStart = useMemo(() => {
     if (!crashResult || !crashResult.agePercentiles) return undefined;
@@ -163,7 +193,6 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
   }, [crashResult, currentCrashStartAge]);
 
   const cashBufferSummary = useMemo(() => {
-    if (!hasRun) return {} as any;
     return calculateCashBufferRequiredDetails(
       profile,
       pots,
@@ -171,7 +200,7 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
       currentCashBufferYears,
       projectedCashAtCrashStart
     );
-  }, [profile, pots, currentCrashStartAge, currentCashBufferYears, projectedCashAtCrashStart, hasRun]);
+  }, [profile, pots, currentCrashStartAge, currentCashBufferYears, projectedCashAtCrashStart]);
 
   const prepareChartData = (result: typeof mcResult) => {
     if (!result) return [];
@@ -215,49 +244,12 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
     );
   }
 
-  if (!hasRun || !mcResult || !baseResult || !stressedResult || !crashResult) {
+  if (!mcResult || !baseResult || !stressedResult || !crashResult) {
     return (
-      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 sm:p-8 space-y-6 transition-colors">
-        <div className="flex items-center gap-2 pb-4 border-b border-slate-100 dark:border-slate-800">
-          <div className="p-2 bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 rounded-xl">
-            <Dices className="w-5 h-5" />
-          </div>
-          <div>
-            <h2 className="font-extrabold text-slate-800 dark:text-slate-100 text-base flex items-center gap-2">
-              <span>Monte Carlo Volatility &amp; Risk Simulation</span>
-              <span className="text-[10px] font-bold uppercase tracking-wider bg-indigo-100 dark:bg-indigo-950 text-indigo-800 dark:text-indigo-300 px-2.5 py-0.5 rounded-full border border-indigo-200/50 dark:border-indigo-800/50">
-                Stochastic Model
-              </span>
-            </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Simulates {params.numSimulations} market scenarios across accumulation &amp; decumulation phases
-            </p>
-          </div>
-        </div>
-        <div className="flex flex-col items-center justify-center py-10 px-4 space-y-4 text-center">
-          <p className="text-xs text-slate-600 dark:text-slate-400 max-w-md">
-            Click below to execute {params.numSimulations} randomized market return iterations across standard, stressed, and crash scenarios.
-          </p>
-          {isSimulating ? (
-            <div className="text-indigo-600 dark:text-indigo-400 font-bold flex items-center gap-2 text-sm">
-              <RefreshCw className="w-4 h-4 animate-spin" />
-              <span>Running Simulation...</span>
-            </div>
-          ) : (
-            <button
-              onClick={() => {
-                setIsSimulating(true);
-                setTimeout(() => {
-                  setHasRun(true);
-                  setIsSimulating(false);
-                }, 100);
-              }}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-3 rounded-2xl transition-all shadow-sm hover:shadow-md cursor-pointer flex items-center gap-2 text-sm"
-            >
-              <Dices className="w-4 h-4" />
-              <span>Run Simulation</span>
-            </button>
-          )}
+      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 p-8 flex flex-col items-center justify-center space-y-3">
+        <div className="text-indigo-600 dark:text-indigo-400 font-bold flex items-center gap-2 text-sm">
+          <RefreshCw className="w-5 h-5 animate-spin" />
+          <span>Generating Monte Carlo Stochastic Projections...</span>
         </div>
       </div>
     );
@@ -291,18 +283,37 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({ profile, pots, t
             </div>
             <div>
               <h2 className="font-extrabold text-slate-800 dark:text-slate-100 text-base flex items-center gap-2">
-                <span>Monte Carlo Volatility & Risk Simulation</span>
-                <span className="text-[10px] font-bold uppercase tracking-wider bg-indigo-100 dark:bg-indigo-950 text-indigo-800 dark:text-indigo-300 px-2.5 py-0.5 rounded-full border border-indigo-200/50 dark:border-indigo-800/50">
-                  Stochastic Model
+                <span>Monte Carlo Volatility &amp; Risk Simulation</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 px-2.5 py-0.5 rounded-full border border-emerald-200/50 dark:border-emerald-800/50">
+                  Live Simulated
                 </span>
               </h2>
               {!isStudioMode && (
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  Simulates {params.numSimulations} market scenarios across accumulation & decumulation phases
+                  Simulates {params.numSimulations} randomized market scenarios across accumulation &amp; decumulation phases (updated live)
                 </p>
               )}
             </div>
           </div>
+        </div>
+
+        <div className="flex items-center gap-2 self-start md:self-auto">
+          <button
+            type="button"
+            onClick={() => {
+              setIsSimulating(true);
+              setTimeout(() => {
+                setIterationSeed((prev) => prev + 1);
+                setIsSimulating(false);
+              }, 80);
+            }}
+            disabled={isSimulating}
+            className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 border border-slate-200 dark:border-slate-700 shadow-xs"
+            title="Re-run Monte Carlo iterations with new randomized market paths"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isSimulating ? 'animate-spin' : ''}`} />
+            <span>{isSimulating ? 'Recalculating...' : 'Re-run Trials'}</span>
+          </button>
         </div>
       </div>
 

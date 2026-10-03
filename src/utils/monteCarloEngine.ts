@@ -249,6 +249,11 @@ export interface MonteCarloResult {
     p75: number;
     p90: number;
   })[];
+  paths?: {
+    mc10Returns: number[];
+    mc50Returns: number[];
+    mc90Returns: number[];
+  };
   successRateTargetAge: number; // % runs lasting to maxAge or target age (e.g. 85)
   successRateAge80: number;
   successRateAge85: number;
@@ -399,6 +404,8 @@ function parseAnnuityTypeConfig(type?: string) {
   const accCashGiaMult = giaRatio * 0.90 + (1 - giaRatio) * 0.80;
   const decumCashGiaMult = giaRatio * 0.95 + (1 - giaRatio) * 0.85;
   
+  const simDecumReturns: number[][] = Array.from({ length: numSimulations }, () => []);
+
   for (let sim = 0; sim < numSimulations; sim++) {
     let primaryPensionPot = cleanPots.workplacePensionBalance + cleanPots.sippBalance;
     let partnerPensionPot = profile.isCouplePlanning ? (partnerPots.workplacePensionBalance + partnerPots.sippBalance) : 0;
@@ -1184,6 +1191,7 @@ function parseAnnuityTypeConfig(type?: string) {
         } else {
           randomReturn = sampleLogNormalReturn(meanDecumReturn, decumulationVolatility);
         }
+        simDecumReturns[sim].push(randomReturn);
 
         // Cash savings return in decumulation during a crash year does not suffer equity crash drop
         const cashYield = 0.02;
@@ -1866,6 +1874,12 @@ function parseAnnuityTypeConfig(type?: string) {
   const retirementTotals = simTotalPots.map((s) => s[retirementYrIndex]).sort((a, b) => a - b);
   const endTotals = simTotalPots.map((s) => s[endYrIndex]).sort((a, b) => a - b);
 
+  // Identify simulation run indices closest to 10th, 50th, and 90th percentiles of ending wealth
+  const indexedEndTotals = simTotalPots.map((s, idx) => ({ pot: s[endYrIndex] ?? 0, idx })).sort((a, b) => a.pot - b.pot);
+  const p10SimIdx = indexedEndTotals[Math.max(0, Math.min(indexedEndTotals.length - 1, Math.floor(indexedEndTotals.length * 0.1)))].idx;
+  const p50SimIdx = indexedEndTotals[Math.max(0, Math.min(indexedEndTotals.length - 1, Math.floor(indexedEndTotals.length * 0.5)))].idx;
+  const p90SimIdx = indexedEndTotals[Math.max(0, Math.min(indexedEndTotals.length - 1, Math.floor(indexedEndTotals.length * 0.9)))].idx;
+
   depletionAges.sort((a, b) => a - b);
   const medianDepletionAge = depletionAges.length > 0 ? getPercentile(depletionAges, 50) : undefined;
 
@@ -1893,6 +1907,11 @@ function parseAnnuityTypeConfig(type?: string) {
       p75: p.p75TotalPot,
       p90: p.p90TotalPot,
     })),
+    paths: {
+      mc10Returns: simDecumReturns[p10SimIdx] || [],
+      mc50Returns: simDecumReturns[p50SimIdx] || [],
+      mc90Returns: simDecumReturns[p90SimIdx] || [],
+    },
     successRateTargetAge: getSuccessRateForAge(profile.targetRetirementAge || 85),
     successRateAge80: getSuccessRateForAge(80),
     successRateAge85: getSuccessRateForAge(85),

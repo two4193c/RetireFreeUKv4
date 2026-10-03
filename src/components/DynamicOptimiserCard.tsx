@@ -30,7 +30,7 @@ import {
   Dices,
 } from 'lucide-react';
 import { UserProfile, InvestmentPots, TaxCalculationResult, YearProjection, AppMode } from '../types';
-import { runMonteCarloSimulation } from '../utils/monteCarloEngine';
+import { runMonteCarloSimulation, MonteCarloResult } from '../utils/monteCarloEngine';
 
 const PA = 12570;
 const BASIC_CEIL = 50270;
@@ -52,6 +52,7 @@ interface DynamicOptimiserCardProps {
   appMode?: AppMode;
   onRunStressTest?: () => void;
   onChange?: (p: UserProfile) => void;
+  monteCarloResult?: MonteCarloResult | null;
 }
 
 const KpiPill: React.FC<{
@@ -139,6 +140,7 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
   appMode: _appMode = 'advanced',
   onRunStressTest,
   onChange: _onChange,
+  monteCarloResult,
 }) => {
   const [expanded, setExpanded] = useState(true);
   const [showMatrix, setShowMatrix] = useState(false);
@@ -150,12 +152,17 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
   const retRows = useMemo(() => projections.filter((p) => p.isRetired), [projections]);
 
   useEffect(() => {
+    if (monteCarloResult?.successRate !== undefined) {
+      setMcSuccessRate(monteCarloResult.successRate);
+      setMcRunning(false);
+      return;
+    }
     setMcSuccessRate(undefined);
     setMcRunning(true);
     const timer = setTimeout(() => {
       try {
         const result = runMonteCarloSimulation(profile, pots, taxResult, {
-          numSimulations: 1000,
+          numSimulations: 500,
           accumulationVolatility: 12,
           decumulationVolatility: 8,
           maxAge: profile.lifeExpectancyAge ?? 95,
@@ -166,9 +173,9 @@ export const DynamicOptimiserCard: React.FC<DynamicOptimiserCardProps> = ({
       } finally {
         setMcRunning(false);
       }
-    }, 600);
+    }, 200);
     return () => clearTimeout(timer);
-  }, [profile, pots, taxResult]);
+  }, [profile, pots, taxResult, monteCarloResult]);
 
   const kpis = useMemo(() => {
     if (!retRows.length) return null;

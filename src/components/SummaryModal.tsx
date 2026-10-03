@@ -12,6 +12,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { UserProfile, InvestmentPots, TaxCalculationResult, YearProjection, AppMode } from '../types';
+import { MonteCarloResult } from '../utils/monteCarloEngine';
 import { PlanInsightsCard } from './PlanInsightsCard';
 import { StrategySummaryCard } from './StrategySummaryCard';
 import { ProjectionChart } from './ProjectionChart';
@@ -39,6 +40,7 @@ interface SummaryModalProps {
   onOpenMaximizedSpendModal?: () => void;
   appMode?: AppMode;
   initialSubTab?: SummaryModalSubTab;
+  monteCarloResult?: MonteCarloResult | null;
 }
 
 export const SummaryModal: React.FC<SummaryModalProps> = ({
@@ -52,6 +54,7 @@ export const SummaryModal: React.FC<SummaryModalProps> = ({
   onOpenMaximizedSpendModal,
   appMode = 'studio',
   initialSubTab = 'all',
+  monteCarloResult,
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<SummaryModalSubTab>(initialSubTab);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -191,6 +194,7 @@ export const SummaryModal: React.FC<SummaryModalProps> = ({
                   taxResult={taxResult}
                   onChange={onChange}
                   onOpenMaximizedSpendModal={onOpenMaximizedSpendModal}
+                  monteCarloResult={monteCarloResult}
                 />
               </div>
 
@@ -226,6 +230,7 @@ export const SummaryModal: React.FC<SummaryModalProps> = ({
                   onChange={onChange}
                   showAllScenarios={true}
                   appMode={appMode}
+                  precomputedResult={monteCarloResult}
                 />
               </div>
 
@@ -290,6 +295,7 @@ export const SummaryModal: React.FC<SummaryModalProps> = ({
               onChange={onChange}
               showAllScenarios={true}
               appMode={appMode}
+              precomputedResult={monteCarloResult}
             />
           )}
 

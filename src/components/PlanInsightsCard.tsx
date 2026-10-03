@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { UserProfile, InvestmentPots, TaxCalculationResult, YearProjection } from '../types';
 import { computePlanInsights, ActionableOpportunity } from '../utils/planInsightsEngine';
+import { MonteCarloResult } from '../utils/monteCarloEngine';
 import {
   Lightbulb,
   Sparkles,
@@ -28,6 +29,7 @@ interface PlanInsightsCardProps {
   taxResult: TaxCalculationResult;
   onChange?: (updatedProfile: UserProfile) => void;
   onOpenMaximizedSpendModal?: () => void;
+  monteCarloResult?: MonteCarloResult | null;
 }
 
 export const PlanInsightsCard: React.FC<PlanInsightsCardProps> = ({
@@ -37,12 +39,13 @@ export const PlanInsightsCard: React.FC<PlanInsightsCardProps> = ({
   taxResult,
   onChange,
   onOpenMaximizedSpendModal,
+  monteCarloResult,
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
   const insights = useMemo(() => {
-    return computePlanInsights(profile, pots, projections, taxResult);
-  }, [profile, pots, projections, taxResult]);
+    return computePlanInsights(profile, pots, projections, taxResult, monteCarloResult);
+  }, [profile, pots, projections, taxResult, monteCarloResult]);
 
   const { scorecard, milestones, opportunities, executiveSummary } = insights;
 

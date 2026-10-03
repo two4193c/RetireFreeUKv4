@@ -3,6 +3,7 @@ import { getPensionAccessAge, getPartnerPensionAccessAge, getProjectedPensionAtT
 import { sanitizePots, DEFAULT_POTS, DEFAULT_PARTNER_POTS } from './defaultData';
 import { solveMaximizedSpend } from './maximizedSpendSolver';
 import { STATE_PENSION_FULL_ANNUAL } from '../config/ukTaxRates';
+import { MonteCarloResult } from './monteCarloEngine';
 
 export interface PlanScorecard {
   runwayYears: number;
@@ -107,7 +108,8 @@ export function computePlanInsights(
   profile: UserProfile,
   pots: InvestmentPots,
   projections: YearProjection[] = [],
-  taxResult?: TaxCalculationResult
+  taxResult?: TaxCalculationResult,
+  monteCarloResult?: MonteCarloResult | null
 ): ComprehensivePlanInsights {
   const isCouple = Boolean(profile.isCouplePlanning);
   const currentAge = profile.currentAge || 40;
@@ -220,18 +222,20 @@ export function computePlanInsights(
   // ---------------------------------------------------------------------------
   // 5. Estimated Monte Carlo / Stochastic Resilience
   // ---------------------------------------------------------------------------
-  let monteCarloEstimatedSuccess = 95;
-  if (!isFullyFunded) {
-    const yearsToDepletion = (depletionAge || targetAge) - targetAge;
-    monteCarloEstimatedSuccess = Math.max(
-      10,
-      Math.min(75, Math.round((yearsToDepletion / Math.max(1, horizonAge - targetAge)) * 80))
-    );
-  } else {
-    if (initialSwr <= 3.3) monteCarloEstimatedSuccess = 98;
-    else if (initialSwr <= 3.8) monteCarloEstimatedSuccess = 94;
-    else if (initialSwr <= 4.5) monteCarloEstimatedSuccess = 85;
-    else monteCarloEstimatedSuccess = 72;
+  let monteCarloEstimatedSuccess = monteCarloResult?.successRateAge85 ?? monteCarloResult?.successRate;
+  if (monteCarloEstimatedSuccess === undefined) {
+    if (!isFullyFunded) {
+      const yearsToDepletion = (depletionAge || targetAge) - targetAge;
+      monteCarloEstimatedSuccess = Math.max(
+        10,
+        Math.min(75, Math.round((yearsToDepletion / Math.max(1, horizonAge - targetAge)) * 80))
+      );
+    } else {
+      if (initialSwr <= 3.3) monteCarloEstimatedSuccess = 98;
+      else if (initialSwr <= 3.8) monteCarloEstimatedSuccess = 94;
+      else if (initialSwr <= 4.5) monteCarloEstimatedSuccess = 85;
+      else monteCarloEstimatedSuccess = 72;
+    }
   }
 
   const scorecard: PlanScorecard = {

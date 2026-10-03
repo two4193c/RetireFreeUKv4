@@ -27,12 +27,14 @@ import {
 import { getActualSpendingTargetForAge } from '../utils/projectionEngine';
 import { getEffectiveDecumulationReturn } from '../utils/assetAllocation';
 import { DEFAULT_POTS } from '../utils/defaultData';
+import { MonteCarloResult } from '../utils/monteCarloEngine';
 
 interface DynamicSpendingCardProps {
   profile: UserProfile;
   pots?: InvestmentPots;
   projections?: YearProjection[];
   onChange: (updatedProfile: UserProfile) => void;
+  monteCarloResult?: MonteCarloResult | null;
 }
 
 export type SimulationScenarioType = 'mc10' | 'mc50' | 'mc90' | 'stress' | 'cycle' | 'bull';
@@ -83,6 +85,7 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
   pots = DEFAULT_POTS,
   projections,
   onChange,
+  monteCarloResult,
 }) => {
   const [selectedScenario, setSelectedScenario] = useState<SimulationScenarioType>('mc50');
   const [showEventLog, setShowEventLog] = useState<boolean>(true);
@@ -163,8 +166,26 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
     );
   }, [profile.postRetirementReturn, profile.assetAllocationSplit, profile.investmentFees]);
 
-  // Generate 200 Monte Carlo stochastic runs and extract the 10th, 50th, and 90th percentile return paths
+  // Extract the 10th, 50th, and 90th percentile return paths from the central Monte Carlo simulation
+  // (with deterministic Mulberry32 fallback when simulation data is booting or unprovided)
   const monteCarloPaths = useMemo(() => {
+    if (
+      monteCarloResult?.paths &&
+      monteCarloResult.paths.mc10Returns &&
+      monteCarloResult.paths.mc10Returns.length > 0 &&
+      monteCarloResult.paths.mc50Returns &&
+      monteCarloResult.paths.mc50Returns.length > 0 &&
+      monteCarloResult.paths.mc90Returns &&
+      monteCarloResult.paths.mc90Returns.length > 0
+    ) {
+      return {
+        mc10: monteCarloResult.paths.mc10Returns,
+        mc50: monteCarloResult.paths.mc50Returns,
+        mc90: monteCarloResult.paths.mc90Returns,
+        isFromRealSimulation: true,
+      };
+    }
+
     const numRuns = 200;
     const volatility = 0.08; // Standard decumulation volatility
     const seedBase = 777 + retAge * 13 + Math.round(initialTarget % 1000);
@@ -194,8 +215,9 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
       mc10: runs[p10Idx].returns,
       mc50: runs[p50Idx].returns,
       mc90: runs[p90Idx].returns,
+      isFromRealSimulation: false,
     };
-  }, [horizonYears, initialTarget, meanDecumReturn, retAge]);
+  }, [monteCarloResult, horizonYears, initialTarget, meanDecumReturn, retAge]);
 
   // Run dynamic simulation for selected scenario
   const simulationResults = useMemo(() => {
@@ -665,7 +687,7 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
                   {isMonteCarloScenario && (
                     <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 flex items-center gap-1">
                       <Sparkles className="w-3 h-3 text-indigo-500" />
-                      <span>Monte Carlo Path</span>
+                      <span>{monteCarloPaths.isFromRealSimulation ? 'Simulated (500 Runs)' : 'Monte Carlo Path'}</span>
                     </span>
                   )}
                 </div>

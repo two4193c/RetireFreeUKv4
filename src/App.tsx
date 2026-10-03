@@ -10,6 +10,7 @@ import { ResetPresetsModal } from './components/ResetPresetsModal';
 import { calculateUKTax } from './utils/ukTaxEngine';
 import { generateProjections } from './utils/projectionEngine';
 import { solveMaximizedSpend, disableMaximizedSpend } from './utils/maximizedSpendSolver';
+import { runMonteCarloSimulation, MonteCarloResult } from './utils/monteCarloEngine';
 import { Header } from './components/Header';
 import { GuidedTour } from './components/GuidedTour';
 import { ProfileInputs } from './components/ProfileInputs';
@@ -787,6 +788,44 @@ function App() {
     }
   }, [profile, pots]);
 
+  // Central live Monte Carlo simulation (automatically computed and shared across all cards)
+  const [centralMonteCarloResult, setCentralMonteCarloResult] = useState<MonteCarloResult | null>(() => {
+    try {
+      const tax = calculateUKTax(profile, pots);
+      return runMonteCarloSimulation(profile, pots, tax, {
+        numSimulations: 500,
+        accumulationVolatility: 12.0,
+        decumulationVolatility: 8.0,
+        maxAge: profile.maximizedSpendConfig?.targetEndAge || profile.lifeExpectancyAge || 95,
+      });
+    } catch {
+      return null;
+    }
+  });
+
+  useEffect(() => {
+    if (!taxResult) {
+      setCentralMonteCarloResult(null);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      try {
+        const mc = runMonteCarloSimulation(profile, pots, taxResult, {
+          numSimulations: 500,
+          accumulationVolatility: 12.0,
+          decumulationVolatility: 8.0,
+          maxAge: profile.maximizedSpendConfig?.targetEndAge || profile.lifeExpectancyAge || 95,
+        });
+        setCentralMonteCarloResult(mc);
+      } catch (err) {
+        console.error('Central Monte Carlo calculation error:', err);
+      }
+    }, 120);
+
+    return () => clearTimeout(timer);
+  }, [profile, pots, taxResult]);
+
   return (
     <div className="min-h-screen bg-slate-100/70 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans flex flex-col lg:flex-row antialiased selection:bg-primary-500 selection:text-white transition-colors duration-200">
       
@@ -1188,10 +1227,10 @@ function App() {
                       />
                     </div>
                     <div id="card-risk-monte" className="scroll-mt-24 transition-all duration-300">
-                      <MonteCarloCard profile={profile} pots={pots} taxResult={taxResult} onChange={handleProfileChange} appMode={appMode} />
+                      <MonteCarloCard profile={profile} pots={pots} taxResult={taxResult} precomputedResult={centralMonteCarloResult} onChange={handleProfileChange} appMode={appMode} />
                     </div>
                     <div id="card-risk-dynamic-spending" className="scroll-mt-24 transition-all duration-300">
-                      <DynamicSpendingCard profile={profile} pots={pots} projections={projections} onChange={handleProfileChange} />
+                      <DynamicSpendingCard profile={profile} pots={pots} projections={projections} monteCarloResult={centralMonteCarloResult} onChange={handleProfileChange} />
                     </div>
                       <div id="card-risk-historic" className="scroll-mt-24 transition-all duration-300">
                       <HistoricModelingCard profile={profile} pots={pots} taxResult={taxResult} onChange={handleProfileChange} appMode={appMode} />
@@ -1204,6 +1243,7 @@ function App() {
                         taxResult={taxResult}
                         projections={projections}
                         appMode={appMode}
+                        monteCarloResult={centralMonteCarloResult}
                         onRunStressTest={() => setActiveTab('risk')}
                         onChange={handleProfileChange}
                       />
@@ -1521,6 +1561,7 @@ function App() {
                     taxResult={taxResult}
                     projections={projections}
                     appMode={appMode}
+                    monteCarloResult={centralMonteCarloResult}
                     onRunStressTest={() => setActiveTab('risk')}
                     onChange={handleProfileChange}
                   />
@@ -1640,10 +1681,10 @@ function App() {
             {!studioMode && activeTab === 'risk' && (
               <div className="space-y-6">
                 <div id="card-risk-monte" className="scroll-mt-24 transition-all duration-300">
-                  <MonteCarloCard profile={profile} pots={pots} taxResult={taxResult} onChange={handleProfileChange} appMode={appMode} />
+                  <MonteCarloCard profile={profile} pots={pots} taxResult={taxResult} precomputedResult={centralMonteCarloResult} onChange={handleProfileChange} appMode={appMode} />
                 </div>
                 <div id="card-risk-dynamic-spending" className="scroll-mt-24 transition-all duration-300">
-                  <DynamicSpendingCard profile={profile} pots={pots} projections={projections} onChange={handleProfileChange} />
+                  <DynamicSpendingCard profile={profile} pots={pots} projections={projections} monteCarloResult={centralMonteCarloResult} onChange={handleProfileChange} />
                 </div>
                   {appMode === 'advanced' && (
                   <div id="card-risk-historic" className="scroll-mt-24 transition-all duration-300">
@@ -1673,6 +1714,7 @@ function App() {
                     taxResult={taxResult}
                     onChange={handleProfileChange}
                     onOpenMaximizedSpendModal={() => setIsMaximizedSpendModalOpen(true)}
+                    monteCarloResult={centralMonteCarloResult}
                   />
                 </div>
                 <div id="card-summary-strat" className="scroll-mt-24 transition-all duration-300">
@@ -1689,7 +1731,7 @@ function App() {
                   <ProjectionChart projections={projections} profile={profile} pots={pots} onChange={handleProfileChange} onPotsChange={handlePotsChange} showAllCharts={true} />
                 </div>
                 <div id="card-summary-monte" className="scroll-mt-24 transition-all duration-300">
-                  <MonteCarloCard profile={profile} pots={pots} taxResult={taxResult} onChange={handleProfileChange} showAllScenarios={true} appMode={appMode} />
+                  <MonteCarloCard profile={profile} pots={pots} taxResult={taxResult} precomputedResult={centralMonteCarloResult} onChange={handleProfileChange} showAllScenarios={true} appMode={appMode} />
                 </div>
                 <div id="card-summary-estate" className="scroll-mt-24 transition-all duration-300">
                   <IhtEstatePlanningCard profile={profile} projections={projections} onChange={handleProfileChange} hideInputs={true} />
@@ -2192,6 +2234,7 @@ function App() {
         onOpenMaximizedSpendModal={() => setIsMaximizedSpendModalOpen(true)}
         appMode={appMode}
         initialSubTab={summaryModalSubTab}
+        monteCarloResult={centralMonteCarloResult}
       />
 
       {/* Compare Scenarios Pop-Out Modal for Studio Mode */}
