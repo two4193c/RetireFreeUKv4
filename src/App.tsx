@@ -818,7 +818,7 @@ function App() {
           setActiveCardId('');
           if (appMode === 'studio') {
             const studioTabTargetMap: Record<string, string> = {
-              strategy: 'card-strat-planner',
+              strategy: 'card-strat-phases',
               inputs: 'card-inputs-couple',
               mortgage: 'card-right-sizing',
               advanced_settings: 'card-adv-macro',
@@ -1087,7 +1087,16 @@ function App() {
                     <div id="card-inputs-fees" className="scroll-mt-24 transition-all duration-300">
                       <InvestmentFeesCard isStudioMode={true} profile={profile} pots={pots} onChange={handleProfileChange} />
                     </div>
-                    {/* 11. Drawdown strategy */}
+                    {/* 11. Retirement income requirement */}
+                    <div id="card-strat-phases" className="scroll-mt-24 transition-all duration-300">
+                      <SpendingPhasesCard isStudioMode={true}
+                        profile={profile}
+                        onChange={handleProfileChange}
+                        onOpenMaximizedSpendModal={() => setIsMaximizedSpendModalOpen(true)}
+                        appMode={appMode}
+                      />
+                    </div>
+                    {/* 12. Drawdown strategy */}
                     <div id="card-strat-planner" className="scroll-mt-24 transition-all duration-300">
                       <DrawdownPlanner isStudioMode={true}
                         profile={profile}
@@ -1104,15 +1113,6 @@ function App() {
                             setActiveTab('compare');
                           }
                         }}
-                        onOpenMaximizedSpendModal={() => setIsMaximizedSpendModalOpen(true)}
-                        appMode={appMode}
-                      />
-                    </div>
-                    {/* 12. Retirement income requirement */}
-                    <div id="card-strat-phases" className="scroll-mt-24 transition-all duration-300">
-                      <SpendingPhasesCard isStudioMode={true}
-                        profile={profile}
-                        onChange={handleProfileChange}
                         onOpenMaximizedSpendModal={() => setIsMaximizedSpendModalOpen(true)}
                         appMode={appMode}
                       />
@@ -1191,8 +1191,8 @@ function App() {
                       <MonteCarloCard profile={profile} pots={pots} taxResult={taxResult} onChange={handleProfileChange} appMode={appMode} />
                     </div>
                     <div id="card-risk-dynamic-spending" className="scroll-mt-24 transition-all duration-300">
-                        <DynamicSpendingCard profile={profile} onChange={handleProfileChange} />
-                      </div>
+                      <DynamicSpendingCard profile={profile} pots={pots} projections={projections} onChange={handleProfileChange} />
+                    </div>
                       <div id="card-risk-historic" className="scroll-mt-24 transition-all duration-300">
                       <HistoricModelingCard profile={profile} pots={pots} taxResult={taxResult} onChange={handleProfileChange} appMode={appMode} />
                     </div>
@@ -1410,6 +1410,14 @@ function App() {
             {/* Tab 2: Drawdown Planning */}
             {!studioMode && activeTab === 'strategy' && (
               <div className="space-y-6">
+                <div id="card-strat-phases" className="scroll-mt-24 transition-all duration-300">
+                  <SpendingPhasesCard
+                    profile={profile}
+                    onChange={handleProfileChange}
+                    onOpenMaximizedSpendModal={() => setIsMaximizedSpendModalOpen(true)}
+                    appMode={appMode}
+                  />
+                </div>
                 <div id="card-strat-planner" className="scroll-mt-24 transition-all duration-300">
                   <DrawdownPlanner
                     profile={profile}
@@ -1420,14 +1428,6 @@ function App() {
                     activeScenarioId={activeScenarioId}
                     onCreateStrategyVariants={handleCreateStrategyVariants}
                     onNavigateToCompare={() => setActiveTab('compare')}
-                    onOpenMaximizedSpendModal={() => setIsMaximizedSpendModalOpen(true)}
-                    appMode={appMode}
-                  />
-                </div>
-                <div id="card-strat-phases" className="scroll-mt-24 transition-all duration-300">
-                  <SpendingPhasesCard
-                    profile={profile}
-                    onChange={handleProfileChange}
                     onOpenMaximizedSpendModal={() => setIsMaximizedSpendModalOpen(true)}
                     appMode={appMode}
                   />
@@ -1643,8 +1643,8 @@ function App() {
                   <MonteCarloCard profile={profile} pots={pots} taxResult={taxResult} onChange={handleProfileChange} appMode={appMode} />
                 </div>
                 <div id="card-risk-dynamic-spending" className="scroll-mt-24 transition-all duration-300">
-                    <DynamicSpendingCard profile={profile} onChange={handleProfileChange} />
-                  </div>
+                  <DynamicSpendingCard profile={profile} pots={pots} projections={projections} onChange={handleProfileChange} />
+                </div>
                   {appMode === 'advanced' && (
                   <div id="card-risk-historic" className="scroll-mt-24 transition-all duration-300">
                     <HistoricModelingCard profile={profile} pots={pots} taxResult={taxResult} onChange={handleProfileChange} appMode={appMode} />

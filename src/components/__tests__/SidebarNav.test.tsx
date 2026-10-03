@@ -84,6 +84,10 @@ describe('SidebarNav menu configuration', () => {
     const stratAnalysisTab = NAV_STRUCTURE.find((t) => t.id === 'strategy_analysis');
 
     expect(stratTab?.cards.some((c) => c.id === 'card-dynamic-optimiser')).toBe(false);
+    expect(stratTab?.cards[0]?.id).toBe('card-strat-phases');
+    expect(stratTab?.cards[0]?.label).toBe('Retirement Income Requirement');
+    expect(stratTab?.cards[1]?.id).toBe('card-strat-planner');
+    expect(stratTab?.cards[1]?.label).toBe('Drawdown Strategy Planner');
     expect(stratAnalysisTab?.cards[0]?.id).toBe('card-dynamic-optimiser');
     expect(stratAnalysisTab?.cards[0]?.label).toBe('Dynamic Optimiser');
     expect(stratAnalysisTab?.cards[1]?.id).toBe('card-swr-trajectory-chart');

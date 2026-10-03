@@ -76,8 +76,8 @@ export const NAV_STRUCTURE: TabGroup[] = [
     icon: Percent,
     description: 'Drawdown sequencing, tax brackets, and spending phases',
     cards: [
-      { id: 'card-strat-planner', label: 'Drawdown Strategy Planner' },
       { id: 'card-strat-phases', label: 'Retirement Income Requirement' },
+      { id: 'card-strat-planner', label: 'Drawdown Strategy Planner' },
       { id: 'card-strat-gilt-ladder', label: 'UK Gilt Ladder Strategy' },
       { id: 'card-strat-macro', label: 'Asset Allocation & Macro Settings' },
     ],
