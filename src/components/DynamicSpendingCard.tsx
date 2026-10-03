@@ -13,12 +13,17 @@ import {
   ArrowUpRight,
   Layers,
   Sparkles,
+  BarChart3,
+  Activity,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
   ComposedChart,
   Area,
   Line,
+  Bar,
+  Cell,
+  CartesianGrid,
   XAxis,
   YAxis,
   Tooltip,
@@ -88,6 +93,7 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
   monteCarloResult,
 }) => {
   const [selectedScenario, setSelectedScenario] = useState<SimulationScenarioType>('mc50');
+  const [chartViewMode, setChartViewMode] = useState<'corridor' | 'bars' | 'combined'>('corridor');
   const [showEventLog, setShowEventLog] = useState<boolean>(true);
 
   const activeMarketScenario = profile.monteCarloParams?.marketScenario || monteCarloResult?.params?.marketScenario || 'standard';
@@ -955,12 +961,70 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
               </div>
             </div>
 
+            {/* Chart View Mode Controls */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-2 pb-1 border-t border-slate-200/70 dark:border-slate-700/70">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Chart View:</span>
+                <div className="inline-flex p-1 rounded-xl bg-slate-200/60 dark:bg-slate-700/60 border border-slate-300/40 dark:border-slate-600/40 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setChartViewMode('corridor')}
+                    className={`px-3 py-1 font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                      chartViewMode === 'corridor'
+                        ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                  >
+                    <Activity className="w-3.5 h-3.5" />
+                    <span>Income Corridor</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setChartViewMode('bars')}
+                    className={`px-3 py-1 font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                      chartViewMode === 'bars'
+                        ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-xs'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                  >
+                    <BarChart3 className="w-3.5 h-3.5" />
+                    <span>Pot &amp; Income Bars</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setChartViewMode('combined')}
+                    className={`px-3 py-1 font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                      chartViewMode === 'combined'
+                        ? 'bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-400 shadow-xs'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                  >
+                    <Layers className="w-3.5 h-3.5" />
+                    <span>Combined Overlay</span>
+                  </button>
+                </div>
+              </div>
+
+              {chartViewMode !== 'corridor' && (
+                <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400 flex items-center gap-3">
+                  <span className="flex items-center gap-1">
+                    <span className="w-2.5 h-2.5 rounded-xs bg-indigo-500 inline-block" />
+                    <span className="text-slate-700 dark:text-slate-300 font-semibold">Left Axis:</span> Pot Balance
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-2.5 h-2.5 rounded-xs bg-emerald-500 inline-block" />
+                    <span className="text-slate-700 dark:text-slate-300 font-semibold">Right Axis:</span> Annual Spend
+                  </span>
+                </div>
+              )}
+            </div>
+
             {/* Recharts Composed Chart */}
-            <div className="w-full h-80 pt-2">
+            <div className="w-full h-84 sm:h-96 pt-2">
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart
                   data={simulationResults}
-                  margin={{ top: 10, right: 10, left: 10, bottom: 20 }}
+                  margin={{ top: 10, right: chartViewMode === 'corridor' ? 10 : 20, left: 10, bottom: 20 }}
                 >
                   <defs>
                     <linearGradient id="gkIncomeGradient" x1="0" y1="0" x2="0" y2="1">
@@ -973,6 +1037,8 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
                     </linearGradient>
                   </defs>
 
+                  <CartesianGrid strokeDasharray="3 3" stroke="#94a3b8" opacity={0.2} vertical={false} />
+
                   <XAxis
                     dataKey="age"
                     stroke="#94a3b8"
@@ -980,13 +1046,39 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
                     tickLine={false}
                     tickFormatter={(val) => `Age ${val}`}
                   />
-                  <YAxis
-                    stroke="#94a3b8"
-                    fontSize={11}
-                    tickLine={false}
-                    domain={['dataMin - 5000', 'auto']}
-                    tickFormatter={(val) => `£${(val / 1000).toFixed(0)}k`}
-                  />
+
+                  {chartViewMode === 'corridor' ? (
+                    <YAxis
+                      yAxisId="income"
+                      stroke="#94a3b8"
+                      fontSize={11}
+                      tickLine={false}
+                      domain={['dataMin - 5000', 'auto']}
+                      tickFormatter={(val) => `£${(val / 1000).toFixed(0)}k`}
+                    />
+                  ) : (
+                    <>
+                      <YAxis
+                        yAxisId="pot"
+                        orientation="left"
+                        stroke="#6366f1"
+                        fontSize={11}
+                        tickLine={false}
+                        domain={[0, 'auto']}
+                        tickFormatter={(val) => `£${val >= 1000000 ? (val / 1000000).toFixed(1) + 'm' : (val / 1000).toFixed(0) + 'k'}`}
+                      />
+                      <YAxis
+                        yAxisId="income"
+                        orientation="right"
+                        stroke="#10b981"
+                        fontSize={11}
+                        tickLine={false}
+                        domain={[0, 'auto']}
+                        tickFormatter={(val) => `£${(val / 1000).toFixed(0)}k`}
+                      />
+                    </>
+                  )}
+
                   <Tooltip
                     content={({ active, payload }) => {
                       if (!active || !payload || !payload.length) return null;
@@ -1002,11 +1094,15 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
                               Age {data.age} (Year {data.yearIndex + 1})
                             </span>
                             <span className="text-[10px] text-slate-500">
-                              Annual Return: {data.returnRate > 0 ? `+${data.returnRate}%` : `${data.returnRate}%`}
+                              Return: {data.returnRate > 0 ? `+${data.returnRate}%` : `${data.returnRate}%`}
                             </span>
                           </div>
 
                           <div className="space-y-1">
+                            <div className="flex justify-between items-center text-indigo-600 dark:text-indigo-400 font-extrabold">
+                              <span>Portfolio Pot:</span>
+                              <span>£{data.portfolio.toLocaleString()}</span>
+                            </div>
                             <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400 font-extrabold">
                               <span>Dynamic Spend:</span>
                               <span>£{data.dynamicIncome.toLocaleString()}</span>
@@ -1020,10 +1116,6 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
                               <span>£{data.essentialFloor.toLocaleString()}</span>
                             </div>
                             <div className="flex justify-between items-center text-slate-500 pt-1 border-t border-slate-100 dark:border-slate-800">
-                              <span>Portfolio Pot:</span>
-                              <span>£{data.portfolio.toLocaleString()}</span>
-                            </div>
-                            <div className="flex justify-between items-center text-slate-500">
                               <span>Withdrawal Rate:</span>
                               <span className="font-bold">{data.withdrawalRate}%</span>
                             </div>
@@ -1066,55 +1158,162 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
                     wrapperStyle={{ paddingBottom: '10px', fontSize: '11px' }}
                   />
 
-                  {/* Essential Floor Shaded Area */}
-                  <Area
-                    type="monotone"
-                    dataKey="essentialFloor"
-                    name="Essential Floor"
-                    stroke="#f59e0b"
-                    strokeWidth={1.5}
-                    strokeDasharray="3 3"
-                    fill="url(#gkFloorGradient)"
-                  />
+                  {/* Mode 1: Bars View (Pot Balance & Dynamic Income Bars side by side) */}
+                  {chartViewMode === 'bars' && (
+                    <>
+                      <Bar
+                        yAxisId="pot"
+                        dataKey="portfolio"
+                        name="Portfolio Pot Balance"
+                        fill="#6366f1"
+                        radius={[4, 4, 0, 0]}
+                        maxBarSize={30}
+                        opacity={0.88}
+                      />
+                      <Bar
+                        yAxisId="income"
+                        dataKey="dynamicIncome"
+                        name="Dynamic Spend (Income)"
+                        radius={[4, 4, 0, 0]}
+                        maxBarSize={24}
+                      >
+                        {simulationResults.map((entry, index) => {
+                          const isCut = entry.event === 'cut' || entry.event === 'floor_protected';
+                          const isRaise = entry.event === 'raise';
+                          const isFreeze = entry.event === 'freeze';
+                          const color = isCut ? '#f43f5e' : isRaise ? '#10b981' : isFreeze ? '#06b6d4' : '#10b981';
+                          return <Cell key={`cell-spend-${index}`} fill={color} />;
+                        })}
+                      </Bar>
+                      <Line
+                        yAxisId="income"
+                        type="monotone"
+                        dataKey="baselineIncome"
+                        name="Baseline Target Requirement"
+                        stroke="#94a3b8"
+                        strokeWidth={2}
+                        strokeDasharray="4 4"
+                        dot={false}
+                      />
+                    </>
+                  )}
 
-                  {/* Baseline Target Reference Line */}
-                  <Line
-                    type="monotone"
-                    dataKey="baselineIncome"
-                    name="Baseline Target Requirement"
-                    stroke="#6366f1"
-                    strokeWidth={2}
-                    strokeDasharray="4 4"
-                    dot={false}
-                  />
+                  {/* Mode 2: Combined Overlay View (Pot bars in background + corridor lines in foreground) */}
+                  {chartViewMode === 'combined' && (
+                    <>
+                      <Bar
+                        yAxisId="pot"
+                        dataKey="portfolio"
+                        name="Portfolio Pot Balance"
+                        fill="#818cf8"
+                        fillOpacity={0.25}
+                        stroke="#6366f1"
+                        strokeWidth={1}
+                        radius={[3, 3, 0, 0]}
+                        maxBarSize={36}
+                      />
+                      <Area
+                        yAxisId="income"
+                        type="monotone"
+                        dataKey="essentialFloor"
+                        name="Essential Floor"
+                        stroke="#f59e0b"
+                        strokeWidth={1.5}
+                        strokeDasharray="3 3"
+                        fill="url(#gkFloorGradient)"
+                      />
+                      <Line
+                        yAxisId="income"
+                        type="monotone"
+                        dataKey="baselineIncome"
+                        name="Baseline Target Requirement"
+                        stroke="#6366f1"
+                        strokeWidth={2}
+                        strokeDasharray="4 4"
+                        dot={false}
+                      />
+                      <Line
+                        yAxisId="income"
+                        type="monotone"
+                        dataKey="dynamicIncome"
+                        name="Dynamic Spending (Guyton-Klinger)"
+                        stroke="#10b981"
+                        strokeWidth={3}
+                        dot={(props: any) => {
+                          const { cx, cy, payload } = props;
+                          if (!payload.event) return <g key={`dot-${payload.age}`} />;
+                          const isCut = payload.event === 'cut' || payload.event === 'floor_protected';
+                          const isRaise = payload.event === 'raise';
+                          const fill = isCut ? '#f43f5e' : isRaise ? '#10b981' : '#06b6d4';
 
-                  {/* Dynamic Guyton-Klinger Spending Line */}
-                  <Line
-                    type="monotone"
-                    dataKey="dynamicIncome"
-                    name="Dynamic Spending (Guyton-Klinger)"
-                    stroke="#10b981"
-                    strokeWidth={3}
-                    dot={(props: any) => {
-                      const { cx, cy, payload } = props;
-                      if (!payload.event) return <g key={`dot-${payload.age}`} />;
-                      const isCut = payload.event === 'cut' || payload.event === 'floor_protected';
-                      const isRaise = payload.event === 'raise';
-                      const fill = isCut ? '#f43f5e' : isRaise ? '#10b981' : '#06b6d4';
+                          return (
+                            <circle
+                              key={`dot-${payload.age}`}
+                              cx={cx}
+                              cy={cy}
+                              r={5}
+                              fill={fill}
+                              stroke="#ffffff"
+                              strokeWidth={2}
+                            />
+                          );
+                        }}
+                      />
+                    </>
+                  )}
 
-                      return (
-                        <circle
-                          key={`dot-${payload.age}`}
-                          cx={cx}
-                          cy={cy}
-                          r={5}
-                          fill={fill}
-                          stroke="#ffffff"
-                          strokeWidth={2}
-                        />
-                      );
-                    }}
-                  />
+                  {/* Mode 3: Income Corridor View (Classic line & shaded area corridor) */}
+                  {chartViewMode === 'corridor' && (
+                    <>
+                      <Area
+                        yAxisId="income"
+                        type="monotone"
+                        dataKey="essentialFloor"
+                        name="Essential Floor"
+                        stroke="#f59e0b"
+                        strokeWidth={1.5}
+                        strokeDasharray="3 3"
+                        fill="url(#gkFloorGradient)"
+                      />
+                      <Line
+                        yAxisId="income"
+                        type="monotone"
+                        dataKey="baselineIncome"
+                        name="Baseline Target Requirement"
+                        stroke="#6366f1"
+                        strokeWidth={2}
+                        strokeDasharray="4 4"
+                        dot={false}
+                      />
+                      <Line
+                        yAxisId="income"
+                        type="monotone"
+                        dataKey="dynamicIncome"
+                        name="Dynamic Spending (Guyton-Klinger)"
+                        stroke="#10b981"
+                        strokeWidth={3}
+                        dot={(props: any) => {
+                          const { cx, cy, payload } = props;
+                          if (!payload.event) return <g key={`dot-${payload.age}`} />;
+                          const isCut = payload.event === 'cut' || payload.event === 'floor_protected';
+                          const isRaise = payload.event === 'raise';
+                          const fill = isCut ? '#f43f5e' : isRaise ? '#10b981' : '#06b6d4';
+
+                          return (
+                            <circle
+                              key={`dot-${payload.age}`}
+                              cx={cx}
+                              cy={cy}
+                              r={5}
+                              fill={fill}
+                              stroke="#ffffff"
+                              strokeWidth={2}
+                            />
+                          );
+                        }}
+                      />
+                    </>
+                  )}
                 </ComposedChart>
               </ResponsiveContainer>
             </div>

@@ -250,4 +250,38 @@ describe('DynamicSpendingCard - Guyton-Klinger Spending Rules & Monte Carlo Path
     expect(screen.getByText(/Simulated \(500 Runs • Early Crash Model\)/i)).toBeInTheDocument();
     expect(screen.getByText('Crash')).toBeInTheDocument();
   });
+
+  it('supports toggling between Income Corridor, Pot & Income Bars, and Combined Overlay', () => {
+    const onChange = vi.fn();
+    render(<DynamicSpendingCard profile={baseProfileEnabled} pots={DEFAULT_POTS} onChange={onChange} />);
+
+    // Check all three view mode buttons are present
+    const corridorBtn = screen.getByRole('button', { name: /Income Corridor/i });
+    const barsBtn = screen.getByRole('button', { name: /Pot & Income Bars/i });
+    const combinedBtn = screen.getByRole('button', { name: /Combined Overlay/i });
+
+    expect(corridorBtn).toBeInTheDocument();
+    expect(barsBtn).toBeInTheDocument();
+    expect(combinedBtn).toBeInTheDocument();
+
+    // Default mode is corridor, so dual axis legend hint is not shown
+    expect(screen.queryByText(/Left Axis:/i)).not.toBeInTheDocument();
+
+    // Switch to Pot & Income Bars
+    fireEvent.click(barsBtn);
+    expect(screen.getByText(/Left Axis:/i)).toBeInTheDocument();
+    expect(screen.getByText(/Right Axis:/i)).toBeInTheDocument();
+    expect(screen.getByText(/Pot Balance/i)).toBeInTheDocument();
+    expect(screen.getByText(/Annual Spend/i)).toBeInTheDocument();
+
+    // Switch to Combined Overlay
+    fireEvent.click(combinedBtn);
+    expect(screen.getByText(/Left Axis:/i)).toBeInTheDocument();
+    expect(screen.getByText(/Right Axis:/i)).toBeInTheDocument();
+
+    // Switch back to Income Corridor
+    fireEvent.click(corridorBtn);
+    expect(screen.queryByText(/Left Axis:/i)).not.toBeInTheDocument();
+  });
 });
+
