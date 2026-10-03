@@ -89,6 +89,9 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
   const defaultAge = profile.targetRetirementAge || (projections[0]?.age ?? 60);
   const [selectedAge, setSelectedAge] = useState<number>(defaultAge);
   const defaultCombinedEssentialFloor = useMemo(() => {
+    if (profile.essentialRetirementIncomeAnnual !== undefined && profile.essentialRetirementIncomeAnnual !== null && profile.essentialRetirementIncomeAnnual > 0) {
+      return profile.essentialRetirementIncomeAnnual;
+    }
     const target = getTargetIncomeForAge(profile, selectedAge) || profile.targetRetirementIncomeAnnual || 30000;
     return Math.round((target * 0.65) / 500) * 500;
   }, [profile, selectedAge]);
@@ -96,6 +99,10 @@ export const CashFlowSankeyCard: React.FC<CashFlowSankeyCardProps> = ({
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const [hoveredLinkId, setHoveredLinkId] = useState<string | null>(null);
   const [combinedEssentialFloor, setCombinedEssentialFloor] = useState<number>(defaultCombinedEssentialFloor); // Numerical essential floor in today's £
+
+  useEffect(() => {
+    setCombinedEssentialFloor(defaultCombinedEssentialFloor);
+  }, [defaultCombinedEssentialFloor]);
   const [viewMode, setViewMode] = useState<CashFlowViewMode>(initialViewMode);
 
   // Dynamic theme tracking for SVG rendering and light/dark styling

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Scale, CheckCircle2, ShieldCheck, AlertTriangle, RefreshCw, DollarSign, Wallet } from 'lucide-react';
 import { UserProfile, InvestmentPots } from '../types';
 import { getActualSpendingTargetForAge } from '../utils/projectionEngine';
@@ -6,12 +6,35 @@ import { getActualSpendingTargetForAge } from '../utils/projectionEngine';
 interface EssentialFloorSplitCardProps {
   profile: UserProfile;
   pots: InvestmentPots;
+  onChange?: (updatedProfile: UserProfile) => void;
 }
 
-export const EssentialFloorSplitCard: React.FC<EssentialFloorSplitCardProps> = ({ profile, pots }) => {
-  const [essentialPct, setEssentialPct] = useState<number>(65);
-
+export const EssentialFloorSplitCard: React.FC<EssentialFloorSplitCardProps> = ({ profile, pots, onChange }) => {
   const targetIncome = getActualSpendingTargetForAge(profile, profile.targetRetirementAge || 60);
+
+  const initialPct = profile.essentialRetirementIncomeAnnual && targetIncome > 0
+    ? Math.min(100, Math.max(10, Math.round((profile.essentialRetirementIncomeAnnual / targetIncome) * 100)))
+    : 65;
+
+  const [essentialPct, setEssentialPct] = useState<number>(initialPct);
+
+  useEffect(() => {
+    if (profile.essentialRetirementIncomeAnnual !== undefined && profile.essentialRetirementIncomeAnnual !== null && targetIncome > 0) {
+      const pct = Math.min(100, Math.max(10, Math.round((profile.essentialRetirementIncomeAnnual / targetIncome) * 100)));
+      setEssentialPct(pct);
+    }
+  }, [profile.essentialRetirementIncomeAnnual, targetIncome]);
+
+  const handleSliderChange = (newPct: number) => {
+    setEssentialPct(newPct);
+    if (onChange) {
+      const newAmt = Math.round((targetIncome * (newPct / 100)) / 500) * 500;
+      onChange({
+        ...profile,
+        essentialRetirementIncomeAnnual: newAmt,
+      });
+    }
+  };
   
   // --- Correct UserProfile field names per types.ts ---
   const statePensionAnnual = profile.includeStatePension ? (profile.statePensionAmountAnnual || 0) : 0;
@@ -73,7 +96,7 @@ export const EssentialFloorSplitCard: React.FC<EssentialFloorSplitCardProps> = (
           max="90"
           step="5"
           value={essentialPct}
-          onChange={(e) => setEssentialPct(Number(e.target.value))}
+          onChange={(e) => handleSliderChange(Number(e.target.value))}
           className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-teal-600"
         />
         <div className="flex justify-between text-[10px] text-slate-400 font-semibold">

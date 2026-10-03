@@ -420,6 +420,7 @@ export interface UserProfile {
   partnerEmployerNiPassThroughPercent?: number;
   partnerEmployerNiRate?: number;
   targetRetirementIncomeAnnual: number; // in today's money
+  essentialRetirementIncomeAnnual?: number; // Essential spending floor in today's money (£/yr)
   actualSpendingTargetAnnual?: number; // Actual spending requirement when max drawdown is enabled
   reinvestExcessDrawdown?: boolean; // Option to max drawdown while keeping actual spending requirement lower
   spendingPhases?: SpendingPhasesConfig; // Go-Go, Slow-Go, No-Go age-based spending requirements

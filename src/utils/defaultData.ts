@@ -165,6 +165,7 @@ export const DEFAULT_PROFILE: UserProfile = {
   employerNiPassThroughPercent: 0,
   employerNiRate: 0.138,
   targetRetirementIncomeAnnual: 32000, // in today's money
+  essentialRetirementIncomeAnnual: 20800, // Essential spending floor (65% of target)
   spendingPhases: {
     enabled: false,
     goGoEndAge: 74,
@@ -354,6 +355,9 @@ export function sanitizeProfile(profile?: Partial<UserProfile> | null): UserProf
     partnerWorkplacePensionBalance: base.partnerWorkplacePensionBalance ?? (base.partnerPots?.workplacePensionBalance ?? 0),
     partnerSippBalance: base.partnerSippBalance ?? (base.partnerPots?.sippBalance ?? 0),
     partnerIsaBalance: base.partnerIsaBalance ?? (base.partnerPots?.stocksAndSharesIsaBalance ?? 0),
+    essentialRetirementIncomeAnnual: base.essentialRetirementIncomeAnnual !== undefined && base.essentialRetirementIncomeAnnual !== null && !isNaN(base.essentialRetirementIncomeAnnual)
+      ? base.essentialRetirementIncomeAnnual
+      : Math.round(((base.targetRetirementIncomeAnnual || 0) * 0.65) / 500) * 500,
     mortgage: {
       ...DEFAULT_MORTGAGE,
       ...(base.mortgage || {}),

@@ -16,6 +16,7 @@ import {
   ArrowRight,
   Info,
   Scale,
+  ShieldCheck,
 } from 'lucide-react';
 
 interface SpendingPhasesCardProps {
@@ -602,6 +603,30 @@ export const SpendingPhasesCard: React.FC<SpendingPhasesCardProps> = ({
   const monthlyIncome = Math.round((profile.targetRetirementIncomeAnnual || 0) / 12);
   const weeklyIncome = Math.round((profile.targetRetirementIncomeAnnual || 0) / 52);
 
+  const currentTargetAnnual = profile.targetRetirementIncomeAnnual || 0;
+  const currentEssentialFloor = profile.essentialRetirementIncomeAnnual !== undefined && profile.essentialRetirementIncomeAnnual !== null
+    ? profile.essentialRetirementIncomeAnnual
+    : Math.round((currentTargetAnnual * 0.65) / 500) * 500;
+  const essentialMonthly = Math.round(currentEssentialFloor / 12);
+  const essentialWeekly = Math.round(currentEssentialFloor / 52);
+  const essentialPct = currentTargetAnnual > 0
+    ? Math.min(100, Math.round((currentEssentialFloor / currentTargetAnnual) * 100))
+    : 0;
+  const discretionaryAnnual = Math.max(0, currentTargetAnnual - currentEssentialFloor);
+
+  const handleEssentialFloorChange = (newVal: number) => {
+    const cleanVal = Math.max(0, isNaN(newVal) ? 0 : newVal);
+    onChange({
+      ...profile,
+      essentialRetirementIncomeAnnual: cleanVal,
+    });
+  };
+
+  const handleSetEssentialPercent = (pct: number) => {
+    const calculated = Math.round(((currentTargetAnnual * (pct / 100)) / 500)) * 500;
+    handleEssentialFloorChange(calculated);
+  };
+
   return (
     <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-5 space-y-5 transition-all shadow-xs">
       {/* Header */}
@@ -776,6 +801,88 @@ export const SpendingPhasesCard: React.FC<SpendingPhasesCardProps> = ({
             </div>
           </div>
         )}
+      </div>
+
+      {/* Essential Spending Floor Field */}
+      <div className="bg-white dark:bg-slate-800/80 rounded-2xl p-4 border border-teal-200/90 dark:border-teal-800/80 space-y-3.5 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <label className="text-xs font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+            <ShieldCheck className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
+            <span>Essential Spending Floor</span>
+            {!isStudio && <span className="text-[10px] text-slate-400 font-normal">(In today's £)</span>}
+          </label>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[11px] font-bold text-teal-800 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/70 px-2.5 py-1 rounded-xl border border-teal-200/70 dark:border-teal-800/70">
+              {essentialPct}% of Target
+            </span>
+            <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700/60 px-2.5 py-1 rounded-xl">
+              £{essentialMonthly.toLocaleString()}/month
+            </span>
+            <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700/60 px-2.5 py-1 rounded-xl">
+              £{essentialWeekly.toLocaleString()}/week
+            </span>
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center">
+          <div className="relative flex-1">
+            <span className="absolute left-3.5 top-2.5 text-slate-400 dark:text-slate-500 font-extrabold text-base">
+              £
+            </span>
+            <input
+              type="number"
+              step="500"
+              min="0"
+              value={currentEssentialFloor}
+              onChange={(e) => handleEssentialFloorChange(Number(e.target.value))}
+              placeholder="e.g. 20800"
+              className="w-full pl-8 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-teal-300/80 dark:border-teal-700/80 rounded-xl text-base font-extrabold text-slate-900 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"
+            />
+          </div>
+
+          {/* Quick % buttons */}
+          <div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap">
+            {[50, 60, 65, 70, 80].map((pct) => (
+              <button
+                key={pct}
+                type="button"
+                onClick={() => handleSetEssentialPercent(pct)}
+                className={`px-2.5 py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
+                  essentialPct === pct
+                    ? 'bg-teal-600 text-white border-teal-600 shadow-xs'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-teal-50 dark:hover:bg-teal-950/40 hover:text-teal-700 dark:hover:text-teal-300'
+                }`}
+                title={`Set Essential Floor to ${pct}% of Target (£${Math.round((currentTargetAnnual * (pct / 100))).toLocaleString()}/yr)`}
+              >
+                {pct}%
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {!isStudio && (
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+            <Info className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
+            <span>
+              Your baseline floor for non-negotiable living expenses (housing, utilities, food, council tax). Used in Cash Flow Sankey diagrams and hybrid annuity drawdown splits.
+            </span>
+          </p>
+        )}
+
+        {/* Discretionary breakdown bar */}
+        <div className="pt-2.5 border-t border-slate-200/80 dark:border-slate-700/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px]">
+          <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300 flex-wrap">
+            <span className="w-2.5 h-2.5 rounded-full bg-teal-500 shrink-0" />
+            <span>Essential: <strong>£{currentEssentialFloor.toLocaleString()}/yr</strong></span>
+            <span className="text-slate-400">|</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 shrink-0" />
+            <span>Discretionary: <strong>£{discretionaryAnnual.toLocaleString()}/yr</strong> ({100 - essentialPct}%)</span>
+          </div>
+
+          <span className="text-slate-500 dark:text-slate-400 text-[10px]">
+            {currentTargetAnnual > 0 ? `${essentialPct}% Essential + ${100 - essentialPct}% Discretionary` : ''}
+          </span>
+        </div>
       </div>
 
 

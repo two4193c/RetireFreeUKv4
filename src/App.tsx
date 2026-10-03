@@ -1233,7 +1233,7 @@ function App() {
                       />
                     </div>
                     <div id="card-essential-floor-split" className="scroll-mt-24 transition-all duration-300">
-                      <EssentialFloorSplitCard profile={profile} pots={pots} />
+                      <EssentialFloorSplitCard profile={profile} pots={pots} onChange={handleProfileChange} />
                     </div>
                     <div id="card-tranche-visualisation" className="scroll-mt-24 transition-all duration-300">
                       <TrancheCrystallisationVisualiserCard
@@ -1547,7 +1547,7 @@ function App() {
                   />
                 </div>
                 <div id="card-essential-floor-split" className="scroll-mt-24 transition-all duration-300">
-                  <EssentialFloorSplitCard profile={profile} pots={pots} />
+                  <EssentialFloorSplitCard profile={profile} pots={pots} onChange={handleProfileChange} />
                 </div>
                 <div id="card-tranche-visualisation" className="scroll-mt-24 transition-all duration-300">
                   <TrancheCrystallisationVisualiserCard
