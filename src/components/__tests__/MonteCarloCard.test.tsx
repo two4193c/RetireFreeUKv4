@@ -138,4 +138,32 @@ describe('MonteCarloCard', () => {
       );
     });
   });
+
+  it('does not trigger repeated or infinite onChange calls when mounted with standard profile', async () => {
+    (monteCarloEngine.runMonteCarloSimulation as any).mockReturnValue(mockResult);
+    (monteCarloEngine.calculateCashBufferRequiredDetails as any).mockReturnValue({
+      totalNetCashBufferRequired: 0,
+      existingCashAvailable: 0,
+      shortfallOrSurplus: 0,
+      isFullyCovered: true,
+      yearlyDetails: [],
+    });
+
+    const onChange = vi.fn();
+    render(
+      <MonteCarloCard
+        profile={mockProfile}
+        pots={mockPots}
+        taxResult={mockTaxResult}
+        onChange={onChange}
+        precomputedResult={mockResult as any}
+      />
+    );
+
+    // Wait 350ms to allow any initial debounced timer to settle
+    await new Promise((resolve) => setTimeout(resolve, 350));
+
+    // Because profile params match initial localParams, onChange should not be repeatedly invoked
+    expect(onChange).toHaveBeenCalledTimes(0);
+  });
 });

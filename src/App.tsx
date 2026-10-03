@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, Component, ErrorInfo, ReactNode } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef, Component, ErrorInfo, ReactNode } from 'react';
 import { PlannerScenario, UserProfile, InvestmentPots, DrawdownStrategy, AppMode, DashboardTab } from './types';
 import { STRATEGY_DEFINITIONS } from './components/QuickDrawdownStrategyBar';
 import { DEFAULT_PROFILE, DEFAULT_POTS, DEFAULT_PARTNER_POTS, PRESET_SCENARIOS, sanitizePots, sanitizeProfile, createBlankScenario, ZERO_POTS } from './utils/defaultData';
@@ -380,30 +380,42 @@ function App() {
   const pots = useMemo(() => sanitizePots(activeScenario?.pots, activeScenario?.pots ? ZERO_POTS : DEFAULT_POTS), [activeScenario?.pots]);
 
   // Update profile for active scenario
-  const handleProfileChange = (updatedProfile: UserProfile | Partial<UserProfile>) => {
-    setScenarios((prev) =>
-      prev.map((s) => {
+  const handleProfileChange = useCallback((updatedProfile: UserProfile | Partial<UserProfile>) => {
+    setScenarios((prev) => {
+      let hasChange = false;
+      const next = prev.map((s) => {
         if (s.id !== activeScenarioId) return s;
         const currentProfile = s.profile || DEFAULT_PROFILE;
         const merged = { ...currentProfile, ...updatedProfile };
         const sanitized = sanitizeProfile(merged);
+        if (JSON.stringify(sanitized) === JSON.stringify(currentProfile)) {
+          return s;
+        }
+        hasChange = true;
         return { ...s, profile: sanitized, updatedAt: new Date().toISOString() };
-      })
-    );
-  };
+      });
+      return hasChange ? next : prev;
+    });
+  }, [activeScenarioId]);
 
   // Update pots for active scenario
-  const handlePotsChange = (updatedPots: InvestmentPots | Partial<InvestmentPots>) => {
-    setScenarios((prev) =>
-      prev.map((s) => {
+  const handlePotsChange = useCallback((updatedPots: InvestmentPots | Partial<InvestmentPots>) => {
+    setScenarios((prev) => {
+      let hasChange = false;
+      const next = prev.map((s) => {
         if (s.id !== activeScenarioId) return s;
         const currentPots = s.pots || ZERO_POTS;
         const merged = { ...currentPots, ...updatedPots };
         const sanitized = sanitizePots(merged, ZERO_POTS);
+        if (JSON.stringify(sanitized) === JSON.stringify(currentPots)) {
+          return s;
+        }
+        hasChange = true;
         return { ...s, pots: sanitized, updatedAt: new Date().toISOString() };
-      })
-    );
-  };
+      });
+      return hasChange ? next : prev;
+    });
+  }, [activeScenarioId]);
 
   const handlePartnerPotsChange = (updatedPartnerPots: InvestmentPots) => {
     const cleanPartnerPots = sanitizePots(updatedPartnerPots, ZERO_POTS);
@@ -810,9 +822,32 @@ function App() {
     }
   });
 
+  const prevSimInputSigRef = useRef<string>('');
+
   useEffect(() => {
     if (!taxResult) {
       setCentralMonteCarloResult(null);
+      return;
+    }
+
+    const currentSig = JSON.stringify({
+      pots,
+      currentAge: profile.currentAge,
+      targetRetirementAge: profile.targetRetirementAge,
+      targetRetirementIncomeAnnual: profile.targetRetirementIncomeAnnual,
+      drawdownStrategy: profile.drawdownStrategy,
+      expectedInvestmentReturn: profile.expectedInvestmentReturn,
+      postRetirementReturn: profile.postRetirementReturn,
+      expectedInflationRate: profile.expectedInflationRate,
+      monteCarloParams: profile.monteCarloParams,
+      assetAllocationSplit: profile.assetAllocationSplit,
+      investmentFees: profile.investmentFees,
+      isCouplePlanning: profile.isCouplePlanning,
+      partnerPots: profile.partnerPots,
+      taxSummary: { gross: taxResult.grossIncome, tax: taxResult.totalTaxPaid },
+    });
+
+    if (prevSimInputSigRef.current === currentSig && centralMonteCarloResult !== null) {
       return;
     }
 
@@ -831,6 +866,7 @@ function App() {
           useCashBuffer: profile.monteCarloParams?.useCashBuffer ?? false,
           cashBufferYears: profile.monteCarloParams?.cashBufferYears ?? 2,
         });
+        prevSimInputSigRef.current = currentSig;
         setCentralMonteCarloResult(mc);
       } catch (err) {
         console.error('Central Monte Carlo calculation error:', err);
@@ -838,7 +874,7 @@ function App() {
     }, 60);
 
     return () => clearTimeout(timer);
-  }, [profile, pots, taxResult]);
+  }, [profile, pots, taxResult, centralMonteCarloResult]);
 
   return (
     <div className="min-h-screen bg-slate-100/70 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans flex flex-col lg:flex-row antialiased selection:bg-primary-500 selection:text-white transition-colors duration-200">

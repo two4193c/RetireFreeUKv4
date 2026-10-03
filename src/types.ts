@@ -381,6 +381,7 @@ export interface MonteCarloParams {
   crashYearDropsPercent?: number[];
   useCashBuffer?: boolean;
   cashBufferYears?: number;
+  iterationSeed?: number;
 }
 
 export interface UserProfile {

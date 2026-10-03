@@ -256,12 +256,23 @@ export interface MonteCarloResult {
   medianDepletionAge?: number;
 }
 
+// 32-bit Mulberry32 PRNG for deterministic, reproducible simulation runs
+function mulberry32(seed: number): () => number {
+  return function () {
+    let t = (seed += 0x6d2b79f5);
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
 // Box-Muller transform for standard normal random variable N(0,1)
-function randomNormal(mean = 0, stdDev = 1): number {
+function randomNormal(mean = 0, stdDev = 1, prng?: () => number): number {
+  const rng = prng || Math.random;
   let u = 0;
   let v = 0;
-  while (u === 0) u = Math.random();
-  while (v === 0) v = Math.random();
+  while (u === 0) u = rng();
+  while (v === 0) v = rng();
   const z = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
   return mean + z * stdDev;
 }
@@ -277,8 +288,8 @@ function getPercentile(sortedArr: number[], percentile: number): number {
   return sortedArr[lower] * (1 - weight) + sortedArr[upper] * weight;
 }
 
-function sampleLogNormalReturn(meanReturn: number, volatility: number): number {
-  const z = randomNormal(0, 1);
+function sampleLogNormalReturn(meanReturn: number, volatility: number, prng?: () => number): number {
+  const z = randomNormal(0, 1, prng);
   const drift = Math.log(1 + meanReturn) - 0.5 * volatility * volatility;
   return Math.exp(drift + volatility * z) - 1;
 }
@@ -329,6 +340,20 @@ export function runMonteCarloSimulation(
   const partnerMaxLsa = profile.isCouplePlanning ? getPartnerLsaLimit(profile) : maxLsa;
 
   const cleanPots = sanitizePots(pots, pots ? ZERO_POTS : DEFAULT_POTS);
+  const iterSeed = customParams?.iterationSeed ?? 0;
+  const baseSeed = iterSeed * 7919 +
+    Math.abs(
+      Math.round(
+        safeCurrentAge * 1013 +
+        Number(profile.targetRetirementAge || 60) * 317 +
+        Number(profile.targetRetirementIncomeAnnual || 30000) % 50000 +
+        (cleanPots.workplacePensionBalance || 0) % 10000 +
+        (cleanPots.stocksAndSharesIsaBalance || 0) % 10000 +
+        numSimulations +
+        (marketScenario === 'stressed' ? 777 : marketScenario === 'early_crash' ? 999 : 333)
+      )
+    ) || 1234567;
+  const prng = mulberry32(baseSeed);
   const partnerFallback = profile.isCouplePlanning ? DEFAULT_PARTNER_POTS : ZERO_POTS;
   const partnerPots = sanitizePots(
     profile.partnerPots,
@@ -884,8 +909,8 @@ function parseAnnuityTypeConfig(type?: string) {
         const crashYearIdx = age - crashStartAge;
         const crashDrop = isCrashYear ? getCrashDropForYearIndex(crashYearIdx) : 0;
         const randomReturn = isCrashYear
-          ? sampleLogNormalReturn(-crashDrop, accumulationVolatility)
-          : sampleLogNormalReturn(meanAccumReturn, accumulationVolatility);
+          ? sampleLogNormalReturn(-crashDrop, accumulationVolatility, prng)
+          : sampleLogNormalReturn(meanAccumReturn, accumulationVolatility, prng);
 
         // Existing pot earns full year random return; ongoing monthly contributions earn half-year average return
         
@@ -1172,9 +1197,9 @@ function parseAnnuityTypeConfig(type?: string) {
         const crashDrop = isCrashYear ? getCrashDropForYearIndex(crashYearIdx) : 0;
         let randomReturn: number;
         if (isCrashYear) {
-          randomReturn = sampleLogNormalReturn(-crashDrop, decumulationVolatility);
+          randomReturn = sampleLogNormalReturn(-crashDrop, decumulationVolatility, prng);
         } else {
-          randomReturn = sampleLogNormalReturn(meanDecumReturn, decumulationVolatility);
+          randomReturn = sampleLogNormalReturn(meanDecumReturn, decumulationVolatility, prng);
         }
         simDecumReturns[sim].push(randomReturn);
 
@@ -1895,6 +1920,7 @@ function parseAnnuityTypeConfig(type?: string) {
       crashYearDropsPercent: Array.from({ length: crashDuration }, (_, i) => Math.round(getCrashDropForYearIndex(i) * 100)),
       useCashBuffer: customParams?.useCashBuffer ?? false,
       cashBufferYears: customParams?.cashBufferYears ?? crashDuration,
+      iterationSeed: iterSeed,
     },
     agePercentiles,
     percentiles: agePercentiles.map((p) => ({

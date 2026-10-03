@@ -27,6 +27,24 @@ interface MonteCarloCardProps {
   precomputedResult?: MonteCarloResult | null;
 }
 
+function areMonteCarloParamsEqual(a?: MonteCarloParams | null, b?: MonteCarloParams | null): boolean {
+  if (!a && !b) return true;
+  if (!a || !b) return false;
+  return (
+    a.numSimulations === b.numSimulations &&
+    a.accumulationVolatility === b.accumulationVolatility &&
+    a.decumulationVolatility === b.decumulationVolatility &&
+    a.maxAge === b.maxAge &&
+    (a.marketScenario || 'standard') === (b.marketScenario || 'standard') &&
+    a.stressedReturnDropPercent === b.stressedReturnDropPercent &&
+    a.crashStartAge === b.crashStartAge &&
+    a.crashDurationYears === b.crashDurationYears &&
+    Boolean(a.useCashBuffer) === Boolean(b.useCashBuffer) &&
+    a.cashBufferYears === b.cashBufferYears &&
+    JSON.stringify(a.crashYearDropsPercent || []) === JSON.stringify(b.crashYearDropsPercent || [])
+  );
+}
+
 export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({
   profile,
   pots,
@@ -55,16 +73,22 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({
 
   const [params, setParams] = useState<MonteCarloParams>(initialParams);
   const [localParams, setLocalParams] = useState<MonteCarloParams>(initialParams);
-  const lastEmittedParamsRef = React.useRef<string>(JSON.stringify(initialParams));
   const [iterationSeed, setIterationSeed] = useState(0);
   const [isSimulating, setIsSimulating] = useState(false);
+  const onChangeRef = React.useRef(onChange);
+  onChangeRef.current = onChange;
+
+  const isUserEditRef = React.useRef(false);
+  const updateLocalParams = (updater: React.SetStateAction<MonteCarloParams>) => {
+    isUserEditRef.current = true;
+    setLocalParams(updater);
+  };
 
   // Sync external changes to profile.monteCarloParams (e.g. from scenario switching)
   React.useEffect(() => {
     if (!profile.monteCarloParams) return;
-    const str = JSON.stringify(profile.monteCarloParams);
-    if (str !== lastEmittedParamsRef.current) {
-      lastEmittedParamsRef.current = str;
+    if (!areMonteCarloParamsEqual(profile.monteCarloParams, localParams)) {
+      isUserEditRef.current = false;
       setLocalParams((prev) => ({
         ...prev,
         ...profile.monteCarloParams,
@@ -77,35 +101,43 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({
   }, [profile.monteCarloParams]);
 
   React.useEffect(() => {
-    setLocalParams((prev) => ({
-      ...prev,
-      maxAge: targetHorizonAge,
-      crashStartAge: profile.targetRetirementAge,
-    }));
+    setLocalParams((prev) => {
+      if (prev.maxAge === targetHorizonAge && prev.crashStartAge === profile.targetRetirementAge) {
+        return prev;
+      }
+      return {
+        ...prev,
+        maxAge: targetHorizonAge,
+        crashStartAge: profile.targetRetirementAge,
+      };
+    });
   }, [targetHorizonAge, profile.targetRetirementAge]);
 
   // Debounced sync to params and parent profile for slider/text inputs
   React.useEffect(() => {
+    if (!isUserEditRef.current) {
+      setParams(localParams);
+      return;
+    }
     const timer = setTimeout(() => {
       setParams(localParams);
-      const str = JSON.stringify(localParams);
-      if (lastEmittedParamsRef.current !== str) {
-        lastEmittedParamsRef.current = str;
-        onChange?.({ monteCarloParams: localParams });
+      if (!areMonteCarloParamsEqual(localParams, profile.monteCarloParams)) {
+        onChangeRef.current?.({ monteCarloParams: localParams });
       }
+      isUserEditRef.current = false;
     }, 250);
     return () => clearTimeout(timer);
-  }, [localParams, onChange]);
+  }, [localParams, profile.monteCarloParams]);
 
   const handleMarketScenarioSelect = (scenario: MarketScenario) => {
+    isUserEditRef.current = false;
     const updated: MonteCarloParams = {
       ...localParams,
       marketScenario: scenario,
     };
-    lastEmittedParamsRef.current = JSON.stringify(updated);
     setLocalParams(updated);
     setParams(updated);
-    onChange?.({ monteCarloParams: updated });
+    onChangeRef.current?.({ monteCarloParams: updated });
   };
 
   const [activeTab, setActiveTab] = useState<'fan' | 'breakdown' | 'survival'>('fan');
@@ -142,7 +174,7 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({
 
   const handleCrashDurationChange = (newDuration: number) => {
     const validDur = Math.max(1, Math.min(10, newDuration));
-    setLocalParams((prev) => {
+    updateLocalParams((prev) => {
       const existing = prev.crashYearDropsPercent || [30, 15];
       const updated: number[] = [];
       for (let i = 0; i < validDur; i++) {
@@ -165,7 +197,7 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({
   };
 
   const handleCrashYearDropChange = (yearIndex: number, newDrop: number) => {
-    setLocalParams((prev) => {
+    updateLocalParams((prev) => {
       const existing = [...(prev.crashYearDropsPercent || currentCrashYearDrops)];
       existing[yearIndex] = Math.max(-100, Math.min(100, newDrop));
       return {
@@ -199,7 +231,7 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({
     ) {
       return precomputedResult;
     }
-    return runMonteCarloSimulation(profile, pots, taxResult, params);
+    return runMonteCarloSimulation(profile, pots, taxResult, { ...params, iterationSeed });
   }, [profile, pots, taxResult, params, precomputedResult, iterationSeed, localParams, targetHorizonAge]);
 
   // Compute 3 scenario results for Overview tab comparison view
@@ -216,12 +248,12 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({
     ) {
       return precomputedResult;
     }
-    return runMonteCarloSimulation(profile, pots, taxResult, { ...params, marketScenario: 'standard' });
+    return runMonteCarloSimulation(profile, pots, taxResult, { ...params, marketScenario: 'standard', iterationSeed });
   }, [profile, pots, taxResult, params, precomputedResult, iterationSeed, localParams, targetHorizonAge]);
 
   const stressedResult = useMemo(() => {
     if (!taxResult) return null;
-    return runMonteCarloSimulation(profile, pots, taxResult, { ...params, marketScenario: 'stressed' });
+    return runMonteCarloSimulation(profile, pots, taxResult, { ...params, marketScenario: 'stressed', iterationSeed });
   }, [profile, pots, taxResult, params, iterationSeed]);
 
   const crashResult = useMemo(() => {
@@ -231,6 +263,7 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({
       marketScenario: 'early_crash',
       useCashBuffer: params.useCashBuffer ?? false,
       cashBufferYears: params.cashBufferYears ?? params.crashDurationYears ?? 2,
+      iterationSeed,
     });
   }, [profile, pots, taxResult, params, iterationSeed]);
 
@@ -393,7 +426,7 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({
                   step="1"
                   value={localParams.accumulationVolatility}
                   onChange={(e) =>
-                    setLocalParams((prev) => ({ ...prev, accumulationVolatility: Number(e.target.value) }))
+                    updateLocalParams((prev) => ({ ...prev, accumulationVolatility: Number(e.target.value) }))
                   }
                   className="w-full accent-indigo-600 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg cursor-pointer"
                 />
@@ -412,7 +445,7 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({
                   step="1"
                   value={localParams.decumulationVolatility}
                   onChange={(e) =>
-                    setLocalParams((prev) => ({ ...prev, decumulationVolatility: Number(e.target.value) }))
+                    updateLocalParams((prev) => ({ ...prev, decumulationVolatility: Number(e.target.value) }))
                   }
                   className="w-full accent-indigo-600 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg cursor-pointer"
                 />
@@ -426,7 +459,7 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({
                 </div>
                 <select
                   value={localParams.maxAge}
-                  onChange={(e) => setLocalParams((prev) => ({ ...prev, maxAge: Number(e.target.value) }))}
+                  onChange={(e) => updateLocalParams((prev) => ({ ...prev, maxAge: Number(e.target.value) }))}
                   className="w-full px-2.5 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100"
                 >
                   <option value={85}>To Age 85</option>
@@ -1133,7 +1166,7 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({
                   max="8.0"
                   step="0.1"
                   value={localParams.stressedReturnDropPercent ?? 2.0}
-                  onChange={(e) => setLocalParams((prev) => ({ ...prev, stressedReturnDropPercent: parseFloat(e.target.value) || 0 }))}
+                  onChange={(e) => updateLocalParams((prev) => ({ ...prev, stressedReturnDropPercent: parseFloat(e.target.value) || 0 }))}
                   className="w-full sm:w-36 accent-amber-600 cursor-pointer"
                 />
                 <input
@@ -1142,7 +1175,7 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({
                   min="0"
                   max="20"
                   value={localParams.stressedReturnDropPercent ?? 2.0}
-                  onChange={(e) => setLocalParams((prev) => ({ ...prev, stressedReturnDropPercent: parseFloat(e.target.value) || 0 }))}
+                  onChange={(e) => updateLocalParams((prev) => ({ ...prev, stressedReturnDropPercent: parseFloat(e.target.value) || 0 }))}
                   className="w-20 text-xs font-extrabold text-center px-2 py-1 bg-white dark:bg-slate-800 text-amber-950 dark:text-amber-100 border border-amber-300 dark:border-amber-700 rounded-xl"
                 />
                 <span className="text-xs font-extrabold text-amber-950 dark:text-amber-100 bg-amber-100 dark:bg-amber-900/80 px-2.5 py-1 rounded-xl border border-amber-300 dark:border-amber-700 whitespace-nowrap">
@@ -1168,7 +1201,7 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({
                       crashDurationYears: 2,
                       crashYearDropsPercent: [30, 15],
                     };
-                    setLocalParams((prev) => ({
+                    updateLocalParams((prev) => ({
                       ...prev,
                       ...defaults,
                     }));
@@ -1191,7 +1224,7 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({
                   </label>
                   <select
                     value={currentCrashStartAge}
-                    onChange={(e) => setLocalParams((prev) => ({ ...prev, crashStartAge: parseInt(e.target.value, 10) }))}
+                    onChange={(e) => updateLocalParams((prev) => ({ ...prev, crashStartAge: parseInt(e.target.value, 10) }))}
                     className="w-full text-xs font-bold bg-white dark:bg-slate-900 text-rose-950 dark:text-rose-100 border border-rose-300 dark:border-rose-700 rounded-xl px-2.5 py-2 focus:ring-rose-500 cursor-pointer"
                   >
                     {Array.from({ length: Math.max(1, (localParams.maxAge || 95) - profile.currentAge + 1) }, (_, i) => profile.currentAge + i).map((a) => {
@@ -1295,7 +1328,7 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({
                       <input
                         type="checkbox"
                         checked={localParams.useCashBuffer ?? false}
-                        onChange={(e) => setLocalParams((prev) => ({ ...prev, useCashBuffer: e.target.checked }))}
+                        onChange={(e) => updateLocalParams((prev) => ({ ...prev, useCashBuffer: e.target.checked }))}
                         className="w-4 h-4 text-rose-600 rounded border-rose-300 focus:ring-rose-500 cursor-pointer accent-rose-600"
                       />
                       <span>Use Cash Buffer for Crash Scenario ({currentCashBufferYears} {currentCashBufferYears === 1 ? 'Year' : 'Years'} from Crash Start)</span>
@@ -1310,7 +1343,7 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({
                       <span className="text-[11px] font-bold text-rose-900 dark:text-rose-200">Buffer Duration:</span>
                       <select
                         value={currentCashBufferYears}
-                        onChange={(e) => setLocalParams((prev) => ({ ...prev, cashBufferYears: parseInt(e.target.value, 10) }))}
+                        onChange={(e) => updateLocalParams((prev) => ({ ...prev, cashBufferYears: parseInt(e.target.value, 10) }))}
                         className="text-xs font-bold bg-rose-50 dark:bg-slate-800 text-rose-950 dark:text-rose-100 border border-rose-300 dark:border-rose-700 rounded-lg px-2 py-1 focus:ring-rose-500 cursor-pointer"
                       >
                         {Array.from({ length: 10 }, (_, i) => i + 1).map((y) => (
