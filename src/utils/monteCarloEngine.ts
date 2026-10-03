@@ -1270,11 +1270,23 @@ function parseAnnuityTypeConfig(type?: string) {
         }
 
         // Required inflation-adjusted gross target (strictly cushioned at Essential Floor)
-        const essentialFloor = (profile.essentialRetirementIncomeAnnual !== undefined && profile.essentialRetirementIncomeAnnual > 0)
-          ? profile.essentialRetirementIncomeAnnual
-          : Math.round(getActualSpendingTargetForAge(profile, age) * 0.65);
-        const maxDrawdownIncomeTarget = Math.max(essentialFloor, getTargetIncomeForAge(profile, age) * gkMultiplier);
-        const actualSpendingBase = Math.max(essentialFloor, getActualSpendingTargetForAge(profile, age) * gkMultiplier);
+        // Essential Floor only cushions GK cuts; it must never lift spending above the plan target
+        const baseSpendingTarget = getActualSpendingTargetForAge(profile, age);
+        const baseIncomeTarget = getTargetIncomeForAge(profile, age);
+        let maxDrawdownIncomeTarget = baseIncomeTarget * gkMultiplier;
+        let actualSpendingBase = baseSpendingTarget * gkMultiplier;
+        if (profile.dynamicSpendingRules?.enabled && gkMultiplier < 1) {
+          const rawFloor = (profile.essentialRetirementIncomeAnnual !== undefined && profile.essentialRetirementIncomeAnnual > 0)
+            ? profile.essentialRetirementIncomeAnnual
+            : Math.round(baseSpendingTarget * 0.65);
+          const essentialFloor = Math.min(rawFloor, baseSpendingTarget);
+          if (baseSpendingTarget > 0 && actualSpendingBase < essentialFloor) {
+            // Clamp the multiplier itself so it can't ratchet down invisibly below the floor
+            gkMultiplier = essentialFloor / baseSpendingTarget;
+            actualSpendingBase = essentialFloor;
+            maxDrawdownIncomeTarget = baseIncomeTarget * gkMultiplier;
+          }
+        }
         const isReinvestExcess = Boolean(
           profile.reinvestExcessDrawdown ||
           profile.maximizedSpendConfig?.reinvestExcessDrawdown

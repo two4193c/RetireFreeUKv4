@@ -141,7 +141,7 @@ export const WithdrawalGuardrailGaugeCard: React.FC<WithdrawalGuardrailGaugeCard
   // Horizon adjustment: for horizons longer than 30 years, tighten upper guardrail slightly
   const horizonAdjustment = Math.max(0, (horizonYears - 30) * 0.03);
   const lowerGuardrail = Math.max(1.5, Math.round((initialSwr * (1 - prospThreshFrac)) * 10) / 10);
-  const upperGuardrail = Math.min(8.0, Math.round((initialSwr * (1 + presThreshFrac) - horizonAdjustment) * 10) / 10);
+  const upperGuardrail = Math.max(lowerGuardrail + 0.1, Math.min(8.0, Math.round((initialSwr * (1 + presThreshFrac) - horizonAdjustment) * 10) / 10));
 
   // Status
   let status: 'prosperity' | 'safe' | 'capital_preservation' = 'safe';
