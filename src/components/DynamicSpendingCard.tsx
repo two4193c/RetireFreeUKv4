@@ -23,6 +23,7 @@ import {
   ChevronUp,
   Eye,
   Gauge,
+  Calendar,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -130,33 +131,8 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
   const horizonYears = Math.max(10, endAge - retAge);
   const inflationRate = (profile.expectedInflationRate ?? 2.5) / 100;
 
-  // Calculate starting retirement portfolio
-  const startingWealth = useMemo(() => {
-    // When Monte Carlo simulation results matching the active scenario are available,
-    // use the scenario-adjusted retirement pot totals for accurate stress modeling
-    const isScenarioMatch = !monteCarloResult?.params?.marketScenario || monteCarloResult.params.marketScenario === activeMarketScenario;
-    if (isScenarioMatch && monteCarloResult) {
-      if (selectedScenario === 'mc10' && (monteCarloResult.p10RetirementPot || 0) > 0) {
-        return monteCarloResult.p10RetirementPot;
-      }
-      if (selectedScenario === 'mc90' && (monteCarloResult.p90RetirementPot || 0) > 0) {
-        return monteCarloResult.p90RetirementPot;
-      }
-      if ((monteCarloResult.medianRetirementPot || 0) > 0) {
-        return monteCarloResult.medianRetirementPot;
-      }
-    }
-
-    const retRow = projections?.find((p) => p.age === retAge);
-    if (retRow && retRow.totalPot > 0) {
-      if (activeMarketScenario === 'stressed') {
-        const accumYears = Math.max(0, retAge - (profile.currentAge || 30));
-        const drag = (profile.monteCarloParams?.stressedReturnDropPercent ?? 2.0) / 100;
-        const discountFactor = Math.pow(1 - drag, accumYears * 0.5);
-        return Math.round(retRow.totalPot * discountFactor);
-      }
-      return retRow.totalPot;
-    }
+  // Current liquid portfolio wealth today across primary and partner pots
+  const todayTotalPot = useMemo(() => {
     let total =
       (pots.workplacePensionBalance || 0) +
       (pots.sippBalance || 0) +
@@ -176,21 +152,93 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
         (profile.partnerPots.giaBalance || 0) +
         (profile.partnerPots.cashSavingsBalance || 0);
     }
-    return Math.max(150000, total);
+    return Math.max(0, total);
+  }, [pots, profile.isCouplePlanning, profile.partnerPots]);
+
+  // Calculate starting retirement portfolio (Projected portfolio at retirement age retAge in real today's £, NOT today's pot)
+  const startingWealth = useMemo(() => {
+    // 1. When Monte Carlo simulation results matching the active scenario are available,
+    // use the scenario-adjusted retirement pot totals for accurate decumulation modeling
+    const isScenarioMatch = !monteCarloResult?.params?.marketScenario || monteCarloResult.params.marketScenario === activeMarketScenario;
+    if (isScenarioMatch && monteCarloResult) {
+      if (selectedScenario === 'mc10' && (monteCarloResult.p10RetirementPot || 0) > 0) {
+        return monteCarloResult.p10RetirementPot;
+      }
+      if (selectedScenario === 'mc90' && (monteCarloResult.p90RetirementPot || 0) > 0) {
+        return monteCarloResult.p90RetirementPot;
+      }
+      if ((monteCarloResult.medianRetirementPot || 0) > 0) {
+        return monteCarloResult.medianRetirementPot;
+      }
+    }
+
+    // 2. From standard projections, find the accumulated balance at retirement age retAge
+    const retRow = projections?.find((p) => p.age === retAge);
+    if (retRow && retRow.totalPot > 0) {
+      const accumYears = Math.max(0, retAge - (profile.currentAge || 30));
+      const inflFactor = Math.pow(1 + inflationRate, accumYears);
+      const isAdjustedReal = profile.adjustForInflation !== false;
+      const baseRetPot = isAdjustedReal && inflFactor > 0 ? Math.round(retRow.totalPot / inflFactor) : retRow.totalPot;
+
+      if (activeMarketScenario === 'stressed') {
+        const drag = (profile.monteCarloParams?.stressedReturnDropPercent ?? 2.0) / 100;
+        const discountFactor = Math.pow(1 - drag, accumYears * 0.5);
+        return Math.round(baseRetPot * discountFactor);
+      }
+      return baseRetPot;
+    }
+
+    // 3. Fallback: If retirement is in the future, compound today's pot with ongoing contributions and expected real return
+    const accumYears = Math.max(0, retAge - (profile.currentAge || 30));
+    if (accumYears > 0 && todayTotalPot > 0) {
+      const returnAccum = (profile.expectedInvestmentReturn ?? 6.0) / 100;
+      const isAdjustedReal = profile.adjustForInflation !== false;
+      const netAccumReturn = isAdjustedReal ? ((1 + returnAccum) / (1 + inflationRate) - 1) : returnAccum;
+      const employeeContrib =
+        pots.workplacePensionMonthlyEmployeeType === 'percent'
+          ? ((profile.currentSalary || 0) * (pots.workplacePensionMonthlyEmployee / 100)) / 12
+          : pots.workplacePensionMonthlyEmployee || 0;
+      const employerContrib =
+        (pots.employerMatchPercentage || 0) > 0 && (profile.currentSalary || 0) > 0
+          ? (((profile.currentSalary || 0) * (pots.employerMatchPercentage || 0)) / 100) / 12
+          : 0;
+      const annualContrib =
+        (employeeContrib +
+          employerContrib +
+          (pots.sippMonthlyContribution || 0) +
+          (pots.stocksAndSharesIsaMonthlyContribution || 0)) *
+        12;
+      const compoundGrowth = Math.pow(1 + netAccumReturn, accumYears);
+      const contribGrowth = annualContrib > 0 && netAccumReturn > 0
+        ? annualContrib * ((compoundGrowth - 1) / netAccumReturn)
+        : annualContrib * accumYears;
+      const futurePot = Math.round(todayTotalPot * compoundGrowth + contribGrowth);
+      return Math.max(150000, futurePot);
+    }
+
+    return Math.max(150000, todayTotalPot);
   }, [
     monteCarloResult,
     activeMarketScenario,
     selectedScenario,
-    pots,
-    profile.isCouplePlanning,
-    profile.partnerPots,
-    profile.currentAge,
-    profile.monteCarloParams?.stressedReturnDropPercent,
     projections,
     retAge,
+    profile.currentAge,
+    profile.monteCarloParams?.stressedReturnDropPercent,
+    profile.adjustForInflation,
+    profile.expectedInvestmentReturn,
+    inflationRate,
+    todayTotalPot,
+    pots,
   ]);
 
-  const initialTarget = getActualSpendingTargetForAge(profile, retAge);
+  // The user's input income requirement baseline (fixed from plan settings so SWR can be compared against it)
+  const inputIncomeRequirement = profile.baselineIncomeRequirementAnnual ?? profile.targetRetirementIncomeAnnual ?? 40000;
+  const getInputIncomeRequirementForAge = (age: number) => {
+    return getActualSpendingTargetForAge({ ...profile, targetRetirementIncomeAnnual: inputIncomeRequirement }, age);
+  };
+
+  const initialTarget = getInputIncomeRequirementForAge(retAge);
   const essentialFloorBaseline =
     profile.essentialRetirementIncomeAnnual !== undefined &&
     profile.essentialRetirementIncomeAnnual > 0
@@ -344,11 +392,22 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
   const effectiveUpperTriggerPot = effectiveUpperGuardrailRate > 0 && effectiveInitialSpend > 0 ? Math.round(effectiveInitialSpend / (effectiveUpperGuardrailRate / 100)) : 0;
   const effectiveLowerTriggerPot = effectiveLowerGuardrailRate > 0 && effectiveInitialSpend > 0 ? Math.round(effectiveInitialSpend / (effectiveLowerGuardrailRate / 100)) : 0;
 
-  const applyStartingSpendToPlan = (newAnnualSpend: number) => {
+  const applyStartingSpendToPlan = (newAnnualSpend: number, swrRate?: number) => {
     const rounded = Math.round(newAnnualSpend);
+    const rateToApply = swrRate ?? activeSwrConfig.rate;
+    // CRITICAL: Always preserve the user's input income requirement baseline so it is NEVER lost or overwritten
+    const preservedInputRequirement = profile.baselineIncomeRequirementAnnual ?? profile.targetRetirementIncomeAnnual;
+
     const updated: Partial<UserProfile> = {
-      targetRetirementIncomeAnnual: rounded,
+      baselineIncomeRequirementAnnual: preservedInputRequirement,
       actualSpendingTargetAnnual: rounded,
+      dynamicSpendingRules: {
+        ...rules,
+        enabled: true,
+        targetStartingWithdrawalRate: rateToApply,
+        initialSpendingAmount: rounded,
+        swrBaselineSource: swrChartSource,
+      },
     };
     if (profile.maximizedSpendConfig?.enabled) {
       updated.maximizedSpendConfig = {
@@ -360,7 +419,30 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
       ...profile,
       ...updated,
     });
-    setAppliedNotification(`Plan Target Spending successfully updated to £${rounded.toLocaleString()}/yr!`);
+    setAppliedNotification(
+      `Dynamic Spending Target updated to £${rounded.toLocaleString()}/yr (${rateToApply.toFixed(2)}% SWR)! Your baseline input requirement (£${preservedInputRequirement.toLocaleString()}/yr) remains fixed for comparison.`
+    );
+    setTimeout(() => {
+      setAppliedNotification(null);
+    }, 4500);
+  };
+
+  const resetToInputIncomeRequirement = () => {
+    const preservedInputRequirement = profile.baselineIncomeRequirementAnnual ?? profile.targetRetirementIncomeAnnual;
+    onChange({
+      ...profile,
+      actualSpendingTargetAnnual: preservedInputRequirement,
+      dynamicSpendingRules: {
+        ...rules,
+        initialSpendingAmount: undefined,
+        targetStartingWithdrawalRate: undefined,
+        swrBaselineSource: 'plan',
+      },
+    });
+    setSwrChartSource('plan');
+    setAppliedNotification(
+      `Dynamic spending reset to match your input income requirement (£${preservedInputRequirement.toLocaleString()}/yr).`
+    );
     setTimeout(() => {
       setAppliedNotification(null);
     }, 4000);
@@ -512,8 +594,8 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
 
       const inflationFactor = Math.pow(1 + inflationRate, yr);
       const planIncomeRequirementAtAge = isAdjustedReal
-        ? getActualSpendingTargetForAge(profile, currentAge)
-        : getActualSpendingTargetForAge(profile, currentAge) * inflationFactor;
+        ? getInputIncomeRequirementForAge(currentAge)
+        : Math.round(getInputIncomeRequirementForAge(currentAge) * inflationFactor);
 
       // The unadjusted starting spend progression for the chosen SWR across years before dynamic GK adjustments
       const swrStartingSpendAtAge = Math.round(planIncomeRequirementAtAge * scaleFactor);
@@ -1076,8 +1158,13 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
                 </div>
 
                 <div className="space-y-1.5 pt-1">
-                  <div className="text-[11px] text-slate-400 text-center">
-                    Starting Wealth: £{startingWealth.toLocaleString()}
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400 text-center">
+                    <div>Retirement Starting Pot (Age {retAge}): <strong>£{startingWealth.toLocaleString()}</strong></div>
+                    {retAge > (profile.currentAge || 30) && (
+                      <div className="text-[10px] text-slate-400 mt-0.5">
+                        Current Pot Today: £{todayTotalPot.toLocaleString()}
+                      </div>
+                    )}
                   </div>
                   <button
                     type="button"
@@ -1226,13 +1313,13 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
 
                   <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-700/80">
                     <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                      Required Starting Pot
+                      Required Starting Pot (Age {retAge})
                     </div>
                     <div className="text-base font-black text-slate-800 dark:text-slate-100 mt-0.5">
                       £{customRequiredWealth.toLocaleString()}
                     </div>
                     <div className="text-[10px] text-slate-400 mt-0.5">
-                      to fund current £{initialTarget.toLocaleString()}/yr
+                      to fund input £{initialTarget.toLocaleString()}/yr requirement
                     </div>
                   </div>
 
@@ -1293,7 +1380,7 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
                 )}
               </div>
               <span className="text-[11px] font-semibold text-slate-400">
-                Initial Wealth: £{startingWealth.toLocaleString()} | Initial Spend: £{effectiveInitialSpend.toLocaleString()}/yr ({effectiveInitialRate.toFixed(2)}% SWR)
+                Retirement Starting Pot (Age {retAge}): £{startingWealth.toLocaleString()} | Input Requirement: £{initialTarget.toLocaleString()}/yr ({initialWithdrawalRate.toFixed(2)}% SWR)
               </span>
             </div>
 
@@ -1336,11 +1423,14 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
           <div className="bg-slate-50 dark:bg-slate-800/40 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700/80 space-y-4">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
               <div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <h4 className="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider flex items-center gap-1.5">
                     <Layers className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                     <span>Dynamic Income Trajectory &amp; Trigger Points</span>
                   </h4>
+                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600">
+                    Retirement Horizon: Age {retAge} → Age {endAge}
+                  </span>
                   {isMonteCarloScenario && (
                     <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 flex items-center gap-1">
                       <Sparkles className="w-3 h-3 text-indigo-500" />
@@ -1365,7 +1455,7 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
                   )}
                 </div>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                  Real-time visualization comparing baseline spending requirements against dynamic Guyton-Klinger income and your non-negotiable Essential Floor across Monte Carlo paths and stress models.
+                  Real-time decumulation timeline starting at retirement age {retAge} comparing your fixed baseline spending requirement against dynamic Guyton-Klinger income and your non-negotiable Essential Floor across Monte Carlo paths and stress models.
                 </p>
               </div>
 
@@ -1542,6 +1632,41 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
               </div>
             </div>
 
+            {/* Decumulation Horizon & Starting Pot Callout */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700/80 text-xs shadow-xs">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-lg bg-emerald-600/10 dark:bg-emerald-400/10 text-emerald-600 dark:text-emerald-400 shrink-0">
+                  <Calendar className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-2 flex-wrap">
+                    <span>Decumulation Timeline Starts at Retirement Age {retAge}</span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                      Starts with Retirement Pot, Not Today's Pot
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                    Trajectory simulates your retirement decumulation from <strong>Age {retAge}</strong> through <strong>Age {endAge}</strong> ({horizonYears} years) starting with your <strong>Projected Retirement Starting Pot of £{startingWealth.toLocaleString()}</strong>{retAge > (profile.currentAge || 30) ? ` (accumulated from today's portfolio of £${todayTotalPot.toLocaleString()})` : ''}.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 shrink-0 self-start sm:self-auto text-right border-t sm:border-t-0 sm:border-l border-slate-200 dark:border-slate-700 pt-2 sm:pt-0 sm:pl-3">
+                {retAge > (profile.currentAge || 30) && (
+                  <>
+                    <div>
+                      <div className="text-[10px] text-slate-400 font-bold uppercase">Current Pot Today</div>
+                      <div className="font-extrabold text-slate-600 dark:text-slate-300">£{todayTotalPot.toLocaleString()}</div>
+                    </div>
+                    <div className="w-px h-6 bg-slate-300 dark:bg-slate-700" />
+                  </>
+                )}
+                <div>
+                  <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase">Retirement Starting Pot</div>
+                  <div className="font-extrabold text-emerald-600 dark:text-emerald-400">£{startingWealth.toLocaleString()}</div>
+                </div>
+              </div>
+            </div>
+
             {/* SWR Starting Baseline Switcher for Chart */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xs">
               <div className="flex items-center gap-2 flex-wrap">
@@ -1558,7 +1683,7 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
                         ? 'bg-emerald-600 text-white shadow-xs'
                         : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700/60'
                     }`}
-                    title="Simulate dynamic income trajectory using your current retirement plan spending target"
+                    title="Simulate dynamic income trajectory matching your plan target input income requirement"
                   >
                     <span>Plan Target ({initialWithdrawalRate.toFixed(1)}% • £{Math.round(initialTarget / 1000)}k)</span>
                   </button>
@@ -1617,31 +1742,48 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
               {swrChartSource !== 'plan' && (
                 <button
                   type="button"
-                  onClick={() => applyStartingSpendToPlan(activeSwrConfig.startingSpend)}
+                  onClick={() => applyStartingSpendToPlan(activeSwrConfig.startingSpend, activeSwrConfig.rate)}
                   className="px-2.5 py-1 text-[11px] font-extrabold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow-xs transition-colors flex items-center gap-1 cursor-pointer shrink-0 self-end sm:self-auto"
                 >
                   <Check className="w-3.5 h-3.5" />
-                  <span>Set As Plan Target (£{activeSwrConfig.startingSpend.toLocaleString()}/yr)</span>
+                  <span>Apply SWR to Spending (£{activeSwrConfig.startingSpend.toLocaleString()}/yr)</span>
                 </button>
               )}
             </div>
 
-            {/* Explanatory Banner when SWR Baseline or Benchmark is simulated in chart */}
+            {/* Explanatory Banner: Comparing active SWR against fixed input income requirement baseline */}
             {swrChartSource !== 'plan' && (
               <div className="p-3 rounded-xl bg-indigo-50/90 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-800 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                 <div className="flex items-center gap-2 text-indigo-900 dark:text-indigo-200">
                   <Gauge className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
                   <span>
-                    <strong>Chart SWR Simulation:</strong> Trajectory displays dynamic spending from <strong>{activeSwrConfig.name}</strong> ({effectiveInitialRate.toFixed(2)}% SWR = £{effectiveInitialSpend.toLocaleString()}/yr) plotted directly against your fixed input income requirement baseline (£{initialTarget.toLocaleString()}/yr). Upper guardrail cut triggers if SWR &gt; {effectiveUpperGuardrailRate.toFixed(2)}% (pot &lt; £{effectiveUpperTriggerPot.toLocaleString()}); Prosperity raise triggers if SWR &lt; {effectiveLowerGuardrailRate.toFixed(2)}% (pot &gt; £{effectiveLowerTriggerPot.toLocaleString()}).
+                    <strong>Chart SWR Simulation:</strong> Comparing <strong>{activeSwrConfig.name}</strong> ({effectiveInitialRate.toFixed(2)}% SWR = £{effectiveInitialSpend.toLocaleString()}/yr) against your <strong>fixed input income requirement baseline (£{initialTarget.toLocaleString()}/yr)</strong> starting at retirement age {retAge} with your projected starting pot of £{startingWealth.toLocaleString()}.
+                    {effectiveInitialSpend > initialTarget
+                      ? ` This SWR covers your requirement with an initial +£${(effectiveInitialSpend - initialTarget).toLocaleString()}/yr surplus!`
+                      : effectiveInitialSpend < initialTarget
+                      ? ` Note: this SWR results in an initial -£${(initialTarget - effectiveInitialSpend).toLocaleString()}/yr shortfall vs your requirement.`
+                      : ' This SWR matches your requirement exactly.'}
                   </span>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setSwrChartSource('plan')}
-                  className="px-2.5 py-1 text-[11px] font-bold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 rounded-lg transition-colors cursor-pointer self-start sm:self-auto shrink-0"
-                >
-                  Reset to Plan Target
-                </button>
+                <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
+                  <button
+                    type="button"
+                    onClick={() => setSwrChartSource('plan')}
+                    className="px-2.5 py-1 text-[11px] font-bold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 rounded-lg transition-colors cursor-pointer"
+                  >
+                    Reset to Plan Target
+                  </button>
+                  {profile.dynamicSpendingRules?.initialSpendingAmount && (
+                    <button
+                      type="button"
+                      onClick={resetToInputIncomeRequirement}
+                      className="px-2.5 py-1 text-[11px] font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer"
+                      title="Reset dynamic spending back to your exact input income requirement"
+                    >
+                      Reset Plan Spending
+                    </button>
+                  )}
+                </div>
               </div>
             )}
 

@@ -364,6 +364,9 @@ export interface DynamicSpendingRules {
   prosperityThresholdPercent: number; // e.g. 20 (withdraw rate drops 20% below initial)
   prosperityIncreasePercent: number; // e.g. 10 (increase spending 10%)
   skipInflationOnNegativeReturn: boolean;
+  targetStartingWithdrawalRate?: number; // e.g. 5.2 (%)
+  initialSpendingAmount?: number; // e.g. £52,000 (£/yr)
+  swrBaselineSource?: 'plan' | 'calculator' | 'gk_optimal' | 'bengen' | 'conservative';
 }
 
 export type MarketScenario = 'standard' | 'stressed' | 'early_crash';
@@ -439,6 +442,7 @@ export interface UserProfile {
   partnerEmployerNiPassThroughPercent?: number;
   partnerEmployerNiRate?: number;
   targetRetirementIncomeAnnual: number; // in today's money
+  baselineIncomeRequirementAnnual?: number; // Preserved user input income requirement for comparison against SWR calculators & dynamic spending
   essentialRetirementIncomeAnnual?: number; // Essential spending floor in today's money (£/yr)
   actualSpendingTargetAnnual?: number; // Actual spending requirement when max drawdown is enabled
   reinvestExcessDrawdown?: boolean; // Option to max drawdown while keeping actual spending requirement lower

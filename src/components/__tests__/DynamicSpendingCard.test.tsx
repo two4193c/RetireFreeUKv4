@@ -395,5 +395,45 @@ describe('DynamicSpendingCard - Guyton-Klinger Spending Rules & Monte Carlo Path
     fireEvent.click(gkOptimalBtn);
     expect(screen.getByText(/fixed input income requirement baseline \(£40,000\/yr\)/i)).toBeInTheDocument();
   });
+
+  it('starts dynamic income trajectory and trigger points at retirement age using the retirement starting pot, not today pot', () => {
+    const onChange = vi.fn();
+    const youngerProfile: UserProfile = {
+      ...baseProfileEnabled,
+      currentAge: 35,
+      targetRetirementAge: 62,
+    };
+
+    // Mock projections with an accumulated pot at retirement age 62 (£850,000)
+    const mockProjections = [
+      { age: 35, totalPot: 150000, isRetired: false } as any,
+      { age: 50, totalPot: 450000, isRetired: false } as any,
+      { age: 62, totalPot: 850000, isRetired: true } as any,
+      { age: 63, totalPot: 820000, isRetired: true } as any,
+      { age: 75, totalPot: 500000, isRetired: true } as any,
+      { age: 95, totalPot: 200000, isRetired: true } as any,
+    ];
+
+    render(
+      <DynamicSpendingCard
+        profile={youngerProfile}
+        pots={DEFAULT_POTS}
+        projections={mockProjections}
+        onChange={onChange}
+      />
+    );
+
+    // 1. Check retirement age start callouts
+    expect(screen.getByText(/Decumulation Timeline Starts at Retirement Age 62/i)).toBeInTheDocument();
+    expect(screen.getByText(/Starts with Retirement Pot, Not Today's Pot/i)).toBeInTheDocument();
+
+    // 2. Check that the horizon starts at retirement age 62, not current age 35
+    expect(screen.getByText(/Retirement Horizon: Age 62 → Age/i)).toBeInTheDocument();
+
+    // 3. Confirm both Current Pot Today and Retirement Starting Pot are distinguished in UI
+    expect(screen.getAllByText(/Retirement Starting Pot/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/Current Pot Today/i).length).toBeGreaterThanOrEqual(1);
+  });
 });
+
 
