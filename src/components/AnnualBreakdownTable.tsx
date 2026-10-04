@@ -182,14 +182,16 @@ export const AnnualBreakdownTable: React.FC<AnnualBreakdownTableProps> = ({
       ].join(',');
     });
 
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...csvRows].join('\n');
-    const encodedUri = encodeURI(csvContent);
+    const csvContent = [headers.join(','), ...csvRows].join('\n');
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
+    link.setAttribute('href', url);
     link.setAttribute('download', `uk_retirement_annual_breakdown_age_${profile.currentAge}_to_100.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -989,14 +991,14 @@ export const AnnualBreakdownTable: React.FC<AnnualBreakdownTableProps> = ({
                       <div className="py-2 flex justify-between items-center">
                         <span className="text-slate-500 dark:text-slate-400 font-medium">Pension Tax Relief Gained:</span>
                         <span className="font-bold text-primary-700 dark:text-primary-300">
-                          +£{(showTaxBreakdownModal.annualTaxReliefTotal || (0) || 0).toLocaleString()}
+                          +£{(showTaxBreakdownModal.annualTaxReliefTotal || 0).toLocaleString()}
                         </span>
                       </div>
 
                       <div className="py-2 flex justify-between items-center">
                         <span className="text-slate-500 dark:text-slate-400 font-medium">Income Tax & NI on Salary:</span>
                         <span className="font-bold text-slate-700 dark:text-slate-300">
-                          £{(showTaxBreakdownModal.totalTaxPaid || (0) || 0).toLocaleString()}
+                          £{(showTaxBreakdownModal.totalTaxPaid || 0).toLocaleString()}
                         </span>
                       </div>
                     </>

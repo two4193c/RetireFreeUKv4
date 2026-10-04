@@ -69,6 +69,14 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
     bondPercent: 15,
     cashPercent: 10,
   });
+  const [debouncedAllocation, setDebouncedAllocation] = useState<AssetAllocation>(allocation);
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedAllocation(allocation);
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [allocation]);
 
   const projectionEndAge = getProjectionEndAge(profile);
   const [maxAge, setMaxAge] = useState<number>(() =>
@@ -118,8 +126,8 @@ export const HistoricModelingCard: React.FC<HistoricModelingCardProps> = ({
 
   // Run the 50-year historic simulation
   const simSummary = useMemo(() => {
-    return runHistoricSimulation(profile, pots, taxResult, maxAge, allocation, reverseSequence);
-  }, [profile, pots, taxResult, allocation, maxAge, reverseSequence]);
+    return runHistoricSimulation(profile, pots, taxResult, maxAge, debouncedAllocation, reverseSequence);
+  }, [profile, pots, taxResult, debouncedAllocation, maxAge, reverseSequence]);
 
   // Set default selected start year once computed
   React.useEffect(() => {

@@ -4987,6 +4987,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       // =========================================================================
       const mcNormal = mcNormalPrelim;
 
+      await new Promise((r) => setTimeout(r, 0));
       const mcCrash = runMonteCarloSimulation(profile, pots, exportTaxResult as any, {
         numSimulations: 500,
         accumulationVolatility: 12.0,
@@ -5694,7 +5695,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
 
       doc.text('Main Home Valuation:', 18, mc3Y + 6);
       doc.setFont('helvetica', 'normal');
-      doc.text(`£${(ihtSettings.primaryResidenceValue || (0) || 0).toLocaleString()} @ ${ihtSettings.annualPropertyGrowthPercent || 3.0}% p.a.`, 58, mc3Y + 6);
+      doc.text(`£${(ihtSettings.primaryResidenceValue || 0).toLocaleString()} @ ${ihtSettings.annualPropertyGrowthPercent || 3.0}% p.a.`, 58, mc3Y + 6);
 
       doc.setFont('helvetica', 'bold');
       doc.text('April 2027 Budget Pension Rule:', 110, mc3Y + 6);
@@ -5704,7 +5705,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       doc.setFont('helvetica', 'bold');
       doc.text('Other Physical Assets:', 18, mc3Y + 12);
       doc.setFont('helvetica', 'normal');
-      doc.text(`£${(ihtSettings.otherTaxableAssets || (0) || 0).toLocaleString()}`, 58, mc3Y + 12);
+      doc.text(`£${(ihtSettings.otherTaxableAssets || 0).toLocaleString()}`, 58, mc3Y + 12);
 
       doc.setFont('helvetica', 'bold');
       doc.text('Available Allowances (NRB + RNRB):', 110, mc3Y + 12);
@@ -5910,12 +5911,12 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
           doc.setTextColor(51, 65, 85);
           doc.text(`Age ${p.age} (${p.year})`, 16, appY + 4);
           doc.text(p.isRetired ? 'Retire' : 'Accum', 35, appY + 4);
-          doc.text(`£${Math.round(p.pensionPot || (0) || 0).toLocaleString()}`, 52, appY + 4);
-          doc.text(`£${Math.round(p.isaPot || (0) || 0).toLocaleString()}`, 74, appY + 4);
-          doc.text(`£${Math.round(p.cashGiaPot || (0) || 0).toLocaleString()}`, 94, appY + 4);
+          doc.text(`£${Math.round(p.pensionPot || 0).toLocaleString()}`, 52, appY + 4);
+          doc.text(`£${Math.round(p.isaPot || 0).toLocaleString()}`, 74, appY + 4);
+          doc.text(`£${Math.round(p.cashGiaPot || 0).toLocaleString()}`, 94, appY + 4);
 
           doc.setFont('helvetica', 'bold');
-          doc.text(`£${Math.round(p.totalPot || (0) || 0).toLocaleString()}`, 116, appY + 4);
+          doc.text(`£${Math.round(p.totalPot || 0).toLocaleString()}`, 116, appY + 4);
           doc.setFont('helvetica', 'normal');
 
           doc.text(`£${Math.round((fixedGuarInc) || 0).toLocaleString()}`, 138, appY + 4);
@@ -5924,11 +5925,11 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
           if (hasShortfall) {
             doc.setTextColor(225, 29, 72); // Rose text for deficit year
             doc.setFont('helvetica', 'bold');
-            doc.text(`£${Math.round(p.netRetirementIncome || (0) || 0).toLocaleString()} !`, 178, appY + 4);
+            doc.text(`£${Math.round(p.netRetirementIncome || 0).toLocaleString()} !`, 178, appY + 4);
             doc.setFont('helvetica', 'normal');
           } else {
             doc.setFont('helvetica', 'bold');
-            doc.text(`£${Math.round(p.netRetirementIncome || (0) || 0).toLocaleString()}`, 178, appY + 4);
+            doc.text(`£${Math.round(p.netRetirementIncome || 0).toLocaleString()}`, 178, appY + 4);
             doc.setFont('helvetica', 'normal');
           }
 
@@ -5939,6 +5940,7 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
       // =========================================================================
       // APPENDIX 3: HISTORIC MARKET PERFORMANCE SIMULATION (75 START YEARS)
       // =========================================================================
+      await new Promise((r) => setTimeout(r, 0));
       const historicSim = runHistoricSimulation(profile, pots, exportTaxResult as any);
 
       // Part 1: Summary & Charts
@@ -7888,18 +7890,21 @@ export const ExportSection: React.FC<ExportSectionProps> = ({
             {/* Export JSON */}
             <button
               onClick={() => {
-                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({
+                const jsonStr = JSON.stringify({
                   version: 'v2',
                   exportedAt: new Date().toISOString(),
                   scenarios: scenarios
-                }, null, 2));
+                }, null, 2);
+                const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
                 const downloadAnchor = document.createElement('a');
                 const dateStr = new Date().toISOString().split('T')[0];
-                downloadAnchor.setAttribute("href", dataStr);
+                downloadAnchor.setAttribute("href", url);
                 downloadAnchor.setAttribute("download", `${appName.replace(/\s+/g, '_')}_Settings_Backup_${dateStr}.json`);
                 document.body.appendChild(downloadAnchor);
                 downloadAnchor.click();
                 downloadAnchor.remove();
+                URL.revokeObjectURL(url);
                 setExportSuccessMsg('Settings exported to JSON backup file!');
                 setTimeout(() => setExportSuccessMsg(null), 4000);
               }}

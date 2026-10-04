@@ -91,9 +91,9 @@ export const SummaryCommentsCard: React.FC<SummaryCommentsCardProps> = ({ profil
           </p>
           {isRecyclingRisk && recyclingDetails && (
             <div className="pt-2 border-t border-rose-200 dark:border-rose-800 text-[11px] font-bold text-rose-900 dark:text-rose-200 space-y-0.5">
-              <p>• PCLS Lump Sum: £{(recyclingDetails.pclsAmount || (0) || 0).toLocaleString()}</p>
-              <p>• Re-contributed Pension Amount: £{(recyclingDetails.annualContributions || (0) || 0).toLocaleString()}</p>
-              <p className="text-rose-600 dark:text-rose-400">• HMRC 30% Recycling Threshold: £{(recyclingDetails.threshold || (0) || 0).toLocaleString()}</p>
+              <p>• PCLS Lump Sum: £{(recyclingDetails.pclsAmount || 0).toLocaleString()}</p>
+              <p>• Re-contributed Pension Amount: £{(recyclingDetails.annualContributions || 0).toLocaleString()}</p>
+              <p className="text-rose-600 dark:text-rose-400">• HMRC 30% Recycling Threshold: £{(recyclingDetails.threshold || 0).toLocaleString()}</p>
             </div>
           )}
         </div>

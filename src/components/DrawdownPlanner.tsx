@@ -103,7 +103,8 @@ const LumpSumSplitEditor: React.FC<LumpSumSplitEditorProps> = ({
         <button
           type="button"
           onClick={handleAddSplit}
-          className={`text-[11px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 transition-all text-white ${
+          disabled={lumpSumAmount <= 0}
+          className={`text-[11px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 transition-all text-white disabled:opacity-50 disabled:cursor-not-allowed ${
             isEmerald
               ? 'bg-primary-600 hover:bg-primary-700'
               : 'bg-rose-600 hover:bg-rose-700'
@@ -114,7 +115,11 @@ const LumpSumSplitEditor: React.FC<LumpSumSplitEditorProps> = ({
         </button>
       </div>
 
-      {splits.length === 0 ? (
+      {lumpSumAmount <= 0 ? (
+        <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl text-xs text-amber-800 dark:text-amber-300">
+          Tax-free lump sum is currently £0. Configure pension access age and pension pots above to enable multi-pot split allocations.
+        </div>
+      ) : splits.length === 0 ? (
         <div className="text-center py-3 text-xs text-slate-500 dark:text-slate-400 italic bg-white dark:bg-slate-900 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">
           No split rules added yet. Click &quot;Add Destination Pot&quot; to distribute tax-free cash across ISAs, Cash, and Debt payoff.
         </div>

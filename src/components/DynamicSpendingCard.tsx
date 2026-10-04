@@ -259,6 +259,8 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
     prosperityThresholdPercent: 20,
     prosperityIncreasePercent: 10,
     skipInflationOnNegativeReturn: true,
+    phaseAwareGuardrails: true,
+    suspendCutsInLateRetirement: true,
   };
 
   const upperGuardrailRate = initialWithdrawalRate * (1 + rules.capitalPreservationThresholdPercent / 100);
@@ -843,6 +845,8 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
                   prosperityThresholdPercent: 20,
                   prosperityIncreasePercent: 10,
                   skipInflationOnNegativeReturn: true,
+                  phaseAwareGuardrails: true,
+                  suspendCutsInLateRetirement: true,
                 });
               } else {
                 updateField('dynamicSpendingRules', {
@@ -1033,6 +1037,70 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
                     updateField('dynamicSpendingRules', {
                       ...rules,
                       skipInflationOnNegativeReturn: e.target.checked,
+                    })
+                  }
+                />
+                <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-slate-600 peer-checked:bg-emerald-500"></div>
+              </label>
+            </div>
+
+            {/* Improvement 1: Phase-Aware Guardrail Anchoring Toggle */}
+            <div className="pt-2 border-t border-slate-200/80 dark:border-slate-700/80 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Layers className="w-4 h-4 text-indigo-500 shrink-0" />
+                <div>
+                  <h4 className="font-bold text-slate-800 dark:text-slate-200 text-xs flex items-center gap-1.5">
+                    <span>Phase-Aware Guardrail Anchoring</span>
+                    <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                      Recommended
+                    </span>
+                  </h4>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                    Calibrates guardrails against your planned spending phase baseline so pre-planned early lifestyle changes (e.g. active travel years) do not trigger false-alarm cuts.
+                  </p>
+                </div>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={rules.phaseAwareGuardrails !== false}
+                  onChange={(e) =>
+                    updateField('dynamicSpendingRules', {
+                      ...rules,
+                      phaseAwareGuardrails: e.target.checked,
+                    })
+                  }
+                />
+                <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-slate-600 peer-checked:bg-emerald-500"></div>
+              </label>
+            </div>
+
+            {/* Improvement 2: Guyton's Rule of 10-15 Years (Late-Life Horizon Decay) */}
+            <div className="pt-2 border-t border-slate-200/80 dark:border-slate-700/80 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-emerald-500 shrink-0" />
+                <div>
+                  <h4 className="font-bold text-slate-800 dark:text-slate-200 text-xs flex items-center gap-1.5">
+                    <span>Suspend Cuts in Late Retirement (Guyton's 10–15 Year Rule)</span>
+                    <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                      Academic Standard
+                    </span>
+                  </h4>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                    Suspends capital preservation cuts during the final 10–12 years of retirement (or beyond Age 80) to avoid unnecessary late-life frugality when depletion risk is past.
+                  </p>
+                </div>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={rules.suspendCutsInLateRetirement !== false}
+                  onChange={(e) =>
+                    updateField('dynamicSpendingRules', {
+                      ...rules,
+                      suspendCutsInLateRetirement: e.target.checked,
                     })
                   }
                 />

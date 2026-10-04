@@ -745,20 +745,22 @@ export const IhtEstatePlanningCard: React.FC<IhtEstatePlanningCardProps> = ({
                     {(iht.petGifts || []).map((g) => {
                       let taperPct = '0% Relief (Full 40% Tax)';
                       let badgeColor = 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300';
+                      const years = g.yearsAgo || 0;
+                      const amt = g.amount || 0;
 
-                      if (g.yearsAgo >= 7) {
+                      if (years >= 7) {
                         taperPct = '100% Relief (100% Tax-Free)';
                         badgeColor = 'bg-primary-100 text-primary-700 dark:bg-primary-950 dark:text-primary-300';
-                      } else if (g.yearsAgo >= 6) {
+                      } else if (years >= 6) {
                         taperPct = '80% Taper Relief (8% Effective Tax)';
                         badgeColor = 'bg-teal-100 text-teal-700 dark:bg-teal-950 dark:text-teal-300';
-                      } else if (g.yearsAgo >= 5) {
+                      } else if (years >= 5) {
                         taperPct = '60% Taper Relief (16% Effective Tax)';
                         badgeColor = 'bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300';
-                      } else if (g.yearsAgo >= 4) {
+                      } else if (years >= 4) {
                         taperPct = '40% Taper Relief (24% Effective Tax)';
                         badgeColor = 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300';
-                      } else if (g.yearsAgo >= 3) {
+                      } else if (years >= 3) {
                         taperPct = '20% Taper Relief (32% Effective Tax)';
                         badgeColor = 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300';
                       }
@@ -769,10 +771,10 @@ export const IhtEstatePlanningCard: React.FC<IhtEstatePlanningCardProps> = ({
                             {g.recipient || 'Beneficiary'}
                           </td>
                           <td className="p-2.5 font-bold text-slate-900 dark:text-white">
-                            £{g.amount.toLocaleString()}
+                            £{amt.toLocaleString()}
                           </td>
                           <td className="p-2.5 font-semibold text-slate-700 dark:text-slate-300">
-                            {g.yearsAgo} {g.yearsAgo === 1 ? 'Year' : 'Years'} Ago {g.yearsAgo >= 7 ? '(Exempt)' : ''}
+                            {years} {years === 1 ? 'Year' : 'Years'} Ago {years >= 7 ? '(Exempt)' : ''}
                           </td>
                           <td className="p-2.5">
                             <span className={`px-2 py-0.5 rounded-md font-bold text-[10px] ${badgeColor}`}>

@@ -71,26 +71,25 @@ export const PlanManagementCard: React.FC<PlanManagementCardProps> = ({
   };
 
   const handleExportJson = () => {
-    const dataStr =
-      'data:text/json;charset=utf-8,' +
-      encodeURIComponent(
-        JSON.stringify(
-          {
-            version: 'v2',
-            exportedAt: new Date().toISOString(),
-            scenarios: scenarios,
-          },
-          null,
-          2
-        )
-      );
+    const jsonStr = JSON.stringify(
+      {
+        version: 'v2',
+        exportedAt: new Date().toISOString(),
+        scenarios: scenarios,
+      },
+      null,
+      2
+    );
+    const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const downloadAnchor = document.createElement('a');
     const dateStr = new Date().toISOString().split('T')[0];
-    downloadAnchor.setAttribute('href', dataStr);
+    downloadAnchor.setAttribute('href', url);
     downloadAnchor.setAttribute('download', `RetireFree_UK_Settings_Backup_${dateStr}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
+    URL.revokeObjectURL(url);
   };
 
   const handleJsonFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {

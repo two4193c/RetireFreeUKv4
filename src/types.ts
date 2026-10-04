@@ -364,6 +364,8 @@ export interface DynamicSpendingRules {
   prosperityThresholdPercent: number; // e.g. 20 (withdraw rate drops 20% below initial)
   prosperityIncreasePercent: number; // e.g. 10 (increase spending 10%)
   skipInflationOnNegativeReturn: boolean;
+  phaseAwareGuardrails?: boolean; // Anchors guardrails to planned spending phases to prevent false cuts on stepped lifestyle phases
+  suspendCutsInLateRetirement?: boolean; // Jonathan Guyton's "Rule of 10-15 Years": suspends capital preservation cuts in final 10-12 years / age 80+
   targetStartingWithdrawalRate?: number; // e.g. 5.2 (%)
   initialSpendingAmount?: number; // e.g. £52,000 (£/yr)
   swrBaselineSource?: 'plan' | 'calculator' | 'gk_optimal' | 'bengen' | 'conservative';
@@ -413,6 +415,7 @@ export interface UserProfile {
   partnerDateOfBirth?: string;
   partnerCurrentAge?: number;
   partnerTargetRetirementAge?: number;
+  partnerRetirementAge?: number;
   partnerTargetRetirementDate?: string;
   partnerTargetRetirementInputMode?: 'age' | 'date';
   partnerStatePensionAge?: number;

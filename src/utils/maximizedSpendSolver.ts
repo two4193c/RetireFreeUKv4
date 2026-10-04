@@ -185,7 +185,7 @@ export function getScopeEvaluationInputs(
     evalProfile.isCouplePlanning = false;
     evalProfile.dateOfBirth = profileInput.partnerDateOfBirth ?? profileInput.dateOfBirth;
     evalProfile.currentAge = profileInput.partnerCurrentAge ?? profileInput.currentAge;
-    evalProfile.targetRetirementAge = profileInput.partnerTargetRetirementAge ?? profileInput.targetRetirementAge;
+    evalProfile.targetRetirementAge = profileInput.partnerTargetRetirementAge ?? profileInput.partnerRetirementAge ?? profileInput.targetRetirementAge;
     evalProfile.lifeExpectancyAge = profileInput.partnerLifeExpectancyAge ?? profileInput.lifeExpectancyAge ?? 90;
     evalProfile.statePensionAge = profileInput.partnerStatePensionAge ?? 67;
     evalProfile.statePensionDeferralYears = profileInput.partnerStatePensionDeferralYears ?? 0;

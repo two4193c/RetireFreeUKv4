@@ -142,9 +142,11 @@ export const ManagePlansModal: React.FC<ManagePlansModalProps> = ({
   };
 
   const handleExportSingleScenario = (scenario: PlannerScenario) => {
-    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify([scenario], null, 2));
+    const jsonStr = JSON.stringify([scenario], null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const downloadAnchorNode = document.createElement('a');
-    downloadAnchorNode.setAttribute('href', dataStr);
+    downloadAnchorNode.setAttribute('href', url);
     downloadAnchorNode.setAttribute(
       'download',
       `retirefree_plan_${scenario.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.json`
@@ -152,29 +154,29 @@ export const ManagePlansModal: React.FC<ManagePlansModalProps> = ({
     document.body.appendChild(downloadAnchorNode);
     downloadAnchorNode.click();
     downloadAnchorNode.remove();
+    URL.revokeObjectURL(url);
   };
 
   const handleExportAllJson = () => {
-    const dataStr =
-      'data:text/json;charset=utf-8,' +
-      encodeURIComponent(
-        JSON.stringify(
-          {
-            version: 'v2',
-            exportedAt: new Date().toISOString(),
-            scenarios: scenarios,
-          },
-          null,
-          2
-        )
-      );
+    const jsonStr = JSON.stringify(
+      {
+        version: 'v2',
+        exportedAt: new Date().toISOString(),
+        scenarios: scenarios,
+      },
+      null,
+      2
+    );
+    const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const downloadAnchor = document.createElement('a');
     const dateStr = new Date().toISOString().split('T')[0];
-    downloadAnchor.setAttribute('href', dataStr);
+    downloadAnchor.setAttribute('href', url);
     downloadAnchor.setAttribute('download', `RetireFree_UK_Full_Backup_${dateStr}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
+    URL.revokeObjectURL(url);
   };
 
   const processJsonText = (text: string) => {

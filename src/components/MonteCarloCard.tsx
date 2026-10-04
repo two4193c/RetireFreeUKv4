@@ -238,6 +238,7 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({
   // Compute 3 scenario results for Overview tab comparison view
   const baseResult = useMemo(() => {
     if (!taxResult) return null;
+    if (params.marketScenario === 'standard') return mcResult;
     if (
       precomputedResult?.params &&
       iterationSeed === 0 &&
@@ -250,12 +251,13 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({
       return precomputedResult;
     }
     return runMonteCarloSimulation(profile, pots, taxResult, { ...params, marketScenario: 'standard', iterationSeed });
-  }, [profile, pots, taxResult, params, precomputedResult, iterationSeed, localParams, targetHorizonAge]);
+  }, [profile, pots, taxResult, params, precomputedResult, iterationSeed, localParams, targetHorizonAge, mcResult]);
 
   const stressedResult = useMemo(() => {
     if (!taxResult) return null;
+    if (params.marketScenario === 'stressed') return mcResult;
     return runMonteCarloSimulation(profile, pots, taxResult, { ...params, marketScenario: 'stressed', iterationSeed });
-  }, [profile, pots, taxResult, params, iterationSeed]);
+  }, [profile, pots, taxResult, params, iterationSeed, mcResult]);
 
   const crashResult = useMemo(() => {
     if (!taxResult) return null;
@@ -269,9 +271,9 @@ export const MonteCarloCard: React.FC<MonteCarloCardProps> = ({
   }, [profile, pots, taxResult, params, iterationSeed]);
 
   const projectedCashAtCrashStart = useMemo(() => {
-    if (!crashResult || !crashResult.agePercentiles) return undefined;
+    if (!crashResult || !crashResult.agePercentiles) return 0;
     const targetAgeData = crashResult.agePercentiles.find((p) => p.age === currentCrashStartAge);
-    return targetAgeData?.p50CashGiaPot;
+    return targetAgeData?.p50CashGiaPot ?? 0;
   }, [crashResult, currentCrashStartAge]);
 
   const cashBufferSummary = useMemo(() => {

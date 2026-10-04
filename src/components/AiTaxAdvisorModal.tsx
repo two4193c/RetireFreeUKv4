@@ -78,7 +78,7 @@ export const AiTaxAdvisorModal: React.FC<AiTaxAdvisorModalProps> = ({
       score -= 20;
       nextSteps.push(`Adjust target retirement age or increase monthly savings by £150/mo to avoid capital depletion at age ${depletedYear.age}.`);
     } else {
-      opportunities.push(`Portfolio capital is sustained past age 95! Projected wealth at retirement: £${(projectedAtRetirement?.totalPot || (0) || 0).toLocaleString()}.`);
+      opportunities.push(`Portfolio capital is sustained past age 95! Projected wealth at retirement: £${(projectedAtRetirement?.totalPot || 0).toLocaleString()}.`);
     }
 
     if (nextSteps.length < 2) {

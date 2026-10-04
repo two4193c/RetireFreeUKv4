@@ -1087,6 +1087,13 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
 
       y += 8;
 
+      // Page overflow guard before Section 3
+      if (y > 230) {
+        pdf.addPage();
+        addHeader(`${scenarioA.name} vs ${scenarioB.name}`, 'Risk & Stress Benchmark');
+        y = 20;
+      }
+
       // Section 3: Risk-Adjusted Longevity & Stress Benchmark
       pdf.setTextColor(darkSlate[0], darkSlate[1], darkSlate[2]);
       pdf.setFontSize(11);
@@ -1134,11 +1141,17 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
       }
       y += 8;
 
-      // Footer
-      pdf.setFontSize(8);
-      pdf.setFont('helvetica', 'normal');
-      pdf.setTextColor(mutedSlate[0], mutedSlate[1], mutedSlate[2]);
-      pdf.text(`${appName} v2 - Professional Strategic Retirement Comparison Document`, margin, pageHeight - 10);
+      // Dynamic Two-Pass Page Footers
+      const totalPdfPages = pdf.getNumberOfPages();
+      for (let p = 1; p <= totalPdfPages; p++) {
+        pdf.setPage(p);
+        pdf.setFillColor(255, 255, 255);
+        pdf.rect(margin, pageHeight - 12, contentWidth, 8, 'F');
+        pdf.setFontSize(8);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(mutedSlate[0], mutedSlate[1], mutedSlate[2]);
+        pdf.text(`${appName} v2 - Professional Strategic Retirement Comparison Document • Page ${p} of ${totalPdfPages}`, margin, pageHeight - 8);
+      }
 
       const safeNameA = scenarioA.name.replace(/[^a-zA-Z0-9_-]/g, '_');
       const safeNameB = scenarioB.name.replace(/[^a-zA-Z0-9_-]/g, '_');
@@ -2829,14 +2842,14 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
               <tr>
                 <td className="py-3 px-4 font-bold text-slate-700 dark:text-slate-300">Primary Residence & Property Growth</td>
                 <td className="py-3 px-4 font-semibold">
-                  £{(iht80A.primaryResidenceValue || (0) || 0).toLocaleString()} (+{iht80A.annualPropertyGrowthPercent}% p.a.)
+                  £{(iht80A.primaryResidenceValue || 0).toLocaleString()} (+{iht80A.annualPropertyGrowthPercent}% p.a.)
                 </td>
                 <td className="py-3 px-4 font-semibold text-indigo-700 dark:text-indigo-300">
-                  £{(iht80B.primaryResidenceValue || (0) || 0).toLocaleString()} (+{iht80B.annualPropertyGrowthPercent}% p.a.)
+                  £{(iht80B.primaryResidenceValue || 0).toLocaleString()} (+{iht80B.annualPropertyGrowthPercent}% p.a.)
                 </td>
                 {showScenarioC && iht80C && (
                   <td className="py-3 px-4 font-semibold text-primary-700 dark:text-primary-300">
-                    £{(iht80C.primaryResidenceValue || (0) || 0).toLocaleString()} (+{iht80C.annualPropertyGrowthPercent}% p.a.)
+                    £{(iht80C.primaryResidenceValue || 0).toLocaleString()} (+{iht80C.annualPropertyGrowthPercent}% p.a.)
                   </td>
                 )}
                 <td className="py-3 px-4 font-medium text-slate-500 dark:text-slate-400">
@@ -2848,14 +2861,14 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
               <tr className="bg-slate-50/50 dark:bg-slate-800/30">
                 <td className="py-3 px-4 font-bold text-slate-700 dark:text-slate-300">Annual Gifting Strategy (£/yr)</td>
                 <td className="py-3 px-4 font-semibold text-primary-700 dark:text-primary-300">
-                  £{(iht80A.annualGiftingStrategy || (0) || 0).toLocaleString()}/yr
+                  £{(iht80A.annualGiftingStrategy || 0).toLocaleString()}/yr
                 </td>
                 <td className="py-3 px-4 font-semibold text-primary-700 dark:text-primary-300">
-                  £{(iht80B.annualGiftingStrategy || (0) || 0).toLocaleString()}/yr
+                  £{(iht80B.annualGiftingStrategy || 0).toLocaleString()}/yr
                 </td>
                 {showScenarioC && iht80C && (
                   <td className="py-3 px-4 font-semibold text-primary-700 dark:text-primary-300">
-                    £{(iht80C.annualGiftingStrategy || (0) || 0).toLocaleString()}/yr
+                    £{(iht80C.annualGiftingStrategy || 0).toLocaleString()}/yr
                   </td>
                 )}
                 <td className="py-3 px-4 font-medium text-slate-500 dark:text-slate-400">
@@ -2994,15 +3007,15 @@ export const ScenarioComparer: React.FC<ScenarioComparerProps> = ({
         <div className="space-y-1">
           <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 block">Annual Tax Relief Gained:</span>
           <div className="flex items-baseline gap-2 flex-wrap">
-            <span className="text-xs font-extrabold text-slate-900 dark:text-slate-100">A: £{(taxA?.totalPensionTaxRelief || (0) || 0).toLocaleString()}</span>
-            <span className="text-xs font-extrabold text-indigo-600 dark:text-indigo-400">B: £{(taxB?.totalPensionTaxRelief || (0) || 0).toLocaleString()}</span>
+            <span className="text-xs font-extrabold text-slate-900 dark:text-slate-100">A: £{(taxA?.totalPensionTaxRelief || 0).toLocaleString()}</span>
+            <span className="text-xs font-extrabold text-indigo-600 dark:text-indigo-400">B: £{(taxB?.totalPensionTaxRelief || 0).toLocaleString()}</span>
             {showScenarioC && taxC && (
-              <span className="text-xs font-extrabold text-primary-600 dark:text-primary-400">C: £{(taxC.totalPensionTaxRelief || (0) || 0).toLocaleString()}</span>
+              <span className="text-xs font-extrabold text-primary-600 dark:text-primary-400">C: £{(taxC.totalPensionTaxRelief || 0).toLocaleString()}</span>
             )}
           </div>
           {!showScenarioC && taxA && taxB && (
             <span className="text-[10px] font-bold text-primary-600 dark:text-primary-400 block">
-              Delta: +£{((taxB.totalPensionTaxRelief || 0) - (taxA.totalPensionTaxRelief || (0)) || 0).toLocaleString()}/yr
+              Delta: +£{((taxB.totalPensionTaxRelief || 0) - (taxA.totalPensionTaxRelief || 0)).toLocaleString()}/yr
             </span>
           )}
         </div>
