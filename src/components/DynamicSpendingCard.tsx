@@ -16,6 +16,11 @@ import {
   Sparkles,
   BarChart3,
   Activity,
+  Calculator,
+  Sliders,
+  Check,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -31,9 +36,10 @@ import {
   Legend,
 } from 'recharts';
 import { getActualSpendingTargetForAge } from '../utils/projectionEngine';
-import { getEffectiveDecumulationReturn } from '../utils/assetAllocation';
+import { getEffectiveDecumulationReturn, getTotalFeePercent } from '../utils/assetAllocation';
 import { DEFAULT_POTS } from '../utils/defaultData';
 import { MonteCarloResult } from '../utils/monteCarloEngine';
+import { calculateGuytonKlingerRecommendedSwr } from '../utils/guytonKlingerEngine';
 
 interface DynamicSpendingCardProps {
   profile: UserProfile;
@@ -206,6 +212,82 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
   // Approximate trigger portfolio levels at retirement
   const upperTriggerPortfolio = upperGuardrailRate > 0 ? initialTarget / (upperGuardrailRate / 100) : 0;
   const lowerTriggerPortfolio = lowerGuardrailRate > 0 ? initialTarget / (lowerGuardrailRate / 100) : 0;
+
+  // Guyton-Klinger Safe Starting Withdrawal Rate (MSR) benchmark & calculation
+  const equityPct = profile.assetAllocationSplit?.equities ?? 65;
+  const feeDrag = getTotalFeePercent(profile.investmentFees);
+  const floorRatio = initialTarget > 0 ? essentialFloorBaseline / initialTarget : 0.65;
+
+  const gkSwrAnalysis = useMemo(() => {
+    return calculateGuytonKlingerRecommendedSwr({
+      horizonYears,
+      equityPercentage: equityPct,
+      feeDragPercent: feeDrag,
+      capitalPreservationCutPercent: rules.capitalPreservationCutPercent,
+      capitalPreservationThresholdPercent: rules.capitalPreservationThresholdPercent,
+      prosperityThresholdPercent: rules.prosperityThresholdPercent,
+      prosperityIncreasePercent: rules.prosperityIncreasePercent,
+      skipInflationOnNegativeReturn: rules.skipInflationOnNegativeReturn,
+      essentialFloorRatio: floorRatio,
+      startingWealth,
+      desiredAnnualSpend: initialTarget,
+    });
+  }, [
+    horizonYears,
+    equityPct,
+    feeDrag,
+    rules.capitalPreservationCutPercent,
+    rules.capitalPreservationThresholdPercent,
+    rules.prosperityThresholdPercent,
+    rules.prosperityIncreasePercent,
+    rules.skipInflationOnNegativeReturn,
+    floorRatio,
+    startingWealth,
+    initialTarget,
+  ]);
+
+  const [showSwrCalculator, setShowSwrCalculator] = useState<boolean>(true);
+  const [customStartingSwr, setCustomStartingSwr] = useState<number>(() => {
+    return startingWealth > 0 ? Math.round((initialTarget / startingWealth) * 100) / 100 : 5.0;
+  });
+  const [appliedNotification, setAppliedNotification] = useState<string | null>(null);
+
+  const prevInitialRateRef = React.useRef(initialWithdrawalRate);
+  React.useEffect(() => {
+    if (Math.abs(prevInitialRateRef.current - initialWithdrawalRate) > 0.05) {
+      prevInitialRateRef.current = initialWithdrawalRate;
+      setCustomStartingSwr(Math.round(initialWithdrawalRate * 100) / 100);
+    }
+  }, [initialWithdrawalRate]);
+
+  const customCalculatedSpend = Math.round(startingWealth * (customStartingSwr / 100));
+  const customRequiredWealth = customStartingSwr > 0 ? Math.round(initialTarget / (customStartingSwr / 100)) : startingWealth;
+  const customUpperGuardrailRate = Math.round(customStartingSwr * (1 + (rules.capitalPreservationThresholdPercent ?? 20) / 100) * 100) / 100;
+  const customLowerGuardrailRate = Math.round(customStartingSwr * (1 - (rules.prosperityThresholdPercent ?? 20) / 100) * 100) / 100;
+  const customUpperTriggerPot = customUpperGuardrailRate > 0 && customCalculatedSpend > 0 ? Math.round(customCalculatedSpend / (customUpperGuardrailRate / 100)) : 0;
+  const customLowerTriggerPot = customLowerGuardrailRate > 0 && customCalculatedSpend > 0 ? Math.round(customCalculatedSpend / (customLowerGuardrailRate / 100)) : 0;
+
+  const applyStartingSpendToPlan = (newAnnualSpend: number) => {
+    const rounded = Math.round(newAnnualSpend);
+    const updated: Partial<UserProfile> = {
+      targetRetirementIncomeAnnual: rounded,
+      actualSpendingTargetAnnual: rounded,
+    };
+    if (profile.maximizedSpendConfig?.enabled) {
+      updated.maximizedSpendConfig = {
+        ...profile.maximizedSpendConfig,
+        targetAnnualIncome: rounded,
+      };
+    }
+    onChange({
+      ...profile,
+      ...updated,
+    });
+    setAppliedNotification(`Plan Target Spending successfully updated to £${rounded.toLocaleString()}/yr!`);
+    setTimeout(() => {
+      setAppliedNotification(null);
+    }, 4000);
+  };
 
   // Mean decumulation return accounting for asset allocation split & investment fee drag
   const meanDecumReturn = useMemo(() => {
@@ -730,6 +812,313 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
                 <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-slate-600 peer-checked:bg-emerald-500"></div>
               </label>
             </div>
+          </div>
+
+          {/* Guyton-Klinger Starting SWR Calculator & Benchmarks Section */}
+          <div className="bg-gradient-to-br from-indigo-50/70 via-white to-purple-50/70 dark:from-slate-800/80 dark:via-slate-900/90 dark:to-indigo-950/40 rounded-2xl border border-indigo-200/80 dark:border-indigo-800/80 p-4 sm:p-5 shadow-xs space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-indigo-100 dark:border-indigo-900/50 pb-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded-lg bg-indigo-600 text-white shadow-xs">
+                    <Calculator className="w-4 h-4" />
+                  </div>
+                  <h4 className="font-extrabold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                    <span>Starting Withdrawal Rate (SWR) Calculator &amp; Benchmarks</span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                      MSR Model
+                    </span>
+                  </h4>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  Guyton-Klinger research establishes that adopting dynamic decision rules (Capital Preservation cuts &amp; Inflation freezes) safely boosts your initial withdrawal rate from Bengen's static ~4% to <strong>{gkSwrAnalysis.recommendedInitialSwr.toFixed(1)}%</strong>.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowSwrCalculator(!showSwrCalculator)}
+                className="self-start sm:self-auto text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 flex items-center gap-1 cursor-pointer bg-white dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-indigo-200 dark:border-indigo-700/80 shadow-xs"
+              >
+                <Sliders className="w-3.5 h-3.5" />
+                <span>{showSwrCalculator ? 'Hide Calculator' : 'Open SWR Calculator'}</span>
+                {showSwrCalculator ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+              </button>
+            </div>
+
+            {/* Notification alert if spend was applied */}
+            {appliedNotification && (
+              <div className="p-3 rounded-xl bg-emerald-100/90 dark:bg-emerald-950/80 border border-emerald-300 dark:border-emerald-700 text-emerald-900 dark:text-emerald-100 text-xs font-bold flex items-center gap-2 animate-in fade-in duration-200">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <span>{appliedNotification}</span>
+              </div>
+            )}
+
+            {/* 3 Benchmark Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {/* Card 1: Recommended Guyton-Klinger Dynamic Rate */}
+              <div className="p-3.5 rounded-xl bg-white dark:bg-slate-800 border-2 border-indigo-500/50 dark:border-indigo-600/60 shadow-xs relative flex flex-col justify-between space-y-2">
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
+                      <Sparkles className="w-3 h-3" />
+                      Guyton-Klinger Safe Rate
+                    </span>
+                    <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
+                      +{gkSwrAnalysis.dynamicRulesBoost.toFixed(2)}% Boost
+                    </span>
+                  </div>
+                  <div className="mt-1 flex items-baseline gap-1.5">
+                    <span className="text-2xl font-black text-slate-900 dark:text-white">
+                      {gkSwrAnalysis.recommendedInitialSwr.toFixed(2)}%
+                    </span>
+                    <span className="text-xs text-slate-500 font-semibold">
+                      = £{gkSwrAnalysis.initialAnnualSpend.toLocaleString()}/yr
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-snug">
+                    Empirical MSR calibrated for your {horizonYears}-yr horizon, {equityPct}% equities, and {rules.capitalPreservationCutPercent}% capital preservation cut.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => applyStartingSpendToPlan(gkSwrAnalysis.initialAnnualSpend)}
+                  className="w-full mt-2 py-1.5 px-3 rounded-lg text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  <span>Apply Recommended Rate (£{gkSwrAnalysis.initialAnnualSpend.toLocaleString()}/yr)</span>
+                </button>
+              </div>
+
+              {/* Card 2: Bengen Static 4% Baseline */}
+              <div className="p-3.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xs flex flex-col justify-between space-y-2">
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                      Bengen Static Rule
+                    </span>
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                      Zero Cuts
+                    </span>
+                  </div>
+                  <div className="mt-1 flex items-baseline gap-1.5">
+                    <span className="text-2xl font-black text-slate-700 dark:text-slate-200">
+                      {gkSwrAnalysis.bengenStaticSwr.toFixed(2)}%
+                    </span>
+                    <span className="text-xs text-slate-500 font-semibold">
+                      = £{Math.round(startingWealth * (gkSwrAnalysis.bengenStaticSwr / 100)).toLocaleString()}/yr
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-snug">
+                    Traditional static rule. Lower spending because it assumes the retiree never cuts spending even during historical crashes.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => applyStartingSpendToPlan(Math.round(startingWealth * (gkSwrAnalysis.bengenStaticSwr / 100)))}
+                  className="w-full mt-2 py-1.5 px-3 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <span>Apply Static Baseline</span>
+                </button>
+              </div>
+
+              {/* Card 3: Current Plan Rate */}
+              <div className="p-3.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xs flex flex-col justify-between space-y-2">
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                      Your Current Plan
+                    </span>
+                    <span
+                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
+                        initialWithdrawalRate <= gkSwrAnalysis.recommendedInitialSwr
+                          ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300'
+                          : 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300'
+                      }`}
+                    >
+                      {initialWithdrawalRate <= gkSwrAnalysis.recommendedInitialSwr ? 'Safe Zone' : 'High SWR'}
+                    </span>
+                  </div>
+                  <div className="mt-1 flex items-baseline gap-1.5">
+                    <span className="text-2xl font-black text-slate-900 dark:text-white">
+                      {initialWithdrawalRate.toFixed(2)}%
+                    </span>
+                    <span className="text-xs text-slate-500 font-semibold">
+                      = £{initialTarget.toLocaleString()}/yr
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-snug">
+                    {initialWithdrawalRate <= gkSwrAnalysis.recommendedInitialSwr ? (
+                      <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
+                        ✓ Well protected by Guyton-Klinger guardrails with ample margin.
+                      </span>
+                    ) : (
+                      <span className="text-amber-600 dark:text-amber-400 font-semibold">
+                        Higher sequence risk: withdrawal rate exceeds {gkSwrAnalysis.recommendedInitialSwr.toFixed(1)}%, making early spending cuts more likely.
+                      </span>
+                    )}
+                  </p>
+                </div>
+
+                <div className="text-[11px] text-slate-400 text-center py-1">
+                  Starting Wealth: £{startingWealth.toLocaleString()}
+                </div>
+              </div>
+            </div>
+
+            {/* Interactive SWR Solver Drawer */}
+            {showSwrCalculator && (
+              <div className="p-4 bg-white dark:bg-slate-800 rounded-xl border border-indigo-100 dark:border-indigo-900/60 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Sliders className="w-4 h-4 text-indigo-500" />
+                    <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                      Interactive SWR &amp; Spending Solver
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="text-[10px] text-slate-400 font-bold uppercase">Presets:</span>
+                    <button
+                      type="button"
+                      onClick={() => setCustomStartingSwr(gkSwrAnalysis.bengenStaticSwr)}
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-md border cursor-pointer transition-all ${
+                        Math.abs(customStartingSwr - gkSwrAnalysis.bengenStaticSwr) < 0.05
+                          ? 'bg-indigo-600 text-white border-indigo-600'
+                          : 'bg-slate-50 dark:bg-slate-700/60 border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100'
+                      }`}
+                    >
+                      Bengen {gkSwrAnalysis.bengenStaticSwr.toFixed(1)}%
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCustomStartingSwr(gkSwrAnalysis.recommendedInitialSwr)}
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-md border cursor-pointer transition-all ${
+                        Math.abs(customStartingSwr - gkSwrAnalysis.recommendedInitialSwr) < 0.05
+                          ? 'bg-indigo-600 text-white border-indigo-600'
+                          : 'bg-indigo-50 dark:bg-indigo-950/60 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100'
+                      }`}
+                    >
+                      Guyton-Klinger Safe {gkSwrAnalysis.recommendedInitialSwr.toFixed(1)}%
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCustomStartingSwr(3.5)}
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-md border cursor-pointer transition-all ${
+                        Math.abs(customStartingSwr - 3.5) < 0.05
+                          ? 'bg-indigo-600 text-white border-indigo-600'
+                          : 'bg-slate-50 dark:bg-slate-700/60 border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100'
+                      }`}
+                    >
+                      Conservative 3.5%
+                    </button>
+                  </div>
+                </div>
+
+                {/* Slider + Input */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-slate-700 dark:text-slate-300">
+                      Starting Withdrawal Rate (SWR):
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="number"
+                        min="2.0"
+                        max="8.0"
+                        step="0.05"
+                        value={customStartingSwr}
+                        onChange={(e) => setCustomStartingSwr(Math.max(2.0, Math.min(10.0, parseFloat(e.target.value) || 2.0)))}
+                        className="w-20 px-2 py-1 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-xs font-extrabold text-right text-indigo-600 dark:text-indigo-400"
+                      />
+                      <span className="text-xs font-bold text-slate-500">%</span>
+                    </div>
+                  </div>
+                  <input
+                    type="range"
+                    min="2.5"
+                    max="7.5"
+                    step="0.05"
+                    value={customStartingSwr}
+                    onChange={(e) => setCustomStartingSwr(parseFloat(e.target.value))}
+                    className="w-full accent-indigo-600 h-2 bg-slate-200 dark:bg-slate-700 rounded-lg cursor-pointer"
+                  />
+                  <div className="flex justify-between text-[10px] text-slate-400 font-medium">
+                    <span>2.5% (Ultra Safe)</span>
+                    <span>4.0% (Classic Bengen)</span>
+                    <span className="font-bold text-indigo-600 dark:text-indigo-400">
+                      {gkSwrAnalysis.recommendedInitialSwr.toFixed(1)}% (GK Optimal)
+                    </span>
+                    <span>7.5% (Very Aggressive)</span>
+                  </div>
+                </div>
+
+                {/* Solver Live Outputs */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
+                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-700/80">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                      Initial Annual Spend
+                    </div>
+                    <div className="text-base font-black text-indigo-600 dark:text-indigo-400 mt-0.5">
+                      £{customCalculatedSpend.toLocaleString()}/yr
+                    </div>
+                    <div className="text-[10px] text-slate-400 mt-0.5">
+                      {customCalculatedSpend >= initialTarget ? `+£${(customCalculatedSpend - initialTarget).toLocaleString()}` : `-£${(initialTarget - customCalculatedSpend).toLocaleString()}`} vs current plan
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-700/80">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                      Required Starting Pot
+                    </div>
+                    <div className="text-base font-black text-slate-800 dark:text-slate-100 mt-0.5">
+                      £{customRequiredWealth.toLocaleString()}
+                    </div>
+                    <div className="text-[10px] text-slate-400 mt-0.5">
+                      to fund current £{initialTarget.toLocaleString()}/yr
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-rose-50/60 dark:bg-rose-950/30 border border-rose-200/60 dark:border-rose-900/40">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400">
+                      Upper Guardrail Cut
+                    </div>
+                    <div className="text-base font-black text-rose-600 dark:text-rose-400 mt-0.5">
+                      &gt; {customUpperGuardrailRate.toFixed(2)}%
+                    </div>
+                    <div className="text-[10px] text-rose-700/80 dark:text-rose-300/80 mt-0.5">
+                      Triggers if pot &lt; £{customUpperTriggerPot.toLocaleString()}
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-900/40">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                      Lower Guardrail Raise
+                    </div>
+                    <div className="text-base font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
+                      &lt; {customLowerGuardrailRate.toFixed(2)}%
+                    </div>
+                    <div className="text-[10px] text-emerald-700/80 dark:text-emerald-300/80 mt-0.5">
+                      Triggers if pot &gt; £{customLowerTriggerPot.toLocaleString()}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-100 dark:border-slate-700/80">
+                  <div className="text-xs text-slate-500 dark:text-slate-400">
+                    Want to use this starting withdrawal rate for your retirement income?
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => applyStartingSpendToPlan(customCalculatedSpend)}
+                    className="w-full sm:w-auto py-2 px-4 rounded-xl text-xs font-extrabold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <Check className="w-4 h-4" />
+                    <span>Set Target Spending to £{customCalculatedSpend.toLocaleString()}/yr ({customStartingSwr.toFixed(1)}% SWR)</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Guardrail Corridor Thresholds Status Bar */}

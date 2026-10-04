@@ -272,7 +272,7 @@ describe('DynamicSpendingCard - Guyton-Klinger Spending Rules & Monte Carlo Path
     expect(screen.getByText(/Left Axis:/i)).toBeInTheDocument();
     expect(screen.getByText(/Right Axis:/i)).toBeInTheDocument();
     expect(screen.getByText(/Pot Balance/i)).toBeInTheDocument();
-    expect(screen.getByText(/Annual Spend/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Annual Spend/i).length).toBeGreaterThanOrEqual(1);
 
     // Switch to Combined Overlay
     fireEvent.click(combinedBtn);
