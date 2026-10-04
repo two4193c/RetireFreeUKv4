@@ -24,6 +24,10 @@ import {
   Eye,
   Gauge,
   Calendar,
+  Lock,
+  Unlock,
+  ShieldCheck,
+  Compass,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -61,6 +65,7 @@ interface SimulationPoint {
   baselineIncome: number;
   dynamicIncome: number;
   essentialFloor: number;
+  discretionarySpend: number;
   withdrawalRate: number;
   returnRate: number;
   event?: 'cut' | 'raise' | 'freeze' | 'floor_protected';
@@ -392,6 +397,59 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
   const effectiveUpperTriggerPot = effectiveUpperGuardrailRate > 0 && effectiveInitialSpend > 0 ? Math.round(effectiveInitialSpend / (effectiveUpperGuardrailRate / 100)) : 0;
   const effectiveLowerTriggerPot = effectiveLowerGuardrailRate > 0 && effectiveInitialSpend > 0 ? Math.round(effectiveInitialSpend / (effectiveLowerGuardrailRate / 100)) : 0;
 
+  // Feature 1: Distance-to-Trigger & Proactive Early Warning Buffer Metrics
+  const dropCushionAmount = Math.max(0, startingWealth - effectiveUpperTriggerPot);
+  const dropCushionPercent = startingWealth > 0 ? (dropCushionAmount / startingWealth) * 100 : 0;
+  const growthNeededAmount = Math.max(0, effectiveLowerTriggerPot - startingWealth);
+  const growthNeededPercent = startingWealth > 0 ? (growthNeededAmount / startingWealth) * 100 : 0;
+  const corridorWidth = Math.max(1, effectiveLowerTriggerPot - effectiveUpperTriggerPot);
+  const potPositionInCorridorPct = Math.min(100, Math.max(0, ((startingWealth - effectiveUpperTriggerPot) / corridorWidth) * 100));
+
+  const corridorStatus: 'safe' | 'caution_cut' | 'prosperity' =
+    startingWealth <= effectiveUpperTriggerPot
+      ? 'caution_cut'
+      : startingWealth >= effectiveLowerTriggerPot
+      ? 'prosperity'
+      : dropCushionPercent < 8
+      ? 'caution_cut'
+      : 'safe';
+
+  // Feature 2: Tiered Spending Protection Metrics (Core Essential vs Flexible Discretionary)
+  const discretionarySpend = Math.max(0, effectiveInitialSpend - essentialFloorBaseline);
+  const essentialSpendPercent = effectiveInitialSpend > 0 ? Math.min(100, (essentialFloorBaseline / effectiveInitialSpend) * 100) : 65;
+  const discretionarySpendPercent = Math.max(0, 100 - essentialSpendPercent);
+
+  // Capital Preservation Haircut Simulation
+  const cutPercent = rules.capitalPreservationCutPercent ?? 10;
+  const totalCutAmount = Math.round(effectiveInitialSpend * (cutPercent / 100));
+  const prospectiveDiscretionarySpend = Math.max(0, discretionarySpend - totalCutAmount);
+  const discretionaryCutPercent = discretionarySpend > 0 ? Math.min(100, (totalCutAmount / discretionarySpend) * 100) : 100;
+  const isCappedAtEssentialFloor = totalCutAmount >= discretionarySpend;
+
+  // Guaranteed Pension Floor Coverage
+  const guaranteedStatePension =
+    (profile.statePensionAnnual || (profile.includeStatePension !== false ? 11502 : 0)) +
+    (profile.isCouplePlanning && profile.partnerStatePensionAnnual
+      ? profile.partnerStatePensionAnnual
+      : profile.isCouplePlanning && profile.partnerIncludeStatePension !== false
+      ? 11502
+      : 0);
+  const guaranteedDb =
+    (profile.dbPensionAnnual || 0) + (profile.isCouplePlanning ? (profile.partnerDbPensionAnnual || 0) : 0);
+  const totalGuaranteedIncome = guaranteedStatePension + guaranteedDb;
+  const guaranteedCoveragePct =
+    essentialFloorBaseline > 0
+      ? Math.min(100, Math.round((totalGuaranteedIncome / essentialFloorBaseline) * 100))
+      : 0;
+
+  const handleUpdateEssentialFloor = (newFloor: number) => {
+    const cleanFloor = Math.max(0, Math.round(newFloor));
+    onChange({
+      ...profile,
+      essentialRetirementIncomeAnnual: cleanFloor,
+    });
+  };
+
   const applyStartingSpendToPlan = (newAnnualSpend: number, swrRate?: number) => {
     const rounded = Math.round(newAnnualSpend);
     const rateToApply = swrRate ?? activeSwrConfig.rate;
@@ -679,6 +737,7 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
         baselineIncome: Math.round(planIncomeRequirementAtAge), // ALWAYS the user's input income requirement
         dynamicIncome: dynamicSpend,
         essentialFloor: essentialFloorAtAge,
+        discretionarySpend: Math.max(0, dynamicSpend - essentialFloorAtAge),
         withdrawalRate: Number(actualWr.toFixed(2)),
         returnRate: Number((ret * 100).toFixed(1)),
         event,
@@ -1365,27 +1424,52 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
             )}
           </div>
 
-          {/* Guardrail Corridor Thresholds Status Bar */}
-          <div className="bg-slate-900 text-white rounded-2xl p-4 shadow-sm border border-slate-800 space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
-              <div className="flex items-center gap-2">
-                <Zap className="w-4 h-4 text-amber-400" />
+          {/* FEATURE 1: Live Guardrail Trigger Boundaries & Interactive Distance-to-Trigger Gauge */}
+          <div className="bg-slate-900 text-white rounded-2xl p-5 shadow-sm border border-slate-800 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Compass className="w-4 h-4 text-emerald-400" />
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-200">
-                  Live Guardrail Trigger Boundaries (At Retirement Age {retAge})
+                  Live Guardrail Trigger Boundaries &amp; Distance-to-Trigger Gauge (At Retirement Age {retAge})
                 </span>
                 {swrChartSource !== 'plan' && (
                   <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/40">
                     {activeSwrConfig.name}
                   </span>
                 )}
+                <span
+                  className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border flex items-center gap-1.5 ${
+                    corridorStatus === 'safe'
+                      ? 'bg-emerald-950/80 text-emerald-300 border-emerald-800'
+                      : corridorStatus === 'caution_cut'
+                      ? 'bg-rose-950/80 text-rose-300 border-rose-800'
+                      : 'bg-purple-950/80 text-purple-300 border-purple-800'
+                  }`}
+                >
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full ${
+                      corridorStatus === 'safe'
+                        ? 'bg-emerald-400'
+                        : corridorStatus === 'caution_cut'
+                        ? 'bg-rose-400 animate-pulse'
+                        : 'bg-purple-400'
+                    }`}
+                  />
+                  {corridorStatus === 'safe'
+                    ? 'In Safe Corridor (Spending 100% Inflation-Protected)'
+                    : corridorStatus === 'caution_cut'
+                    ? 'Caution: Approaching Upper Cut Trigger'
+                    : 'In Prosperity Zone (Spending Raise Eligible)'}
+                </span>
               </div>
               <span className="text-[11px] font-semibold text-slate-400">
                 Retirement Starting Pot (Age {retAge}): £{startingWealth.toLocaleString()} | Input Requirement: £{initialTarget.toLocaleString()}/yr ({initialWithdrawalRate.toFixed(2)}% SWR)
               </span>
             </div>
 
+            {/* 4 Primary Summary Cards */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-              <div className="bg-slate-800/80 p-2.5 rounded-xl border border-slate-700/60">
+              <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700/60">
                 <div className="text-[10px] text-slate-400 font-bold uppercase">Initial SWR</div>
                 <div className="text-sm font-black text-indigo-400 mt-0.5">{effectiveInitialRate.toFixed(2)}%</div>
                 <div className="text-[10px] text-slate-400 mt-0.5 truncate" title={activeSwrConfig.name}>
@@ -1393,7 +1477,7 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
                 </div>
               </div>
 
-              <div className="bg-rose-950/40 p-2.5 rounded-xl border border-rose-900/40">
+              <div className="bg-rose-950/40 p-3 rounded-xl border border-rose-900/40">
                 <div className="text-[10px] text-rose-300 font-bold uppercase">Upper Guardrail (Cut)</div>
                 <div className="text-sm font-black text-rose-400 mt-0.5">&gt; {effectiveUpperGuardrailRate.toFixed(2)}%</div>
                 <div className="text-[10px] text-rose-300/80 mt-0.5">
@@ -1401,7 +1485,7 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
                 </div>
               </div>
 
-              <div className="bg-emerald-950/40 p-2.5 rounded-xl border border-emerald-900/40">
+              <div className="bg-emerald-950/40 p-3 rounded-xl border border-emerald-900/40">
                 <div className="text-[10px] text-emerald-300 font-bold uppercase">Lower Guardrail (Raise)</div>
                 <div className="text-sm font-black text-emerald-400 mt-0.5">&lt; {effectiveLowerGuardrailRate.toFixed(2)}%</div>
                 <div className="text-[10px] text-emerald-300/80 mt-0.5">
@@ -1409,11 +1493,292 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
                 </div>
               </div>
 
-              <div className="bg-amber-950/40 p-2.5 rounded-xl border border-amber-900/40">
+              <div className="bg-amber-950/40 p-3 rounded-xl border border-amber-900/40">
                 <div className="text-[10px] text-amber-300 font-bold uppercase">Essential Floor Cushion</div>
                 <div className="text-sm font-black text-amber-400 mt-0.5">£{essentialFloorBaseline.toLocaleString()}/yr</div>
                 <div className="text-[10px] text-amber-300/80 mt-0.5">
                   {Math.round((essentialFloorBaseline / effectiveInitialSpend) * 100)}% of Spend (Protected)
+                </div>
+              </div>
+            </div>
+
+            {/* Visual Distance-to-Trigger Corridor Track */}
+            <div className="p-3.5 bg-slate-800/60 rounded-xl border border-slate-700/80 space-y-3">
+              <div className="flex items-center justify-between text-[11px] text-slate-300">
+                <span className="font-extrabold flex items-center gap-1.5">
+                  <Gauge className="w-3.5 h-3.5 text-indigo-400" />
+                  <span>Proactive Distance-to-Trigger Gauge</span>
+                </span>
+                <span className="text-[10px] text-slate-400">
+                  Corridor Range: £{effectiveUpperTriggerPot.toLocaleString()} → £{effectiveLowerTriggerPot.toLocaleString()} (£{(effectiveLowerTriggerPot - effectiveUpperTriggerPot).toLocaleString()} Safe Span)
+                </span>
+              </div>
+
+              {/* Progress Track with Pin */}
+              <div className="relative pt-6 pb-2">
+                {/* Starting Pot Indicator Marker */}
+                <div
+                  className="absolute top-0 -translate-x-1/2 flex flex-col items-center transition-all duration-300 z-10"
+                  style={{ left: `${potPositionInCorridorPct}%` }}
+                >
+                  <span className="px-2 py-0.5 rounded-md bg-white text-slate-900 font-black text-[10px] shadow-md whitespace-nowrap flex items-center gap-1">
+                    <span>Starting Pot £{startingWealth.toLocaleString()}</span>
+                  </span>
+                  <div className="w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[5px] border-t-white" />
+                </div>
+
+                {/* 3-Zone Track */}
+                <div className="h-3.5 rounded-full overflow-hidden flex bg-slate-950 border border-slate-700">
+                  <div
+                    className="h-full bg-gradient-to-r from-rose-700 to-rose-500 opacity-90"
+                    style={{ width: '22%' }}
+                    title={`Cut Zone: Below £${effectiveUpperTriggerPot.toLocaleString()}`}
+                  />
+                  <div
+                    className="h-full bg-gradient-to-r from-emerald-500 via-teal-500 to-indigo-500 flex-1 relative flex items-center justify-center text-[9px] font-black text-white/90 uppercase tracking-widest"
+                    title={`Safe Corridor: £${effectiveUpperTriggerPot.toLocaleString()} to £${effectiveLowerTriggerPot.toLocaleString()}`}
+                  >
+                    <span>Safe Corridor</span>
+                  </div>
+                  <div
+                    className="h-full bg-gradient-to-r from-purple-500 to-indigo-600 opacity-90"
+                    style={{ width: '22%' }}
+                    title={`Prosperity Zone: Above £${effectiveLowerTriggerPot.toLocaleString()}`}
+                  />
+                </div>
+
+                {/* Trigger Boundaries Labels */}
+                <div className="flex justify-between items-center text-[10px] text-slate-400 pt-1.5 font-semibold">
+                  <div className="text-left text-rose-400">
+                    <div>Upper Cut Trigger: £{effectiveUpperTriggerPot.toLocaleString()}</div>
+                    <div className="text-[9px] text-slate-500">SWR &gt; {effectiveUpperGuardrailRate.toFixed(1)}%</div>
+                  </div>
+                  <div className="text-center text-emerald-400 font-bold">
+                    <div>Current SWR: {effectiveInitialRate.toFixed(2)}%</div>
+                    <div className="text-[9px] text-slate-400">£{effectiveInitialSpend.toLocaleString()}/yr spend</div>
+                  </div>
+                  <div className="text-right text-purple-400">
+                    <div>Lower Raise Trigger: £{effectiveLowerTriggerPot.toLocaleString()}</div>
+                    <div className="text-[9px] text-slate-500">SWR &lt; {effectiveLowerGuardrailRate.toFixed(1)}%</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Two Early Warning Buffer Callouts */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div className="p-3 rounded-lg bg-rose-950/30 border border-rose-900/50 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-rose-300 flex items-center gap-1">
+                      <TrendingDown className="w-3.5 h-3.5 text-rose-400" />
+                      <span>Market Drop Cushion to Cut</span>
+                    </span>
+                    <span className="text-xs font-black text-rose-300">
+                      £{dropCushionAmount.toLocaleString()} (-{dropCushionPercent.toFixed(1)}%)
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-300 leading-snug">
+                    Your portfolio can fall by up to <strong>£{dropCushionAmount.toLocaleString()} (-{dropCushionPercent.toFixed(1)}%)</strong> before the Capital Preservation Rule triggers a {rules.capitalPreservationCutPercent}% spending cut.
+                  </p>
+                </div>
+
+                <div className="p-3 rounded-lg bg-emerald-950/30 border border-emerald-900/50 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-300 flex items-center gap-1">
+                      <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Growth Target to Spending Raise</span>
+                    </span>
+                    <span className="text-xs font-black text-emerald-300">
+                      +£{growthNeededAmount.toLocaleString()} (+{growthNeededPercent.toFixed(1)}%)
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-300 leading-snug">
+                    A portfolio increase of <strong>+£{growthNeededAmount.toLocaleString()} (+{growthNeededPercent.toFixed(1)}%)</strong> will activate the Prosperity Rule, permanently raising spending by +{rules.prosperityIncreasePercent}%.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* FEATURE 2: Tiered Spending Protection (Core Essential vs Flexible Discretionary) */}
+          <div className="p-4 md:p-5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-xs space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-700 pb-3">
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">
+                    Tiered Spending Protection: Core Essential vs. Flexible Discretionary
+                  </h4>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                    Essential Floor 100% Immune
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                  Under Guyton-Klinger guardrails, your essential bills are 100% immune from spending cuts. Only your flexible discretionary budget acts as an economic shock absorber.
+                </p>
+              </div>
+
+              {totalGuaranteedIncome > 0 && (
+                <div className="px-3 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 text-right shrink-0">
+                  <div className="text-[10px] font-bold text-indigo-700 dark:text-indigo-300 uppercase">Guaranteed Pension Backstop</div>
+                  <div className="text-xs font-black text-indigo-900 dark:text-indigo-200">
+                    £{totalGuaranteedIncome.toLocaleString()}/yr ({guaranteedCoveragePct}% of Essential)
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Visual Tiered Spending Stack Bar */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-bold text-slate-700 dark:text-slate-300">
+                  Initial Retirement Annual Spend: <strong>£{effectiveInitialSpend.toLocaleString()}/yr</strong>
+                </span>
+                <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Tier 1 Essential: <strong>{essentialSpendPercent.toFixed(0)}%</strong> | Tier 2 Flexible: <strong>{discretionarySpendPercent.toFixed(0)}%</strong>
+                </span>
+              </div>
+
+              <div className="h-4 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden flex shadow-inner">
+                <div
+                  className="h-full bg-gradient-to-r from-amber-500 to-amber-600 transition-all duration-300 flex items-center justify-center text-[10px] font-bold text-white shadow-xs"
+                  style={{ width: `${essentialSpendPercent}%` }}
+                  title={`Tier 1 Protected Essential Floor: £${essentialFloorBaseline.toLocaleString()}/yr (${essentialSpendPercent.toFixed(0)}%)`}
+                >
+                  {essentialSpendPercent >= 25 && <span>Tier 1: Essential £{essentialFloorBaseline.toLocaleString()}</span>}
+                </div>
+                <div
+                  className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-300 flex items-center justify-center text-[10px] font-bold text-white shadow-xs"
+                  style={{ width: `${discretionarySpendPercent}%` }}
+                  title={`Tier 2 Flexible Discretionary: £${discretionarySpend.toLocaleString()}/yr (${discretionarySpendPercent.toFixed(0)}%)`}
+                >
+                  {discretionarySpendPercent >= 25 && <span>Tier 2: Flexible £{discretionarySpend.toLocaleString()}</span>}
+                </div>
+              </div>
+
+              {/* Tier Cards Breakdown */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                <div className="p-3 rounded-xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
+                      <Lock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                      <span>Tier 1: Non-Negotiable Essential Floor</span>
+                    </span>
+                    <span className="text-xs font-black text-amber-700 dark:text-amber-300">
+                      £{essentialFloorBaseline.toLocaleString()}/yr
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-amber-800/80 dark:text-amber-300/80 leading-snug">
+                    Covers food, utilities, council tax, home maintenance, and basic transport. <strong>0% cut allowance.</strong> Guardrail spending cuts will never breach this floor.
+                  </p>
+                </div>
+
+                <div className="p-3 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/50 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-emerald-900 dark:text-emerald-200 flex items-center gap-1.5">
+                      <Unlock className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                      <span>Tier 2: Flexible Discretionary Budget</span>
+                    </span>
+                    <span className="text-xs font-black text-emerald-700 dark:text-emerald-300">
+                      £{discretionarySpend.toLocaleString()}/yr
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-emerald-800/80 dark:text-emerald-300/80 leading-snug">
+                    Covers holidays, luxury dining, hobbies, vehicle upgrades, and gifting. Acts as your economic shock absorber to protect portfolio longevity.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Stress Test Haircut Simulator */}
+            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                  <Zap className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Stress Test: What Happens If Upper Guardrail Triggers (-{cutPercent}% Cut)?</span>
+                </span>
+                <span className="text-[11px] font-bold text-rose-600 dark:text-rose-400">
+                  Total Cut: -£{totalCutAmount.toLocaleString()}/yr
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                <div className="p-2.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                  <div className="text-[10px] text-slate-400 font-bold uppercase">Tier 1 Essential</div>
+                  <div className="text-xs font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
+                    £{essentialFloorBaseline.toLocaleString()}/yr
+                  </div>
+                  <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
+                    ✓ £0 Cut (100% Protected)
+                  </div>
+                </div>
+
+                <div className="p-2.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                  <div className="text-[10px] text-slate-400 font-bold uppercase">Tier 2 Discretionary</div>
+                  <div className="text-xs font-black text-amber-600 dark:text-amber-400 mt-0.5">
+                    £{prospectiveDiscretionarySpend.toLocaleString()}/yr
+                  </div>
+                  <div className="text-[10px] text-rose-500 font-semibold">
+                    -{discretionaryCutPercent.toFixed(1)}% flexible haircut (-£{totalCutAmount.toLocaleString()})
+                  </div>
+                </div>
+
+                <div className="p-2.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                  <div className="text-[10px] text-slate-400 font-bold uppercase">Post-Cut Total Income</div>
+                  <div className="text-xs font-black text-indigo-600 dark:text-indigo-400 mt-0.5">
+                    £{(effectiveInitialSpend - totalCutAmount).toLocaleString()}/yr
+                  </div>
+                  <div className="text-[10px] text-slate-500">
+                    {isCappedAtEssentialFloor ? 'Clamped at Essential Floor' : 'Fully covers all bills with cushion'}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Essential Floor Adjuster */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1 border-t border-slate-100 dark:border-slate-700 text-xs">
+              <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
+                <Sliders className="w-3.5 h-3.5 text-indigo-500" />
+                <span className="font-bold">Adjust Essential Floor:</span>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-1.5">
+                {[
+                  { label: '50% Frugal', pct: 0.5 },
+                  { label: '65% Standard', pct: 0.65 },
+                  { label: '75% Comfort', pct: 0.75 },
+                  { label: '80% High', pct: 0.8 },
+                ].map((preset) => {
+                  const targetAmt = Math.round(effectiveInitialSpend * preset.pct);
+                  const isSelected = Math.abs(essentialFloorBaseline - targetAmt) < 500;
+                  return (
+                    <button
+                      key={preset.label}
+                      type="button"
+                      onClick={() => handleUpdateEssentialFloor(targetAmt)}
+                      className={`px-2.5 py-1 text-[11px] font-bold rounded-lg border transition-all cursor-pointer ${
+                        isSelected
+                          ? 'bg-amber-500 text-white border-amber-600 shadow-xs'
+                          : 'bg-slate-50 dark:bg-slate-700/60 border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100'
+                      }`}
+                    >
+                      {preset.label} (£{Math.round(targetAmt / 1000)}k)
+                    </button>
+                  );
+                })}
+
+                <div className="flex items-center gap-1 ml-1">
+                  <span className="text-slate-400 font-bold">£</span>
+                  <input
+                    type="number"
+                    step={1000}
+                    min={0}
+                    max={effectiveInitialSpend}
+                    value={essentialFloorBaseline}
+                    onChange={(e) => handleUpdateEssentialFloor(Number(e.target.value) || 0)}
+                    className="w-24 px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-bold text-xs"
+                    title="Custom Essential Spending Floor (£/yr)"
+                  />
+                  <span className="text-[11px] text-slate-400">/yr</span>
                 </div>
               </div>
             </div>
@@ -1954,8 +2319,12 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
                               </div>
                             )}
                             <div className="flex justify-between items-center text-amber-600 dark:text-amber-400 font-semibold">
-                              <span>Essential Floor:</span>
-                              <span>£{data.essentialFloor.toLocaleString()}</span>
+                              <span>Tier 1 Protected Floor:</span>
+                              <span>£{data.essentialFloor.toLocaleString()} (100% immune)</span>
+                            </div>
+                            <div className="flex justify-between items-center text-teal-600 dark:text-teal-400 font-semibold">
+                              <span>Tier 2 Flexible Discretionary:</span>
+                              <span>£{Math.max(0, data.dynamicIncome - data.essentialFloor).toLocaleString()}</span>
                             </div>
                             <div className="flex justify-between items-center text-slate-500 pt-1 border-t border-slate-100 dark:border-slate-800">
                               <span>Withdrawal Rate:</span>

@@ -323,7 +323,7 @@ describe('DynamicSpendingCard - Guyton-Klinger Spending Rules & Monte Carlo Path
     // Check that configured input percentages are rendered
     expect(screen.getByText(/\+30%/)).toBeInTheDocument();
     expect(screen.getAllByText(/-15%/).length).toBeGreaterThan(0);
-    expect(screen.getByText(/\+12%/)).toBeInTheDocument();
+    expect(screen.getAllByText(/\+12%/).length).toBeGreaterThan(0);
 
     // Verify input fields contain the custom numbers
     const inputs = screen.getAllByRole('spinbutton') as HTMLInputElement[];
@@ -433,6 +433,42 @@ describe('DynamicSpendingCard - Guyton-Klinger Spending Rules & Monte Carlo Path
     // 3. Confirm both Current Pot Today and Retirement Starting Pot are distinguished in UI
     expect(screen.getAllByText(/Retirement Starting Pot/i).length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText(/Current Pot Today/i).length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('renders Distance-to-Trigger Early Warning Gauge with market drop cushion and growth targets', () => {
+    const onChange = vi.fn();
+    render(<DynamicSpendingCard profile={baseProfileEnabled} pots={DEFAULT_POTS} onChange={onChange} />);
+
+    // Check Distance-to-Trigger Gauge presence
+    expect(screen.getByText(/Proactive Distance-to-Trigger Gauge/i)).toBeInTheDocument();
+    expect(screen.getByText(/Market Drop Cushion to Cut/i)).toBeInTheDocument();
+    expect(screen.getByText(/Growth Target to Spending Raise/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Safe Corridor/i).length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('renders Tiered Spending Protection with 100% immune essential floor and stress test haircut simulation', () => {
+    const onChange = vi.fn();
+    render(<DynamicSpendingCard profile={baseProfileEnabled} pots={DEFAULT_POTS} onChange={onChange} />);
+
+    // Check Tiered Spending Protection headers and tiers
+    expect(screen.getByText(/Tiered Spending Protection: Core Essential vs. Flexible Discretionary/i)).toBeInTheDocument();
+    expect(screen.getByText(/Tier 1: Non-Negotiable Essential Floor/i)).toBeInTheDocument();
+    expect(screen.getByText(/Tier 2: Flexible Discretionary Budget/i)).toBeInTheDocument();
+    expect(screen.getByText(/Essential Floor 100% Immune/i)).toBeInTheDocument();
+
+    // Check Stress Test simulation
+    expect(screen.getByText(/Stress Test: What Happens If Upper Guardrail Triggers/i)).toBeInTheDocument();
+    expect(screen.getByText(/✓ £0 Cut \(100% Protected\)/i)).toBeInTheDocument();
+
+    // Check Preset buttons for essential floor
+    const frugalBtn = screen.getByRole('button', { name: /50% Frugal/i });
+    expect(frugalBtn).toBeInTheDocument();
+    fireEvent.click(frugalBtn);
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        essentialRetirementIncomeAnnual: expect.any(Number),
+      })
+    );
   });
 });
 
