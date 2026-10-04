@@ -21,6 +21,8 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
+  Eye,
+  Gauge,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -250,6 +252,7 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
   const [customStartingSwr, setCustomStartingSwr] = useState<number>(() => {
     return startingWealth > 0 ? Math.round((initialTarget / startingWealth) * 100) / 100 : 5.0;
   });
+  const [swrChartSource, setSwrChartSource] = useState<'plan' | 'calculator' | 'gk_optimal' | 'bengen' | 'conservative'>('plan');
   const [appliedNotification, setAppliedNotification] = useState<string | null>(null);
 
   const prevInitialRateRef = React.useRef(initialWithdrawalRate);
@@ -266,6 +269,80 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
   const customLowerGuardrailRate = Math.round(customStartingSwr * (1 - (rules.prosperityThresholdPercent ?? 20) / 100) * 100) / 100;
   const customUpperTriggerPot = customUpperGuardrailRate > 0 && customCalculatedSpend > 0 ? Math.round(customCalculatedSpend / (customUpperGuardrailRate / 100)) : 0;
   const customLowerTriggerPot = customLowerGuardrailRate > 0 && customCalculatedSpend > 0 ? Math.round(customCalculatedSpend / (customLowerGuardrailRate / 100)) : 0;
+
+  // Active SWR baseline configuration driving the dynamic income chart & trigger points
+  const activeSwrConfig = useMemo(() => {
+    switch (swrChartSource) {
+      case 'calculator':
+        return {
+          source: 'calculator' as const,
+          name: 'SWR Calculator (Selected)',
+          shortName: `SWR Solver (${customStartingSwr.toFixed(1)}%)`,
+          rate: customStartingSwr,
+          startingSpend: customCalculatedSpend,
+          description: `Custom SWR Solver rate of ${customStartingSwr.toFixed(2)}% (£${customCalculatedSpend.toLocaleString()}/yr)`,
+          isCustom: true,
+        };
+      case 'gk_optimal':
+        return {
+          source: 'gk_optimal' as const,
+          name: 'Guyton-Klinger Safe Optimal',
+          shortName: `GK Optimal (${gkSwrAnalysis.recommendedInitialSwr.toFixed(1)}%)`,
+          rate: gkSwrAnalysis.recommendedInitialSwr,
+          startingSpend: gkSwrAnalysis.initialAnnualSpend,
+          description: `Empirical Guyton-Klinger MSR of ${gkSwrAnalysis.recommendedInitialSwr.toFixed(2)}% (£${gkSwrAnalysis.initialAnnualSpend.toLocaleString()}/yr)`,
+          isCustom: false,
+        };
+      case 'bengen':
+        return {
+          source: 'bengen' as const,
+          name: 'Bengen Static 4% Benchmark',
+          shortName: `Bengen 4% (${gkSwrAnalysis.bengenStaticSwr.toFixed(1)}%)`,
+          rate: gkSwrAnalysis.bengenStaticSwr,
+          startingSpend: Math.round(startingWealth * (gkSwrAnalysis.bengenStaticSwr / 100)),
+          description: `William Bengen static rule baseline of ${gkSwrAnalysis.bengenStaticSwr.toFixed(2)}% (£${Math.round(startingWealth * (gkSwrAnalysis.bengenStaticSwr / 100)).toLocaleString()}/yr)`,
+          isCustom: false,
+        };
+      case 'conservative':
+        return {
+          source: 'conservative' as const,
+          name: 'Conservative 3.5% Benchmark',
+          shortName: 'Conservative (3.5%)',
+          rate: 3.5,
+          startingSpend: Math.round(startingWealth * 0.035),
+          description: `Ultra-conservative baseline of 3.50% (£${Math.round(startingWealth * 0.035).toLocaleString()}/yr)`,
+          isCustom: false,
+        };
+      case 'plan':
+      default:
+        return {
+          source: 'plan' as const,
+          name: 'Current Plan Target',
+          shortName: `Plan Target (${initialWithdrawalRate.toFixed(1)}%)`,
+          rate: initialWithdrawalRate,
+          startingSpend: initialTarget,
+          description: `Official retirement plan target of £${initialTarget.toLocaleString()}/yr (${initialWithdrawalRate.toFixed(2)}% SWR)`,
+          isCustom: false,
+        };
+    }
+  }, [
+    swrChartSource,
+    customStartingSwr,
+    customCalculatedSpend,
+    gkSwrAnalysis.recommendedInitialSwr,
+    gkSwrAnalysis.initialAnnualSpend,
+    gkSwrAnalysis.bengenStaticSwr,
+    startingWealth,
+    initialWithdrawalRate,
+    initialTarget,
+  ]);
+
+  const effectiveInitialSpend = activeSwrConfig.startingSpend;
+  const effectiveInitialRate = activeSwrConfig.rate;
+  const effectiveUpperGuardrailRate = Math.round(effectiveInitialRate * (1 + (rules.capitalPreservationThresholdPercent ?? 20) / 100) * 100) / 100;
+  const effectiveLowerGuardrailRate = Math.round(effectiveInitialRate * (1 - (rules.prosperityThresholdPercent ?? 20) / 100) * 100) / 100;
+  const effectiveUpperTriggerPot = effectiveUpperGuardrailRate > 0 && effectiveInitialSpend > 0 ? Math.round(effectiveInitialSpend / (effectiveUpperGuardrailRate / 100)) : 0;
+  const effectiveLowerTriggerPot = effectiveLowerGuardrailRate > 0 && effectiveInitialSpend > 0 ? Math.round(effectiveInitialSpend / (effectiveLowerGuardrailRate / 100)) : 0;
 
   const applyStartingSpendToPlan = (newAnnualSpend: number) => {
     const rounded = Math.round(newAnnualSpend);
@@ -413,7 +490,7 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
     const isAdjustedReal = profile.adjustForInflation !== false;
     const returnSeries = scenarioReturns[selectedScenario] || monteCarloPaths.mc50;
     let spendingMultiplier = 1.0;
-    const initialGkRate = initialWithdrawalRate / 100;
+    const initialGkRate = effectiveInitialRate / 100;
     const presThresh = 1 + (rules.capitalPreservationThresholdPercent ?? 20) / 100;
     const presCut = (rules.capitalPreservationCutPercent ?? 10) / 100;
     const prospThresh = 1 - (rules.prosperityThresholdPercent ?? 20) / 100;
@@ -423,6 +500,9 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
     const isScenarioMatch = !monteCarloResult?.params?.marketScenario || monteCarloResult.params.marketScenario === activeMarketScenario;
     const hasMcPercentiles = isScenarioMatch && Boolean(monteCarloResult?.agePercentiles?.length);
 
+    // Scale spending baseline if a non-plan SWR baseline is active
+    const scaleFactor = initialTarget > 0 ? effectiveInitialSpend / initialTarget : 1.0;
+
     let runningSimPot = startingWealth;
     let prevDynamicSpend = 0;
 
@@ -431,9 +511,11 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
       if (currentAge > endAge) break;
 
       const inflationFactor = Math.pow(1 + inflationRate, yr);
-      const baseTargetAtAge = isAdjustedReal
+      const unscaledTarget = isAdjustedReal
         ? getActualSpendingTargetForAge(profile, currentAge)
         : getActualSpendingTargetForAge(profile, currentAge) * inflationFactor;
+      const baseTargetAtAge = Math.round(unscaledTarget * scaleFactor);
+
       const essentialFloorAtAge = isAdjustedReal
         ? Math.round(essentialFloorBaseline)
         : Math.round(essentialFloorBaseline * inflationFactor);
@@ -443,7 +525,7 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
       // Determine this year's portfolio pot balance available for withdrawal
       let portfolioThisAge = startingWealth;
       if (yr > 0) {
-        if (isMcScenario && hasMcPercentiles) {
+        if (swrChartSource === 'plan' && isMcScenario && hasMcPercentiles) {
           const mcPoint = monteCarloResult!.agePercentiles.find((p) => p.age === currentAge);
           if (mcPoint) {
             if (selectedScenario === 'mc50') portfolioThisAge = mcPoint.p50TotalPot;
@@ -480,14 +562,14 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
           } else {
             spendingMultiplier = prospectiveMultiplier;
             event = 'cut';
-            eventNote = `Capital Preservation triggered: Withdrawal rate hit ${(currentRate * 100).toFixed(1)}% (+${((currentRate / initialGkRate - 1) * 100).toFixed(0)}% vs initial ${initialWithdrawalRate.toFixed(1)}%). Spending cut by ${rules.capitalPreservationCutPercent}%.`;
+            eventNote = `Capital Preservation triggered: Withdrawal rate hit ${(currentRate * 100).toFixed(1)}% (+${((currentRate / initialGkRate - 1) * 100).toFixed(0)}% vs initial ${effectiveInitialRate.toFixed(1)}%). Spending cut by ${rules.capitalPreservationCutPercent}%.`;
           }
         }
         // Prosperity Rule Trigger (Lower Guardrail)
         else if (currentRate < initialGkRate * prospThresh) {
           spendingMultiplier *= 1 + prospInc;
           event = 'raise';
-          eventNote = `Prosperity Rule triggered: Portfolio growth lowered withdrawal rate to ${(currentRate * 100).toFixed(1)}% (-${((1 - currentRate / initialGkRate) * 100).toFixed(0)}% vs initial ${initialWithdrawalRate.toFixed(1)}%). Spending raised by ${rules.prosperityIncreasePercent}%.`;
+          eventNote = `Prosperity Rule triggered: Portfolio growth lowered withdrawal rate to ${(currentRate * 100).toFixed(1)}% (-${((1 - currentRate / initialGkRate) * 100).toFixed(0)}% vs initial ${effectiveInitialRate.toFixed(1)}%). Spending raised by ${rules.prosperityIncreasePercent}%.`;
         }
         // Inflation Freeze Rule Trigger
         else if (rules.skipInflationOnNegativeReturn && ret < 0) {
@@ -529,7 +611,9 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
     horizonYears,
     inflationRate,
     initialTarget,
-    initialWithdrawalRate,
+    effectiveInitialRate,
+    effectiveInitialSpend,
+    swrChartSource,
     monteCarloPaths,
     monteCarloResult,
     profile,
@@ -880,14 +964,28 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
                   </p>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => applyStartingSpendToPlan(gkSwrAnalysis.initialAnnualSpend)}
-                  className="w-full mt-2 py-1.5 px-3 rounded-lg text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  <Check className="w-3.5 h-3.5" />
-                  <span>Apply Recommended Rate (£{gkSwrAnalysis.initialAnnualSpend.toLocaleString()}/yr)</span>
-                </button>
+                <div className="space-y-1.5 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => applyStartingSpendToPlan(gkSwrAnalysis.initialAnnualSpend)}
+                    className="w-full py-1.5 px-3 rounded-lg text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                    <span>Apply Recommended Rate (£{gkSwrAnalysis.initialAnnualSpend.toLocaleString()}/yr)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSwrChartSource('gk_optimal')}
+                    className={`w-full py-1 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                      swrChartSource === 'gk_optimal'
+                        ? 'bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-300 dark:border-indigo-700 shadow-xs'
+                        : 'text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-700/60 border border-transparent'
+                    }`}
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    <span>{swrChartSource === 'gk_optimal' ? 'Active in Chart Trajectory' : 'Simulate in Chart'}</span>
+                  </button>
+                </div>
               </div>
 
               {/* Card 2: Bengen Static 4% Baseline */}
@@ -914,13 +1012,27 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
                   </p>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => applyStartingSpendToPlan(Math.round(startingWealth * (gkSwrAnalysis.bengenStaticSwr / 100)))}
-                  className="w-full mt-2 py-1.5 px-3 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  <span>Apply Static Baseline</span>
-                </button>
+                <div className="space-y-1.5 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => applyStartingSpendToPlan(Math.round(startingWealth * (gkSwrAnalysis.bengenStaticSwr / 100)))}
+                    className="w-full py-1.5 px-3 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <span>Apply Static Baseline</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSwrChartSource('bengen')}
+                    className={`w-full py-1 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                      swrChartSource === 'bengen'
+                        ? 'bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-100 border border-slate-300 dark:border-slate-600 shadow-xs'
+                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700/60 border border-transparent'
+                    }`}
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    <span>{swrChartSource === 'bengen' ? 'Active in Chart Trajectory' : 'Simulate in Chart'}</span>
+                  </button>
+                </div>
               </div>
 
               {/* Card 3: Current Plan Rate */}
@@ -961,8 +1073,22 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
                   </p>
                 </div>
 
-                <div className="text-[11px] text-slate-400 text-center py-1">
-                  Starting Wealth: £{startingWealth.toLocaleString()}
+                <div className="space-y-1.5 pt-1">
+                  <div className="text-[11px] text-slate-400 text-center">
+                    Starting Wealth: £{startingWealth.toLocaleString()}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSwrChartSource('plan')}
+                    className={`w-full py-1 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                      swrChartSource === 'plan'
+                        ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 shadow-xs'
+                        : 'text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-slate-700/60 border border-transparent'
+                    }`}
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    <span>{swrChartSource === 'plan' ? 'Active in Chart Trajectory' : 'Simulate Plan in Chart'}</span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -981,7 +1107,10 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
                     <span className="text-[10px] text-slate-400 font-bold uppercase">Presets:</span>
                     <button
                       type="button"
-                      onClick={() => setCustomStartingSwr(gkSwrAnalysis.bengenStaticSwr)}
+                      onClick={() => {
+                        setCustomStartingSwr(gkSwrAnalysis.bengenStaticSwr);
+                        setSwrChartSource('calculator');
+                      }}
                       className={`text-[10px] font-bold px-2 py-0.5 rounded-md border cursor-pointer transition-all ${
                         Math.abs(customStartingSwr - gkSwrAnalysis.bengenStaticSwr) < 0.05
                           ? 'bg-indigo-600 text-white border-indigo-600'
@@ -992,7 +1121,10 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
                     </button>
                     <button
                       type="button"
-                      onClick={() => setCustomStartingSwr(gkSwrAnalysis.recommendedInitialSwr)}
+                      onClick={() => {
+                        setCustomStartingSwr(gkSwrAnalysis.recommendedInitialSwr);
+                        setSwrChartSource('calculator');
+                      }}
                       className={`text-[10px] font-bold px-2 py-0.5 rounded-md border cursor-pointer transition-all ${
                         Math.abs(customStartingSwr - gkSwrAnalysis.recommendedInitialSwr) < 0.05
                           ? 'bg-indigo-600 text-white border-indigo-600'
@@ -1003,7 +1135,10 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
                     </button>
                     <button
                       type="button"
-                      onClick={() => setCustomStartingSwr(3.5)}
+                      onClick={() => {
+                        setCustomStartingSwr(3.5);
+                        setSwrChartSource('calculator');
+                      }}
                       className={`text-[10px] font-bold px-2 py-0.5 rounded-md border cursor-pointer transition-all ${
                         Math.abs(customStartingSwr - 3.5) < 0.05
                           ? 'bg-indigo-600 text-white border-indigo-600'
@@ -1011,6 +1146,19 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
                       }`}
                     >
                       Conservative 3.5%
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSwrChartSource('calculator')}
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-md border cursor-pointer transition-all flex items-center gap-1 ${
+                        swrChartSource === 'calculator'
+                          ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                          : 'bg-indigo-50 dark:bg-indigo-950/60 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100'
+                      }`}
+                      title="Display this SWR Solver's rate and guardrail boundaries in the dynamic trajectory chart below"
+                    >
+                      <Eye className="w-3 h-3" />
+                      <span>{swrChartSource === 'calculator' ? 'Active in Chart' : 'Simulate in Chart'}</span>
                     </button>
                   </div>
                 </div>
@@ -1028,7 +1176,11 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
                         max="8.0"
                         step="0.05"
                         value={customStartingSwr}
-                        onChange={(e) => setCustomStartingSwr(Math.max(2.0, Math.min(10.0, parseFloat(e.target.value) || 2.0)))}
+                        onChange={(e) => {
+                          const val = Math.max(2.0, Math.min(10.0, parseFloat(e.target.value) || 2.0));
+                          setCustomStartingSwr(val);
+                          setSwrChartSource('calculator');
+                        }}
                         className="w-20 px-2 py-1 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-xs font-extrabold text-right text-indigo-600 dark:text-indigo-400"
                       />
                       <span className="text-xs font-bold text-slate-500">%</span>
@@ -1040,7 +1192,10 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
                     max="7.5"
                     step="0.05"
                     value={customStartingSwr}
-                    onChange={(e) => setCustomStartingSwr(parseFloat(e.target.value))}
+                    onChange={(e) => {
+                      setCustomStartingSwr(parseFloat(e.target.value));
+                      setSwrChartSource('calculator');
+                    }}
                     className="w-full accent-indigo-600 h-2 bg-slate-200 dark:bg-slate-700 rounded-lg cursor-pointer"
                   />
                   <div className="flex justify-between text-[10px] text-slate-400 font-medium">
@@ -1129,32 +1284,39 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-200">
                   Live Guardrail Trigger Boundaries (At Retirement Age {retAge})
                 </span>
+                {swrChartSource !== 'plan' && (
+                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/40">
+                    {activeSwrConfig.name}
+                  </span>
+                )}
               </div>
               <span className="text-[11px] font-semibold text-slate-400">
-                Initial Wealth: £{startingWealth.toLocaleString()} | Initial Target: £{initialTarget.toLocaleString()}/yr
+                Initial Wealth: £{startingWealth.toLocaleString()} | Initial Spend: £{effectiveInitialSpend.toLocaleString()}/yr ({effectiveInitialRate.toFixed(2)}% SWR)
               </span>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
               <div className="bg-slate-800/80 p-2.5 rounded-xl border border-slate-700/60">
                 <div className="text-[10px] text-slate-400 font-bold uppercase">Initial SWR</div>
-                <div className="text-sm font-black text-indigo-400 mt-0.5">{initialWithdrawalRate.toFixed(2)}%</div>
-                <div className="text-[10px] text-slate-400 mt-0.5">Starting Baseline</div>
+                <div className="text-sm font-black text-indigo-400 mt-0.5">{effectiveInitialRate.toFixed(2)}%</div>
+                <div className="text-[10px] text-slate-400 mt-0.5 truncate" title={activeSwrConfig.name}>
+                  {swrChartSource === 'plan' ? 'Plan Baseline' : activeSwrConfig.shortName}
+                </div>
               </div>
 
               <div className="bg-rose-950/40 p-2.5 rounded-xl border border-rose-900/40">
                 <div className="text-[10px] text-rose-300 font-bold uppercase">Upper Guardrail (Cut)</div>
-                <div className="text-sm font-black text-rose-400 mt-0.5">&gt; {upperGuardrailRate.toFixed(2)}%</div>
+                <div className="text-sm font-black text-rose-400 mt-0.5">&gt; {effectiveUpperGuardrailRate.toFixed(2)}%</div>
                 <div className="text-[10px] text-rose-300/80 mt-0.5">
-                  Portfolio &lt; £{Math.round(upperTriggerPortfolio).toLocaleString()}
+                  Portfolio &lt; £{effectiveUpperTriggerPot.toLocaleString()}
                 </div>
               </div>
 
               <div className="bg-emerald-950/40 p-2.5 rounded-xl border border-emerald-900/40">
                 <div className="text-[10px] text-emerald-300 font-bold uppercase">Lower Guardrail (Raise)</div>
-                <div className="text-sm font-black text-emerald-400 mt-0.5">&lt; {lowerGuardrailRate.toFixed(2)}%</div>
+                <div className="text-sm font-black text-emerald-400 mt-0.5">&lt; {effectiveLowerGuardrailRate.toFixed(2)}%</div>
                 <div className="text-[10px] text-emerald-300/80 mt-0.5">
-                  Portfolio &gt; £{Math.round(lowerTriggerPortfolio).toLocaleString()}
+                  Portfolio &gt; £{effectiveLowerTriggerPot.toLocaleString()}
                 </div>
               </div>
 
@@ -1162,7 +1324,7 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
                 <div className="text-[10px] text-amber-300 font-bold uppercase">Essential Floor Cushion</div>
                 <div className="text-sm font-black text-amber-400 mt-0.5">£{essentialFloorBaseline.toLocaleString()}/yr</div>
                 <div className="text-[10px] text-amber-300/80 mt-0.5">
-                  {Math.round((essentialFloorBaseline / initialTarget) * 100)}% of Target (Protected)
+                  {Math.round((essentialFloorBaseline / effectiveInitialSpend) * 100)}% of Spend (Protected)
                 </div>
               </div>
             </div>
@@ -1377,6 +1539,109 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
                 </span>
               </div>
             </div>
+
+            {/* SWR Starting Baseline Switcher for Chart */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xs">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                  <Sliders className="w-3.5 h-3.5 text-indigo-500" />
+                  <span>Chart SWR Baseline:</span>
+                </span>
+                <div className="flex flex-wrap items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setSwrChartSource('plan')}
+                    className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
+                      swrChartSource === 'plan'
+                        ? 'bg-emerald-600 text-white shadow-xs'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700/60'
+                    }`}
+                    title="Simulate dynamic income trajectory using your current retirement plan spending target"
+                  >
+                    <span>Plan Target ({initialWithdrawalRate.toFixed(1)}% • £{Math.round(initialTarget / 1000)}k)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSwrChartSource('calculator')}
+                    className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
+                      swrChartSource === 'calculator'
+                        ? 'bg-indigo-600 text-white shadow-xs'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700/60'
+                    }`}
+                    title="Simulate dynamic income trajectory using the active SWR Solver slider selection"
+                  >
+                    <span>SWR Solver ({customStartingSwr.toFixed(1)}% • £{Math.round(customCalculatedSpend / 1000)}k)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSwrChartSource('gk_optimal')}
+                    className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
+                      swrChartSource === 'gk_optimal'
+                        ? 'bg-indigo-600 text-white shadow-xs'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700/60'
+                    }`}
+                    title="Simulate dynamic income trajectory using Guyton-Klinger recommended safe starting rate"
+                  >
+                    <Sparkles className="w-3 h-3 text-amber-300" />
+                    <span>GK Optimal ({gkSwrAnalysis.recommendedInitialSwr.toFixed(1)}% • £{Math.round(gkSwrAnalysis.initialAnnualSpend / 1000)}k)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSwrChartSource('bengen')}
+                    className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
+                      swrChartSource === 'bengen'
+                        ? 'bg-slate-700 text-white shadow-xs'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700/60'
+                    }`}
+                    title="Simulate dynamic income trajectory using classic William Bengen static 4% benchmark"
+                  >
+                    <span>Bengen 4% ({gkSwrAnalysis.bengenStaticSwr.toFixed(1)}% • £{Math.round(startingWealth * (gkSwrAnalysis.bengenStaticSwr / 100) / 1000)}k)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSwrChartSource('conservative')}
+                    className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
+                      swrChartSource === 'conservative'
+                        ? 'bg-slate-700 text-white shadow-xs'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700/60'
+                    }`}
+                    title="Simulate dynamic income trajectory using ultra-conservative 3.5% benchmark"
+                  >
+                    <span>Conservative (3.5% • £{Math.round(startingWealth * 0.035 / 1000)}k)</span>
+                  </button>
+                </div>
+              </div>
+
+              {swrChartSource !== 'plan' && (
+                <button
+                  type="button"
+                  onClick={() => applyStartingSpendToPlan(activeSwrConfig.startingSpend)}
+                  className="px-2.5 py-1 text-[11px] font-extrabold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow-xs transition-colors flex items-center gap-1 cursor-pointer shrink-0 self-end sm:self-auto"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  <span>Set As Plan Target (£{activeSwrConfig.startingSpend.toLocaleString()}/yr)</span>
+                </button>
+              )}
+            </div>
+
+            {/* Explanatory Banner when SWR Baseline or Benchmark is simulated in chart */}
+            {swrChartSource !== 'plan' && (
+              <div className="p-3 rounded-xl bg-indigo-50/90 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-800 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                <div className="flex items-center gap-2 text-indigo-900 dark:text-indigo-200">
+                  <Gauge className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                  <span>
+                    <strong>Chart SWR Simulation:</strong> Trajectory is showing income and trigger points calibrated for <strong>{activeSwrConfig.name}</strong> ({effectiveInitialRate.toFixed(2)}% SWR = £{effectiveInitialSpend.toLocaleString()}/yr). Upper guardrail cut triggers if SWR &gt; {effectiveUpperGuardrailRate.toFixed(2)}% (pot &lt; £{effectiveUpperTriggerPot.toLocaleString()}); Prosperity raise triggers if SWR &lt; {effectiveLowerGuardrailRate.toFixed(2)}% (pot &gt; £{effectiveLowerTriggerPot.toLocaleString()}).
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSwrChartSource('plan')}
+                  className="px-2.5 py-1 text-[11px] font-bold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 rounded-lg transition-colors cursor-pointer self-start sm:self-auto shrink-0"
+                >
+                  Reset to Plan Target
+                </button>
+              </div>
+            )}
 
             {/* Chart View Mode Controls */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-2 pb-1 border-t border-slate-200/70 dark:border-slate-700/70">

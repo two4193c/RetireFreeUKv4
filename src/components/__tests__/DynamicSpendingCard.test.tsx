@@ -337,5 +337,45 @@ describe('DynamicSpendingCard - Guyton-Klinger Spending Rules & Monte Carlo Path
     expect(prospThreshInput).toBeDefined();
     expect(prospIncInput).toBeDefined();
   });
+
+  it('supports selecting starting withdrawal rate calculator and benchmarks to drive the chart trajectory', () => {
+    const onChange = vi.fn();
+    render(<DynamicSpendingCard profile={baseProfileEnabled} pots={DEFAULT_POTS} onChange={onChange} />);
+
+    // Verify SWR baseline controls are present in the chart section
+    expect(screen.getByText(/Chart SWR Baseline:/i)).toBeInTheDocument();
+    const planTargetBtn = screen.getByRole('button', { name: /Plan Target/i });
+    const swrSolverBtn = screen.getByRole('button', { name: /SWR Solver/i });
+    const gkOptimalBtn = screen.getByRole('button', { name: /GK Optimal/i });
+    const bengenBtn = screen.getByRole('button', { name: /Bengen 4%/i });
+    const conservativeBtns = screen.getAllByRole('button', { name: /Conservative/i });
+
+    expect(planTargetBtn).toBeInTheDocument();
+    expect(swrSolverBtn).toBeInTheDocument();
+    expect(gkOptimalBtn).toBeInTheDocument();
+    expect(bengenBtn).toBeInTheDocument();
+    expect(conservativeBtns.length).toBeGreaterThanOrEqual(1);
+
+    // Default is Plan Target, so simulation banner is not shown
+    expect(screen.queryByText(/Chart SWR Simulation:/i)).not.toBeInTheDocument();
+
+    // Switch to GK Optimal benchmark
+    fireEvent.click(gkOptimalBtn);
+    expect(screen.getByText(/Chart SWR Simulation:/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Guyton-Klinger Safe Optimal/i).length).toBeGreaterThanOrEqual(1);
+
+    // Switch to Bengen 4% benchmark
+    fireEvent.click(bengenBtn);
+    expect(screen.getAllByText(/Bengen Static 4% Benchmark/i).length).toBeGreaterThanOrEqual(1);
+
+    // Switch to SWR Solver selection
+    fireEvent.click(swrSolverBtn);
+    expect(screen.getAllByText(/SWR Calculator \(Selected\)/i).length).toBeGreaterThanOrEqual(1);
+
+    // Reset back to Plan Target
+    const resetBtn = screen.getByRole('button', { name: /Reset to Plan Target/i });
+    fireEvent.click(resetBtn);
+    expect(screen.queryByText(/Chart SWR Simulation:/i)).not.toBeInTheDocument();
+  });
 });
 
