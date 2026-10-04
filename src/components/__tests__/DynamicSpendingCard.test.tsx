@@ -377,5 +377,23 @@ describe('DynamicSpendingCard - Guyton-Klinger Spending Rules & Monte Carlo Path
     fireEvent.click(resetBtn);
     expect(screen.queryByText(/Chart SWR Simulation:/i)).not.toBeInTheDocument();
   });
+
+  it('keeps baseline income requirement fixed when applying different starting withdrawal rates', () => {
+    const onChange = vi.fn();
+    render(<DynamicSpendingCard profile={baseProfileEnabled} pots={DEFAULT_POTS} onChange={onChange} />);
+
+    // In baseProfileEnabled, targetRetirementIncomeAnnual is 40000
+    // Switch to Bengen 4%
+    const bengenBtn = screen.getByRole('button', { name: /Bengen 4%/i });
+    fireEvent.click(bengenBtn);
+
+    // The simulation banner confirms the baseline is fixed at £40,000
+    expect(screen.getByText(/fixed input income requirement baseline \(£40,000\/yr\)/i)).toBeInTheDocument();
+
+    // Switch to GK Optimal
+    const gkOptimalBtn = screen.getByRole('button', { name: /GK Optimal/i });
+    fireEvent.click(gkOptimalBtn);
+    expect(screen.getByText(/fixed input income requirement baseline \(£40,000\/yr\)/i)).toBeInTheDocument();
+  });
 });
 

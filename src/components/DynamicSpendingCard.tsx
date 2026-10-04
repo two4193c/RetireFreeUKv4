@@ -511,10 +511,12 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
       if (currentAge > endAge) break;
 
       const inflationFactor = Math.pow(1 + inflationRate, yr);
-      const unscaledTarget = isAdjustedReal
+      const planIncomeRequirementAtAge = isAdjustedReal
         ? getActualSpendingTargetForAge(profile, currentAge)
         : getActualSpendingTargetForAge(profile, currentAge) * inflationFactor;
-      const baseTargetAtAge = Math.round(unscaledTarget * scaleFactor);
+
+      // The unadjusted starting spend progression for the chosen SWR across years before dynamic GK adjustments
+      const swrStartingSpendAtAge = Math.round(planIncomeRequirementAtAge * scaleFactor);
 
       const essentialFloorAtAge = isAdjustedReal
         ? Math.round(essentialFloorBaseline)
@@ -547,16 +549,16 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
       let eventNote: string | undefined = undefined;
 
       if (yr > 0 && rules.enabled && portfolioThisAge > 0 && initialGkRate > 0) {
-        const currentRate = (baseTargetAtAge * spendingMultiplier) / portfolioThisAge;
+        const currentRate = (swrStartingSpendAtAge * spendingMultiplier) / portfolioThisAge;
 
         // Capital Preservation Rule Trigger (Upper Guardrail)
         if (currentRate > initialGkRate * presThresh) {
           const prospectiveMultiplier = spendingMultiplier * (1 - presCut);
-          const prospectiveIncome = baseTargetAtAge * prospectiveMultiplier;
+          const prospectiveIncome = swrStartingSpendAtAge * prospectiveMultiplier;
 
           if (prospectiveIncome < essentialFloorAtAge) {
             // Clamped at essential floor
-            spendingMultiplier = Math.max(0.2, essentialFloorAtAge / baseTargetAtAge);
+            spendingMultiplier = Math.max(0.2, essentialFloorAtAge / swrStartingSpendAtAge);
             event = 'floor_protected';
             eventNote = `Capital Preservation triggered (+${((currentRate / initialGkRate - 1) * 100).toFixed(0)}% SWR surge to ${(currentRate * 100).toFixed(1)}%), but spending cut was cushioned at your Essential Floor (£${essentialFloorAtAge.toLocaleString()}/yr).`;
           } else {
@@ -580,7 +582,7 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
       }
 
       // Calculate actual spending target with GK multiplier applied and clamped at floor
-      let dynamicSpend = Math.round(baseTargetAtAge * spendingMultiplier);
+      let dynamicSpend = Math.round(swrStartingSpendAtAge * spendingMultiplier);
       if (dynamicSpend < essentialFloorAtAge) {
         dynamicSpend = essentialFloorAtAge;
       }
@@ -592,14 +594,14 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
         age: currentAge,
         yearIndex: yr,
         portfolio: Math.round(portfolioThisAge),
-        baselineIncome: Math.round(baseTargetAtAge),
+        baselineIncome: Math.round(planIncomeRequirementAtAge), // ALWAYS the user's input income requirement
         dynamicIncome: dynamicSpend,
         essentialFloor: essentialFloorAtAge,
         withdrawalRate: Number(actualWr.toFixed(2)),
         returnRate: Number((ret * 100).toFixed(1)),
         event,
         eventNote,
-        diffFromBaseline: Math.round(dynamicSpend - baseTargetAtAge),
+        diffFromBaseline: Math.round(dynamicSpend - planIncomeRequirementAtAge),
       });
     }
 
@@ -1630,7 +1632,7 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
                 <div className="flex items-center gap-2 text-indigo-900 dark:text-indigo-200">
                   <Gauge className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
                   <span>
-                    <strong>Chart SWR Simulation:</strong> Trajectory is showing income and trigger points calibrated for <strong>{activeSwrConfig.name}</strong> ({effectiveInitialRate.toFixed(2)}% SWR = £{effectiveInitialSpend.toLocaleString()}/yr). Upper guardrail cut triggers if SWR &gt; {effectiveUpperGuardrailRate.toFixed(2)}% (pot &lt; £{effectiveUpperTriggerPot.toLocaleString()}); Prosperity raise triggers if SWR &lt; {effectiveLowerGuardrailRate.toFixed(2)}% (pot &gt; £{effectiveLowerTriggerPot.toLocaleString()}).
+                    <strong>Chart SWR Simulation:</strong> Trajectory displays dynamic spending from <strong>{activeSwrConfig.name}</strong> ({effectiveInitialRate.toFixed(2)}% SWR = £{effectiveInitialSpend.toLocaleString()}/yr) plotted directly against your fixed input income requirement baseline (£{initialTarget.toLocaleString()}/yr). Upper guardrail cut triggers if SWR &gt; {effectiveUpperGuardrailRate.toFixed(2)}% (pot &lt; £{effectiveUpperTriggerPot.toLocaleString()}); Prosperity raise triggers if SWR &lt; {effectiveLowerGuardrailRate.toFixed(2)}% (pot &gt; £{effectiveLowerTriggerPot.toLocaleString()}).
                   </span>
                 </div>
                 <button
@@ -1786,13 +1788,29 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
                               <span>£{data.portfolio.toLocaleString()}</span>
                             </div>
                             <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400 font-extrabold">
-                              <span>Dynamic Spend:</span>
+                              <span>Dynamic Spend {swrChartSource !== 'plan' ? `(${activeSwrConfig.shortName})` : ''}:</span>
                               <span>£{data.dynamicIncome.toLocaleString()}</span>
                             </div>
                             <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
-                              <span>Baseline Target:</span>
+                              <span>Baseline Income Requirement:</span>
                               <span>£{data.baselineIncome.toLocaleString()}</span>
                             </div>
+                            {data.diffFromBaseline !== 0 && (
+                              <div
+                                className={`flex justify-between items-center text-[11px] font-bold ${
+                                  data.diffFromBaseline > 0
+                                    ? 'text-emerald-600 dark:text-emerald-400'
+                                    : 'text-rose-600 dark:text-rose-400'
+                                }`}
+                              >
+                                <span>vs Income Requirement:</span>
+                                <span>
+                                  {data.diffFromBaseline > 0
+                                    ? `+£${data.diffFromBaseline.toLocaleString()}/yr surplus`
+                                    : `-£${Math.abs(data.diffFromBaseline).toLocaleString()}/yr shortfall`}
+                                </span>
+                              </div>
+                            )}
                             <div className="flex justify-between items-center text-amber-600 dark:text-amber-400 font-semibold">
                               <span>Essential Floor:</span>
                               <span>£{data.essentialFloor.toLocaleString()}</span>
