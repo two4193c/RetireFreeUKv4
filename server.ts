@@ -73,6 +73,17 @@ async function startServer() {
       // Sanitise all user-provided values before interpolating into the prompt
       const s = sanitiseForPrompt;
 
+      // Partner balances: prefer partnerPots (engine source of truth), fall back to legacy flat fields
+      const pp = profile?.partnerPots || {};
+      const isCouple = Boolean(profile?.isCouplePlanning);
+      const partnerPension = isCouple
+        ? (pp.workplacePensionBalance ?? profile?.partnerWorkplacePensionBalance ?? 0) + (pp.sippBalance ?? profile?.partnerSippBalance ?? 0)
+        : 0;
+      const partnerIsa = isCouple
+        ? (pp.stocksAndSharesIsaBalance ?? profile?.partnerIsaBalance ?? 0) + (pp.cashIsaBalance ?? 0) + (pp.lisaBalance ?? 0)
+        : 0;
+      const partnerCashGia = isCouple ? (pp.giaBalance ?? 0) + (pp.cashSavingsBalance ?? 0) : 0;
+
       const prompt = `You are a top UK Chartered Financial Planner and UK Tax Advisor.
 Analyze the following UK retirement plan and provide an actionable, highly practical summary with tax efficiency advice based on UK 2024/25 & 2025/26 tax rules.
 
@@ -88,9 +99,9 @@ ${profile?.isCouplePlanning ? `- Partner: ${s(profile?.partnerName) || 'Partner'
 - Dual Household Personal Allowance in Drawdown: £25,140/yr tax-free` : ''}
 
 Current Balances & Contributions:
-- Pension Pot: £${s(pots ? (pots.workplacePensionBalance + pots.sippBalance + (profile?.isCouplePlanning ? (profile?.partnerWorkplacePensionBalance || 0) + (profile?.partnerSippBalance || 0) : 0)) : 'N/A')} (Contrib: £${s(taxResult?.totalPensionContributionsAnnual)}/yr including employer match)
-- ISA Pot: £${s(pots ? (pots.stocksAndSharesIsaBalance + pots.cashIsaBalance + pots.lisaBalance + (profile?.isCouplePlanning ? (profile?.partnerIsaBalance || 0) : 0)) : 'N/A')} (Contrib: £${s(taxResult?.totalIsaContributionsAnnual)}/yr)
-- Cash/GIA Pot: £${s(pots ? (pots.giaBalance + pots.cashSavingsBalance) : 'N/A')}
+- Pension Pot: £${s(pots ? ((pots.workplacePensionBalance || 0) + (pots.sippBalance || 0) + partnerPension) : 'N/A')} (Contrib: £${s(taxResult?.totalPensionContributionsAnnual)}/yr including employer match)
+- ISA Pot: £${s(pots ? ((pots.stocksAndSharesIsaBalance || 0) + (pots.cashIsaBalance || 0) + (pots.lisaBalance || 0) + partnerIsa) : 'N/A')} (Contrib: £${s(taxResult?.totalIsaContributionsAnnual)}/yr)
+- Cash/GIA Pot: £${s(pots ? ((pots.giaBalance || 0) + (pots.cashSavingsBalance || 0) + partnerCashGia) : 'N/A')}
 
 Tax Calculations:
 - Marginal Tax Rate: ${s(taxResult?.marginalTaxRate)}%

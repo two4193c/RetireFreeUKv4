@@ -988,7 +988,7 @@ export function calculateUKTax(
     const niOnGrossAfterSacrifice = calculateStandardNI(Math.max(0, grossSalary - niReliefEligibleSacrifice));
     salarySacrificeNicSavedEmployee = Math.max(0, niOnGross - niOnGrossAfterSacrifice);
 
-    salarySacrificeNicSavedEmployer = niReliefEligibleSacrifice * EMPLOYER_NI_RATE;
+    salarySacrificeNicSavedEmployer = niReliefEligibleSacrifice * (profile.employerNiRate ?? EMPLOYER_NI_RATE);
   }
 
   const totalEmployeePensionGross = totalWorkplacePensionGross + grossSippAnnual;

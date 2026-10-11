@@ -317,6 +317,22 @@ describe('ukTaxEngine - aggregateIncome & Threshold Income Taper', () => {
     expect(result.salarySacrificeNicSavedEmployee).toBeCloseTo(120, 1);
     expect(result.salarySacrificeNicSavedEmployer).toBeCloseTo(6000 * 0.15, 1);
   });
+
+  it('uses the profile employerNiRate (e.g. legacy 13.8%) for employer NI saved', () => {
+    const profile: any = {
+      ...DEFAULT_PROFILE,
+      grossAnnualSalary: 60000,
+      pensionContributionMethod: 'salary_sacrifice',
+      employerNiRate: 0.138,
+    };
+    const pots: any = {
+      ...DEFAULT_POTS,
+      workplacePensionMonthlyEmployee: 500,
+      workplacePensionMonthlyEmployeeType: 'amount',
+    };
+    const result = calculateUKTax(profile, pots);
+    expect(result.salarySacrificeNicSavedEmployer).toBeCloseTo(6000 * 0.138, 1);
+  });
 });
 
 
