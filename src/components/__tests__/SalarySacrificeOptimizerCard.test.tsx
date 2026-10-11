@@ -66,7 +66,7 @@ describe('SalarySacrificeOptimizerCard', () => {
     expect(screen.getByText(/£15,000 \(13.0%\)/i)).toBeInTheDocument();
   });
 
-  it('toggles Employer NI rate between 13.8% and 15.0% and calls onChange', () => {
+  it('defaults Employer NI rate to 15.0% and toggles to the legacy 13.8% and back, calling onChange', () => {
     const profile = {
       ...DEFAULT_PROFILE,
       grossAnnualSalary: 80000,
@@ -81,11 +81,20 @@ describe('SalarySacrificeOptimizerCard', () => {
       />
     );
 
-    const aprilBtn = screen.getByRole('button', { name: /15.0% \(April 2025\+\)/i });
-    fireEvent.click(aprilBtn);
-
-    // Metric display should reflect 15.0%
+    // Default metric display reflects the current 15.0% rate
     expect(screen.getByText('15.0%')).toBeInTheDocument();
+
+    const legacyBtn = screen.getByRole('button', { name: /13.8% \(Pre-Apr 2025\)/i });
+    fireEvent.click(legacyBtn);
+    expect(screen.getByText('13.8%', { selector: 'span' })).toBeInTheDocument();
+    expect(handleChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        employerNiRate: 0.138,
+      })
+    );
+
+    const currentBtn = screen.getByRole('button', { name: /15.0% \(Current\)/i });
+    fireEvent.click(currentBtn);
     expect(handleChange).toHaveBeenCalledWith(
       expect.objectContaining({
         employerNiRate: 0.150,

@@ -309,8 +309,11 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
                     value={profile.pensionAccessAge ?? profile.protectedPensionAccessAge ?? primaryAccessAge}
                     onChange={(e) => {
                       const val = Number(e.target.value);
-                      updateField('pensionAccessAge', val > 0 ? val : undefined);
-                      updateField('protectedPensionAccessAge', val > 0 ? val : undefined);
+                      onChange({
+                        ...profile,
+                        pensionAccessAge: val > 0 ? val : undefined,
+                        protectedPensionAccessAge: val > 0 ? val : undefined,
+                      });
                     }}
                     placeholder={`e.g. ${primaryAccessAge}`}
                     className="w-24 px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-extrabold text-primary-600 dark:text-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
@@ -321,8 +324,11 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
                         key={age}
                         type="button"
                         onClick={() => {
-                          updateField('pensionAccessAge', age);
-                          updateField('protectedPensionAccessAge', age);
+                          onChange({
+                            ...profile,
+                            pensionAccessAge: age,
+                            protectedPensionAccessAge: age,
+                          });
                         }}
                         className={`px-2.5 py-1.5 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
                           (profile.pensionAccessAge ?? profile.protectedPensionAccessAge ?? primaryAccessAge) === age
@@ -456,8 +462,11 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
                     value={profile.partnerPensionAccessAge ?? profile.partnerProtectedPensionAccessAge ?? partnerAccessAge}
                     onChange={(e) => {
                       const val = Number(e.target.value);
-                      updateField('partnerPensionAccessAge', val > 0 ? val : undefined);
-                      updateField('partnerProtectedPensionAccessAge', val > 0 ? val : undefined);
+                      onChange({
+                        ...profile,
+                        partnerPensionAccessAge: val > 0 ? val : undefined,
+                        partnerProtectedPensionAccessAge: val > 0 ? val : undefined,
+                      });
                     }}
                     placeholder={`e.g. ${partnerAccessAge}`}
                     className="w-24 px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-extrabold text-indigo-600 dark:text-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
@@ -468,8 +477,11 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
                         key={age}
                         type="button"
                         onClick={() => {
-                          updateField('partnerPensionAccessAge', age);
-                          updateField('partnerProtectedPensionAccessAge', age);
+                          onChange({
+                            ...profile,
+                            partnerPensionAccessAge: age,
+                            partnerProtectedPensionAccessAge: age,
+                          });
                         }}
                         className={`px-2.5 py-1.5 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
                           (profile.partnerPensionAccessAge ?? profile.partnerProtectedPensionAccessAge ?? partnerAccessAge) === age
@@ -611,8 +623,11 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
                   value={profile.pensionAccessAge ?? profile.protectedPensionAccessAge ?? primaryAccessAge}
                   onChange={(e) => {
                     const val = Number(e.target.value);
-                    updateField('pensionAccessAge', val > 0 ? val : undefined);
-                    updateField('protectedPensionAccessAge', val > 0 ? val : undefined);
+                    onChange({
+                      ...profile,
+                      pensionAccessAge: val > 0 ? val : undefined,
+                      protectedPensionAccessAge: val > 0 ? val : undefined,
+                    });
                   }}
                   placeholder={`e.g. ${primaryAccessAge}`}
                   className="w-24 px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-extrabold text-primary-600 dark:text-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
@@ -623,8 +638,11 @@ export const ProfileInputs: React.FC<ProfileInputsProps> = ({ profile, onChange,
                       key={age}
                       type="button"
                       onClick={() => {
-                        updateField('pensionAccessAge', age);
-                        updateField('protectedPensionAccessAge', age);
+                        onChange({
+                          ...profile,
+                          pensionAccessAge: age,
+                          protectedPensionAccessAge: age,
+                        });
                       }}
                       className={`px-2.5 py-1.5 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
                         (profile.pensionAccessAge ?? profile.protectedPensionAccessAge ?? primaryAccessAge) === age

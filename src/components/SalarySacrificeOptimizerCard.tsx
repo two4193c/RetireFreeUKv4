@@ -85,10 +85,10 @@ export const SalarySacrificeOptimizerCard: React.FC<SalarySacrificeOptimizerCard
     ? (profile.partnerEmployerNiPassThroughPercent ?? 0)
     : (profile.employerNiPassThroughPercent ?? 0);
   const defaultNiRate = isPartner
-    ? (profile.partnerEmployerNiRate ?? 0.138)
-    : (profile.employerNiRate ?? 0.138);
+    ? (profile.partnerEmployerNiRate ?? 0.15)
+    : (profile.employerNiRate ?? 0.15);
 
-  const [employerNiRate, setEmployerNiRate] = useState<number>(defaultNiRate); // 13.8% or 0.150 (15.0%)
+  const [employerNiRate, setEmployerNiRate] = useState<number>(defaultNiRate); // 15.0% (current) or 0.138 (13.8%, pre-April 2025)
   const [employerPassThroughPercent, setEmployerPassThroughPercent] = useState<number>(defaultPassThrough); // 0%, 50%, 100% (default 0%)
   const [claimChildBenefit, setClaimChildBenefit] = useState<boolean>(false);
   const [childBenefitChildren, setChildBenefitChildren] = useState<number>(2);
@@ -115,8 +115,8 @@ export const SalarySacrificeOptimizerCard: React.FC<SalarySacrificeOptimizerCard
     setEmployerPassThroughPercent(currentPassThrough);
 
     const currentNiRate = isPartner
-      ? (profile.partnerEmployerNiRate ?? 0.138)
-      : (profile.employerNiRate ?? 0.138);
+      ? (profile.partnerEmployerNiRate ?? 0.15)
+      : (profile.employerNiRate ?? 0.15);
     setEmployerNiRate(currentNiRate);
   }, [
     defaultSalary,
@@ -186,8 +186,8 @@ export const SalarySacrificeOptimizerCard: React.FC<SalarySacrificeOptimizerCard
     setEmployerPassThroughPercent(personPassThrough);
 
     const personRate = person === 'partner'
-      ? (profile.partnerEmployerNiRate ?? 0.138)
-      : (profile.employerNiRate ?? 0.138);
+      ? (profile.partnerEmployerNiRate ?? 0.15)
+      : (profile.employerNiRate ?? 0.15);
     setEmployerNiRate(personRate);
 
     setYearsToRetirement(Math.max(1, newRetAge - newCurrentAge));
@@ -337,7 +337,7 @@ export const SalarySacrificeOptimizerCard: React.FC<SalarySacrificeOptimizerCard
               </div>
               <p className="text-xs sm:text-sm text-emerald-100 mt-1 max-w-2xl leading-relaxed">
                 Compare Relief at Source (RAS) against Salary Sacrifice, capture employee NI savings (8% / 2%),
-                and amplify your pension with employer NI rebates (13.8% or 15.0%).
+                and amplify your pension with employer NI rebates (15.0% from April 2025; 13.8% before).
               </p>
             </div>
           </div>
@@ -714,7 +714,7 @@ export const SalarySacrificeOptimizerCard: React.FC<SalarySacrificeOptimizerCard
                       : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100'
                   }`}
                 >
-                  13.8% (Current)
+                  13.8% (Pre-Apr 2025)
                 </button>
                 <button
                   type="button"
@@ -725,7 +725,7 @@ export const SalarySacrificeOptimizerCard: React.FC<SalarySacrificeOptimizerCard
                       : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100'
                   }`}
                 >
-                  15.0% (April 2025+)
+                  15.0% (Current)
                 </button>
               </div>
             </div>

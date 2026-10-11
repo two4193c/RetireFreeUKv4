@@ -195,7 +195,7 @@ export const TaxGuideCard: React.FC = () => {
             <ul className="list-disc list-inside space-y-1 text-slate-600 dark:text-slate-400">
               <li>Saves Income Tax (20%, 40%, or 45%)</li>
               <li>Saves Employee National Insurance (8% or 2%)</li>
-              <li>Employer saves 13.8% Employer NI (often passed back as extra contribution)</li>
+              <li>Employer saves 15% Employer NI (often passed back as extra contribution)</li>
             </ul>
           </div>
 

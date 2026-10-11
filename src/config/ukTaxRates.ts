@@ -24,7 +24,7 @@ export const SCOT_ADVANCED_THRESHOLD = 125_140;
 export const SCOT_TOP_RATE = 0.48;
 
 // National Insurance
-export const EMPLOYER_NI_RATE = 0.138;
+export const EMPLOYER_NI_RATE = 0.15; // 15% from April 2025 (was 13.8%)
 export const EMPLOYEE_NI_RATE = 0.08;
 export const NI_PRIMARY_THRESHOLD = 12_570;
 export const NI_UPPER_EARNINGS_LIMIT = 50_270;
@@ -40,7 +40,7 @@ export const PCLS_RECYCLING_THRESHOLD = 7_500;
 export const PCLS_RECYCLING_PERCENTAGE = 0.30;
 
 // State Pension
-export const STATE_PENSION_FULL_ANNUAL = 11_973.00; // 2025/26 full new State Pension
+export const STATE_PENSION_FULL_ANNUAL = 12_547.60; // 2026/27 full new State Pension (£241.30/wk)
 
 // NMPA
 export const NMPA_CURRENT = 55;

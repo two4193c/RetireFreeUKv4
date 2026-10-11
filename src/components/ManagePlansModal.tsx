@@ -460,7 +460,7 @@ export const ManagePlansModal: React.FC<ManagePlansModalProps> = ({
                               <span>•</span>
                               <span>Retire Age {s.profile?.targetRetirementAge ?? 60}</span>
                               <span>•</span>
-                              <span>Target Spend £{(Number(s.profile?.targetAnnualSpendNet) || 0).toLocaleString()}/yr</span>
+                              <span>Target Spend £{(Number(s.profile?.targetRetirementIncomeAnnual ?? (s.profile as any)?.targetAnnualSpendNet) || 0).toLocaleString()}/yr</span>
                               {updatedDateStr && (
                                 <>
                                   <span>•</span>

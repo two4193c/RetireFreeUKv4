@@ -86,7 +86,7 @@ export const AiTaxAdvisorModal: React.FC<AiTaxAdvisorModalProps> = ({
     }
 
     return {
-      summary: `Your retirement plan is projected to reach £${(projectedAtRetirement?.totalPot || 0).toLocaleString()} at age ${profile.targetRetirementAge}. Marginal tax rate is ${marginalRate}%. Total annual tax relief gained: £${(taxResult?.totalTaxReliefGained || 0).toLocaleString()}/yr.`,
+      summary: `Your retirement plan is projected to reach £${(projectedAtRetirement?.totalPot || 0).toLocaleString()} at age ${profile.targetRetirementAge}. Marginal tax rate is ${marginalRate}%. Total annual tax relief gained: £${(taxResult?.totalPensionTaxRelief || (taxResult as any)?.totalTaxReliefGained || 0).toLocaleString()}/yr.`,
       taxEfficiencyScore: Math.max(40, score),
       keyOpportunities: opportunities,
       taxTrapAdvice,

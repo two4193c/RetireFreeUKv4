@@ -198,7 +198,7 @@ export function getScopeEvaluationInputs(
     evalProfile.enableTripleLock = profileInput.partnerEnableTripleLock ?? profileInput.enableTripleLock;
     evalProfile.pensionContributionMethod = profileInput.partnerPensionContributionMethod ?? profileInput.pensionContributionMethod;
     evalProfile.employerNiPassThroughPercent = profileInput.partnerEmployerNiPassThroughPercent ?? 0;
-    evalProfile.employerNiRate = profileInput.partnerEmployerNiRate ?? 0.138;
+    evalProfile.employerNiRate = profileInput.partnerEmployerNiRate ?? 0.15;
     evalProfile.hasTriggeredMpaa = profileInput.partnerHasTriggeredMpaa ?? false;
     evalProfile.carryForwardAllowance = profileInput.partnerCarryForwardAllowance ?? 0;
     evalProfile.pensionAccessAge = profileInput.partnerPensionAccessAge ?? profileInput.pensionAccessAge;

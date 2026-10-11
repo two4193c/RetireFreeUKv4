@@ -93,11 +93,16 @@ export const WithdrawalGuardrailGaugeCard: React.FC<WithdrawalGuardrailGaugeCard
         guaranteedIncomeAtRetirement += baseSp * priDefBoost;
       }
     }
+    const partnerOffset =
+      profile.isCouplePlanning && profile.partnerCurrentAge !== undefined
+        ? profile.partnerCurrentAge - (profile.currentAge || 0)
+        : 0;
+    const partnerAgeAtRet = retAge + partnerOffset;
+
     if (profile.isCouplePlanning && (profile.partnerIncludeStatePension ?? true)) {
-      const pRetAge = profile.partnerTargetRetirementAge || retAge;
       const partDefYears = profile.partnerStatePensionDeferralYears || 0;
       const partDefBoost = 1 + (0.058 * partDefYears);
-      if (pRetAge >= ((profile.partnerStatePensionAge || 67) + partDefYears)) {
+      if (partnerAgeAtRet >= ((profile.partnerStatePensionAge || 67) + partDefYears)) {
         const yrs = Math.min(35, profile.partnerQualifyingYears ?? 35);
         if (yrs >= 10) {
           const baseSp = profile.partnerStatePensionAmountAnnual ?? (Math.round((yrs / 35) * (profile.partnerFullStatePensionAmount ?? 12547.6) * 100) / 100);
@@ -108,13 +113,13 @@ export const WithdrawalGuardrailGaugeCard: React.FC<WithdrawalGuardrailGaugeCard
 
     // DB Pensions
     (profile.dbPensions || []).filter(p => p.enabled && (profile.isCouplePlanning || p.owner !== 'partner')).forEach(p => {
-      const evalAge = p.owner === 'partner' ? (profile.partnerTargetRetirementAge || retAge) : retAge;
+      const evalAge = p.owner === 'partner' ? partnerAgeAtRet : retAge;
       if (evalAge >= p.startAge) guaranteedIncomeAtRetirement += p.annualIncome;
     });
 
     // Fixed Income
     (profile.fixedIncomeStreams || []).filter(s => s.enabled && (profile.isCouplePlanning || s.owner !== 'partner')).forEach(s => {
-      const evalAge = s.owner === 'partner' ? (profile.partnerTargetRetirementAge || retAge) : retAge;
+      const evalAge = s.owner === 'partner' ? partnerAgeAtRet : retAge;
       if (evalAge >= s.startAge && (!s.endAge || evalAge <= s.endAge)) guaranteedIncomeAtRetirement += s.annualAmount;
     });
 

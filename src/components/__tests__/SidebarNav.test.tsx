@@ -1,5 +1,9 @@
-import { describe, it, expect } from 'vitest';
-import { NAV_STRUCTURE, getFilteredNavStructure } from '../SidebarNav';
+import React from 'react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { SidebarNav, NAV_STRUCTURE, getFilteredNavStructure } from '../SidebarNav';
+import { PRESET_SCENARIOS } from '../../utils/defaultData';
+import { DashboardTab } from '../../types';
 
 describe('SidebarNav menu configuration', () => {
   it('has renamed tabs and reordered tabs in NAV_STRUCTURE', () => {
@@ -96,5 +100,218 @@ describe('SidebarNav menu configuration', () => {
     expect(stratAnalysisTab?.cards[2]?.label).toBe('Personalized Withdrawal Rate (PWR) Metric');
     expect(stratAnalysisTab?.cards[3]?.id).toBe('card-swr-uk-us-benchmark');
     expect(stratAnalysisTab?.cards[3]?.label).toBe('Bengen (US) vs UK Domestic Market Benchmark');
+  });
+});
+
+describe('SidebarNav component interactivity', () => {
+  beforeEach(() => {
+    window.scrollTo = vi.fn();
+  });
+
+  const defaultProps = {
+    appName: 'RetireFree UK',
+    activeTab: 'inputs' as DashboardTab,
+    onSelectTab: vi.fn(),
+    isCollapsed: false,
+    onToggleCollapse: vi.fn(),
+    theme: 'light' as const,
+    onToggleTheme: vi.fn(),
+    scenarios: PRESET_SCENARIOS,
+    activeScenarioId: PRESET_SCENARIOS[0].id,
+    onSelectScenario: vi.fn(),
+    onNewScenario: vi.fn(),
+    onSaveScenario: vi.fn(),
+  };
+
+  it('renders sidebar with app name and groups', () => {
+    render(<SidebarNav {...defaultProps} />);
+
+    expect(screen.getAllByText('RetireFree UK').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Input & Accumulation').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('Drawdown Planning')).toBeInTheDocument();
+  });
+
+  it('selects a tab when an inactive tab header is clicked', () => {
+    const onSelectTab = vi.fn();
+    render(<SidebarNav {...defaultProps} onSelectTab={onSelectTab} />);
+
+    const strategyTabButton = screen.getByText('Drawdown Planning');
+    fireEvent.click(strategyTabButton);
+
+    expect(onSelectTab).toHaveBeenCalledWith('strategy');
+  });
+
+  it('collapses an active tab group on click in standard mode', () => {
+    const onSelectTab = vi.fn();
+    render(<SidebarNav {...defaultProps} activeTab="inputs" onSelectTab={onSelectTab} />);
+
+    // Since 'inputs' starts open, sub-items like 'Planning Mode' are visible
+    expect(screen.getByText('Planning Mode')).toBeInTheDocument();
+
+    // Click inputs header inside aside navigation
+    const aside = screen.getByRole('complementary');
+    const inputsHeader = within(aside).getByText('Input & Accumulation');
+    fireEvent.click(inputsHeader);
+
+    // Should not call onSelectTab because it collapses in non-studio mode
+    expect(onSelectTab).not.toHaveBeenCalled();
+    // 'Planning Mode' should be hidden now
+    expect(screen.queryByText('Planning Mode')).not.toBeInTheDocument();
+  });
+
+  it('re-triggers onSelectTab in studio mode even when open', () => {
+    const onSelectTab = vi.fn();
+    render(
+      <SidebarNav
+        {...defaultProps}
+        activeTab="inputs"
+        appMode="studio"
+        onSelectTab={onSelectTab}
+      />
+    );
+
+    const aside = screen.getByRole('complementary');
+    const inputsHeader = within(aside).getByText('Input & Accumulation');
+    fireEvent.click(inputsHeader);
+
+    expect(onSelectTab).toHaveBeenCalledWith('inputs');
+  });
+
+  it('handles clicking a sub-card item', () => {
+    const onSelectCard = vi.fn();
+    render(
+      <SidebarNav
+        {...defaultProps}
+        activeTab="inputs"
+        onSelectCard={onSelectCard}
+      />
+    );
+
+    const planningModeCard = screen.getByText('Planning Mode');
+    fireEvent.click(planningModeCard);
+
+    expect(onSelectCard).toHaveBeenCalledWith('inputs', 'card-inputs-couple');
+  });
+
+  it('handles card-other-taxrules triggering onOpenGuide', () => {
+    const onOpenGuide = vi.fn();
+    const onSelectCard = vi.fn();
+    render(
+      <SidebarNav
+        {...defaultProps}
+        activeTab="inputs"
+        onOpenGuide={onOpenGuide}
+        onSelectCard={onSelectCard}
+      />
+    );
+
+    // Expand documentation group
+    const docHeader = screen.getByText('Documentation');
+    fireEvent.click(docHeader);
+
+    // Look for a sub card if rendered
+    expect(onSelectCard).not.toHaveBeenCalled();
+  });
+
+  it('expands and collapses all groups via quick action buttons', () => {
+    render(<SidebarNav {...defaultProps} activeTab="inputs" />);
+
+    const expandAllBtn = screen.getByRole('button', { name: /Expand all menu groups/i });
+    const collapseAllBtn = screen.getByRole('button', { name: /Collapse all menu groups/i });
+
+    // Expand all
+    fireEvent.click(expandAllBtn);
+    expect(screen.getByText('Drawdown Strategy Planner')).toBeInTheDocument();
+
+    // Collapse all
+    fireEvent.click(collapseAllBtn);
+    expect(screen.queryByText('Drawdown Strategy Planner')).not.toBeInTheDocument();
+    expect(screen.queryByText('Planning Mode')).not.toBeInTheDocument();
+  });
+
+  it('toggles desktop sidebar collapse', () => {
+    const onToggleCollapse = vi.fn();
+    render(<SidebarNav {...defaultProps} onToggleCollapse={onToggleCollapse} isCollapsed={false} />);
+
+    const collapseBtn = screen.getByRole('button', { name: /Collapse Sidebar Menu/i });
+    fireEvent.click(collapseBtn);
+
+    expect(onToggleCollapse).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders collapsed state with expand button', () => {
+    const onToggleCollapse = vi.fn();
+    render(<SidebarNav {...defaultProps} onToggleCollapse={onToggleCollapse} isCollapsed={true} />);
+
+    const expandBtn = screen.getByRole('button', { name: /Expand Sidebar Menu/i });
+    expect(expandBtn).toBeInTheDocument();
+
+    fireEvent.click(expandBtn);
+    expect(onToggleCollapse).toHaveBeenCalledTimes(1);
+  });
+
+  it('switches app mode via bottom mode switcher buttons', () => {
+    const onSetAppMode = vi.fn();
+    render(<SidebarNav {...defaultProps} appMode="basic" onSetAppMode={onSetAppMode} />);
+
+    const advancedBtn = screen.getByRole('button', { name: /Advanced/i });
+    fireEvent.click(advancedBtn);
+    expect(onSetAppMode).toHaveBeenCalledWith('advanced');
+
+    const studioBtn = screen.getByRole('button', { name: /Studio/i });
+    fireEvent.click(studioBtn);
+    expect(onSetAppMode).toHaveBeenCalledWith('studio');
+
+    const basicBtn = screen.getByRole('button', { name: /Basic/i });
+    fireEvent.click(basicBtn);
+    expect(onSetAppMode).toHaveBeenCalledWith('basic');
+  });
+
+  it('triggers theme toggle, save plan, and tour callbacks', () => {
+    const onToggleTheme = vi.fn();
+    const onSaveScenario = vi.fn();
+    const onStartTour = vi.fn();
+
+    render(
+      <SidebarNav
+        {...defaultProps}
+        onToggleTheme={onToggleTheme}
+        onSaveScenario={onSaveScenario}
+        onStartTour={onStartTour}
+      />
+    );
+
+    const themeBtn = screen.getByRole('button', { name: /Appearance Options/i });
+    fireEvent.click(themeBtn);
+    expect(onToggleTheme).toHaveBeenCalledTimes(1);
+
+    const saveBtn = screen.getByRole('button', { name: /Save active plan/i });
+    fireEvent.click(saveBtn);
+    expect(onSaveScenario).toHaveBeenCalledTimes(1);
+
+    const tourBtn = screen.getByTitle(/Start Guided Tour/i);
+    fireEvent.click(tourBtn);
+    expect(onStartTour).toHaveBeenCalledTimes(1);
+  });
+
+  it('toggles mobile menu drawer', () => {
+    render(<SidebarNav {...defaultProps} />);
+
+    const aside = screen.getByRole('complementary');
+    expect(aside.className).toContain('-translate-x-full');
+
+    // Mobile bar button has the app name
+    const mobileMenuBtn = screen.getAllByText('RetireFree UK')[0].closest('button')!;
+    fireEvent.click(mobileMenuBtn);
+
+    // Mobile menu is open: aside should be translated into view
+    expect(aside.className).toContain('translate-x-0');
+
+    // Mobile close button inside aside header
+    const closeBtn = screen.getByRole('button', { name: /Close Mobile Menu/i });
+    fireEvent.click(closeBtn);
+
+    // After closing, aside should translate out
+    expect(aside.className).toContain('-translate-x-full');
   });
 });

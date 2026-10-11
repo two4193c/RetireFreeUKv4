@@ -163,7 +163,7 @@ export const DEFAULT_PROFILE: UserProfile = {
   customTaxBands: DEFAULT_CUSTOM_TAX_BANDS,
   pensionContributionMethod: 'salary_sacrifice',
   employerNiPassThroughPercent: 0,
-  employerNiRate: 0.138,
+  employerNiRate: 0.15,
   targetRetirementIncomeAnnual: 32000, // in today's money
   essentialRetirementIncomeAnnual: 20800, // Essential spending floor (65% of target)
   spendingPhases: {

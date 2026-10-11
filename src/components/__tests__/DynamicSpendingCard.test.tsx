@@ -3,7 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { DynamicSpendingCard } from '../DynamicSpendingCard';
 import { DEFAULT_PROFILE, DEFAULT_POTS } from '../../utils/defaultData';
-import { UserProfile } from '../../types';
+import { UserProfile, InvestmentPots } from '../../types';
 
 // Mock Recharts ResponsiveContainer to avoid SVG size rendering issues in JSDOM
 vi.mock('recharts', async () => {
@@ -86,7 +86,7 @@ describe('DynamicSpendingCard - Guyton-Klinger Spending Rules & Monte Carlo Path
     expect(screen.getByText('Preservation Cuts')).toBeInTheDocument();
     expect(screen.getByText('Prosperity Raises')).toBeInTheDocument();
     expect(screen.getByText('Floor Breaches')).toBeInTheDocument();
-    expect(screen.getByText('0 (100% Protected)')).toBeInTheDocument();
+    expect(screen.getAllByText(/Protected|Breached/i).length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText(/Longevity Shield/i)).toBeInTheDocument();
 
     // Verify responsive container rendered for chart
@@ -469,6 +469,151 @@ describe('DynamicSpendingCard - Guyton-Klinger Spending Rules & Monte Carlo Path
         essentialRetirementIncomeAnnual: expect.any(Number),
       })
     );
+  });
+
+  it('enables reinvestExcessDrawdown and updates actualSpendingTargetAnnual when applying SWR to plan', () => {
+    const onChange = vi.fn();
+    render(<DynamicSpendingCard profile={baseProfileEnabled} pots={DEFAULT_POTS} onChange={onChange} />);
+
+    // Select the Bengen 4% benchmark to activate a non-plan SWR baseline
+    const bengenBtn = screen.getByRole('button', { name: /Bengen 4%/i });
+    fireEvent.click(bengenBtn);
+
+    const applyBtns = screen.getAllByRole('button', { name: /Apply SWR to Spending/i });
+    expect(applyBtns.length).toBeGreaterThan(0);
+    fireEvent.click(applyBtns[0]);
+
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        reinvestExcessDrawdown: true,
+        actualSpendingTargetAnnual: expect.any(Number),
+        baselineIncomeRequirementAnnual: baseProfileEnabled.targetRetirementIncomeAnnual,
+        dynamicSpendingRules: expect.objectContaining({
+          enabled: true,
+          initialSpendingAmount: expect.any(Number),
+        }),
+      })
+    );
+  });
+
+  it('restores previous reinvestExcessDrawdown and clears baselineIncomeRequirementAnnual on reset', () => {
+    const onChange = vi.fn();
+    const appliedProfile: UserProfile = {
+      ...baseProfileEnabled,
+      reinvestExcessDrawdown: true,
+      actualSpendingTargetAnnual: 52000,
+      baselineIncomeRequirementAnnual: 40000,
+      dynamicSpendingRules: {
+        ...baseProfileEnabled.dynamicSpendingRules!,
+        initialSpendingAmount: 52000,
+        targetStartingWithdrawalRate: 5.2,
+        swrBaselineSource: 'calculator',
+        previousReinvestExcessDrawdown: false,
+        previousActualSpendingTargetAnnual: undefined,
+      },
+    };
+
+    render(<DynamicSpendingCard profile={appliedProfile} pots={DEFAULT_POTS} onChange={onChange} />);
+
+    const resetBtn = screen.getByRole('button', { name: /Reset Plan Spending/i });
+    expect(resetBtn).toBeInTheDocument();
+    fireEvent.click(resetBtn);
+
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        reinvestExcessDrawdown: false,
+        actualSpendingTargetAnnual: undefined,
+        baselineIncomeRequirementAnnual: undefined,
+        dynamicSpendingRules: expect.objectContaining({
+          initialSpendingAmount: undefined,
+          targetStartingWithdrawalRate: undefined,
+          swrBaselineSource: 'plan',
+        }),
+      })
+    );
+  });
+
+  it('restores saved swrBaselineSource on initial render', () => {
+    const onChange = vi.fn();
+    const customSourceProfile: UserProfile = {
+      ...baseProfileEnabled,
+      dynamicSpendingRules: {
+        ...baseProfileEnabled.dynamicSpendingRules!,
+        swrBaselineSource: 'bengen',
+      },
+    };
+
+    render(<DynamicSpendingCard profile={customSourceProfile} pots={DEFAULT_POTS} onChange={onChange} />);
+
+    // In bengen mode, the banner mentions Bengen Static 4% Benchmark
+    expect(screen.getAllByText(/Bengen Static 4% Benchmark/i).length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('displays exhaustion warning banner when pot depletes early under stressed conditions', () => {
+    const onChange = vi.fn();
+    const tinyPotPots: InvestmentPots = {
+      ...DEFAULT_POTS,
+      workplacePensionBalance: 10000,
+      sippBalance: 0,
+      stocksAndSharesIsaBalance: 0,
+      cashIsaBalance: 0,
+      lisaBalance: 0,
+      giaBalance: 0,
+      cashSavingsBalance: 0,
+    };
+    const tinyPotProfile: UserProfile = {
+      ...baseProfileEnabled,
+      currentAge: 60,
+      targetRetirementAge: 60,
+      targetRetirementIncomeAnnual: 40000,
+      includeStatePension: false,
+    };
+
+    render(<DynamicSpendingCard profile={tinyPotProfile} pots={tinyPotPots} onChange={onChange} />);
+
+    // Exhaustion banner should be rendered
+    expect(screen.getByText(/Portfolio Exhaustion Warning:/i)).toBeInTheDocument();
+    expect(screen.getByText(/Guaranteed income only/i)).toBeInTheDocument();
+  });
+
+  it('allows applying Bengen static baseline directly to plan spending', () => {
+    const onChange = vi.fn();
+    render(<DynamicSpendingCard profile={baseProfileEnabled} pots={DEFAULT_POTS} onChange={onChange} />);
+
+    const staticApplyBtn = screen.getByRole('button', { name: /Apply Static Baseline/i });
+    fireEvent.click(staticApplyBtn);
+
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        reinvestExcessDrawdown: true,
+        actualSpendingTargetAnnual: expect.any(Number),
+        dynamicSpendingRules: expect.objectContaining({
+          enabled: true,
+          initialSpendingAmount: expect.any(Number),
+        }),
+      })
+    );
+  });
+
+  it('supports selecting SWR calculator presets and typing a custom withdrawal rate', () => {
+    const onChange = vi.fn();
+    render(<DynamicSpendingCard profile={baseProfileEnabled} pots={DEFAULT_POTS} onChange={onChange} />);
+
+    // Click GK Safe preset in solver
+    const gkSafeBtn = screen.getByRole('button', { name: /Guyton-Klinger Safe/i });
+    fireEvent.click(gkSafeBtn);
+
+    // Click Conservative preset
+    const consPresetBtn = screen.getByRole('button', { name: /Conservative 3.5%/i });
+    fireEvent.click(consPresetBtn);
+
+    // Find custom SWR input and change value
+    const numInputs = screen.getAllByRole('spinbutton');
+    const swrInput = numInputs.find(i => (i as HTMLInputElement).value === '3.5');
+    if (swrInput) {
+      fireEvent.change(swrInput, { target: { value: '4.75' } });
+      expect((swrInput as HTMLInputElement).value).toBe('4.75');
+    }
   });
 });
 

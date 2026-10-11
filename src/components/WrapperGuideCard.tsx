@@ -141,7 +141,7 @@ export const WrapperGuideCard: React.FC = () => {
           <span>Why Salary Sacrifice Beats Personal Pension / SIPP for Employees</span>
         </div>
         <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-          Under Salary Sacrifice (Smart Pensions), you formally reduce your gross salary in exchange for employer pension contributions. This saves <strong>Employee National Insurance (8% basic rate / 2% higher rate)</strong> in addition to Income Tax, and allows employers to pass back their <strong>13.8% Employer NI savings</strong> into your pension pot.
+          Under Salary Sacrifice (Smart Pensions), you formally reduce your gross salary in exchange for employer pension contributions. This saves <strong>Employee National Insurance (8% basic rate / 2% higher rate)</strong> in addition to Income Tax, and allows employers to pass back their <strong>15% Employer NI savings</strong> into your pension pot.
         </p>
       </div>
 
@@ -201,7 +201,7 @@ export const WrapperGuideCard: React.FC = () => {
               <ul className="space-y-1.5 text-slate-600 dark:text-slate-300 list-disc pl-4">
                 <li><strong>When employer offers pension matching</strong>: 100% employer match far beats 25% LISA bonus.</li>
                 <li><strong>Higher (40%) or Additional (45%) Rate taxpayers</strong>: 40%–45% pension tax relief significantly beats 25% LISA.</li>
-                <li><strong>Salary Sacrifice available</strong>: Saving Employee NI (8%/2%) + Employer NI (13.8%) makes pension superior.</li>
+                <li><strong>Salary Sacrifice available</strong>: Saving Employee NI (8%/2%) + Employer NI (15%) makes pension superior.</li>
                 <li><strong>Retiring before age 60</strong>: Locked until 60; early access triggers 25% penalty. Use standard ISA for pre-57 bridge.</li>
               </ul>
             </div>

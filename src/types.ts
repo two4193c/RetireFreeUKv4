@@ -369,6 +369,9 @@ export interface DynamicSpendingRules {
   targetStartingWithdrawalRate?: number; // e.g. 5.2 (%)
   initialSpendingAmount?: number; // e.g. £52,000 (£/yr)
   swrBaselineSource?: 'plan' | 'calculator' | 'gk_optimal' | 'bengen' | 'conservative';
+  // Snapshot of settings before "Apply to plan" enabled reinvestExcessDrawdown, restored on reset
+  previousReinvestExcessDrawdown?: boolean;
+  previousActualSpendingTargetAnnual?: number;
 }
 
 export type MarketScenario = 'standard' | 'stressed' | 'early_crash';
@@ -415,6 +418,7 @@ export interface UserProfile {
   partnerDateOfBirth?: string;
   partnerCurrentAge?: number;
   partnerTargetRetirementAge?: number;
+  /** @deprecated Legacy alias read only as a fallback; use partnerTargetRetirementAge. */
   partnerRetirementAge?: number;
   partnerTargetRetirementDate?: string;
   partnerTargetRetirementInputMode?: 'age' | 'date';

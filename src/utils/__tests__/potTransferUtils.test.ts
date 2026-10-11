@@ -344,5 +344,63 @@ describe('potTransferUtils', () => {
       expect(balanceOver50).toBeLessThan(10400);
       expect(balanceOver50).toBeGreaterThan(10200);
     });
+
+    it('handles active regular one-off contributions for workplace pension and SIPP', () => {
+      const profileWithRegularOneOffs: UserProfile = {
+        ...baseProfile,
+        currentAge: 45,
+        targetRetirementAge: 60,
+        grossAnnualSalary: 60000,
+        oneOffContributions: [
+          {
+            id: 'wp-fixed',
+            name: 'Extra Workplace Fixed',
+            targetPot: 'workplace_pension',
+            frequency: 'regular_monthly',
+            workplaceContributionType: 'fixed',
+            employeeMonthlyAmount: 200,
+            employerMonthlyAmount: 100,
+            grossAmount: 300,
+            enabled: true,
+          },
+          {
+            id: 'sipp-reg',
+            name: 'Regular SIPP',
+            targetPot: 'sipp',
+            frequency: 'regular_monthly',
+            sippContributionType: 'net', // adds 25% tax relief
+            grossAmount: 400,
+            enabled: true,
+          },
+        ],
+      };
+
+      // Test workplace pension projection with fixed regular one-off
+      const wpBalance = getProjectedPotBalance(
+        profileWithRegularOneOffs,
+        DEFAULT_POTS,
+        'primary',
+        'workplace_pension',
+        2027,
+        '2027-03-01',
+        undefined,
+        fixedNow
+      );
+      expect(wpBalance).toBeGreaterThan(DEFAULT_POTS.workplacePensionBalance);
+
+      // Test SIPP projection with net regular one-off
+      const sippBalance = getProjectedPotBalance(
+        profileWithRegularOneOffs,
+        DEFAULT_POTS,
+        'primary',
+        'sipp',
+        2027,
+        '2027-03-01',
+        undefined,
+        fixedNow
+      );
+      expect(sippBalance).toBeGreaterThan(DEFAULT_POTS.sippBalance);
+    });
   });
 });
+

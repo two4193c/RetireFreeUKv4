@@ -203,7 +203,7 @@ export function calculateGiltLadder(
   const personDOB = isPartner ? profile.partnerDateOfBirth : profile.dateOfBirth;
 
   const purchaseAge = Math.max(personCurrentAge, config.purchaseAge || config.startAge || personRetireAge);
-  const durationYears = config.durationYears
+  const durationYears = config.durationYears !== undefined
     ? config.durationYears
     : config.endAge
     ? Math.max(1, config.endAge - purchaseAge)

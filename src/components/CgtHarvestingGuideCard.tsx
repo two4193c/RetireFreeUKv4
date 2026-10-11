@@ -32,7 +32,7 @@ export const CgtHarvestingGuideCard: React.FC = () => {
           <span>Reduced £3,000 Annual Exempt Amount (2024/25 Onwards)</span>
         </div>
         <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-          The UK Capital Gains Tax allowance has been slashed from £12,300 to just <strong>£3,000 per person per tax year</strong>. Gains above £3,000 are taxed at 10% (basic rate) or 20% (higher rate) for shares/funds, and 18%/24% for residential property.
+          The UK Capital Gains Tax allowance has been slashed from £12,300 to just <strong>£3,000 per person per tax year</strong>. Gains above £3,000 are taxed at 18% (basic rate) or 24% (higher rate) for all assets, including shares, funds and property.
         </p>
       </div>
 

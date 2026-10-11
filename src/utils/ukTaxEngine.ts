@@ -1591,10 +1591,9 @@ export function calculateDividendTax(
 }
 
 /**
- * Calculates UK Capital Gains Tax (CGT) for 2024/25 tax year.
+ * Calculates UK Capital Gains Tax (CGT) (rates in force from 30 Oct 2024).
  * - Annual Exempt Amount (AEA): £3,000
- * - Standard Assets (GIA stocks/bonds): 10% basic / 20% higher
- * - Residential Property Assets: 18% basic / 24% higher
+ * - All assets (shares, funds, property): 18% basic / 24% higher
  */
 export function calculateCapitalGainsTax(
   taxableIncome: number,
@@ -1617,8 +1616,11 @@ export function calculateCapitalGainsTax(
   // CGT is NOT devolved to Scotland. Always use UK-wide basic rate ceiling.
   // CGT does not use Personal Allowance, so the threshold is strictly taxable income (37700).
   const basicRateCeiling = 37700 + grossRasToExtendBand;
-  const basicRate = isResidentialProperty ? 0.18 : 0.10;
-  const higherRate = isResidentialProperty ? 0.24 : 0.20;
+  // From 30 Oct 2024 CGT is 18% / 24% for all asset classes (shares, funds and property alike).
+  // `isResidentialProperty` is retained for API compatibility but no longer alters the rate.
+  void isResidentialProperty;
+  const basicRate = 0.18;
+  const higherRate = 0.24;
 
   let cgtTax = 0;
   if (taxableIncome >= basicRateCeiling) {

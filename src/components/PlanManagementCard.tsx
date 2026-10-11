@@ -229,7 +229,7 @@ export const PlanManagementCard: React.FC<PlanManagementCardProps> = ({
                         <span>•</span>
                         <span>Retirement Age {s.profile?.targetRetirementAge ?? 60}</span>
                         <span>•</span>
-                        <span>Target Spend £{(Number(s.profile?.targetAnnualSpendNet) || 0).toLocaleString()}/yr</span>
+                        <span>Target Spend £{(Number(s.profile?.targetRetirementIncomeAnnual ?? (s.profile as any)?.targetAnnualSpendNet) || 0).toLocaleString()}/yr</span>
                       </p>
                     </div>
                   )}

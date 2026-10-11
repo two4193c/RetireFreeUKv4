@@ -315,7 +315,7 @@ describe('ukTaxEngine - aggregateIncome & Threshold Income Taper', () => {
     // NI on £54,000 = (50270 - 12570) * 0.08 + (54000 - 50270) * 0.02 = 3016 + 74.6 = 3090.6
     // NI saved = 120 (since £6,000 sacrifice is entirely above upper earnings limit of £50,270, saved at 2% = £120)
     expect(result.salarySacrificeNicSavedEmployee).toBeCloseTo(120, 1);
-    expect(result.salarySacrificeNicSavedEmployer).toBeCloseTo(6000 * 0.138, 1);
+    expect(result.salarySacrificeNicSavedEmployer).toBeCloseTo(6000 * 0.15, 1);
   });
 });
 
@@ -447,12 +447,12 @@ describe('ukTaxEngine - Tapering edge cases', () => {
 });
 
 describe('ukTaxEngine - Capital Gains Tax', () => {
-  it('calculates CGT for non-residential assets (10% basic, 20% higher)', () => {
+  it('calculates CGT for non-residential assets (18% basic, 24% higher since 30 Oct 2024)', () => {
     const basicResult = calculateCapitalGainsTax(20000, 10000, false);
-    expect(basicResult.cgtTax).toBe(7000 * 0.10);
+    expect(basicResult.cgtTax).toBe(7000 * 0.18);
 
     const higherResult = calculateCapitalGainsTax(40000, 10000, false);
-    expect(higherResult.cgtTax).toBe(7000 * 0.20);
+    expect(higherResult.cgtTax).toBe(7000 * 0.24);
   });
 
   it('calculates CGT for residential property (18% basic, 24% higher)', () => {

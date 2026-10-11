@@ -42,7 +42,12 @@ import {
   Tooltip,
   Legend,
 } from 'recharts';
-import { getActualSpendingTargetForAge } from '../utils/projectionEngine';
+import { getActualSpendingTargetForAge, getEssentialFloorForAge } from '../utils/projectionEngine';
+import {
+  simulateGuytonKlinger,
+  getGuaranteedIncomeForAge,
+  DynamicSimulationPoint,
+} from '../utils/dynamicSpendingSimulator';
 import { getEffectiveDecumulationReturn, getTotalFeePercent } from '../utils/assetAllocation';
 import { DEFAULT_POTS } from '../utils/defaultData';
 import { MonteCarloResult } from '../utils/monteCarloEngine';
@@ -58,20 +63,7 @@ interface DynamicSpendingCardProps {
 
 export type SimulationScenarioType = 'mc10' | 'mc50' | 'mc90' | 'stress' | 'cycle' | 'bull';
 
-interface SimulationPoint {
-  age: number;
-  yearIndex: number;
-  portfolio: number;
-  baselineIncome: number;
-  dynamicIncome: number;
-  essentialFloor: number;
-  discretionarySpend: number;
-  withdrawalRate: number;
-  returnRate: number;
-  event?: 'cut' | 'raise' | 'freeze' | 'floor_protected';
-  eventNote?: string;
-  diffFromBaseline: number;
-}
+type SimulationPoint = DynamicSimulationPoint;
 
 // Deterministic 32-bit PRNG (Mulberry32) for reproducible Monte Carlo paths
 function mulberry32(seed: number) {
@@ -218,10 +210,10 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
         ? annualContrib * ((compoundGrowth - 1) / netAccumReturn)
         : annualContrib * accumYears;
       const futurePot = Math.round(todayTotalPot * compoundGrowth + contribGrowth);
-      return Math.max(150000, futurePot);
+      return Math.max(0, futurePot);
     }
 
-    return Math.max(150000, todayTotalPot);
+    return Math.max(0, todayTotalPot);
   }, [
     monteCarloResult,
     activeMarketScenario,
@@ -238,19 +230,39 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
   ]);
 
   // The user's input income requirement baseline (fixed from plan settings so SWR can be compared against it)
-  const inputIncomeRequirement = profile.baselineIncomeRequirementAnnual ?? profile.targetRetirementIncomeAnnual ?? 40000;
+  // Only honour the preserved baseline while a dynamic "Apply to plan" override is active; otherwise
+  // always follow the live plan target so later edits to the income requirement are picked up.
+  const isDynamicOverrideActive = profile.dynamicSpendingRules?.initialSpendingAmount != null;
+  const inputIncomeRequirement =
+    (isDynamicOverrideActive ? profile.baselineIncomeRequirementAnnual : undefined) ??
+    profile.targetRetirementIncomeAnnual ??
+    40000;
+  const inputRequirementProfile: UserProfile = isDynamicOverrideActive
+    ? {
+        ...profile,
+        targetRetirementIncomeAnnual: inputIncomeRequirement,
+        reinvestExcessDrawdown: profile.dynamicSpendingRules?.previousReinvestExcessDrawdown ?? false,
+        actualSpendingTargetAnnual: profile.dynamicSpendingRules?.previousActualSpendingTargetAnnual,
+      }
+    : { ...profile, targetRetirementIncomeAnnual: inputIncomeRequirement };
   const getInputIncomeRequirementForAge = (age: number) => {
-    return getActualSpendingTargetForAge({ ...profile, targetRetirementIncomeAnnual: inputIncomeRequirement }, age);
+    return getActualSpendingTargetForAge(inputRequirementProfile, age);
+  };
+  const getEssentialFloorAtAge = (age: number) => {
+    const f = getEssentialFloorForAge(inputRequirementProfile, age);
+    return f > 0 ? f : Math.round(getInputIncomeRequirementForAge(age) * 0.65);
   };
 
   const initialTarget = getInputIncomeRequirementForAge(retAge);
-  const essentialFloorBaseline =
-    profile.essentialRetirementIncomeAnnual !== undefined &&
-    profile.essentialRetirementIncomeAnnual > 0
-      ? profile.essentialRetirementIncomeAnnual
-      : Math.round(initialTarget * 0.65);
+  const essentialFloorBaseline = getEssentialFloorAtAge(retAge);
+  const guaranteedAtRet = getGuaranteedIncomeForAge(profile, retAge);
+  const planNetStartingSpend = Math.max(0, initialTarget - guaranteedAtRet);
 
-  const initialWithdrawalRate = startingWealth > 0 ? (initialTarget / startingWealth) * 100 : 4.0;
+  // Initial withdrawal rate required from the investment portfolio under current plan
+  const initialWithdrawalRate =
+    startingWealth > 0 && planNetStartingSpend > 0
+      ? (planNetStartingSpend / startingWealth) * 100
+      : (startingWealth > 0 ? (initialTarget / startingWealth) * 100 : 4.0);
 
   const rules = profile.dynamicSpendingRules || {
     enabled: false,
@@ -263,15 +275,8 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
     suspendCutsInLateRetirement: true,
   };
 
-  const upperGuardrailRate = initialWithdrawalRate * (1 + rules.capitalPreservationThresholdPercent / 100);
-  const lowerGuardrailRate = initialWithdrawalRate * (1 - rules.prosperityThresholdPercent / 100);
-
-  // Approximate trigger portfolio levels at retirement
-  const upperTriggerPortfolio = upperGuardrailRate > 0 ? initialTarget / (upperGuardrailRate / 100) : 0;
-  const lowerTriggerPortfolio = lowerGuardrailRate > 0 ? initialTarget / (lowerGuardrailRate / 100) : 0;
-
   // Guyton-Klinger Safe Starting Withdrawal Rate (MSR) benchmark & calculation
-  const equityPct = profile.assetAllocationSplit?.equities ?? 65;
+  const equityPct = profile.assetAllocationSplit?.decumulation?.equity ?? 65;
   const feeDrag = getTotalFeePercent(profile.investmentFees);
   const floorRatio = initialTarget > 0 ? essentialFloorBaseline / initialTarget : 0.65;
 
@@ -287,7 +292,7 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
       skipInflationOnNegativeReturn: rules.skipInflationOnNegativeReturn,
       essentialFloorRatio: floorRatio,
       startingWealth,
-      desiredAnnualSpend: initialTarget,
+      desiredAnnualSpend: planNetStartingSpend > 0 ? planNetStartingSpend : initialTarget,
     });
   }, [
     horizonYears,
@@ -300,15 +305,30 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
     rules.skipInflationOnNegativeReturn,
     floorRatio,
     startingWealth,
+    planNetStartingSpend,
     initialTarget,
   ]);
 
   const [showSwrCalculator, setShowSwrCalculator] = useState<boolean>(true);
   const [customStartingSwr, setCustomStartingSwr] = useState<number>(() => {
-    return startingWealth > 0 ? Math.round((initialTarget / startingWealth) * 100) / 100 : 5.0;
+    if (rules.swrBaselineSource === 'calculator' && rules.targetStartingWithdrawalRate) {
+      return rules.targetStartingWithdrawalRate;
+    }
+    return startingWealth > 0 ? Math.round(initialWithdrawalRate * 100) / 100 : 5.0;
   });
-  const [swrChartSource, setSwrChartSource] = useState<'plan' | 'calculator' | 'gk_optimal' | 'bengen' | 'conservative'>('plan');
+  const [swrChartSource, setSwrChartSource] = useState<'plan' | 'calculator' | 'gk_optimal' | 'bengen' | 'conservative'>(
+    () => rules.swrBaselineSource ?? 'plan'
+  );
   const [appliedNotification, setAppliedNotification] = useState<string | null>(null);
+  const notificationTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  React.useEffect(() => () => {
+    if (notificationTimerRef.current) clearTimeout(notificationTimerRef.current);
+  }, []);
+  const showNotification = (msg: string, ms: number) => {
+    setAppliedNotification(msg);
+    if (notificationTimerRef.current) clearTimeout(notificationTimerRef.current);
+    notificationTimerRef.current = setTimeout(() => setAppliedNotification(null), ms);
+  };
 
   const prevInitialRateRef = React.useRef(initialWithdrawalRate);
   React.useEffect(() => {
@@ -318,12 +338,15 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
     }
   }, [initialWithdrawalRate]);
 
-  const customCalculatedSpend = Math.round(startingWealth * (customStartingSwr / 100));
-  const customRequiredWealth = customStartingSwr > 0 ? Math.round(initialTarget / (customStartingSwr / 100)) : startingWealth;
+  const customCalculatedPotSpend = Math.round(startingWealth * (customStartingSwr / 100));
+  const customTotalSpend = customCalculatedPotSpend + guaranteedAtRet;
+  const customRequiredWealth = customStartingSwr > 0
+    ? Math.round((planNetStartingSpend > 0 ? planNetStartingSpend : initialTarget) / (customStartingSwr / 100))
+    : startingWealth;
   const customUpperGuardrailRate = Math.round(customStartingSwr * (1 + (rules.capitalPreservationThresholdPercent ?? 20) / 100) * 100) / 100;
   const customLowerGuardrailRate = Math.round(customStartingSwr * (1 - (rules.prosperityThresholdPercent ?? 20) / 100) * 100) / 100;
-  const customUpperTriggerPot = customUpperGuardrailRate > 0 && customCalculatedSpend > 0 ? Math.round(customCalculatedSpend / (customUpperGuardrailRate / 100)) : 0;
-  const customLowerTriggerPot = customLowerGuardrailRate > 0 && customCalculatedSpend > 0 ? Math.round(customCalculatedSpend / (customLowerGuardrailRate / 100)) : 0;
+  const customUpperTriggerPot = customUpperGuardrailRate > 0 && customCalculatedPotSpend > 0 ? Math.round(customCalculatedPotSpend / (customUpperGuardrailRate / 100)) : 0;
+  const customLowerTriggerPot = customLowerGuardrailRate > 0 && customCalculatedPotSpend > 0 ? Math.round(customCalculatedPotSpend / (customLowerGuardrailRate / 100)) : 0;
 
   // Active SWR baseline configuration driving the dynamic income chart & trigger points
   const activeSwrConfig = useMemo(() => {
@@ -334,40 +357,50 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
           name: 'SWR Calculator (Selected)',
           shortName: `SWR Solver (${customStartingSwr.toFixed(1)}%)`,
           rate: customStartingSwr,
-          startingSpend: customCalculatedSpend,
-          description: `Custom SWR Solver rate of ${customStartingSwr.toFixed(2)}% (£${customCalculatedSpend.toLocaleString()}/yr)`,
+          startingSpend: customTotalSpend,
+          portfolioWithdrawal: customCalculatedPotSpend,
+          description: `Custom SWR Solver rate of ${customStartingSwr.toFixed(2)}% (£${customCalculatedPotSpend.toLocaleString()}/yr from pot${guaranteedAtRet > 0 ? ` + £${guaranteedAtRet.toLocaleString()}/yr guaranteed` : ''})`,
           isCustom: true,
         };
-      case 'gk_optimal':
+      case 'gk_optimal': {
+        const gkPotSpend = gkSwrAnalysis.initialAnnualSpend;
         return {
           source: 'gk_optimal' as const,
           name: 'Guyton-Klinger Safe Optimal',
           shortName: `GK Optimal (${gkSwrAnalysis.recommendedInitialSwr.toFixed(1)}%)`,
           rate: gkSwrAnalysis.recommendedInitialSwr,
-          startingSpend: gkSwrAnalysis.initialAnnualSpend,
-          description: `Empirical Guyton-Klinger MSR of ${gkSwrAnalysis.recommendedInitialSwr.toFixed(2)}% (£${gkSwrAnalysis.initialAnnualSpend.toLocaleString()}/yr)`,
+          startingSpend: gkPotSpend + guaranteedAtRet,
+          portfolioWithdrawal: gkPotSpend,
+          description: `Empirical Guyton-Klinger MSR of ${gkSwrAnalysis.recommendedInitialSwr.toFixed(2)}% (£${gkPotSpend.toLocaleString()}/yr from pot${guaranteedAtRet > 0 ? ` + £${guaranteedAtRet.toLocaleString()}/yr guaranteed` : ''})`,
           isCustom: false,
         };
-      case 'bengen':
+      }
+      case 'bengen': {
+        const bengenPotSpend = Math.round(startingWealth * (gkSwrAnalysis.bengenStaticSwr / 100));
         return {
           source: 'bengen' as const,
           name: 'Bengen Static 4% Benchmark',
           shortName: `Bengen 4% (${gkSwrAnalysis.bengenStaticSwr.toFixed(1)}%)`,
           rate: gkSwrAnalysis.bengenStaticSwr,
-          startingSpend: Math.round(startingWealth * (gkSwrAnalysis.bengenStaticSwr / 100)),
-          description: `William Bengen static rule baseline of ${gkSwrAnalysis.bengenStaticSwr.toFixed(2)}% (£${Math.round(startingWealth * (gkSwrAnalysis.bengenStaticSwr / 100)).toLocaleString()}/yr)`,
+          startingSpend: bengenPotSpend + guaranteedAtRet,
+          portfolioWithdrawal: bengenPotSpend,
+          description: `William Bengen static rule baseline of ${gkSwrAnalysis.bengenStaticSwr.toFixed(2)}% (£${bengenPotSpend.toLocaleString()}/yr from pot${guaranteedAtRet > 0 ? ` + £${guaranteedAtRet.toLocaleString()}/yr guaranteed` : ''})`,
           isCustom: false,
         };
-      case 'conservative':
+      }
+      case 'conservative': {
+        const consPotSpend = Math.round(startingWealth * 0.035);
         return {
           source: 'conservative' as const,
           name: 'Conservative 3.5% Benchmark',
           shortName: 'Conservative (3.5%)',
           rate: 3.5,
-          startingSpend: Math.round(startingWealth * 0.035),
-          description: `Ultra-conservative baseline of 3.50% (£${Math.round(startingWealth * 0.035).toLocaleString()}/yr)`,
+          startingSpend: consPotSpend + guaranteedAtRet,
+          portfolioWithdrawal: consPotSpend,
+          description: `Ultra-conservative baseline of 3.50% (£${consPotSpend.toLocaleString()}/yr from pot${guaranteedAtRet > 0 ? ` + £${guaranteedAtRet.toLocaleString()}/yr guaranteed` : ''})`,
           isCustom: false,
         };
+      }
       case 'plan':
       default:
         return {
@@ -376,28 +409,47 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
           shortName: `Plan Target (${initialWithdrawalRate.toFixed(1)}%)`,
           rate: initialWithdrawalRate,
           startingSpend: initialTarget,
-          description: `Official retirement plan target of £${initialTarget.toLocaleString()}/yr (${initialWithdrawalRate.toFixed(2)}% SWR)`,
+          portfolioWithdrawal: planNetStartingSpend,
+          description: `Official retirement plan target of £${initialTarget.toLocaleString()}/yr (${initialWithdrawalRate.toFixed(2)}% net SWR)`,
           isCustom: false,
         };
     }
   }, [
     swrChartSource,
     customStartingSwr,
-    customCalculatedSpend,
+    customTotalSpend,
+    customCalculatedPotSpend,
     gkSwrAnalysis.recommendedInitialSwr,
     gkSwrAnalysis.initialAnnualSpend,
     gkSwrAnalysis.bengenStaticSwr,
     startingWealth,
+    guaranteedAtRet,
     initialWithdrawalRate,
     initialTarget,
+    planNetStartingSpend,
   ]);
 
   const effectiveInitialSpend = activeSwrConfig.startingSpend;
+  const effectiveNetStartingSpend = activeSwrConfig.portfolioWithdrawal;
   const effectiveInitialRate = activeSwrConfig.rate;
-  const effectiveUpperGuardrailRate = Math.round(effectiveInitialRate * (1 + (rules.capitalPreservationThresholdPercent ?? 20) / 100) * 100) / 100;
-  const effectiveLowerGuardrailRate = Math.round(effectiveInitialRate * (1 - (rules.prosperityThresholdPercent ?? 20) / 100) * 100) / 100;
-  const effectiveUpperTriggerPot = effectiveUpperGuardrailRate > 0 && effectiveInitialSpend > 0 ? Math.round(effectiveInitialSpend / (effectiveUpperGuardrailRate / 100)) : 0;
-  const effectiveLowerTriggerPot = effectiveLowerGuardrailRate > 0 && effectiveInitialSpend > 0 ? Math.round(effectiveInitialSpend / (effectiveLowerGuardrailRate / 100)) : 0;
+  const effectiveSpendForTriggers = effectiveNetStartingSpend > 0 ? effectiveNetStartingSpend : effectiveInitialSpend;
+  const effectiveNetInitialRate =
+    startingWealth > 0 && effectiveNetStartingSpend > 0
+      ? (effectiveNetStartingSpend / startingWealth) * 100
+      : effectiveInitialRate;
+
+  const effectiveUpperGuardrailRate =
+    Math.round(effectiveNetInitialRate * (1 + (rules.capitalPreservationThresholdPercent ?? 20) / 100) * 100) / 100;
+  const effectiveLowerGuardrailRate =
+    Math.round(effectiveNetInitialRate * (1 - (rules.prosperityThresholdPercent ?? 20) / 100) * 100) / 100;
+  const effectiveUpperTriggerPot =
+    effectiveUpperGuardrailRate > 0 && effectiveSpendForTriggers > 0
+      ? Math.round(effectiveSpendForTriggers / (effectiveUpperGuardrailRate / 100))
+      : 0;
+  const effectiveLowerTriggerPot =
+    effectiveLowerGuardrailRate > 0 && effectiveSpendForTriggers > 0
+      ? Math.round(effectiveSpendForTriggers / (effectiveLowerGuardrailRate / 100))
+      : 0;
 
   // Feature 1: Distance-to-Trigger & Proactive Early Warning Buffer Metrics
   const dropCushionAmount = Math.max(0, startingWealth - effectiveUpperTriggerPot);
@@ -429,16 +481,12 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
   const isCappedAtEssentialFloor = totalCutAmount >= discretionarySpend;
 
   // Guaranteed Pension Floor Coverage
-  const guaranteedStatePension =
-    (profile.statePensionAnnual || (profile.includeStatePension !== false ? 11502 : 0)) +
-    (profile.isCouplePlanning && profile.partnerStatePensionAnnual
-      ? profile.partnerStatePensionAnnual
-      : profile.isCouplePlanning && profile.partnerIncludeStatePension !== false
-      ? 11502
-      : 0);
-  const guaranteedDb =
-    (profile.dbPensionAnnual || 0) + (profile.isCouplePlanning ? (profile.partnerDbPensionAnnual || 0) : 0);
-  const totalGuaranteedIncome = guaranteedStatePension + guaranteedDb;
+  // Peak guaranteed income across retirement (once all State Pensions / DB schemes are in payment)
+  const totalGuaranteedIncome = useMemo(() => {
+    let peak = 0;
+    for (let a = retAge; a <= endAge; a++) peak = Math.max(peak, getGuaranteedIncomeForAge(profile, a));
+    return peak;
+  }, [profile, retAge, endAge]);
   const guaranteedCoveragePct =
     essentialFloorBaseline > 0
       ? Math.min(100, Math.round((totalGuaranteedIncome / essentialFloorBaseline) * 100))
@@ -456,56 +504,77 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
     const rounded = Math.round(newAnnualSpend);
     const rateToApply = swrRate ?? activeSwrConfig.rate;
     // CRITICAL: Always preserve the user's input income requirement baseline so it is NEVER lost or overwritten
-    const preservedInputRequirement = profile.baselineIncomeRequirementAnnual ?? profile.targetRetirementIncomeAnnual;
+    const preservedInputRequirement = inputIncomeRequirement;
 
+    // Snapshot pre-override settings only on the first apply so reset restores the user's originals
+    const previousReinvestExcessDrawdown = isDynamicOverrideActive
+      ? rules.previousReinvestExcessDrawdown
+      : Boolean(profile.reinvestExcessDrawdown);
+    const previousActualSpendingTargetAnnual = isDynamicOverrideActive
+      ? rules.previousActualSpendingTargetAnnual
+      : profile.actualSpendingTargetAnnual;
+
+    // Option (b): keep the plan target untouched and enable reinvestExcessDrawdown so that
+    // actualSpendingTargetAnnual is honoured by getActualSpendingTargetForAge downstream.
     const updated: Partial<UserProfile> = {
       baselineIncomeRequirementAnnual: preservedInputRequirement,
       actualSpendingTargetAnnual: rounded,
+      reinvestExcessDrawdown: true,
       dynamicSpendingRules: {
         ...rules,
         enabled: true,
         targetStartingWithdrawalRate: rateToApply,
         initialSpendingAmount: rounded,
         swrBaselineSource: swrChartSource,
+        previousReinvestExcessDrawdown,
+        previousActualSpendingTargetAnnual,
       },
     };
     if (profile.maximizedSpendConfig?.enabled) {
       updated.maximizedSpendConfig = {
         ...profile.maximizedSpendConfig,
         targetAnnualIncome: rounded,
+        // maxConfig.actualSpendingTargetAnnual takes priority downstream; keep it in sync
+        ...(profile.maximizedSpendConfig.actualSpendingTargetAnnual !== undefined
+          ? { actualSpendingTargetAnnual: rounded }
+          : {}),
       };
     }
     onChange({
       ...profile,
       ...updated,
     });
-    setAppliedNotification(
-      `Dynamic Spending Target updated to £${rounded.toLocaleString()}/yr (${rateToApply.toFixed(2)}% SWR)! Your baseline input requirement (£${preservedInputRequirement.toLocaleString()}/yr) remains fixed for comparison.`
+    showNotification(
+      `Dynamic Spending Target updated to £${rounded.toLocaleString()}/yr (${rateToApply.toFixed(2)}% SWR)! Your baseline input requirement (£${preservedInputRequirement.toLocaleString()}/yr) remains fixed for comparison.`,
+      4500
     );
-    setTimeout(() => {
-      setAppliedNotification(null);
-    }, 4500);
   };
 
   const resetToInputIncomeRequirement = () => {
-    const preservedInputRequirement = profile.baselineIncomeRequirementAnnual ?? profile.targetRetirementIncomeAnnual;
+    const preservedInputRequirement = inputIncomeRequirement;
     onChange({
       ...profile,
-      actualSpendingTargetAnnual: preservedInputRequirement,
+      baselineIncomeRequirementAnnual: undefined,
+      actualSpendingTargetAnnual: isDynamicOverrideActive
+        ? rules.previousActualSpendingTargetAnnual
+        : profile.actualSpendingTargetAnnual,
+      reinvestExcessDrawdown: isDynamicOverrideActive
+        ? Boolean(rules.previousReinvestExcessDrawdown)
+        : profile.reinvestExcessDrawdown,
       dynamicSpendingRules: {
         ...rules,
         initialSpendingAmount: undefined,
         targetStartingWithdrawalRate: undefined,
         swrBaselineSource: 'plan',
+        previousReinvestExcessDrawdown: undefined,
+        previousActualSpendingTargetAnnual: undefined,
       },
     });
     setSwrChartSource('plan');
-    setAppliedNotification(
-      `Dynamic spending reset to match your input income requirement (£${preservedInputRequirement.toLocaleString()}/yr).`
+    showNotification(
+      `Dynamic spending reset to match your input income requirement (£${preservedInputRequirement.toLocaleString()}/yr).`,
+      4000
     );
-    setTimeout(() => {
-      setAppliedNotification(null);
-    }, 4000);
   };
 
   // Mean decumulation return accounting for asset allocation split & investment fee drag
@@ -598,7 +667,7 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
   ]);
 
   // Run dynamic simulation for selected scenario
-  const simulationResults = useMemo(() => {
+  const simulation = useMemo(() => {
     const points: SimulationPoint[] = [];
 
     // Return series mapping (including the 3 Monte Carlo paths)
@@ -631,179 +700,54 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
 
     const isAdjustedReal = profile.adjustForInflation !== false;
     const returnSeries = scenarioReturns[selectedScenario] || monteCarloPaths.mc50;
-    let spendingMultiplier = 1.0;
-    const initialGkRate = effectiveInitialRate / 100;
-    const presThresh = 1 + (rules.capitalPreservationThresholdPercent ?? 20) / 100;
-    const presCut = (rules.capitalPreservationCutPercent ?? 10) / 100;
-    const prospThresh = 1 - (rules.prosperityThresholdPercent ?? 20) / 100;
-    const prospInc = (rules.prosperityIncreasePercent ?? 10) / 100;
-
-    const isMcScenario = selectedScenario === 'mc10' || selectedScenario === 'mc50' || selectedScenario === 'mc90';
-    const isScenarioMatch = !monteCarloResult?.params?.marketScenario || monteCarloResult.params.marketScenario === activeMarketScenario;
-    const hasMcPercentiles = isScenarioMatch && Boolean(monteCarloResult?.agePercentiles?.length);
-
     // Scale spending baseline if a non-plan SWR baseline is active
     const scaleFactor = initialTarget > 0 ? effectiveInitialSpend / initialTarget : 1.0;
 
-    let runningSimPot = startingWealth;
-    let prevDynamicSpend = 0;
-
-    for (let yr = 0; yr <= horizonYears; yr++) {
-      const currentAge = retAge + yr;
-      if (currentAge > endAge) break;
-
-      const inflationFactor = Math.pow(1 + inflationRate, yr);
-      const planIncomeRequirementAtAge = isAdjustedReal
-        ? getInputIncomeRequirementForAge(currentAge)
-        : Math.round(getInputIncomeRequirementForAge(currentAge) * inflationFactor);
-
-      // The unadjusted starting spend progression for the chosen SWR across years before dynamic GK adjustments
-      const swrStartingSpendAtAge = Math.round(planIncomeRequirementAtAge * scaleFactor);
-
-      const essentialFloorAtAge = isAdjustedReal
-        ? Math.round(essentialFloorBaseline)
-        : Math.round(essentialFloorBaseline * inflationFactor);
-
-      const ret = yr > 0 ? returnSeries[(yr - 1) % returnSeries.length] ?? 0.05 : 0;
-
-      // Determine this year's portfolio pot balance available for withdrawal
-      let portfolioThisAge = startingWealth;
-      if (yr > 0) {
-        if (swrChartSource === 'plan' && isMcScenario && hasMcPercentiles) {
-          const mcPoint = monteCarloResult!.agePercentiles.find((p) => p.age === currentAge);
-          if (mcPoint) {
-            if (selectedScenario === 'mc50') portfolioThisAge = mcPoint.p50TotalPot;
-            else if (selectedScenario === 'mc10') portfolioThisAge = mcPoint.p10TotalPot;
-            else if (selectedScenario === 'mc90') portfolioThisAge = mcPoint.p90TotalPot;
-          } else {
-            const realRet = isAdjustedReal ? ((1 + ret) / (1 + inflationRate) - 1) : ret;
-            runningSimPot = Math.max(0, (runningSimPot - prevDynamicSpend) * (1 + realRet));
-            portfolioThisAge = runningSimPot;
-          }
-        } else {
-          const realRet = isAdjustedReal ? ((1 + ret) / (1 + inflationRate) - 1) : ret;
-          runningSimPot = Math.max(0, (runningSimPot - prevDynamicSpend) * (1 + realRet));
-          portfolioThisAge = runningSimPot;
-        }
-      }
-
-      let event: 'cut' | 'raise' | 'freeze' | 'floor_protected' | undefined = undefined;
-      let eventNote: string | undefined = undefined;
-
-      if (yr > 0 && rules.enabled && portfolioThisAge > 0 && initialGkRate > 0) {
-        const currentRate = (swrStartingSpendAtAge * spendingMultiplier) / portfolioThisAge;
-
-        // Capital Preservation Rule Trigger (Upper Guardrail)
-        if (currentRate > initialGkRate * presThresh) {
-          const prospectiveMultiplier = spendingMultiplier * (1 - presCut);
-          const prospectiveIncome = swrStartingSpendAtAge * prospectiveMultiplier;
-
-          if (prospectiveIncome < essentialFloorAtAge) {
-            // Clamped at essential floor
-            spendingMultiplier = Math.max(0.2, essentialFloorAtAge / swrStartingSpendAtAge);
-            event = 'floor_protected';
-            eventNote = `Capital Preservation triggered (+${((currentRate / initialGkRate - 1) * 100).toFixed(0)}% SWR surge to ${(currentRate * 100).toFixed(1)}%), but spending cut was cushioned at your Essential Floor (£${essentialFloorAtAge.toLocaleString()}/yr).`;
-          } else {
-            spendingMultiplier = prospectiveMultiplier;
-            event = 'cut';
-            eventNote = `Capital Preservation triggered: Withdrawal rate hit ${(currentRate * 100).toFixed(1)}% (+${((currentRate / initialGkRate - 1) * 100).toFixed(0)}% vs initial ${effectiveInitialRate.toFixed(1)}%). Spending cut by ${rules.capitalPreservationCutPercent}%.`;
-          }
-        }
-        // Prosperity Rule Trigger (Lower Guardrail)
-        else if (currentRate < initialGkRate * prospThresh) {
-          spendingMultiplier *= 1 + prospInc;
-          event = 'raise';
-          eventNote = `Prosperity Rule triggered: Portfolio growth lowered withdrawal rate to ${(currentRate * 100).toFixed(1)}% (-${((1 - currentRate / initialGkRate) * 100).toFixed(0)}% vs initial ${effectiveInitialRate.toFixed(1)}%). Spending raised by ${rules.prosperityIncreasePercent}%.`;
-        }
-        // Inflation Freeze Rule Trigger
-        else if (rules.skipInflationOnNegativeReturn && ret < 0) {
-          spendingMultiplier /= (1 + inflationRate);
-          event = 'freeze';
-          eventNote = `Inflation Freeze triggered: Negative portfolio return (${(ret * 100).toFixed(1)}%) skipped annual +${(inflationRate * 100).toFixed(1)}% inflation adjustment to protect capital.`;
-        }
-      }
-
-      // Calculate actual spending target with GK multiplier applied and clamped at floor
-      let dynamicSpend = Math.round(swrStartingSpendAtAge * spendingMultiplier);
-      if (dynamicSpend < essentialFloorAtAge) {
-        dynamicSpend = essentialFloorAtAge;
-      }
-      prevDynamicSpend = dynamicSpend;
-
-      const actualWr = portfolioThisAge > 0 ? (dynamicSpend / portfolioThisAge) * 100 : 100;
-
-      points.push({
-        age: currentAge,
-        yearIndex: yr,
-        portfolio: Math.round(portfolioThisAge),
-        baselineIncome: Math.round(planIncomeRequirementAtAge), // ALWAYS the user's input income requirement
-        dynamicIncome: dynamicSpend,
-        essentialFloor: essentialFloorAtAge,
-        discretionarySpend: Math.max(0, dynamicSpend - essentialFloorAtAge),
-        withdrawalRate: Number(actualWr.toFixed(2)),
-        returnRate: Number((ret * 100).toFixed(1)),
-        event,
-        eventNote,
-        diffFromBaseline: Math.round(dynamicSpend - planIncomeRequirementAtAge),
-      });
-    }
-
-    return points;
+    // The pot is always driven recursively by the dynamic withdrawals (Monte Carlo supplies the
+    // return sequence only), so guardrail cuts/raises feed back into the portfolio trajectory.
+    return simulateGuytonKlinger({
+      startingWealth,
+      retAge,
+      endAge,
+      inflationRate,
+      isAdjustedReal,
+      returnSeries,
+      scaleFactor,
+      rules,
+      getPlanSpendAtAge: getInputIncomeRequirementForAge,
+      getFloorAtAge: getEssentialFloorAtAge,
+      getGuaranteedIncomeAtAge: (age) => getGuaranteedIncomeForAge(profile, age),
+      fallbackInitialRatePercent: effectiveInitialRate,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    activeMarketScenario,
     endAge,
-    essentialFloorBaseline,
-    horizonYears,
     inflationRate,
     initialTarget,
     effectiveInitialRate,
     effectiveInitialSpend,
-    swrChartSource,
     monteCarloPaths,
-    monteCarloResult,
-    profile,
+    profile.includeStatePension,
+    profile.statePensionAge,
+    profile.statePensionDeferralYears,
+    profile.statePensionAmountAnnual,
+    profile.isCouplePlanning,
+    profile.partnerIncludeStatePension,
+    profile.partnerStatePensionAge,
+    profile.partnerStatePensionDeferralYears,
+    profile.partnerStatePensionAmountAnnual,
+    profile.partnerCurrentAge,
+    profile.currentAge,
+    profile.dbPensions,
+    profile.adjustForInflation,
     retAge,
     rules,
     selectedScenario,
     startingWealth,
   ]);
 
-  // Aggregate stats from simulation
-  const kpis = useMemo(() => {
-    let cuts = 0;
-    let raises = 0;
-    let freezes = 0;
-    let floorProtectedCount = 0;
-    let totalSaved = 0;
-    let totalBonus = 0;
-
-    for (const p of simulationResults) {
-      if (p.event === 'cut') cuts++;
-      if (p.event === 'raise') raises++;
-      if (p.event === 'freeze') freezes++;
-      if (p.event === 'floor_protected') {
-        cuts++;
-        floorProtectedCount++;
-      }
-      if (p.diffFromBaseline < 0) {
-        totalSaved += Math.abs(p.diffFromBaseline);
-      } else if (p.diffFromBaseline > 0) {
-        totalBonus += p.diffFromBaseline;
-      }
-    }
-
-    return {
-      cuts,
-      raises,
-      freezes,
-      floorProtectedCount,
-      totalSaved,
-      totalBonus,
-      minSpend: Math.min(...simulationResults.map((p) => p.dynamicIncome)),
-      maxSpend: Math.max(...simulationResults.map((p) => p.dynamicIncome)),
-      floorBreaches: 0, // Never breached by design
-    };
-  }, [simulationResults]);
+  const simulationResults = simulation.points;
+  const kpis = simulation.kpis;
 
   // Events list for trigger ledger
   const triggeredEvents = useMemo(() => {
@@ -1158,16 +1102,24 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
                       <Sparkles className="w-3 h-3" />
                       Guyton-Klinger Safe Rate
                     </span>
-                    <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
-                      +{gkSwrAnalysis.dynamicRulesBoost.toFixed(2)}% Boost
+                    <span
+                      className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-md ${
+                        gkSwrAnalysis.dynamicRulesBoost >= 0
+                          ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300'
+                          : 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300'
+                      }`}
+                    >
+                      {gkSwrAnalysis.dynamicRulesBoost >= 0 ? '+' : ''}
+                      {gkSwrAnalysis.dynamicRulesBoost.toFixed(2)}% vs Bengen
                     </span>
                   </div>
-                  <div className="mt-1 flex items-baseline gap-1.5">
+                  <div className="mt-1 flex items-baseline gap-1.5 flex-wrap">
                     <span className="text-2xl font-black text-slate-900 dark:text-white">
                       {gkSwrAnalysis.recommendedInitialSwr.toFixed(2)}%
                     </span>
                     <span className="text-xs text-slate-500 font-semibold">
-                      = £{gkSwrAnalysis.initialAnnualSpend.toLocaleString()}/yr
+                      = £{gkSwrAnalysis.initialAnnualSpend.toLocaleString()}/yr pot draw
+                      {guaranteedAtRet > 0 ? ` (+£${guaranteedAtRet.toLocaleString()} guaranteed)` : ''}
                     </span>
                   </div>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-snug">
@@ -1178,11 +1130,11 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
                 <div className="space-y-1.5 pt-1">
                   <button
                     type="button"
-                    onClick={() => applyStartingSpendToPlan(gkSwrAnalysis.initialAnnualSpend)}
+                    onClick={() => applyStartingSpendToPlan(gkSwrAnalysis.initialAnnualSpend + guaranteedAtRet, gkSwrAnalysis.recommendedInitialSwr)}
                     className="w-full py-1.5 px-3 rounded-lg text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                   >
                     <Check className="w-3.5 h-3.5" />
-                    <span>Apply Recommended Rate (£{gkSwrAnalysis.initialAnnualSpend.toLocaleString()}/yr)</span>
+                    <span>Apply Recommended Rate (£{(gkSwrAnalysis.initialAnnualSpend + guaranteedAtRet).toLocaleString()}/yr)</span>
                   </button>
                   <button
                     type="button"
@@ -1210,12 +1162,13 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
                       Zero Cuts
                     </span>
                   </div>
-                  <div className="mt-1 flex items-baseline gap-1.5">
+                  <div className="mt-1 flex items-baseline gap-1.5 flex-wrap">
                     <span className="text-2xl font-black text-slate-700 dark:text-slate-200">
                       {gkSwrAnalysis.bengenStaticSwr.toFixed(2)}%
                     </span>
                     <span className="text-xs text-slate-500 font-semibold">
-                      = £{Math.round(startingWealth * (gkSwrAnalysis.bengenStaticSwr / 100)).toLocaleString()}/yr
+                      = £{Math.round(startingWealth * (gkSwrAnalysis.bengenStaticSwr / 100)).toLocaleString()}/yr pot draw
+                      {guaranteedAtRet > 0 ? ` (+£${guaranteedAtRet.toLocaleString()} guaranteed)` : ''}
                     </span>
                   </div>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-snug">
@@ -1226,10 +1179,10 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
                 <div className="space-y-1.5 pt-1">
                   <button
                     type="button"
-                    onClick={() => applyStartingSpendToPlan(Math.round(startingWealth * (gkSwrAnalysis.bengenStaticSwr / 100)))}
+                    onClick={() => applyStartingSpendToPlan(Math.round(startingWealth * (gkSwrAnalysis.bengenStaticSwr / 100)) + guaranteedAtRet, gkSwrAnalysis.bengenStaticSwr)}
                     className="w-full py-1.5 px-3 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                   >
-                    <span>Apply Static Baseline</span>
+                    <span>Apply Static Baseline (£{(Math.round(startingWealth * (gkSwrAnalysis.bengenStaticSwr / 100)) + guaranteedAtRet).toLocaleString()}/yr)</span>
                   </button>
                   <button
                     type="button"
@@ -1268,7 +1221,8 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
                       {initialWithdrawalRate.toFixed(2)}%
                     </span>
                     <span className="text-xs text-slate-500 font-semibold">
-                      = £{initialTarget.toLocaleString()}/yr
+                      = £{planNetStartingSpend.toLocaleString()}/yr pot draw
+                      {guaranteedAtRet > 0 ? ` (+£${guaranteedAtRet.toLocaleString()} guaranteed)` : ''}
                     </span>
                   </div>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-snug">
@@ -1428,13 +1382,13 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
                   <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-700/80">
                     <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                      Initial Annual Spend
+                      Total Annual Spending
                     </div>
                     <div className="text-base font-black text-indigo-600 dark:text-indigo-400 mt-0.5">
-                      £{customCalculatedSpend.toLocaleString()}/yr
+                      £{customTotalSpend.toLocaleString()}/yr
                     </div>
                     <div className="text-[10px] text-slate-400 mt-0.5">
-                      {customCalculatedSpend >= initialTarget ? `+£${(customCalculatedSpend - initialTarget).toLocaleString()}` : `-£${(initialTarget - customCalculatedSpend).toLocaleString()}`} vs current plan
+                      £{customCalculatedPotSpend.toLocaleString()}/yr pot draw{guaranteedAtRet > 0 ? ` + £${guaranteedAtRet.toLocaleString()} guaranteed` : ''}
                     </div>
                   </div>
 
@@ -1481,11 +1435,11 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
                   </div>
                   <button
                     type="button"
-                    onClick={() => applyStartingSpendToPlan(customCalculatedSpend)}
+                    onClick={() => applyStartingSpendToPlan(customTotalSpend, customStartingSwr)}
                     className="w-full sm:w-auto py-2 px-4 rounded-xl text-xs font-extrabold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                   >
                     <Check className="w-4 h-4" />
-                    <span>Set Target Spending to £{customCalculatedSpend.toLocaleString()}/yr ({customStartingSwr.toFixed(1)}% SWR)</span>
+                    <span>Set Target Spending to £{customTotalSpend.toLocaleString()}/yr ({customStartingSwr.toFixed(1)}% SWR)</span>
                   </button>
                 </div>
               </div>
@@ -2043,7 +1997,7 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
                   )}
                   {selectedScenario === 'mc90' && (
                     <>
-                      <strong>Monte Carlo 90th Percentile Path (Favourable Expansion Trail):</strong> Top-decile compounding performance from your Monte Carlo simulation. As the portfolio surges and withdrawal rates fall below {lowerGuardrailRate.toFixed(1)}%, the <strong>Prosperity Rule (+{rules.prosperityIncreasePercent}%)</strong> unlocks lifestyle spending raises.
+                      <strong>Monte Carlo 90th Percentile Path (Favourable Expansion Trail):</strong> Top-decile compounding performance from your Monte Carlo simulation. As the portfolio surges and withdrawal rates fall below {effectiveLowerGuardrailRate.toFixed(1)}%, the <strong>Prosperity Rule (+{rules.prosperityIncreasePercent}%)</strong> unlocks lifestyle spending raises.
                     </>
                   )}
                   {selectedScenario === 'stress' && (
@@ -2053,7 +2007,7 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
                   )}
                   {selectedScenario === 'bull' && (
                     <>
-                      <strong>Bull Market Expansion Model:</strong> High compounding growth (+16%, +14%). As withdrawal rates drop below {lowerGuardrailRate.toFixed(1)}%, the <strong>Prosperity Rule (+{rules.prosperityIncreasePercent}%)</strong> unlocks extra lifestyle spending.
+                      <strong>Bull Market Expansion Model:</strong> High compounding growth (+16%, +14%). As withdrawal rates drop below {effectiveLowerGuardrailRate.toFixed(1)}%, the <strong>Prosperity Rule (+{rules.prosperityIncreasePercent}%)</strong> unlocks extra lifestyle spending.
                     </>
                   )}
                   {selectedScenario === 'cycle' && (
@@ -2130,7 +2084,7 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
                     }`}
                     title="Simulate dynamic income trajectory using the active SWR Solver slider selection"
                   >
-                    <span>SWR Solver ({customStartingSwr.toFixed(1)}% • £{Math.round(customCalculatedSpend / 1000)}k)</span>
+                    <span>SWR Solver ({customStartingSwr.toFixed(1)}% • £{Math.round(customTotalSpend / 1000)}k)</span>
                   </button>
                   <button
                     type="button"
@@ -2277,6 +2231,17 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
                 </div>
               )}
             </div>
+
+            {/* Portfolio Depletion / Longevity Alert Banner */}
+            {kpis.depletedAge !== null && (
+              <div className="p-3.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 rounded-xl flex items-start gap-3 text-xs text-rose-800 dark:text-rose-300">
+                <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-bold">Portfolio Exhaustion Warning: </span>
+                  Under this scenario, portfolio capital is fully depleted at age {kpis.depletedAge}. From this point onwards, retirement spending is strictly constrained to guaranteed non-portfolio income (£{getGuaranteedIncomeForAge(profile, kpis.depletedAge).toLocaleString()}/yr).
+                </div>
+              </div>
+            )}
 
             {/* Recharts Composed Chart */}
             <div className="w-full h-84 sm:h-96 pt-2">
@@ -2626,12 +2591,12 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
               </div>
 
               <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/80">
-                <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
-                  <Shield className="w-3.5 h-3.5" />
+                <div className={`flex items-center gap-1.5 ${kpis.floorBreaches > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                  {kpis.floorBreaches > 0 ? <AlertTriangle className="w-3.5 h-3.5" /> : <Shield className="w-3.5 h-3.5" />}
                   <span className="text-[10px] font-bold uppercase tracking-wider">Floor Breaches</span>
                 </div>
-                <div className="text-sm font-black text-emerald-600 dark:text-emerald-400 mt-1">
-                  0 (100% Protected)
+                <div className={`text-sm font-black mt-1 ${kpis.floorBreaches > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                  {kpis.floorBreaches > 0 ? `${kpis.floorBreaches} Years Breached` : '0 (100% Protected)'}
                 </div>
                 <div className="text-[10px] text-slate-500 mt-0.5">
                   Floor £{essentialFloorBaseline.toLocaleString()}/yr
@@ -2639,15 +2604,15 @@ export const DynamicSpendingCard: React.FC<DynamicSpendingCardProps> = ({
               </div>
 
               <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/80">
-                <div className="flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400">
+                <div className={`flex items-center gap-1.5 ${kpis.depletedAge ? 'text-amber-600 dark:text-amber-400' : 'text-indigo-600 dark:text-indigo-400'}`}>
                   <Sparkles className="w-3.5 h-3.5" />
                   <span className="text-[10px] font-bold uppercase tracking-wider">Longevity Shield</span>
                 </div>
-                <div className="text-sm font-black text-indigo-600 dark:text-indigo-400 mt-1">
-                  +4 to +8 Years
+                <div className={`text-sm font-black mt-1 ${kpis.depletedAge ? 'text-amber-600 dark:text-amber-400' : 'text-indigo-600 dark:text-indigo-400'}`}>
+                  {kpis.depletedAge ? `Depleted at Age ${kpis.depletedAge}` : 'Survives Horizon'}
                 </div>
                 <div className="text-[10px] text-slate-500 mt-0.5">
-                  Extended pot survival
+                  {kpis.depletedAge ? 'Guaranteed income only' : 'Extended pot survival'}
                 </div>
               </div>
             </div>

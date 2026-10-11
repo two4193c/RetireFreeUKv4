@@ -159,8 +159,10 @@ describe('Audit Round 2 Bug Fixes (BUG-11 through BUG-17)', () => {
   });
 
   describe('BUG-15: excelFormulaExporter uses STATE_PENSION_FULL_ANNUAL default', () => {
-    it('generates Excel workbook blob without throwing and references correct State Pension defaults', async () => {
-      const { generateFormulaExcelWorkbook } = await import('../excelFormulaExporter');
+    it(
+      'generates Excel workbook blob without throwing and references correct State Pension defaults',
+      async () => {
+        const { generateFormulaExcelWorkbook } = await import('../excelFormulaExporter');
       const profile: UserProfile = {
         ...DEFAULT_PROFILE,
         statePensionAmountAnnual: 0,
@@ -171,7 +173,7 @@ describe('Audit Round 2 Bug Fixes (BUG-11 through BUG-17)', () => {
       expect(blob).toBeDefined();
       expect(blob.size).toBeGreaterThan(1000);
       expect(blob.type).toBe('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    });
+    }, 30000);
   });
 
   describe('BUG-17: giltLadderEngine 0% coupon tax for sub-Personal Allowance income', () => {

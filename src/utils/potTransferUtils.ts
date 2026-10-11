@@ -48,6 +48,7 @@ export function parseTransferTarget(
         if (yr < 100) yr = yr >= 70 ? 1900 + yr : 2000 + yr;
         targetYear = yr || targetYear;
       } else if (parts.length === 2) {
+        targetDay = 1;
         targetMonth = parseInt(parts[0], 10) || 1;
         let yr = parseInt(parts[1], 10);
         if (yr < 100) yr = yr >= 70 ? 1900 + yr : 2000 + yr;

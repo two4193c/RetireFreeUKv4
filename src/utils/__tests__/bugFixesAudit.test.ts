@@ -8,16 +8,16 @@ import { UserProfile, InvestmentPots } from '../../types';
 describe('Bug Fixes Verification Suite', () => {
   // BUG-1
   describe('BUG-1: Capital Gains Tax differential rates', () => {
-    it('applies 10% basic and 20% higher rates for non-residential assets (e.g. shares/GIA)', () => {
+    it('applies 18% basic and 24% higher rates to non-residential assets too (e.g. shares/GIA) since 30 Oct 2024', () => {
       // Basic rate band remaining
       const basicNonRes = calculateCapitalGainsTax(20000, 10000, false);
-      expect(basicNonRes.cgtTax).toBe(7000 * 0.10);
-      expect(basicNonRes.cgtRate).toBe(0.10);
+      expect(basicNonRes.cgtTax).toBe(7000 * 0.18);
+      expect(basicNonRes.cgtRate).toBe(0.18);
 
       // Higher rate band
       const higherNonRes = calculateCapitalGainsTax(40000, 10000, false);
-      expect(higherNonRes.cgtTax).toBe(7000 * 0.20);
-      expect(higherNonRes.cgtRate).toBe(0.20);
+      expect(higherNonRes.cgtTax).toBe(7000 * 0.24);
+      expect(higherNonRes.cgtRate).toBe(0.24);
     });
 
     it('applies 18% basic and 24% higher rates for residential property', () => {
@@ -49,7 +49,7 @@ describe('Bug Fixes Verification Suite', () => {
 
   // BUG-5 & BUG-10
   describe('BUG-5 & BUG-10: State Pension default consistency across engines', () => {
-    it('uses STATE_PENSION_FULL_ANNUAL (11,973) in aggregateIncome when not set on profile', () => {
+    it('uses STATE_PENSION_FULL_ANNUAL (12,547.60) in aggregateIncome when not set on profile', () => {
       const profileWithoutSp: any = {
         ...DEFAULT_PROFILE,
         currentAge: 68,
@@ -88,7 +88,8 @@ describe('Bug Fixes Verification Suite', () => {
       const projections = generateProjections(profile, pots);
       const row67 = projections.find((r) => r.age === 67);
       expect(row67).toBeDefined();
-      expect(row67!.statePensionReceived).toBe(STATE_PENSION_FULL_ANNUAL);
+      // Projection rows are rounded to whole pounds
+      expect(row67!.statePensionReceived).toBe(Math.round(STATE_PENSION_FULL_ANNUAL));
     });
   });
 

@@ -313,7 +313,7 @@ export const TrancheCrystallisationVisualiserCard: React.FC<TrancheCrystallisati
   const totalTfcFromTranches = trancheDetails.reduce((sum, d) => sum + d.totalTrancheTfc, 0);
   const totalResidualToDrawdown = trancheDetails.reduce((sum, d) => sum + d.totalTrancheResidualDrawdown, 0);
   const totalAllTfc = totalTfcFromTranches + dbLumpSum;
-  const isLsaExceeded = totalTfcFromTranches > lsaLimit;
+  const isLsaExceeded = totalAllTfc > lsaLimit;
   const lsaHeadroomRemaining = Math.max(0, lsaLimit - totalTfcFromTranches);
 
   // Maximum gross for bar scaling
@@ -562,7 +562,7 @@ export const TrancheCrystallisationVisualiserCard: React.FC<TrancheCrystallisati
           <div>
             <strong className="block text-rose-950 dark:text-rose-100">Lump Sum Allowance (LSA) Capped:</strong>
             <span>
-              Total tax-free cash across tranches (£{totalTfcFromTranches.toLocaleString()}) exceeds your full £{lsaLimit.toLocaleString()} allowance by £{(totalTfcFromTranches - lsaLimit).toLocaleString()}. Under HMRC rules, any excess lump sum is subject to income tax at your marginal rate.
+              Total tax-free cash across tranches (£{totalAllTfc.toLocaleString()}) exceeds your full £{lsaLimit.toLocaleString()} allowance by £{(totalAllTfc - lsaLimit).toLocaleString()}. Under HMRC rules, any excess lump sum is subject to income tax at your marginal rate.
             </span>
           </div>
         </div>
