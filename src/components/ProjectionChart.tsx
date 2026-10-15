@@ -90,20 +90,20 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
   // Retirement age sliders (shown beneath the Portfolio Trajectory chart)
   const partnerCurrentAgeValue = profile.partnerCurrentAge ?? profile.currentAge;
   const partnerRetireAgeValue = profile.partnerTargetRetirementAge || profile.targetRetirementAge || 60;
-  const retirementAgeSliders = (
+  const renderRetirementAgeSliders = (idSuffix: string) => (
     <div
-      id="retirement-age-sliders"
+      id={`retirement-age-sliders-${idSuffix}`}
       className={`grid gap-4 pt-3 ${isCouple ? 'sm:grid-cols-2' : 'grid-cols-1'}`}
     >
       <div className="bg-slate-50 dark:bg-slate-800/60 px-4 py-3 rounded-2xl border border-slate-200/80 dark:border-slate-700/80">
         <div className="flex items-center justify-between mb-2">
-          <label htmlFor="primary-retirement-age-slider" className="text-xs font-extrabold text-slate-700 dark:text-slate-200 uppercase tracking-wider">
+          <label htmlFor={`primary-retirement-age-slider-${idSuffix}`} className="text-xs font-extrabold text-slate-700 dark:text-slate-200 uppercase tracking-wider">
             {isCouple ? `${profile.name || 'Primary'} Retirement Age` : 'Retirement Age'}
           </label>
           <span className="text-sm font-black text-emerald-600 dark:text-emerald-400">{primaryRetireAge}</span>
         </div>
         <input
-          id="primary-retirement-age-slider"
+          id={`primary-retirement-age-slider-${idSuffix}`}
           type="range"
           min={Math.max(profile.currentAge, 40)}
           max={80}
@@ -120,13 +120,13 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
       {isCouple && (
         <div className="bg-slate-50 dark:bg-slate-800/60 px-4 py-3 rounded-2xl border border-slate-200/80 dark:border-slate-700/80">
           <div className="flex items-center justify-between mb-2">
-            <label htmlFor="partner-retirement-age-slider" className="text-xs font-extrabold text-slate-700 dark:text-slate-200 uppercase tracking-wider">
+            <label htmlFor={`partner-retirement-age-slider-${idSuffix}`} className="text-xs font-extrabold text-slate-700 dark:text-slate-200 uppercase tracking-wider">
               {profile.partnerName || 'Partner'} Retirement Age
             </label>
             <span className="text-sm font-black text-emerald-600 dark:text-emerald-400">{partnerRetireAgeValue}</span>
           </div>
           <input
-            id="partner-retirement-age-slider"
+            id={`partner-retirement-age-slider-${idSuffix}`}
             type="range"
             min={Math.max(partnerCurrentAgeValue, 40)}
             max={80}
@@ -1932,7 +1932,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                 )}
               </ResponsiveContainer>
             </div>
-            {retirementAgeSliders}
+            {renderRetirementAgeSliders('pots-all')}
           </div>
 
           {/* Chart 2: Drawdown Income Breakdown */}
@@ -1972,6 +1972,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                 </ComposedChart>
               </ResponsiveContainer>
             </div>
+            {renderRetirementAgeSliders('income-all')}
           </div>
 
           {/* Chart 3: Annual Shortfall / Deficit */}
@@ -1998,6 +1999,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                 </ComposedChart>
               </ResponsiveContainer>
             </div>
+            {renderRetirementAgeSliders('shortfall-all')}
           </div>
         </div>
       ) : (
@@ -2616,7 +2618,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
         </div>
       )}
 
-      {!showAllCharts && chartMode === 'pots' && retirementAgeSliders}
+      {!showAllCharts && renderRetirementAgeSliders(chartMode)}
 
       {/* View Mode & Inflation Controls (Positioned After Chart) */}
       {!showAllCharts ? (
