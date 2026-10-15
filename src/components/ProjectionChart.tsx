@@ -87,6 +87,63 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
   const partnerRetirePrimaryAge = (profile.partnerTargetRetirementAge || profile.targetRetirementAge || 60) - partnerAgeDiff;
   const isSameRetireYear = isCouple && (primaryRetireAge === partnerRetirePrimaryAge);
 
+  // Retirement age sliders (shown beneath the Portfolio Trajectory chart)
+  const partnerCurrentAgeValue = profile.partnerCurrentAge ?? profile.currentAge;
+  const partnerRetireAgeValue = profile.partnerTargetRetirementAge || profile.targetRetirementAge || 60;
+  const retirementAgeSliders = (
+    <div
+      id="retirement-age-sliders"
+      className={`grid gap-4 pt-3 ${isCouple ? 'sm:grid-cols-2' : 'grid-cols-1'}`}
+    >
+      <div className="bg-slate-50 dark:bg-slate-800/60 px-4 py-3 rounded-2xl border border-slate-200/80 dark:border-slate-700/80">
+        <div className="flex items-center justify-between mb-2">
+          <label htmlFor="primary-retirement-age-slider" className="text-xs font-extrabold text-slate-700 dark:text-slate-200 uppercase tracking-wider">
+            {isCouple ? `${profile.name || 'Primary'} Retirement Age` : 'Retirement Age'}
+          </label>
+          <span className="text-sm font-black text-emerald-600 dark:text-emerald-400">{primaryRetireAge}</span>
+        </div>
+        <input
+          id="primary-retirement-age-slider"
+          type="range"
+          min={Math.max(profile.currentAge, 40)}
+          max={80}
+          step={1}
+          value={primaryRetireAge}
+          onChange={(e) => onChange?.({ targetRetirementAge: Number(e.target.value) })}
+          className="w-full h-2 rounded-lg cursor-pointer accent-emerald-600"
+        />
+        <div className="flex justify-between text-[10px] text-slate-500 dark:text-slate-400 font-bold mt-1">
+          <span>{Math.max(profile.currentAge, 40)}</span>
+          <span>80</span>
+        </div>
+      </div>
+      {isCouple && (
+        <div className="bg-slate-50 dark:bg-slate-800/60 px-4 py-3 rounded-2xl border border-slate-200/80 dark:border-slate-700/80">
+          <div className="flex items-center justify-between mb-2">
+            <label htmlFor="partner-retirement-age-slider" className="text-xs font-extrabold text-slate-700 dark:text-slate-200 uppercase tracking-wider">
+              {profile.partnerName || 'Partner'} Retirement Age
+            </label>
+            <span className="text-sm font-black text-emerald-600 dark:text-emerald-400">{partnerRetireAgeValue}</span>
+          </div>
+          <input
+            id="partner-retirement-age-slider"
+            type="range"
+            min={Math.max(partnerCurrentAgeValue, 40)}
+            max={80}
+            step={1}
+            value={partnerRetireAgeValue}
+            onChange={(e) => onChange?.({ partnerTargetRetirementAge: Number(e.target.value) })}
+            className="w-full h-2 rounded-lg cursor-pointer accent-emerald-600"
+          />
+          <div className="flex justify-between text-[10px] text-slate-500 dark:text-slate-400 font-bold mt-1">
+            <span>{Math.max(partnerCurrentAgeValue, 40)}</span>
+            <span>80</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
   // Private Pension Access Age calculations for Primary and Partner
   const primaryAccessAge = getPensionAccessAge(profile);
   const partnerAccessAgeRaw = getPartnerPensionAccessAge(profile);
@@ -1875,6 +1932,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
                 )}
               </ResponsiveContainer>
             </div>
+            {retirementAgeSliders}
           </div>
 
           {/* Chart 2: Drawdown Income Breakdown */}
@@ -2557,6 +2615,8 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = ({ projections, p
           </AnimatePresence>
         </div>
       )}
+
+      {!showAllCharts && chartMode === 'pots' && retirementAgeSliders}
 
       {/* View Mode & Inflation Controls (Positioned After Chart) */}
       {!showAllCharts ? (
